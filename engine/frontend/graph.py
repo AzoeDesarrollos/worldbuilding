@@ -1,7 +1,7 @@
 from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_RETURN, K_LCTRL, K_LSHIFT, QUIT
 from pygame import font, Surface, Rect, PixelArray, image, mouse, event, draw, Color as Clr
 from pygame import display as pantalla, init as py_init, quit as py_quit
-from pygame.sprite import DirtySprite, LayeredDirty
+from pygame.sprite import Sprite, LayeredUpdates
 from os import getcwd, environ
 import sys
 
@@ -115,7 +115,7 @@ def keys_to_pos(delta, keys, puntos, comparison):
         return round(e * d + puntos[down])
 
 
-class Linea(DirtySprite):
+class Linea(Sprite):
     def __init__(self, x, y, w, h, grupo):
         super().__init__(grupo)
         self.image = Surface((w, h))
@@ -132,11 +132,8 @@ class Linea(DirtySprite):
         if 2 < y < 480:
             self.rect.centery = y
 
-    def update(self):
-        self.dirty = 1
 
-
-class Punto(DirtySprite):
+class Punto(Sprite):
     def __init__(self, x, y, grupo):
         super().__init__(grupo)
         self.image_des = Surface((10, 10), SRCALPHA)
@@ -150,11 +147,9 @@ class Punto(DirtySprite):
 
     def select(self):
         self.image = self.image_sel
-        self.dirty = 1
 
     def deselect(self):
         self.image = self.image_des
-        self.dirty = 1
 
     def move_x(self, x):
         if 59 < x < 589:
@@ -163,9 +158,6 @@ class Punto(DirtySprite):
     def move_y(self, y):
         if 2 < y < 480:
             self.rect.centery = y
-
-    def update(self):
-        self.dirty = 1
 
 
 def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
@@ -176,7 +168,7 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
         fondo = pantalla.get_surface()
 
     rect = Rect(60, 2, 529, 476)
-    lineas = LayeredDirty()
+    lineas = LayeredUpdates()
 
     linea_h = Linea(rect.x, rect.centery, rect.w, 1, lineas)
     linea_v = Linea(rect.centerx, rect.y, 1, rect.h, lineas)
