@@ -1,0 +1,23 @@
+# Earth Units
+earth_mass = 5.972e+24 kg = earth_masses = em
+earth_radius = 6371 km = earth_radii = er
+earth_gravity = 9.807 m/s ** 2 = eg
+earth_density = 5.15 kg/m ** 3 = ed
+earth_ecape_velocity = 5.15 km/s = earth_escape = ee
+earth_orbital_period = year = earth_year = ey
+earth_day = day
+earth_orbital_velocity = 29.78 km/s = eov
+
+# Jupiter Units
+jupiter_mass = 1,90E+31 kg = jupiter_masses = jm
+jupiter_radius = 71492 km = jupiter_radii = jr
+jupiter_gravity = 24,79 m/s ** 2 = jg
+jupiter_density = 1336 kg/m ** 3 = jd
+
+# Sun Units
+sol_mass = 1.988e+30 kg
+sol_luminosity = 3.828e+26 Watts
+sol_radius = 695700 km
+sol_temperature = 5778 Kelvin
+sol_lifetime = 4.6e+12 earth_years
+sol_aparent_brightness = 1.379 w/m2

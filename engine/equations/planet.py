@@ -1,4 +1,5 @@
 from math import sqrt, pi
+from engine import q
 
 
 class Planet:
@@ -16,21 +17,21 @@ class Planet:
         self.name = name
 
         if mass:
-            self.mass = mass
+            self.mass = q(mass, 'earth_masses')
         if radius:
-            self.radius = radius
+            self.radius = q(radius, 'earth_radius')
         if gravity:
-            self.gravity = gravity
+            self.gravity = q(gravity, 'earth_gravity')
 
         if not self.gravity:
-            self.gravity = mass / (radius ** 2)
+            self.gravity = q(mass / (radius ** 2), 'earth_gravity')
         if not self.radius:
-            self.radius = sqrt(mass / gravity)
+            self.radius = q(sqrt(mass / gravity), 'earth_radius')
         if not self.mass:
-            self.mass = gravity * radius ** 2
+            self.mass = q(gravity * radius ** 2, 'earth_masses')
 
-        self.density = self.mass / (self.radius ** 3)
-        self.escape_velocity = sqrt(self.mass / self.radius)
+        self.density = q(self.mass / (self.radius ** 3), 'earth_density')
+        self.escape_velocity = q(sqrt(self.mass / self.radius),'earth_escape')
         self.composition = {}
 
 
@@ -47,10 +48,9 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
 
     eff_temp = sqrt(x) * (1 / sqrt(d))
     eq_temp = (eff_temp ** 4) * (1 + 3 * t / 4)
-    kelvin_t = round(sqrt(sqrt(eq_temp / 0.9)))
-    celsius = kelvin_t - 273
+    kelvin = q(round(sqrt(sqrt(eq_temp / 0.9))), 'kelvin')
 
-    return celsius
+    return kelvin.to('celcius')
 
 
 # Mass
