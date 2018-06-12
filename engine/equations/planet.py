@@ -1,8 +1,9 @@
+from .general import HydrostaticEquilibrium
 from math import sqrt, pi
 from engine import q
 
 
-class Planet:
+class Planet(HydrostaticEquilibrium):
     mass = 0
     radius = 0
     gravity = 0
@@ -30,8 +31,11 @@ class Planet:
         if not self.mass:
             self.mass = q(gravity * radius ** 2, 'earth_masses')
 
-        self.density = q(self.mass / (self.radius ** 3), 'earth_density')
-        self.escape_velocity = q(sqrt(self.mass / self.radius),'earth_escape')
+        self.density = self.calculate_density(self.mass, self.radius)
+        self.volume = self.calculate_volume(self.radius.to('kilometers'))
+        self.surface = self.calculate_surface_area(self.radius.to('kilometers'))
+        self.calculate_circumference(self.radius.to('kilometers'))
+        self.escape_velocity = q(sqrt(self.mass / self.radius), 'earth_escape')
         self.composition = {}
 
 

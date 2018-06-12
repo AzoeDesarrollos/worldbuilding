@@ -1,10 +1,8 @@
-# from engine.globs.constants import UNIT_KG, UNIT_KM, UNIT_WATTS, UNIT_KELVIN, UNIT_YEAR, UNIT_KM2, UNIT_KM3
-# from engine.globs.constants import SOL_MASS, SOL_LUMINOSITY, SOL_RADIUS, SOL_TEMPERATURE, SOL_LIFETIME
-# from engine.globs.constants import STELAR_CLASIFICATION
-# from math import pi
+from .general import HydrostaticEquilibrium
+from engine import q
 
 
-class Star:
+class Star(HydrostaticEquilibrium):
     mass = 1
     radius = 1
     luminosity = 1
@@ -14,45 +12,20 @@ class Star:
 
     def __init__(self, name, mass):
         self.name = name
-        self.mass = mass
+        self.mass = q(mass, 'sol_mass')
         if mass < 1:
-            self.radius = mass ** 0.8
+            self.radius = q(mass ** 0.8, 'sol_radius')
         elif mass > 1:
-            self.radius = mass ** 0.5
+            self.radius = q(mass ** 0.5, 'sol_radius')
 
-        self.luminosity = mass ** 3.5
-        self.lifetime = mass / self.luminosity
+        self.luminosity = q(mass ** 3.5, 'sol_luminosity')
+        self.lifetime = q(mass / self.luminosity, 'sol_lifetime')
         self.temperature = (self.luminosity / (self.radius ** 2)) ** (1 / 4)
+        self.volume = self.calculate_volume(self.radius.to('kilometers'))
+        self.density = self.calculate_density(self.mass, self.radius)
+        self.circumference = self.calculate_circumference(self.radius.to('kilometers'))
+        self.surface = self.calculate_surface_area(self.radius.to('kilometers'))
 
         # for minimo, maximo in STELAR_CLASIFICATION:
         #     if minimo <= mass <= maximo:
         #         self.clase = STELAR_CLASIFICATION[(minimo, maximo)]
-
-    @staticmethod
-    def to_excel(value):
-        s = str(value)
-        s = s.replace('.', ',')
-        return s
-
-    # def export(self):
-    #     x = {'name': self.name,
-    #          'relatives': {
-    #              'mass': self.to_excel(self.mass),
-    #              'radius': self.to_excel(round(self.radius, 2)),
-    #              'lifetime': self.to_excel(round(self.lifetime, 2)),
-    #              'temperature': self.to_excel(round(self.temperature, 2)),
-    #              'luminosity': self.to_excel(round(self.luminosity, 2))
-    #          },
-    #          'absolutes': {
-    #              'mass': '{0:.2E}'.format(self.mass * SOL_MASS) + ' ' + UNIT_KG,
-    #              'radius': '{0:.2E}'.format(self.radius * SOL_RADIUS) + ' ' + UNIT_KM,
-    #              'luminosity': '{0:.2E}'.format(self.luminosity * SOL_LUMINOSITY) + ' ' + UNIT_WATTS,
-    #              'temperature': '{0:.2E}'.format(self.temperature * SOL_TEMPERATURE) + ' ' + UNIT_KELVIN,
-    #              'lifetime': '{0:.2E}'.format(self.lifetime * SOL_LIFETIME) + ' ' + UNIT_YEAR,
-    #              'circumference': '{0:.2E}'.format(2 * pi * self.radius * SOL_RADIUS) + ' ' + UNIT_KM,
-    #              'surface area': '{0:.2E}'.format(4 * pi * ((self.radius * SOL_RADIUS) ** 2)) + ' ' + UNIT_KM2,
-    #              'volume': '{0:.2E}'.format((4 / 3) * pi * ((self.radius * SOL_RADIUS) ** 3)) + ' ' + UNIT_KM3,
-    #              'type': self.clase
-    #          }
-    #          }
-    #     return x
