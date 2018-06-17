@@ -21,3 +21,5 @@ sol_radius = 695700 km
 sol_temperature = 5778 Kelvin
 sol_lifetime = 4.6e+12 earth_years
 sol_aparent_brightness = 1.379 w/m2
+
+solar_lifetime = 1e+10 = ten_billion_years
