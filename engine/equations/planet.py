@@ -44,7 +44,7 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
 
     sigma = 5.6703 * (10 ** -5)
     l = 3.846 * (10 ** 33) * (star_mass ** 3)
-    d = semi_major_axis * 1.496 * (10 ** 33)
+    d = semi_major_axis * 1.496 * (10 ** 13)
     a = albedo / 100
     t = greenhouse * 0.5841
 
@@ -53,7 +53,7 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
     T_eff = sqrt(x) * (1 / sqrt(d))
     T_eq = ((T_eff ** 4)) * (1 + (3 * t / 4))
     T_sur = T_eq / 0.9
-    T_kel = round(sqrt(sqrt(T_sur))*(10**10))
+    T_kel = round(sqrt(sqrt(T_sur)))
 
     kelvin = q(T_kel, 'degK')
     celcius = T_kel-273
