@@ -42,19 +42,23 @@ class Planet(HydrostaticEquilibrium):
 def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
     # adapted from http://www.astro.indiana.edu/ala/PlanetTemp/index.html
 
-    j = 3.846 * (10 ** 33) * (star_mass ** 3)
+    sigma = 5.6703 * (10 ** -5)
+    l = 3.846 * (10 ** 33) * (star_mass ** 3)
     d = semi_major_axis * 1.496 * (10 ** 33)
     a = albedo / 100
     t = greenhouse * 0.5841
 
-    sigma = 5.6703 * (10 ** -5)
-    x = sqrt((1 - a) * j / (16 * pi * sigma))
+    x = sqrt((1 - a) * l / (16 * pi * sigma))
 
-    eff_temp = sqrt(x) * (1 / sqrt(d))
-    eq_temp = (eff_temp ** 4) * (1 + 3 * t / 4)
-    kelvin = q(round(sqrt(sqrt(eq_temp / 0.9))), 'kelvin')
+    T_eff = sqrt(x) * (1 / sqrt(d))
+    T_eq = ((T_eff ** 4)) * (1 + (3 * t / 4))
+    T_sur = T_eq / 0.9
+    T_kel = round(sqrt(sqrt(T_sur))*(10**10))
 
-    return kelvin.to('celcius')
+    kelvin = q(T_kel, 'degK')
+    celcius = T_kel-273
+
+    return round(kelvin.to('degC'))
 
 
 # Mass
