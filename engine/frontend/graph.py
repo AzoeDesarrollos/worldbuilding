@@ -31,11 +31,11 @@ mass_keys.sort()
 
 radius_keys = [0.1] + [i / 10 for i in range(2, 10, 2)] + [float(i) for i in range(1, 12)]
 if __name__ == '__main__':
-    ruta = getcwd() + '/frontend'
+    ruta = getcwd()
 else:
     ruta = getcwd() + '/engine/frontend/'
 
-graph = image.load(ruta + 'graph.png')
+graph = image.load(ruta + '/graph.png')
 px_array = PixelArray(graph.copy())
 
 yes = []
@@ -234,7 +234,7 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
                     linea_v.move_x(px)
                     punto.move_x(px)
 
-                if rect.collidepoint(px, py):
+                if rect.collidepoint(px, py) and (move_x or move_y):
                     rgba = tuple(fondo.unmap_rgb(px_array[px, py]))
                     if rgba in compositions:
                         punto.select()
