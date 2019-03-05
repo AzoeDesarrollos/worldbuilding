@@ -168,8 +168,8 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
         fondo = pantalla.get_surface()
 
     rect = Rect(60, 2, 529, 476)
-    t_rect = Rect(60,2, 100, 200)
-    b_rect = Rect(500,250,100,200)
+    t_rect = Rect(60, 2, 100, 200)
+    b_rect = Rect(500, 250, 100, 200)
     lineas = LayeredUpdates()
 
     linea_h = Linea(rect.x, rect.centery, rect.w, 1, lineas)
@@ -236,7 +236,7 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
                     linea_v.move_x(px)
                     punto.move_x(px)
 
-                not_off_lines = (not t_rect.collidepoint(px,py)) and (not b_rect.collidepoint(px,py))
+                not_off_lines = (not t_rect.collidepoint(px, py)) and (not b_rect.collidepoint(px, py))
                 if rect.collidepoint(px, py) and (move_x or move_y):
                     rgba = tuple(fondo.unmap_rgb(px_array[px, py]))
                     if rgba in compositions and not_off_lines:
@@ -297,8 +297,8 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
 
         mass_text = 'Mass:' + str(round(mass_value, 3))
         radius_text = 'Radius:' + str(round(radius_value, 3))
-        gravity_text = 'Gravity:' + str(round(mass_value / (radius_value ** 3), 2))
-        density_text = 'Density:' + str(round(mass_value / (radius_value ** 2), 2))
+        gravity_text = 'Density:' + str(round(mass_value / (radius_value ** 3), 2))
+        density_text = 'Gravity:' + str(round(mass_value / (radius_value ** 2), 2))
 
         if pantalla.get_init():
             fondo.fill(blanco)

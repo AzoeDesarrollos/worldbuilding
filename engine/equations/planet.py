@@ -1,9 +1,9 @@
-from .general import HydrostaticEquilibrium
+from .general import BodyInHydrostaticEquilibrium
 from math import sqrt, pi
 from engine import q
 
 
-class Planet(HydrostaticEquilibrium):
+class Planet(BodyInHydrostaticEquilibrium):
     mass = 0
     radius = 0
     gravity = 0
@@ -43,20 +43,19 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
     # adapted from http://www.astro.indiana.edu/ala/PlanetTemp/index.html
 
     sigma = 5.6703 * (10 ** -5)
-    l = 3.846 * (10 ** 33) * (star_mass ** 3)
+    _l = 3.846 * (10 ** 33) * (star_mass ** 3)
     d = semi_major_axis * 1.496 * (10 ** 13)
     a = albedo / 100
     t = greenhouse * 0.5841
 
-    x = sqrt((1 - a) * l / (16 * pi * sigma))
+    x = sqrt((1 - a) * _l / (16 * pi * sigma))
 
-    T_eff = sqrt(x) * (1 / sqrt(d))
-    T_eq = ((T_eff ** 4)) * (1 + (3 * t / 4))
-    T_sur = T_eq / 0.9
-    T_kel = round(sqrt(sqrt(T_sur)))
+    t_eff = sqrt(x) * (1 / sqrt(d))
+    t_eq = (t_eff ** 4) * (1 + (3 * t / 4))
+    t_sur = t_eq / 0.9
+    t_kel = round(sqrt(sqrt(t_sur)))
 
-    kelvin = q(T_kel, 'degK')
-    celcius = T_kel-273
+    kelvin = q(t_kel, 'degK')
 
     return round(kelvin.to('degC'))
 

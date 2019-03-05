@@ -1,7 +1,7 @@
 from math import pi
 
 
-class HydrostaticEquilibrium:
+class BodyInHydrostaticEquilibrium:
     circumference = 0
     surface = 0
     volume = 0
