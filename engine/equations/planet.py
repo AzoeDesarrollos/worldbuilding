@@ -10,12 +10,20 @@ class Planet(BodyInHydrostaticEquilibrium):
     density = 0
     escape_velocity = 0
     composition = None
+    name = None
+    has_name = False
 
-    def __init__(self, name, mass=None, radius=None, gravity=None):
+    def __init__(self, data):
+        name = data.get('name', None)
+        mass = data.get('mass', False)
+        radius = data.get('radius', False)
+        gravity = data.get('gravity', False)
         if not mass and not radius and not gravity:
             raise ValueError('must specify at least two values')
 
-        self.name = name
+        if name:
+            self.name = name
+            self.has_name = True
 
         if mass:
             self.mass = q(mass, 'earth_masses')
@@ -31,11 +39,11 @@ class Planet(BodyInHydrostaticEquilibrium):
         if not self.mass:
             self.mass = q(gravity * radius ** 2, 'earth_masses')
 
-        self.density = self.calculate_density(self.mass, self.radius)
+        self.density = self.calculate_density(self.mass.to('grams'), self.radius.to('centimeters'))
         self.volume = self.calculate_volume(self.radius.to('kilometers'))
         self.surface = self.calculate_surface_area(self.radius.to('kilometers'))
-        self.calculate_circumference(self.radius.to('kilometers'))
-        self.escape_velocity = q(sqrt(self.mass / self.radius), 'earth_escape')
+        self.circumference = self.calculate_circumference(self.radius.to('kilometers'))
+        self.escape_velocity = q(sqrt(self.mass.magnitude / self.radius.magnitude), 'earth_escape')
         self.composition = {}
 
 
@@ -55,9 +63,9 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
     t_sur = t_eq / 0.9
     t_kel = round(sqrt(sqrt(t_sur)))
 
-    kelvin = q(t_kel, 'degK')
+    kelvin = q(t_kel, 'kelvin')
 
-    return round(kelvin.to('degC'))
+    return round(kelvin.to('celsius'))
 
 
 # Mass

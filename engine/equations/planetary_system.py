@@ -1,22 +1,10 @@
-from math import sqrt
-
-
 class PlanetarySystem:
     stable_orbits = None
     inner_boundry = 0
     outer_boundry = 0
 
-    def __init__(self, star_mass, star_luminosity):
+    def __init__(self):
         self.stable_orbits = []
-        self.star_mass = star_mass
-        self.star_luminosity = star_luminosity
-
-        self.inner_boundry = star_mass * 0.01
-        self.outer_boundry = star_mass * 40
-
-        self.frost_line = 4.85 * sqrt(star_luminosity)
-        self.habitable_zone_inner = sqrt(star_luminosity / 1.1)
-        self.habitable_zone_outer = sqrt(star_luminosity / 0.53)
 
     def check_orbits(self):
         """Run this method only after adding all the orbits"""
@@ -32,11 +20,3 @@ class PlanetarySystem:
         for flagged in delete:
             if flagged in self.stable_orbits:
                 self.stable_orbits.remove(flagged)
-
-
-class SolarSystem(PlanetarySystem):
-    def __init__(self, star):
-        super().__init__(star.mass, star.luminosity)
-
-    def __repr__(self):
-        return 'Solar Star System'

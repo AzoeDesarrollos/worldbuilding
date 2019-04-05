@@ -1,5 +1,10 @@
 from math import sqrt
 from pygame import draw, Rect
+from engine import q
+
+
+def put_in_orbit(body, star, a, e, i):
+    body.orbit = Orbit(star.mass.magnitude, a, e, i)
 
 
 class Orbit:
@@ -15,37 +20,26 @@ class Orbit:
     velocity = 0
     motion = ''
 
-    has_name = False
-    name = ''
+    def __init__(self, star_mass, a, e, i):
+        self.eccentricity = q(float(e))
+        self.inclination = q(float(i), "degree")
+        self.semi_major_axis = q(float(a), "au")
 
-    def __init__(self, star_mass, a, e, i, name=None):
-        self.eccentricity = float(e)
-        self.inclination = float(i)
-        self.semi_major_axis = float(a)
-
-        if name is not None:
-            self.name = name
-            self.has_name = True
-        else:
-            self.name = 'Orbit @' + str(a)
-            self.has_name = False
-
-        self.semi_minor_axis = a * sqrt(1 - e ** 2)
-        self.periapsis = a * (1 - e)
-        self.apoapsis = a * (1 + e)
-        self.velocity = sqrt(star_mass / a)
+        self.semi_minor_axis = q(a * sqrt(1 - e ** 2), 'au')
+        self.periapsis = q(a * (1 - e), 'au')
+        self.apoapsis = q(a * (1 + e), 'au')
 
         if self.inclination in (0, 180):
             self.motion = 'equatorial'
         elif self.inclination == 90:
             self.motion = 'polar'
-
-        if 0 <= self.inclination <= 90:
-            self.motion += 'prograde'
+        elif 0 <= self.inclination <= 90:
+            self.motion = 'prograde'
         elif 90 < self.inclination <= 180:
-            self.motion += 'retrograde'
+            self.motion = 'retrograde'
 
-        self.period = sqrt((a ** 3) / star_mass)
+        self.velocity = q(sqrt(star_mass / a), 'earth_orbital_velocity').to('kilometer per second')
+        self.period = q(sqrt((a ** 3) / star_mass), 'year')
 
     def draw(self, surface):
         rect = Rect(0, 0, 2 * self.semi_major_axis, 2 * self.semi_minor_axis)

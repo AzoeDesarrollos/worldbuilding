@@ -11,9 +11,18 @@ class Star(BodyInHydrostaticEquilibrium):
     lifetime = 1
     temperature = 1
     classification = 'G'
+    name = None
+    has_name = False
 
-    def __init__(self, name, mass):
-        self.name = name
+    def __init__(self, data):
+        mass = data['mass']
+        name = data.get('name', None)
+        if name is not None:
+            self.name = name
+            self.has_name = True
+        else:
+            self.name = "NotGiven"
+
         self.mass = q(mass, 'sol_mass')
         if mass < 1:
             self.radius = q(mass ** 0.8, 'sol_radius')
@@ -31,6 +40,11 @@ class Star(BodyInHydrostaticEquilibrium):
 
         self.habitable_inner = q(sqrt(self.luminosity.magnitude / 1.1), 'au')
         self.habitable_inner = q(sqrt(self.luminosity.magnitude / 0.53), 'au')
+
+        self.inner_boundry = self.mass * 0.01
+        self.outer_boundry = self.mass * 40
+
+        self.frost_line = 4.85 * sqrt(self.luminosity.magnitude)
 
     @staticmethod
     def stellar_classification(mass):
@@ -57,3 +71,6 @@ class Star(BodyInHydrostaticEquilibrium):
 
         idx = bisect_right(kelvin, self.temperature.magnitude)
         return hex_to_rgb(hexs[idx - 1:idx][0])
+
+    def __repr__(self):
+        return "Star "+self.name
