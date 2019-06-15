@@ -1,26 +1,39 @@
 from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_RETURN, K_LCTRL, K_LSHIFT, QUIT
-from pygame import font, Surface, Rect, PixelArray, image, mouse, event, draw, Color as Clr
+from pygame import font, Surface, Rect, image, mouse, event, Color as Clr, mask
 from pygame import display as pantalla, init as py_init, quit as py_quit
-from pygame.sprite import Sprite, LayeredUpdates
+from pygame.sprite import LayeredUpdates
 from os import getcwd, environ
 import sys
+import json
+# noinspection PyUnresolvedReferences
+if __name__ == '__main__':
+    # noinspection PyUnresolvedReferences
+    from objects import Linea, Punto
+else:
+    from .objects import Linea, Punto
+
+
+def abrir_json(archivo, encoding='utf-8'):
+    with open(archivo, encoding=encoding) as file:
+        return json.load(file)
+
 
 py_init()
 mouse.set_visible(0)
 fuente1 = font.SysFont('verdana', 16)
 fuente2 = font.SysFont('verdana', 14)
 # noinspection PyArgumentList
-negro, blanco, cian, rojo = Clr(0, 0, 0, 255), Clr(255, 255, 255, 255), Clr(0, 125, 255, 255), Clr(255, 0, 0, 255)
+negro, blanco, rojo = Clr(0, 0, 0, 255), Clr(255, 255, 255, 255), Clr(255, 0, 0, 255)
 
 environ['SDL_VIDEO_CENTERED'] = "{!s},{!s}".format(0, 0)
-witdh, height = (601, 590)
+witdh, height = (590, 630)
 frect = Rect(0, 0, witdh, height)
 
 r = fuente2.render
 texto1 = r('- Hold Shift to lock mass or Control to lock radius -', 1, negro, blanco)
-rectT1 = texto1.get_rect(centerx=frect.centerx, centery=580)
+rectT1 = texto1.get_rect(centerx=frect.centerx, centery=600)
 texto2 = r("Mass and Radii values are relative to Earth's", 1, negro, blanco)
-rectT2 = texto2.get_rect(centerx=frect.centerx, centery=560)
+rectT2 = texto2.get_rect(centerx=frect.centerx, centery=620)
 
 mass_keys = [(i + 1) / 10 for i in range(0, 9)]
 mass_keys += [float(i) for i in range(1, 10)]
@@ -31,38 +44,17 @@ mass_keys.sort()
 
 radius_keys = [0.1] + [i / 10 for i in range(2, 10, 2)] + [float(i) for i in range(1, 12)]
 if __name__ == '__main__':
-    ruta = getcwd()
+    ruta = getcwd() + '/data/'
 else:
-    ruta = getcwd() + '/engine/frontend/'
+    ruta = getcwd() + '/engine/frontend/data/'
 
 graph = image.load(ruta + '/graph.png')
-px_array = PixelArray(graph.copy())
+exes = [59, 93, 114, 128, 139, 148, 156, 162, 169, 173, 209, 229, 244, 254, 263, 271, 278, 284, 288, 325, 345, 360, 370,
+        380, 387, 394, 400, 405, 440, 460, 475, 485, 495, 502, 509, 515, 520, 555, 575, 589]
+yes = [478, 453, 431, 412, 395, 379, 279, 221, 179, 147, 121, 99, 79, 62, 47, 1]
 
-yes = []
-for i in reversed(range(0, 479)):
-    color = graph.unmap_rgb(px_array[63, i])
-    if color == negro:
-        yes.append(i)
-
-exes = []
-for i in range(59, 590):
-    color = graph.unmap_rgb(px_array[i, 475])
-    if color == negro:
-        exes.append(i)
-
-graph = px_array.make_surface()
-compositions = {
-    (255, 100, 63, 255): '100% hydrogen',
-    (255, 200, 63, 255): '75% hydrogen, 25% helium',
-    (255, 54, 214, 255): '100% water ice',
-    (159, 116, 0, 255): '75% water ice, 22% silicates, 3% iron core',
-    (64, 128, 0, 255): '48% water ice, 48.5 silicates, 6.5% iron core',
-    (64, 128, 255, 255): '25% water ice, 52.5% silicates, 22.5 iron core',
-    (0, 0, 255, 255): '100% silicates',
-    (0, 191, 255, 255): '32.5% silicate mantle, 67.5% iron core',
-    (230, 191, 255, 255): '70% iron core, 30% silicate mantle',
-    (0, 201, 0, 255): '100% iron core'
-}
+compositions = abrir_json(ruta + 'lineas.json')
+mascara = mask.from_threshold(image.load(ruta + 'mask.png'), (255, 0, 255), (250, 1, 250))
 
 
 def pos_to_keys(delta, keys, puntos, comparison):
@@ -115,51 +107,6 @@ def keys_to_pos(delta, keys, puntos, comparison):
         return round(e * d + puntos[down])
 
 
-class Linea(Sprite):
-    def __init__(self, x, y, w, h, grupo):
-        super().__init__(grupo)
-        self.image = Surface((w, h))
-        self.image.fill(cian)
-
-        self.x, self.y, self.w, self.h = x, y, w, h
-        self.rect = Rect(x, y, w, h)
-
-    def move_x(self, x):
-        if 59 < x < 589:
-            self.rect.centerx = x
-
-    def move_y(self, y):
-        if 2 < y < 480:
-            self.rect.centery = y
-
-
-class Punto(Sprite):
-    def __init__(self, x, y, grupo):
-        super().__init__(grupo)
-        self.image_des = Surface((10, 10), SRCALPHA)
-        self.image_sel = Surface((10, 10), SRCALPHA)
-        draw.circle(self.image_des, cian, [5, 5], 5)
-
-        draw.circle(self.image_sel, rojo, [5, 5], 5)
-
-        self.image = self.image_des
-        self.rect = self.image.get_rect(center=[x, y])
-
-    def select(self):
-        self.image = self.image_sel
-
-    def deselect(self):
-        self.image = self.image_des
-
-    def move_x(self, x):
-        if 59 < x < 589:
-            self.rect.centerx = x
-
-    def move_y(self, y):
-        if 2 < y < 480:
-            self.rect.centery = y
-
-
 def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
     if not __name__ == '__main__':
         fondo = pantalla.set_mode((witdh, height))
@@ -168,29 +115,21 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
         fondo = pantalla.get_surface()
 
     rect = Rect(60, 2, 529, 476)
-    t_rect = Rect(60, 2, 100, 200)
-    b_rect = Rect(500, 250, 100, 200)
     lineas = LayeredUpdates()
 
     linea_h = Linea(rect.x, rect.centery, rect.w, 1, lineas)
     linea_v = Linea(rect.centerx, rect.y, 1, rect.h, lineas)
     punto = Punto(rect.centerx, rect.centery, lineas)
 
-    data = {}
-    lim_mass_a, lim_mass_b = 0, 0
-    lim_radius_a, lim_radius_b = 0, 0
+    data = {'composition': ''}
 
     if any([lim_x_a < 0, lim_x_b < 0, lim_y_a < 0, lim_y_b < 0]):
         raise ValueError()
 
-    if lim_x_a:
-        lim_mass_a = int(keys_to_pos(lim_x_a, mass_keys, exes, 'lt'))
-    if lim_x_b:
-        lim_mass_b = int(keys_to_pos(lim_x_b, mass_keys, exes, 'gt'))
-    if lim_y_a:
-        lim_radius_a = int(keys_to_pos(lim_y_a, radius_keys, yes, 'gt'))
-    if lim_y_b:
-        lim_radius_b = int(keys_to_pos(lim_y_b, radius_keys, yes, 'gt'))
+    lim_mass_a = int(keys_to_pos(lim_x_a, mass_keys, exes, 'lt')) if lim_x_a else 0
+    lim_mass_b = int(keys_to_pos(lim_x_b, mass_keys, exes, 'gt')) if lim_x_b else 0
+    lim_radius_a = int(keys_to_pos(lim_y_a, radius_keys, yes, 'gt')) if lim_y_a else 0
+    lim_radius_b = int(keys_to_pos(lim_y_b, radius_keys, yes, 'gt')) if lim_y_b else 0
 
     move_x, move_y = True, True
     lockx, locky = False, False
@@ -207,7 +146,8 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
         for e in event.get():
             if e.type == QUIT:
                 py_quit()
-                # sys.exit()
+                if __name__ == 'main':
+                    sys.exit()
             elif e.type == MOUSEBUTTONDOWN:
                 if e.button == 1:
                     if (not lockx) or (not locky):
@@ -236,13 +176,16 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
                     linea_v.move_x(px)
                     punto.move_x(px)
 
-                not_off_lines = (not t_rect.collidepoint(px, py)) and (not b_rect.collidepoint(px, py))
                 if rect.collidepoint(px, py) and (move_x or move_y):
-                    rgba = tuple(fondo.unmap_rgb(px_array[px, py]))
-                    if rgba in compositions and not_off_lines:
+                    if mascara.get_at((px, py)):
                         punto.select()
+                        for name in compositions:
+                            if [px, py] in compositions[name]:
+                                data['composition'] = name
+                                break
                     else:
                         punto.deselect()
+                        data['composition'] = ''
 
             elif e.type == KEYDOWN:
                 if e.key == K_ESCAPE:
@@ -260,10 +203,11 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
                     data['radius'] = round(radius_value, 2)
                     data['gravity'] = round(mass_value / (radius_value ** 2), 2)
                     data['density'] = round(mass_value / (radius_value ** 3), 2)
-                    if rect.collidepoint(px, py):
-                        rgba = tuple(fondo.unmap_rgb(px_array[px, py]))
-                        if rgba in compositions:
-                            data['composition'] = compositions[rgba]
+                    if rect.collidepoint(px, py) and mascara.get_at((px, py)):
+                        for name in compositions:
+                            if [px, py] in compositions[name]:
+                                data['composition'] = name
+                                break
                     done = True
 
             elif e.type == KEYUP:
@@ -299,6 +243,7 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
         radius_text = 'Radius:' + str(round(radius_value, 3))
         gravity_text = 'Density:' + str(round(mass_value / (radius_value ** 3), 2))
         density_text = 'Gravity:' + str(round(mass_value / (radius_value ** 2), 2))
+        composition_text = 'Composition:' + data['composition']
 
         if pantalla.get_init():
             fondo.fill(blanco)
@@ -317,6 +262,7 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
             fondo.blit(fuente1.render(radius_text, 1, radius_color), (rect.left, rect.bottom + 22))
             fondo.blit(fuente1.render(density_text, 1, negro), (rect.left + 120, rect.bottom + 43))
             fondo.blit(fuente1.render(gravity_text, 1, negro), (rect.left + 120, rect.bottom + 22))
+            fondo.blit(fuente1.render(composition_text, 1, negro, blanco), (rect.left, rect.bottom + 64))
 
             fondo.blit(texto1, rectT1)
             fondo.blit(texto2, rectT2)
