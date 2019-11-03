@@ -9,8 +9,13 @@ import json
 if __name__ == '__main__':
     # noinspection PyUnresolvedReferences
     from objects import Linea, Punto
+    if len(sys.argv) > 1:
+        parameters = [(float(i)) for i in sys.argv[1:]]
+    else:
+        parameters = []
 else:
     from .objects import Linea, Punto
+    parameters = []
 
 
 def abrir_json(archivo, encoding='utf-8'):
@@ -128,7 +133,7 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
 
     lim_mass_a = int(keys_to_pos(lim_x_a, mass_keys, exes, 'lt')) if lim_x_a else 0
     lim_mass_b = int(keys_to_pos(lim_x_b, mass_keys, exes, 'gt')) if lim_x_b else 0
-    lim_radius_a = int(keys_to_pos(lim_y_a, radius_keys, yes, 'gt')) if lim_y_a else 0
+    lim_radius_a = int(keys_to_pos(lim_y_a, radius_keys, yes, 'lt')) if lim_y_a else 0
     lim_radius_b = int(keys_to_pos(lim_y_b, radius_keys, yes, 'gt')) if lim_y_b else 0
 
     move_x, move_y = True, True
@@ -225,15 +230,15 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
         if any([lim_mass_b, lim_mass_a, lim_radius_a, lim_radius_b]):
             block = Surface(rect.size, SRCALPHA)
             limit = True
-
+            alpha = 150
             if lim_mass_a:
-                block.fill([125] * 4, (0, rect.y - 2, lim_mass_a - rect.x, rect.h))
+                block.fill([0] * 3 + [alpha], (0, rect.y - 2, lim_mass_a - rect.x, rect.h))
             if lim_mass_b:
-                block.fill([125] * 4, (lim_mass_b - rect.x, rect.y - 2, rect.w, rect.h))
+                block.fill([0] * 3 + [alpha], (lim_mass_b - rect.x, rect.y - 2, rect.w, rect.h))
             if lim_radius_a:
-                block.fill([125] * 4, (0, lim_radius_a, rect.w, rect.h - lim_radius_a))
+                block.fill([0] * 3 + [alpha], (0, lim_radius_a, rect.w, rect.h - lim_radius_a))
             if lim_radius_b:
-                block.fill([125] * 4, (0, rect.y - 2, rect.w, lim_radius_b))
+                block.fill([0] * 3 + [alpha], (0, rect.y - 2, rect.w, lim_radius_b))
 
         else:
             block = None
@@ -276,5 +281,5 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
 
 if __name__ == '__main__':
     pantalla.set_mode((witdh, height))
-    info = graph_loop()
+    info = graph_loop(*parameters)
     print(info)
