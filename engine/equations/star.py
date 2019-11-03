@@ -28,14 +28,16 @@ class Star(BodyInHydrostaticEquilibrium):
             self.radius = q(mass ** 0.8, 'sol_radius')
         elif mass > 1:
             self.radius = q(mass ** 0.5, 'sol_radius')
+        else:
+            self.radius = q(1, 'sol_radius')
 
         self.luminosity = q(mass ** 3.5, 'sol_luminosity')
-        self.lifetime = q(mass / self.luminosity, 'sol_lifetime')
-        self.temperature = (self.luminosity / (self.radius ** 2)) ** (1 / 4)
-        self.volume = self.calculate_volume(self.radius.to('kilometers'))
-        self.density = self.calculate_density(self.mass, self.radius)
-        self.circumference = self.calculate_circumference(self.radius.to('kilometers'))
-        self.surface = self.calculate_surface_area(self.radius.to('kilometers'))
+        self.lifetime = q(mass / self.luminosity.m, 'sol_lifetime')
+        self.temperature = q((self.luminosity.m / (self.radius.m ** 2)) ** (1 / 4), 'sol_temperature')
+        self.volume = q(self.calculate_volume(self.radius.to('km').m), 'km^3')
+        self.density = q(self.calculate_density(self.mass.to('g').m, self.radius.to('cm').m), 'g/cm^3')
+        self.circumference = q(self.calculate_circumference(self.radius.to('km').m), 'km')
+        self.surface = q(self.calculate_surface_area(self.radius.to('km').m), 'km^2')
         self.classification = self.stellar_classification(mass)
 
         self.habitable_inner = q(sqrt(self.luminosity.magnitude / 1.1), 'au')

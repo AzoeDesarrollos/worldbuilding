@@ -13,11 +13,11 @@ class BodyInHydrostaticEquilibrium:
 
     @staticmethod
     def calculate_surface_area(r):
-        return 4 * pi * (r ** 2)
+        return 4 * pi * r ** 2
 
     @staticmethod
     def calculate_volume(r):
-        return (4 / 3) * pi * (r ** 3)
+        return (4 / 3) * pi * r ** 3
 
     @classmethod
     def calculate_density(cls, m, r):

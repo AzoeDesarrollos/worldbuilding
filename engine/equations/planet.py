@@ -1,4 +1,5 @@
 from .general import BodyInHydrostaticEquilibrium
+from engine.backend.util import read_csv
 from math import sqrt, pi
 from engine import q
 
@@ -87,3 +88,26 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
 
 Terrestial = [0.1, 3.5, 0.5, 1.5]
 GasDwarf = [1, 20, 0, 2]
+
+
+def temp_by_pos(vencindario, albedo, greenhouse):
+    data = read_csv(vencindario)
+    granularidad = 10
+    resultados = []
+    for row in data:
+        star_class = row[0]
+        if star_class.startswith('G'):
+            rel_mass = row[1]
+            hab_inner = row[6]
+            hab_outer = row[7]
+
+            total_dist = hab_outer - hab_inner
+            unidad = total_dist/granularidad
+
+            for i in range(granularidad):
+                dist = hab_inner + unidad*i
+                if dist <= hab_outer:
+                    t = planet_temperature(rel_mass, dist, albedo, greenhouse)
+                    if 13 <= t < 16:
+                        resultados.append({'name': star_class, 'd': round(dist, 5), 'temp': t})
+    return resultados

@@ -1,10 +1,10 @@
 from pygame.sprite import Sprite
-from pygame import Surface, Rect, SRCALPHA, Color as Clr, draw
+from pygame import Surface, Rect, SRCALPHA, Color, draw
 
 # noinspection PyArgumentList
-cian = Clr(0, 125, 255, 255)
+cian = Color(0, 125, 255, 255)
 # noinspection PyArgumentList
-rojo = Clr(255, 0, 0, 255)
+rojo = Color(255, 0, 0, 255)
 
 
 class Linea(Sprite):
