@@ -151,7 +151,7 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
         for e in event.get():
             if e.type == QUIT:
                 py_quit()
-                if __name__ == 'main':
+                if __name__ == '__main__':
                     sys.exit()
             elif e.type == MOUSEBUTTONDOWN:
                 if e.button == 1:
