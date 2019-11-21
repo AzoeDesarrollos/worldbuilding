@@ -18,7 +18,7 @@ jupiter_density = 1326 kg/m ** 3
 sol_mass = 1.988e+30 kg
 sol_luminosity = 3.828e+26 W
 sol_radius = 695700 km
-sol_temperature = 5778 Kelvin
+sol_temperature = 5778 kelvin
 sol_lifetime = 4.6e+12 earth_years
 sol_aparent_brightness = 1.379 w/m2
 

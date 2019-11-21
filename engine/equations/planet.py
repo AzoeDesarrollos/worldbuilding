@@ -97,11 +97,16 @@ GasDwarf = [1, 20, 2, 0]
 def temp_by_pos(star, albedo=29, greenhouse=1):
     granularidad = 10
     resultados = []
-
-    star_class = star[0]
-    rel_mass = star[1]
-    hab_inner = star[6]
-    hab_outer = star[7]
+    if hasattr(star, 'mass'):
+        star_class = star.classification
+        rel_mass = star.mass.m
+        hab_inner = star.habitable_inner.m
+        hab_outer = star.habitable_outer.m
+    else:
+        star_class = star[0]
+        rel_mass = star[1]
+        hab_inner = star[6]
+        hab_outer = star[7]
 
     total_dist = hab_outer - hab_inner
     unidad = total_dist/granularidad

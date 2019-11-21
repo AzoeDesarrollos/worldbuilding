@@ -21,7 +21,7 @@ class Star(BodyInHydrostaticEquilibrium):
             self.name = name
             self.has_name = True
         else:
-            self.name = "NotGiven"
+            self.name = "NoName"
 
         self.mass = q(mass, 'sol_mass')
         if mass < 1:
@@ -39,14 +39,16 @@ class Star(BodyInHydrostaticEquilibrium):
         self.circumference = q(self.calculate_circumference(self.radius.to('km').m), 'km')
         self.surface = q(self.calculate_surface_area(self.radius.to('km').m), 'km^2')
         self.classification = self.stellar_classification(mass)
+        self.cls = self.classification
 
         self.habitable_inner = q(sqrt(self.luminosity.magnitude / 1.1), 'au')
-        self.habitable_inner = q(sqrt(self.luminosity.magnitude / 0.53), 'au')
+        self.habitable_outer = q(sqrt(self.luminosity.magnitude / 0.53), 'au')
 
-        self.inner_boundry = self.mass * 0.01
-        self.outer_boundry = self.mass * 40
+        self.inner_boundry = q(self.mass.m * 0.01, 'au')
+        self.outer_boundry = q(self.mass.m * 40, 'au')
 
-        self.frost_line = 4.85 * sqrt(self.luminosity.magnitude)
+        self.frost_line = q(4.85 * sqrt(self.luminosity.magnitude), 'au')
+        self.color = self.true_color()
 
     @staticmethod
     def stellar_classification(mass):
@@ -62,6 +64,8 @@ class Star(BodyInHydrostaticEquilibrium):
             lv = len(value)
             return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
 
+        t = self.temperature.to('kelvin').m
+
         kelvin = [2660, 3120, 3230, 3360, 3500, 3680, 3920, 4410, 4780, 5240, 5490, 5610, 5780, 5920, 6200, 6540, 6930,
                   7240, 8190, 8620, 9730, 10800, 12400, 13400, 14500, 15400, 16400, 18800, 22100, 24200, 27000, 30000,
                   31900, 35000, 38000]
@@ -71,8 +75,11 @@ class Star(BodyInHydrostaticEquilibrium):
                 '#e3e8ff', '#dde4ff', '#d2dcff', '#cad6ff', '#c1d0ff', '#bccdff', '#b9caff', '#b6c8ff', '#b4c6ff',
                 '#afc2ff', '#abbfff', '#a9bdff', '#a7bcff', '#a5baff', '#a4baff', '#a3b8ff', '#a2b8ff']
 
-        idx = bisect_right(kelvin, self.temperature.magnitude)
-        return hex_to_rgb(hexs[idx - 1:idx][0])
+        idx = bisect_right(kelvin, t)
+        if idx > len(kelvin)-1:
+            return hex_to_rgb(hexs[-1])
+        else:
+            return hex_to_rgb(hexs[idx])
 
     def __repr__(self):
         return "Star "+self.name

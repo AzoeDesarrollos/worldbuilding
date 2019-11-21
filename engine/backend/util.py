@@ -1,4 +1,6 @@
+from .eventhandler import EventHandler
 import csv
+import json
 
 
 class MyCSV(csv.excel):
@@ -17,3 +19,43 @@ def read_csv(ruta):
             table.append(row)
 
     return table
+
+
+def open_float_list_txt(ruta):
+    lines = []
+    with open(ruta, mode='rt', encoding='utf-8') as file:
+        for line in file.readlines():
+            lines.append(float(line.rstrip('\n')))
+        return lines
+
+
+def guardar_json(nombre, datos, encoding='utf-8'):
+    with open(nombre, mode='w', encoding=encoding) as file:
+        json.dump(datos, file, ensure_ascii=False, indent=2, separators=(',', ':'), sort_keys=True)
+
+
+def abrir_json(archivo, encoding='utf-8'):
+    with open(archivo, encoding=encoding) as file:
+        return json.load(file)
+
+
+def load_from_data(body, filename):
+    return body(abrir_json(filename))
+
+
+def salir_handler(event):
+    data = event.data.get('mensaje', '')
+    print('Saliendo...\nStatus: ' + data)
+    quit()
+    exit()
+
+
+EventHandler.register(salir_handler, 'salir')
+
+__all__ = [
+    'read_csv',
+    'open_float_list_txt',
+    'guardar_json',
+    'abrir_json',
+    'load_from_data',
+]
