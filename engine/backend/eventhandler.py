@@ -99,7 +99,7 @@ class AzoeEvent:
     origin = ''  # origin un string identificando el objeto que creó el evento
     data = {}  # data un dict con la información relevante
 
-    def __init__(self, tipo, origin, data):
+    def __init__(self, tipo, origin, data=None):
         """
         :param tipo:
         :param origin:

@@ -2,6 +2,7 @@ from .general import BodyInHydrostaticEquilibrium
 from engine import q
 from bisect import bisect_right
 from math import sqrt
+from pygame import Color
 
 
 class Star(BodyInHydrostaticEquilibrium):
@@ -77,9 +78,9 @@ class Star(BodyInHydrostaticEquilibrium):
 
         idx = bisect_right(kelvin, t)
         if idx > len(kelvin)-1:
-            return hex_to_rgb(hexs[-1])
+            return Color(hex_to_rgb(hexs[-1]))
         else:
-            return hex_to_rgb(hexs[idx])
+            return Color(hex_to_rgb(hexs[idx]))
 
     def __repr__(self):
         return "Star "+self.name

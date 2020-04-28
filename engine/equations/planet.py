@@ -1,5 +1,4 @@
 from .general import BodyInHydrostaticEquilibrium
-# from engine.backend.util import read_csv
 from math import sqrt, pi
 from engine import q
 
@@ -13,6 +12,7 @@ class Planet(BodyInHydrostaticEquilibrium):
     composition = None
     name = None
     has_name = False
+    habitable = False
 
     def __init__(self, data):
         name = data.get('name', None)
@@ -22,23 +22,33 @@ class Planet(BodyInHydrostaticEquilibrium):
         if not mass and not radius and not gravity:
             raise ValueError('must specify at least two values')
 
+        if q(0.0001, 'earth mass').m > mass > q(0.1, 'earth mass').m and \
+                radius > q(0.03, 'earth radius').m:
+            print('Dwarf planet')
+        if q(10, 'earth_mass').m > mass > q(13, 'Jupiter_mass').m:
+            print('Gas Giant')
+        if mass < q(2, 'Jupiter_mass').m and radius > q(1, 'Jupiter_radius').m:
+            print('Puffy Giant')
+
         if name:
             self.name = name
             self.has_name = True
 
+        unit = data.get('unit', "earth")
+
         if mass:
-            self.mass = q(mass, 'earth_masses')
+            self.mass = q(mass, unit + '_masses')
         if radius:
-            self.radius = q(radius, 'earth_radius')
+            self.radius = q(radius, unit + '_radius')
         if gravity:
-            self.gravity = q(gravity, 'earth_gravity')
+            self.gravity = q(gravity, unit + '_gravity')
 
         if not self.gravity:
-            self.gravity = q(mass / (radius ** 2), 'earth_gravity')
+            self.gravity = q(mass / (radius ** 2), unit + '_gravity')
         if not self.radius:
-            self.radius = q(sqrt(mass / gravity), 'earth_radius')
+            self.radius = q(sqrt(mass / gravity), unit + '_radius')
         if not self.mass:
-            self.mass = q(gravity * radius ** 2, 'earth_masses')
+            self.mass = q(gravity * radius ** 2, unit + '_masses')
 
         self.density = self.calculate_density(self.mass.to('grams'), self.radius.to('centimeters'))
         self.volume = self.calculate_volume(self.radius.to('kilometers'))
@@ -48,7 +58,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.composition = {}
 
 
-def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
+def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse=1):
     """
 
     :rtype: q
@@ -82,7 +92,7 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
 # Dwarf planet: greater than 0.03 earth radius
 # Super earth:  1.25 to 2 earth radius
 # Gas Giant:
-# ------- if mass <= 2 Jupiter masses: less than 1 Jupiter radius
+# ------- if mass <= 2 Jupiter masses: 1.10 Jupiter radius or more
 # ------- elif 2 < mass <= 13 Jupiter masses: 1 +- 0.10 Jupiter radius
 # PuffyGiant: more than 1 Jupiter radius
 
@@ -90,6 +100,7 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
 # Gravity
 # Terrestial: 0.4 to 1.6
 
+# use graph with these parameters # earth units
 Terrestial = [0.0, 3.5, 0.0, 1.5]
 GasDwarf = [1, 20, 2, 0]
 
@@ -102,17 +113,22 @@ def temp_by_pos(star, albedo=29, greenhouse=1):
         rel_mass = star.mass.m
         hab_inner = star.habitable_inner.m
         hab_outer = star.habitable_outer.m
-    else:
+    elif type(star) is list:
         star_class = star[0]
         rel_mass = star[1]
         hab_inner = star[6]
         hab_outer = star[7]
+    else:  # suponemos un dict
+        star_class = star['class']
+        rel_mass = star['mass']
+        hab_inner = star['inner']
+        hab_outer = star['outer']
 
     total_dist = hab_outer - hab_inner
-    unidad = total_dist/granularidad
+    unidad = total_dist / granularidad
 
     for i in range(granularidad):
-        dist = hab_inner + unidad*i
+        dist = hab_inner + unidad * i
         if dist <= hab_outer:
             t = planet_temperature(rel_mass, dist, albedo, greenhouse).magnitude
             if 13 <= t < 16:

@@ -38,7 +38,7 @@ class Galaxy:
 
     def __contains__(self, item):
         # same as __getitem__()
-        pass
+        return self.__getitem__(item) is not None
 
     def __len__(self):
         values = list(self._groups.values())

@@ -1,5 +1,6 @@
-from pygame import event, QUIT, KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP
-from pygame import K_ESCAPE, time
+from pygame import event, QUIT, KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION
+from pygame import K_KP1, K_KP2, K_KP3, K_KP4, K_KP5, K_KP6, K_KP7, K_KP8, K_KP9, K_KP0
+from pygame import K_ESCAPE, time, mouse
 from engine.backend.eventhandler import EventHandler
 from pygame.sprite import LayeredUpdates
 
@@ -26,27 +27,42 @@ class WidgetHandler:
     def set_active(cls, widget):
         for wdg in cls.contents:
             wdg.deactivate()
-        # no se activa al widget per se adrede.
-        # de esta manera Entry se comporta como debería.
         cls.active = widget
 
     @classmethod
     def update(cls):
         cls.clock.tick(60)
-        events = event.get([KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, QUIT])
+        events = event.get([KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, QUIT, MOUSEMOTION])
         event.clear()
         for e in events:
             if e.type == QUIT or (e.type == KEYDOWN and e.key == K_ESCAPE):
                 EventHandler.trigger('salir', 'engine', {'mensaje': 'normal'})
 
             elif e.type == KEYDOWN:
-                pass
+                numbers = [K_KP0, K_KP1, K_KP2, K_KP3, K_KP4, K_KP5, K_KP6, K_KP7, K_KP8, K_KP9]
+                if e.key in numbers:
+                    digit = numbers.index(e.key)
 
             elif e.type == MOUSEBUTTONDOWN:
-                pass
+                widgets = [i for i in cls.contents.sprites() if i.rect.collidepoint(e.pos)]
+                for w in widgets:
+                    w.on_mousebuttondown(e.button)
 
             elif e.type == MOUSEBUTTONUP:
-                pass
+                widgets = [i for i in cls.contents.sprites() if i.rect.collidepoint(e.pos)]
+                for w in widgets:
+                    w.on_mousebuttonup(e.button)
+
+            elif e.type == MOUSEMOTION:
+                x, y = e.pos
+                for widget in cls.contents.sprites():
+                    if widget.rect.collidepoint((x, y)):
+                        widget.on_mousemotion(e.rel)
+
+        x, y = mouse.get_pos()
+        for widget in cls.contents.sprites():
+            if widget.rect.collidepoint((x, y)):
+                widget.on_mouseover()
 
         cls.contents.update()
 

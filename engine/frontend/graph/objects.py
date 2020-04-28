@@ -1,9 +1,7 @@
 from pygame.sprite import Sprite
 from pygame import Surface, Rect, SRCALPHA, Color, draw
 
-# noinspection PyArgumentList
 cian = Color(0, 125, 255, 255)
-# noinspection PyArgumentList
 rojo = Color(255, 0, 0, 255)
 
 

@@ -3,24 +3,32 @@ from pygame import font, Surface, Rect, image, mouse, event, Color as Clr, mask
 from pygame import display as pantalla, init as py_init, quit as py_quit
 from pygame.sprite import LayeredUpdates
 from os import getcwd, environ
+# from bisect import bisect_left,bisect_right
 import sys
 import json
+
 # noinspection PyUnresolvedReferences
 if __name__ == '__main__':
     # noinspection PyUnresolvedReferences
     from objects import Linea, Punto
+
     if len(sys.argv) > 1:
         parameters = [(float(i)) for i in sys.argv[1:]]
     else:
         parameters = []
 else:
     from .objects import Linea, Punto
+
     parameters = []
 
 
 def abrir_json(archivo, encoding='utf-8'):
     with open(archivo, encoding=encoding) as file:
         return json.load(file)
+
+
+def average(a, b):
+    return (a + b) / 2
 
 
 py_init()
@@ -58,7 +66,9 @@ exes = [59, 93, 114, 128, 139, 148, 156, 162, 169, 173, 209, 229, 244, 254, 263,
         380, 387, 394, 400, 405, 440, 460, 475, 485, 495, 502, 509, 515, 520, 555, 575, 589]
 yes = [478, 453, 431, 412, 395, 379, 279, 221, 179, 147, 121, 99, 79, 62, 47, 1]
 
-compositions = abrir_json(ruta + 'lineas.json')
+_lineas = abrir_json(ruta + 'lineas.json')
+composiciones = abrir_json(ruta + 'compositions.json')
+# noinspection PyArgumentList
 mascara = mask.from_threshold(image.load(ruta + 'mask.png'), (255, 0, 255), (250, 1, 250))
 
 
@@ -184,8 +194,8 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
                 if rect.collidepoint(px, py) and (move_x or move_y):
                     if mascara.get_at((px, py)):
                         punto.select()
-                        for name in compositions:
-                            if [px, py] in compositions[name]:
+                        for name in _lineas:
+                            if [px, py] in _lineas[name]:
                                 data['composition'] = name
                                 break
                     else:
@@ -209,9 +219,9 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
                     data['gravity'] = round(mass_value / (radius_value ** 2), 2)
                     data['density'] = round(mass_value / (radius_value ** 3), 2)
                     if rect.collidepoint(px, py) and mascara.get_at((px, py)):
-                        for name in compositions:
-                            if [px, py] in compositions[name]:
-                                data['composition'] = name
+                        for name in _lineas:
+                            if [px, py] in _lineas[name]:
+                                data['composition'] = composiciones[name]
                                 break
                     done = True
 
@@ -223,6 +233,55 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
                 elif e.key == K_LCTRL:
                     if not locky:
                         move_y = True
+
+        px, py = mouse.get_pos()
+        alto, bajo = 0, 0
+        if not data.get('composition', False):
+            for _y in reversed(range(0, py)):
+                if mascara.get_at((px, _y)):
+                    alto = _y
+                    break
+            for _y in range(py, 476):
+                if mascara.get_at((px, _y)):
+                    bajo = _y
+                    break
+
+            a, b = 0, 0
+            # creo que esto se puede escribir con oneliners.
+            for name in _lineas:
+                if [px, alto] in _lineas[name]:
+                    a = name
+                    break
+            for name in _lineas:
+                if [px, bajo] in _lineas[name]:
+                    b = name
+                    break
+            if a and b:
+                # si el cursor está entre dos lineas, se computa el promedio de los valores de composición.
+                silicates = average(composiciones[a]['silicates'], composiciones[b]['silicates'])
+                hydrogen = average(composiciones[a]['hydrogen'], composiciones[b]['hydrogen'])
+                helium = average(composiciones[a]['helium'], composiciones[b]['helium'])
+                iron = average(composiciones[a]['iron'], composiciones[b]['iron'])
+                water_ice = average(composiciones[a]['water ice'], composiciones[b]['water ice'])
+
+                # sólo mostramos los valores mayores a 0%
+                compo = []
+                if silicates:
+                    compo.append(str(round(silicates, 2)) + '% silicates')
+                if hydrogen:
+                    compo.append(str(round(hydrogen, 2)) + '% hydrogen')
+                if helium:
+                    compo.append(str(round(helium, 2)) + '% helium')
+                if iron:
+                    compo.append(str(round(iron, 2)) + '% iron')
+                if water_ice:
+                    compo.append(str(round(water_ice, 2)) + '% water ice')
+                data['composition'] = ', '.join(compo)
+
+                if hydrogen or helium:
+                    data['planet'] = 'gaseous'
+                else:
+                    data['planet'] = 'terrestial'
 
         mass_value = pos_to_keys(linea_v.rect.x, mass_keys, exes, 'gt')
         radius_value = pos_to_keys(linea_h.rect.y, radius_keys, yes, 'lt')
@@ -267,7 +326,8 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
             fondo.blit(fuente1.render(radius_text, 1, radius_color), (rect.left, rect.bottom + 22))
             fondo.blit(fuente1.render(density_text, 1, negro), (rect.left + 120, rect.bottom + 43))
             fondo.blit(fuente1.render(gravity_text, 1, negro), (rect.left + 120, rect.bottom + 22))
-            fondo.blit(fuente1.render(composition_text, 1, negro, blanco), (rect.left, rect.bottom + 64))
+            if data['composition']:
+                fondo.blit(fuente1.render(composition_text, 1, negro, blanco), (rect.left, rect.bottom + 64))
 
             fondo.blit(texto1, rectT1)
             fondo.blit(texto2, rectT2)

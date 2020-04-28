@@ -30,4 +30,4 @@ class Renderer:
         display.flip()
 
 
-# Renderer.init()
+Renderer.init()
