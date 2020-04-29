@@ -285,9 +285,9 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
                     data['composition'] = ', '.join(compo)
 
                     if hydrogen or helium:
-                        data['planet'] = 'gaseous'
+                        data['class'] = 'Gas Dwarf'
                     else:
-                        data['planet'] = 'terrestial'
+                        data['class'] = 'Terrestial Planet'
 
         mass_value = pos_to_keys(linea_v.rect.x, mass_keys, exes, 'gt')
         radius_value = pos_to_keys(linea_h.rect.y, radius_keys, yes, 'lt')

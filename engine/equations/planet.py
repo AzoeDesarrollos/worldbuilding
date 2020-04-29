@@ -22,14 +22,6 @@ class Planet(BodyInHydrostaticEquilibrium):
         if not mass and not radius and not gravity:
             raise ValueError('must specify at least two values')
 
-        if q(0.0001, 'earth mass').m > mass > q(0.1, 'earth mass').m and \
-                radius > q(0.03, 'earth radius').m:
-            print('Dwarf planet')
-        if q(10, 'earth_mass').m > mass > q(13, 'Jupiter_mass').m:
-            print('Gas Giant')
-        if mass < q(2, 'Jupiter_mass').m and radius > q(1, 'Jupiter_radius').m:
-            print('Puffy Giant')
-
         if name:
             self.name = name
             self.has_name = True
@@ -42,6 +34,8 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.radius = q(radius, unit + '_radius')
         if gravity:
             self.gravity = q(gravity, unit + '_gravity')
+
+        self.clase = data['class'] if 'class' in data else self.set_class(self.mass, self.radius)
 
         if not self.gravity:
             self.gravity = q(mass / (radius ** 2), unit + '_gravity')
@@ -56,6 +50,17 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.circumference = self.calculate_circumference(self.radius.to('kilometers'))
         self.escape_velocity = q(sqrt(self.mass.magnitude / self.radius.magnitude), 'earth_escape')
         self.composition = {}
+
+    @staticmethod
+    def set_class(mass, radius):
+        em = 'earth_mass'
+        jm = 'jupiter_mass'
+        if q(0.0001, em).m < mass.m < q(0.1, em).m and radius.m > q(0.03, 'earth_radius').m:
+            return 'Dwarf planet'
+        if q(10, em).m < mass.m < q(13, jm).m:
+            return 'Gas Giant'
+        if mass < q(2, jm).m and radius.m > q(1, jm).m:
+            return 'Puffy Giant'
 
 
 def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse=1):
@@ -86,7 +91,7 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse=1):
 # Mass
 # Dwarf planet: 0.0001 to 0.1 earth masses
 # Gas Giant: 10 earth masses to 13 Jupiter masses
-# PuffyGiant more than 2 Jupiter masses
+# PuffyGiant less than 2 Jupiter masses
 
 # Radius:
 # Dwarf planet: greater than 0.03 earth radius
@@ -109,18 +114,18 @@ def temp_by_pos(star, albedo=29, greenhouse=1):
     granularidad = 10
     resultados = []
     if hasattr(star, 'mass'):
-        star_class = star.classification
+        # star_class = star.classification
         # noinspection PyUnresolvedReferences
         rel_mass = star.mass.m
         hab_inner = star.habitable_inner.m
         hab_outer = star.habitable_outer.m
     elif type(star) is list:
-        star_class = star[0]
+        # star_class = star[0]
         rel_mass = star[1]
         hab_inner = star[6]
         hab_outer = star[7]
     else:  # suponemos un dict
-        star_class = star['class']
+        # star_class = star['class']
         rel_mass = star['mass']
         hab_inner = star['inner']
         hab_outer = star['outer']
@@ -133,6 +138,9 @@ def temp_by_pos(star, albedo=29, greenhouse=1):
         if dist <= hab_outer:
             t = planet_temperature(rel_mass, dist, albedo, greenhouse).magnitude
             if 13 <= t < 16:
-                resultados.append({'name': star_class, 'd': round(dist, 5), 'temp': t})
+                resultados.append(round(dist, 5))
+                # resultados.append({'name': star_class, 'd': round(dist, 5), 'temp': t})
 
-    return resultados
+    resultados.sort(reverse=True)
+
+    return resultados[0]
