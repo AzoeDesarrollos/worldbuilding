@@ -102,7 +102,7 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse=1):
 
 # use graph with these parameters # earth units
 Terrestial = [0.0, 3.5, 0.0, 1.5]
-GasDwarf = [1, 20, 2, 0]
+GasDwarf = [1, 20.5, 2, 0]
 
 
 def temp_by_pos(star, albedo=29, greenhouse=1):
@@ -110,6 +110,7 @@ def temp_by_pos(star, albedo=29, greenhouse=1):
     resultados = []
     if hasattr(star, 'mass'):
         star_class = star.classification
+        # noinspection PyUnresolvedReferences
         rel_mass = star.mass.m
         hab_inner = star.habitable_inner.m
         hab_outer = star.habitable_outer.m

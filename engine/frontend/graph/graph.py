@@ -3,11 +3,9 @@ from pygame import font, Surface, Rect, image, mouse, event, Color as Clr, mask
 from pygame import display as pantalla, init as py_init, quit as py_quit
 from pygame.sprite import LayeredUpdates
 from os import getcwd, environ
-# from bisect import bisect_left,bisect_right
 import sys
 import json
 
-# noinspection PyUnresolvedReferences
 if __name__ == '__main__':
     # noinspection PyUnresolvedReferences
     from objects import Linea, Punto
@@ -16,15 +14,17 @@ if __name__ == '__main__':
         parameters = [(float(i)) for i in sys.argv[1:]]
     else:
         parameters = []
+
+
+    def abrir_json(archivo, encoding='utf-8'):
+        with open(archivo, encoding=encoding) as file:
+            return json.load(file)
+
 else:
     from .objects import Linea, Punto
+    from engine.backend.util import abrir_json
 
     parameters = []
-
-
-def abrir_json(archivo, encoding='utf-8'):
-    with open(archivo, encoding=encoding) as file:
-        return json.load(file)
 
 
 def average(a, b):
@@ -47,6 +47,8 @@ texto1 = r('- Hold Shift to lock mass or Control to lock radius -', 1, negro, bl
 rectT1 = texto1.get_rect(centerx=frect.centerx, centery=600)
 texto2 = r("Mass and Radii values are relative to Earth's", 1, negro, blanco)
 rectT2 = texto2.get_rect(centerx=frect.centerx, centery=620)
+texto3 = r('The cursor is beyond the parameters selected for this world type.', 1, negro, blanco)
+rectT3 = texto3.get_rect(centerx=frect.centerx, y=530)
 
 mass_keys = [(i + 1) / 10 for i in range(0, 9)]
 mass_keys += [float(i) for i in range(1, 10)]
@@ -136,7 +138,7 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
     linea_v = Linea(rect.centerx, rect.y, 1, rect.h, lineas)
     punto = Punto(rect.centerx, rect.centery, lineas)
 
-    data = {'composition': ''}
+    data = {}
 
     if any([lim_x_a < 0, lim_x_b < 0, lim_y_a < 0, lim_y_b < 0]):
         raise ValueError()
@@ -151,6 +153,9 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
 
     mass_value = 0
     radius_value = 0
+
+    mass_color = negro
+    radius_color = negro
 
     mouse.set_pos(rect.center)
     event.clear()
@@ -237,58 +242,60 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
         px, py = mouse.get_pos()
         alto, bajo = 0, 0
         if not data.get('composition', False):
-            for _y in reversed(range(0, py)):
-                if mascara.get_at((px, _y)):
-                    alto = _y
-                    break
-            for _y in range(py, 476):
-                if mascara.get_at((px, _y)):
-                    bajo = _y
-                    break
+            if rect.collidepoint((px, py)):
+                for _y in reversed(range(0, py)):
+                    if mascara.get_at((px, _y)):
+                        alto = _y
+                        break
+                for _y in range(py, 476):
+                    if mascara.get_at((px, _y)):
+                        bajo = _y
+                        break
 
-            a, b = 0, 0
-            # creo que esto se puede escribir con oneliners.
-            for name in _lineas:
-                if [px, alto] in _lineas[name]:
-                    a = name
-                    break
-            for name in _lineas:
-                if [px, bajo] in _lineas[name]:
-                    b = name
-                    break
-            if a and b:
-                # si el cursor está entre dos lineas, se computa el promedio de los valores de composición.
-                silicates = average(composiciones[a]['silicates'], composiciones[b]['silicates'])
-                hydrogen = average(composiciones[a]['hydrogen'], composiciones[b]['hydrogen'])
-                helium = average(composiciones[a]['helium'], composiciones[b]['helium'])
-                iron = average(composiciones[a]['iron'], composiciones[b]['iron'])
-                water_ice = average(composiciones[a]['water ice'], composiciones[b]['water ice'])
+                a, b = 0, 0
+                # creo que esto se puede escribir con oneliners.
+                for name in _lineas:
+                    if [px, alto] in _lineas[name]:
+                        a = name
+                        break
+                for name in _lineas:
+                    if [px, bajo] in _lineas[name]:
+                        b = name
+                        break
+                if a and b:
+                    # si el cursor está entre dos lineas, se computa el promedio de los valores de composición.
+                    silicates = average(composiciones[a]['silicates'], composiciones[b]['silicates'])
+                    hydrogen = average(composiciones[a]['hydrogen'], composiciones[b]['hydrogen'])
+                    helium = average(composiciones[a]['helium'], composiciones[b]['helium'])
+                    iron = average(composiciones[a]['iron'], composiciones[b]['iron'])
+                    water_ice = average(composiciones[a]['water ice'], composiciones[b]['water ice'])
 
-                # sólo mostramos los valores mayores a 0%
-                compo = []
-                if silicates:
-                    compo.append(str(round(silicates, 2)) + '% silicates')
-                if hydrogen:
-                    compo.append(str(round(hydrogen, 2)) + '% hydrogen')
-                if helium:
-                    compo.append(str(round(helium, 2)) + '% helium')
-                if iron:
-                    compo.append(str(round(iron, 2)) + '% iron')
-                if water_ice:
-                    compo.append(str(round(water_ice, 2)) + '% water ice')
-                data['composition'] = ', '.join(compo)
+                    # sólo mostramos los valores mayores a 0%
+                    compo = []
+                    if silicates:
+                        compo.append(str(round(silicates, 2)) + '% silicates')
+                    if hydrogen:
+                        compo.append(str(round(hydrogen, 2)) + '% hydrogen')
+                    if helium:
+                        compo.append(str(round(helium, 2)) + '% helium')
+                    if iron:
+                        compo.append(str(round(iron, 2)) + '% iron')
+                    if water_ice:
+                        compo.append(str(round(water_ice, 2)) + '% water ice')
+                    data['composition'] = ', '.join(compo)
 
-                if hydrogen or helium:
-                    data['planet'] = 'gaseous'
-                else:
-                    data['planet'] = 'terrestial'
+                    if hydrogen or helium:
+                        data['planet'] = 'gaseous'
+                    else:
+                        data['planet'] = 'terrestial'
 
         mass_value = pos_to_keys(linea_v.rect.x, mass_keys, exes, 'gt')
         radius_value = pos_to_keys(linea_h.rect.y, radius_keys, yes, 'lt')
 
+        block = Surface(rect.size, SRCALPHA)
+        block_mask = mask.from_surface(block)
         if any([lim_mass_b, lim_mass_a, lim_radius_a, lim_radius_b]):
-            block = Surface(rect.size, SRCALPHA)
-            limit = True
+            block_rect = block.get_rect(topleft=rect.topleft)
             alpha = 150
             if lim_mass_a:
                 block.fill([0] * 3 + [alpha], (0, rect.y - 2, lim_mass_a - rect.x, rect.h))
@@ -299,38 +306,42 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
             if lim_radius_b:
                 block.fill([0] * 3 + [alpha], (0, rect.y - 2, rect.w, lim_radius_b))
 
-        else:
-            block = None
-            limit = False
+            block_mask = mask.from_surface(block)
+            if block_rect.collidepoint((px, py)):
+                if block_mask.get_at((px-rect.x, py-rect.y)):
+                    punto.disable()
+                    radius_color = rojo
+                    mass_color = rojo
+                else:
+                    punto.enable()
+                    mass_color = negro
+                    radius_color = negro
 
         mass_text = 'Mass:' + str(round(mass_value, 3))
         radius_text = 'Radius:' + str(round(radius_value, 3))
         gravity_text = 'Density:' + str(round(mass_value / (radius_value ** 3), 2))
         density_text = 'Gravity:' + str(round(mass_value / (radius_value ** 2), 2))
-        composition_text = 'Composition:' + data['composition']
 
         if pantalla.get_init():
             fondo.fill(blanco)
             fondo.blit(graph, (0, 0))
-            mass_color = negro
-            radius_color = negro
-            if limit:
+            if block_mask.count() != 0:
                 fondo.blit(block, rect)
-                if lim_x_a > mass_value or (0 < lim_x_b < mass_value):
-                    mass_color = rojo
 
-                if lim_y_a > radius_value or (0 < lim_y_b < radius_value):
-                    radius_color = rojo
-
-            fondo.blit(fuente1.render(mass_text, 1, mass_color), (rect.left, rect.bottom + 43))
-            fondo.blit(fuente1.render(radius_text, 1, radius_color), (rect.left, rect.bottom + 22))
-            fondo.blit(fuente1.render(density_text, 1, negro), (rect.left + 120, rect.bottom + 43))
-            fondo.blit(fuente1.render(gravity_text, 1, negro), (rect.left + 120, rect.bottom + 22))
-            if data['composition']:
-                fondo.blit(fuente1.render(composition_text, 1, negro, blanco), (rect.left, rect.bottom + 64))
+            if punto.disabled:
+                fondo.blit(texto3, rectT3)
+            else:
+                fondo.blit(fuente1.render(mass_text, 1, mass_color), (rect.left, rect.bottom + 43))
+                fondo.blit(fuente1.render(radius_text, 1, radius_color), (rect.left, rect.bottom + 22))
+                fondo.blit(fuente1.render(density_text, 1, negro), (rect.left + 120, rect.bottom + 43))
+                fondo.blit(fuente1.render(gravity_text, 1, negro), (rect.left + 120, rect.bottom + 22))
+                if data.get('composition', False):
+                    composition_text = 'Composition:' + data['composition']
+                    fondo.blit(fuente1.render(composition_text, 1, negro, blanco), (rect.left, rect.bottom + 64))
 
             fondo.blit(texto1, rectT1)
             fondo.blit(texto2, rectT2)
+            punto.update()
             lineas.update()
             lineas.draw(fondo)
             pantalla.update()
