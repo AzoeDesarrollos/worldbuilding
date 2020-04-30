@@ -1,4 +1,4 @@
-from random import seed, random, uniform
+from random import seed, random, uniform, choice
 from datetime import datetime
 from .util import abrir_json, guardar_json
 from os import getcwd, path
@@ -11,6 +11,12 @@ else:
     guardar_json(file, key)
 
 seed(key)
+
+__all__ = [
+    'roll',
+    'choice',
+    'random_mass'
+]
 
 
 def roll(a: float = 0.0, b: float = 0.0):

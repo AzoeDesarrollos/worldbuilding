@@ -14,11 +14,15 @@ def put_in_planet_orbit(body, planet, satellite, a):
 class RawOrbit:
     unit = ''
     semi_major_axis = None
+    temperature = ''
 
     def __init__(self, a, unit):
         self.semi_major_axis = q(float(a), unit)
         self.unit = unit
         self.a = self.semi_major_axis
+
+    def set_temperature(self, t):
+        self.temperature = t
 
     def __mul__(self, other):
         new_a = None
@@ -29,7 +33,7 @@ class RawOrbit:
         elif type(other) is Orbit:
             new_a = q(self.semi_major_axis.m * other.semi_major_axis.m, self.unit)
 
-        return RawOrbit(new_a.m, self.unit)
+        return new_a.m
 
     def __truediv__(self, other):
         new_a = None
@@ -40,7 +44,7 @@ class RawOrbit:
         elif type(other) is Orbit:
             new_a = q(self.semi_major_axis.m / other.semi_major_axis.m, self.unit)
 
-        return RawOrbit(new_a.m, self.unit)
+        return new_a.m
 
     def __float__(self):
         return self.semi_major_axis.m
@@ -51,6 +55,9 @@ class RawOrbit:
     def __gt__(self, other):
         return self.semi_major_axis.m > other
 
+    def __eq__(self, other):
+        return other.semi_major_axis == round(self.semi_major_axis, 3)
+
     def __repr__(self):
         return 'Orbit @'+str(round(self.semi_major_axis.m, 3))
 
@@ -60,9 +67,6 @@ class RawOrbit:
 
 class Orbit:
     semi_major_axis = 0
-    eccentricity = 0
-    inclination = 0
-
     semi_minor_axis = 0
     periapsis = 0
     apoapsis = 0
@@ -71,10 +75,13 @@ class Orbit:
     velocity = 0
     motion = ''
 
+    _e = 0
+    _i = 0
+
     def __init__(self, a: float, e: float, i: float, unit='au'):
         self.unit = unit
-        self.eccentricity = q(float(e))
-        self.inclination = q(float(i), "degree")
+        self._e = float(e)
+        self._i = float(i)
         self.semi_major_axis = q(float(a), unit)
 
         self.semi_minor_axis = q(a * sqrt(1 - e ** 2), unit)
@@ -93,8 +100,6 @@ class Orbit:
         # abreviaturas
         self.a = self.semi_major_axis
         self.b = self.semi_minor_axis
-        self.e = self.eccentricity
-        self.i = self.inclination
 
     def draw(self, surface):
         rect = Rect(0, 0, 2 * self.semi_major_axis, 2 * self.semi_minor_axis)
@@ -104,6 +109,30 @@ class Orbit:
 
     def __repr__(self):
         return 'Orbit @' + str(round(self.semi_major_axis.m, 3))
+
+    @property
+    def eccentricity(self):
+        return q(self._e)
+
+    @property
+    def e(self):
+        return self.eccentricity
+
+    @eccentricity.setter
+    def eccentricity(self, value):
+        self._e = float(value)
+
+    @property
+    def inclination(self):
+        return q(self._i, 'degree')
+
+    @property
+    def i(self):
+        return self.inclination
+
+    @inclination.setter
+    def inclination(self, value):
+        self._i = float(value)
 
 
 class PlanetOrbit:

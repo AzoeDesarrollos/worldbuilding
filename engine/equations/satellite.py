@@ -14,8 +14,7 @@ class Satellite:
         return density
 
 
-class Major(BodyInHydrostaticEquilibrium):
-
+class Major(Satellite, BodyInHydrostaticEquilibrium):
     def __init__(self, data):
         name = data.get('name', None)
         if name:
@@ -29,6 +28,10 @@ class Major(BodyInHydrostaticEquilibrium):
         self.surface = q(self.calculate_surface_area(self.radius.to('km').m), 'km^2')
         self.circumference = q(self.calculate_circumference(self.radius.to('km').m), 'km')
         self.escape_velocity = q(sqrt(self.mass.magnitude / self.radius.magnitude), 'earth_escape')
+
+    @staticmethod
+    def set_density():
+        return NotImplemented
 
 
 class Minor(Satellite):
@@ -48,6 +51,10 @@ class Minor(Satellite):
             raise ValueError('object is not an ellipsoid')
         _a, _b, _c = self.a, self.b, self.c
         self.mass = q(self.density.to('kg/m^3').m * (4 / 3) * pi * _a.to('m').m * _b.to('m').m * _c.to('m').m, 'kg')
+
+    @staticmethod
+    def set_density():
+        return NotImplemented
 
     def __repr__(self):
         return super().__repr__() + ' ({} Ellipsoid)'.format(self.shape.title())

@@ -12,7 +12,7 @@ class Planet(BodyInHydrostaticEquilibrium):
     composition = None
     name = None
     has_name = False
-    habitable = False
+    habitable = True
 
     def __init__(self, data):
         name = data.get('name', None)
@@ -27,6 +27,7 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.has_name = True
 
         unit = data.get('unit', "earth")
+        self.habitable = data['habitable'] if 'habitable' in data else False
 
         if mass:
             self.mass = q(mass, unit + '_masses')
@@ -55,12 +56,15 @@ class Planet(BodyInHydrostaticEquilibrium):
     def set_class(mass, radius):
         em = 'earth_mass'
         jm = 'jupiter_mass'
-        if q(0.0001, em).m < mass.m < q(0.1, em).m and radius.m > q(0.03, 'earth_radius').m:
+        if q(0.0001, em) < mass < q(0.1, em) and radius > q(0.03, 'earth_radius'):
             return 'Dwarf planet'
-        if q(10, em).m < mass.m < q(13, jm).m:
+        if q(10, em) < mass < q(13, jm):
             return 'Gas Giant'
-        if mass < q(2, jm).m and radius.m > q(1, jm).m:
+        if mass < q(2, jm) and radius > q(1, jm):
             return 'Puffy Giant'
+
+    def __repr__(self):
+        return self.clase+' '+str(self.mass.m)
 
 
 def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse=1):

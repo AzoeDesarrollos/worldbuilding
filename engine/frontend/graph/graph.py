@@ -1,8 +1,8 @@
 from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_RETURN, K_LCTRL, K_LSHIFT, QUIT
 from pygame import font, Surface, Rect, image, mouse, event, Color as Clr, mask
-from pygame import display as pantalla, init as py_init, quit as py_quit
+from pygame import display, init as py_init, quit as py_quit
 from pygame.sprite import LayeredUpdates
-from os import getcwd, environ
+from os import environ, getcwd, path
 import sys
 import json
 
@@ -32,10 +32,8 @@ def average(a, b):
 
 
 py_init()
-mouse.set_visible(0)
 fuente1 = font.SysFont('verdana', 16)
 fuente2 = font.SysFont('verdana', 14)
-# noinspection PyArgumentList
 negro, blanco, rojo = Clr(0, 0, 0, 255), Clr(255, 255, 255, 255), Clr(255, 0, 0, 255)
 
 environ['SDL_VIDEO_CENTERED'] = "{!s},{!s}".format(0, 0)
@@ -59,19 +57,18 @@ mass_keys.sort()
 
 radius_keys = [0.1] + [i / 10 for i in range(2, 10, 2)] + [float(i) for i in range(1, 12)]
 if __name__ == '__main__':
-    ruta = getcwd() + '/data/'
+    ruta = path.join(getcwd(), 'data')
 else:
-    ruta = getcwd() + '/engine/frontend/data/'
+    ruta = path.join(getcwd(), 'engine', 'frontend', 'graph', 'data')
 
-graph = image.load(ruta + '/graph.png')
+graph = image.load(path.join(ruta, 'graph.png'))
 exes = [59, 93, 114, 128, 139, 148, 156, 162, 169, 173, 209, 229, 244, 254, 263, 271, 278, 284, 288, 325, 345, 360, 370,
         380, 387, 394, 400, 405, 440, 460, 475, 485, 495, 502, 509, 515, 520, 555, 575, 589]
 yes = [478, 453, 431, 412, 395, 379, 279, 221, 179, 147, 121, 99, 79, 62, 47, 1]
 
-_lineas = abrir_json(ruta + 'lineas.json')
-composiciones = abrir_json(ruta + 'compositions.json')
-# noinspection PyArgumentList
-mascara = mask.from_threshold(image.load(ruta + 'mask.png'), (255, 0, 255), (250, 1, 250))
+_lineas = abrir_json(path.join(ruta, 'lineas.json'))
+composiciones = abrir_json(path.join(ruta, 'compositions.json'))
+mascara = mask.from_threshold(image.load(path.join(ruta, 'mask.png')), (255, 0, 255), (250, 1, 250))
 
 
 def pos_to_keys(delta, keys, puntos, comparison):
@@ -126,10 +123,10 @@ def keys_to_pos(delta, keys, puntos, comparison):
 
 def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
     if not __name__ == '__main__':
-        fondo = pantalla.set_mode((witdh, height))
+        fondo = display.set_mode((witdh, height))
         font.init()
     else:
-        fondo = pantalla.get_surface()
+        fondo = display.get_surface()
 
     rect = Rect(60, 2, 529, 476)
     lineas = LayeredUpdates()
@@ -308,7 +305,7 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
 
             block_mask = mask.from_surface(block)
             if block_rect.collidepoint((px, py)):
-                if block_mask.get_at((px-rect.x, py-rect.y)):
+                if block_mask.get_at((px - rect.x, py - rect.y)):
                     punto.disable()
                     radius_color = rojo
                     mass_color = rojo
@@ -322,7 +319,7 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
         gravity_text = 'Density:' + str(round(mass_value / (radius_value ** 3), 2))
         density_text = 'Gravity:' + str(round(mass_value / (radius_value ** 2), 2))
 
-        if pantalla.get_init():
+        if not done:
             fondo.fill(blanco)
             fondo.blit(graph, (0, 0))
             if block_mask.count() != 0:
@@ -344,13 +341,13 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
             punto.update()
             lineas.update()
             lineas.draw(fondo)
-            pantalla.update()
+            display.update()
 
-    py_quit()
+    display.quit()
     return data
 
 
 if __name__ == '__main__':
-    pantalla.set_mode((witdh, height))
+    display.set_mode((witdh, height))
     info = graph_loop(*parameters)
     print(info)

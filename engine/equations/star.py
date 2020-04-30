@@ -42,13 +42,13 @@ class Star(BodyInHydrostaticEquilibrium):
         self.classification = self.stellar_classification(mass)
         self.cls = self.classification
 
-        self.habitable_inner = q(sqrt(self.luminosity.magnitude / 1.1), 'au')
-        self.habitable_outer = q(sqrt(self.luminosity.magnitude / 0.53), 'au')
+        self.habitable_inner = q(round(sqrt(self.luminosity.magnitude / 1.1), 3), 'au')
+        self.habitable_outer = q(round(sqrt(self.luminosity.magnitude / 0.53), 3), 'au')
 
         self.inner_boundry = q(self.mass.m * 0.01, 'au')
         self.outer_boundry = q(self.mass.m * 40, 'au')
 
-        self.frost_line = q(4.85 * sqrt(self.luminosity.magnitude), 'au')
+        self.frost_line = q(round(4.85 * sqrt(self.luminosity.magnitude), 3), 'au')
         self.color = self.true_color()
 
     @staticmethod
