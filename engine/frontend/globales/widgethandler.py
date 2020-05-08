@@ -1,5 +1,5 @@
-from pygame import event, QUIT, KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION
-from pygame import K_KP1, K_KP2, K_KP3, K_KP4, K_KP5, K_KP6, K_KP7, K_KP8, K_KP9, K_KP0
+from pygame import event, QUIT, KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION, K_KP_ENTER, K_BACKSPACE
+from pygame import K_KP1, K_KP2, K_KP3, K_KP4, K_KP5, K_KP6, K_KP7, K_KP8, K_KP9, K_KP0, K_KP_PERIOD, K_KP_EQUALS
 from pygame import K_ESCAPE, time, mouse
 from engine.backend.eventhandler import EventHandler
 from pygame.sprite import LayeredUpdates
@@ -42,16 +42,23 @@ class WidgetHandler:
                 numbers = [K_KP0, K_KP1, K_KP2, K_KP3, K_KP4, K_KP5, K_KP6, K_KP7, K_KP8, K_KP9]
                 if e.key in numbers:
                     digit = numbers.index(e.key)
+                    EventHandler.trigger('Key', 'engine', {'value': str(digit)})
+                elif e.key == K_KP_PERIOD:
+                    EventHandler.trigger('Key', 'engine', {'value': '.'})
+                elif e.key in (K_KP_ENTER, K_KP_EQUALS):
+                    EventHandler.trigger('Fin', 'engine')
+                elif e.key == K_BACKSPACE:
+                    EventHandler.trigger('BackSpace', 'engine')
 
             elif e.type == MOUSEBUTTONDOWN:
                 widgets = [i for i in cls.contents.sprites() if i.rect.collidepoint(e.pos)]
                 for w in widgets:
-                    w.on_mousebuttondown(e.button)
+                    w.on_mousebuttondown(e)
 
             elif e.type == MOUSEBUTTONUP:
                 widgets = [i for i in cls.contents.sprites() if i.rect.collidepoint(e.pos)]
                 for w in widgets:
-                    w.on_mousebuttonup(e.button)
+                    w.on_mousebuttonup(e)
 
             elif e.type == MOUSEMOTION:
                 x, y = e.pos

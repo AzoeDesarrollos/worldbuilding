@@ -15,6 +15,10 @@ class Renderer:
         cls.contents = LayeredUpdates()
 
     @classmethod
+    def reset(cls):
+        display.set_mode((ANCHO, ALTO))
+
+    @classmethod
     def add_widget(cls, widget, layer=1):
         cls.contents.add(widget, layer=layer)
 

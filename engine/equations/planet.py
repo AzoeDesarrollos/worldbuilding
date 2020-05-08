@@ -49,18 +49,19 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.volume = self.calculate_volume(self.radius.to('kilometers'))
         self.surface = self.calculate_surface_area(self.radius.to('kilometers'))
         self.circumference = self.calculate_circumference(self.radius.to('kilometers'))
-        self.escape_velocity = q(sqrt(self.mass.magnitude / self.radius.magnitude), 'earth_escape')
+        self.escape_velocity = q(sqrt(self.mass.to('kg').m / self.radius.to('km').m), unit+'_escape_velocity')
         self.composition = {}
 
     @staticmethod
     def set_class(mass, radius):
         em = 'earth_mass'
         jm = 'jupiter_mass'
+        jr = 'jupiter_radius'
         if q(0.0001, em) < mass < q(0.1, em) and radius > q(0.03, 'earth_radius'):
             return 'Dwarf planet'
-        if q(10, em) < mass < q(13, jm):
+        elif q(10, em) < mass < q(13, jm):
             return 'Gas Giant'
-        if mass < q(2, jm) and radius > q(1, jm):
+        elif mass < q(2, jm) and radius > q(1, jr):
             return 'Puffy Giant'
 
     def __repr__(self):
@@ -94,6 +95,7 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse=1):
 
 # Mass
 # Dwarf planet: 0.0001 to 0.1 earth masses
+# terrestial: 0.1 to 10 earth masses (not earth-like)
 # Gas Giant: 10 earth masses to 13 Jupiter masses
 # PuffyGiant less than 2 Jupiter masses
 

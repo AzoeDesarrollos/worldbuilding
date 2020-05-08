@@ -16,7 +16,11 @@ class Star(BodyInHydrostaticEquilibrium):
     has_name = False
 
     def __init__(self, data):
-        mass = data['mass']
+        mass = data.get('mass', False)
+        luminosity = data.get('luminosity', False)
+        if not mass and not luminosity:
+            raise ValueError('must specify at least mass or luminosity')
+
         name = data.get('name', None)
         if name is not None:
             self.name = name
@@ -24,22 +28,30 @@ class Star(BodyInHydrostaticEquilibrium):
         else:
             self.name = "NoName"
 
-        self.mass = q(mass, 'sol_mass')
-        if mass < 1:
-            self.radius = q(mass ** 0.8, 'sol_radius')
-        elif mass > 1:
-            self.radius = q(mass ** 0.5, 'sol_radius')
+        if mass:
+            self.mass = q(mass, 'sol_mass')
+        elif luminosity:
+            self.luminosity = q(luminosity, 'sol_luminosity')
+
+        if not mass and luminosity:
+            self.mass = q(luminosity ** (1/3.5),'sol_mass')
+        elif not luminosity and mass:
+            self.luminosity = q(mass ** 3.5, 'sol_luminosity')
+
+        if self.mass.m < 1:
+            self.radius = q(self.mass.m ** 0.8, 'sol_radius')
+        elif self.mass.m > 1:
+            self.radius = q(self.mass.m ** 0.5, 'sol_radius')
         else:
             self.radius = q(1, 'sol_radius')
 
-        self.luminosity = q(mass ** 3.5, 'sol_luminosity')
-        self.lifetime = q(mass / self.luminosity.m, 'sol_lifetime')
+        self.lifetime = q(self.mass.m / self.luminosity.m, 'sol_lifetime')
         self.temperature = q((self.luminosity.m / (self.radius.m ** 2)) ** (1 / 4), 'sol_temperature')
         self.volume = q(self.calculate_volume(self.radius.to('km').m), 'km^3')
         self.density = q(self.calculate_density(self.mass.to('g').m, self.radius.to('cm').m), 'g/cm^3')
         self.circumference = q(self.calculate_circumference(self.radius.to('km').m), 'km')
         self.surface = q(self.calculate_surface_area(self.radius.to('km').m), 'km^2')
-        self.classification = self.stellar_classification(mass)
+        self.classification = self.stellar_classification(self.mass.m)
         self.cls = self.classification
 
         self.habitable_inner = q(round(sqrt(self.luminosity.magnitude / 1.1), 3), 'au')
@@ -77,10 +89,10 @@ class Star(BodyInHydrostaticEquilibrium):
                 '#afc2ff', '#abbfff', '#a9bdff', '#a7bcff', '#a5baff', '#a4baff', '#a3b8ff', '#a2b8ff']
 
         idx = bisect_right(kelvin, t)
-        if idx > len(kelvin)-1:
+        if idx > len(kelvin) - 1:
             return Color(hex_to_rgb(hexs[-1]))
         else:
             return Color(hex_to_rgb(hexs[idx]))
 
     def __repr__(self):
-        return "Star "+self.name
+        return "Star " + self.name

@@ -32,7 +32,7 @@ def average(a, b):
 
 
 py_init()
-fuente1 = font.SysFont('verdana', 16)
+fuente1 = font.SysFont('verdana', 15)
 fuente2 = font.SysFont('verdana', 14)
 negro, blanco, rojo = Clr(0, 0, 0, 255), Clr(255, 255, 255, 255), Clr(255, 0, 0, 255)
 
@@ -121,7 +121,7 @@ def keys_to_pos(delta, keys, puntos, comparison):
         return round(e * d + puntos[down])
 
 
-def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
+def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.0, radius_upper_limit=0.0):
     if not __name__ == '__main__':
         fondo = display.set_mode((witdh, height))
         font.init()
@@ -137,13 +137,13 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
 
     data = {}
 
-    if any([lim_x_a < 0, lim_x_b < 0, lim_y_a < 0, lim_y_b < 0]):
+    if any([mass_lower_limit < 0, mass_upper_limit < 0, radius_lower_limit < 0, radius_upper_limit < 0]):
         raise ValueError()
 
-    lim_mass_a = int(keys_to_pos(lim_x_a, mass_keys, exes, 'lt')) if lim_x_a else 0
-    lim_mass_b = int(keys_to_pos(lim_x_b, mass_keys, exes, 'gt')) if lim_x_b else 0
-    lim_radius_a = int(keys_to_pos(lim_y_a, radius_keys, yes, 'lt')) if lim_y_a else 0
-    lim_radius_b = int(keys_to_pos(lim_y_b, radius_keys, yes, 'gt')) if lim_y_b else 0
+    lim_mass_a = int(keys_to_pos(mass_lower_limit, mass_keys, exes, 'lt')) if mass_lower_limit else 0
+    lim_mass_b = int(keys_to_pos(mass_upper_limit, mass_keys, exes, 'gt')) if mass_upper_limit else 0
+    lim_radius_a = int(keys_to_pos(radius_lower_limit, radius_keys, yes, 'lt')) if radius_lower_limit else 0
+    lim_radius_b = int(keys_to_pos(radius_upper_limit, radius_keys, yes, 'gt')) if radius_upper_limit else 0
 
     move_x, move_y = True, True
     lockx, locky = False, False
@@ -216,10 +216,10 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
                     move_y = False
 
                 elif e.key == K_RETURN:
-                    data['mass'] = round(mass_value, 2)
-                    data['radius'] = round(radius_value, 2)
-                    data['gravity'] = round(mass_value / (radius_value ** 2), 2)
-                    data['density'] = round(mass_value / (radius_value ** 3), 2)
+                    data['mass'] = round(mass_value, 3)
+                    data['radius'] = round(radius_value, 3)
+                    data['gravity'] = round(mass_value / (radius_value ** 2), 3)
+                    data['density'] = round(mass_value / (radius_value ** 3), 3)
                     if rect.collidepoint(px, py) and mascara.get_at((px, py)):
                         for name in _lineas:
                             if [px, py] in _lineas[name]:
@@ -316,8 +316,8 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
 
         mass_text = 'Mass:' + str(round(mass_value, 3))
         radius_text = 'Radius:' + str(round(radius_value, 3))
-        gravity_text = 'Density:' + str(round(mass_value / (radius_value ** 3), 2))
-        density_text = 'Gravity:' + str(round(mass_value / (radius_value ** 2), 2))
+        gravity_text = 'Density:' + str(round(mass_value / (radius_value ** 3), 3))
+        density_text = 'Gravity:' + str(round(mass_value / (radius_value ** 2), 3))
 
         if not done:
             fondo.fill(blanco)
@@ -328,13 +328,13 @@ def graph_loop(lim_x_a=0.0, lim_x_b=0.0, lim_y_a=0.0, lim_y_b=0.0):
             if punto.disabled:
                 fondo.blit(texto3, rectT3)
             else:
-                fondo.blit(fuente1.render(mass_text, 1, mass_color), (rect.left, rect.bottom + 43))
-                fondo.blit(fuente1.render(radius_text, 1, radius_color), (rect.left, rect.bottom + 22))
-                fondo.blit(fuente1.render(density_text, 1, negro), (rect.left + 120, rect.bottom + 43))
-                fondo.blit(fuente1.render(gravity_text, 1, negro), (rect.left + 120, rect.bottom + 22))
+                fondo.blit(fuente1.render(mass_text, 1, mass_color), (5, rect.bottom + 43))
+                fondo.blit(fuente1.render(radius_text, 1, radius_color), (140, rect.bottom + 43))
+                fondo.blit(fuente1.render(density_text, 1, negro), (130*2-5, rect.bottom + 43))
+                fondo.blit(fuente1.render(gravity_text, 1, negro), (140*3, rect.bottom + 43))
                 if data.get('composition', False):
                     composition_text = 'Composition:' + data['composition']
-                    fondo.blit(fuente1.render(composition_text, 1, negro, blanco), (rect.left, rect.bottom + 64))
+                    fondo.blit(fuente1.render(composition_text, 1, negro, blanco), (5, rect.bottom + 64))
 
             fondo.blit(texto1, rectT1)
             fondo.blit(texto2, rectT2)

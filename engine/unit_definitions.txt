@@ -13,6 +13,7 @@ jupiter_mass = 11.209 earth_masses = jupiter_masses
 jupiter_radius = 71492 km = jupiter_radii
 jupiter_gravity = 24,79 m/s ** 2
 jupiter_density = 1326 kg/m ** 3
+jupiter_escape_velocity = 59.5 km/s
 
 # Sun Units
 sol_mass = 1.988e+30 kg

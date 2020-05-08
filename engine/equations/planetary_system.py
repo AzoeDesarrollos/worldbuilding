@@ -1,5 +1,6 @@
 from engine.backend.randomness import roll, choice
 from .orbit import RawOrbit, Orbit
+from engine import q
 
 
 class OrbitException(Exception):
@@ -22,7 +23,17 @@ class PlanetarySystem:
         self._axes = []
         self.planets = []
 
-    def add_planet(self, planet, last_planet=False):
+        body_mass = q(star.mass * 1.4672, 'jupiter_mass')
+        self.gigant_mass = q(body_mass.m * 0.998, 'jupiter_mass')
+        self.terra_mass = q(body_mass.m * 6.356, 'earth_mass')
+
+    def add_planet(self, data):
+        pass
+
+    def remove_planet(self, planet):
+        pass
+
+    def put_in_star_orbit(self, planet, last_planet=False):
         """Se puede correr éste metodo primero, añadiendo planetas en orbitas aleatorias o se puede correr add_orbits()
         primero, y colocar los planetas en las órbitas precalculadas.
         """
@@ -92,6 +103,8 @@ class PlanetarySystem:
             elif planet.clase == 'Hot Jupiter':
                 other = [o for o in self.raw_orbits if o.temperature == 'hot' and o not in self.stable_orbits]
                 a = round(min([o for o in other]).a.m, 3)
+                if not 0.001 <= a <= 0.09:
+                    raise OrbitException('The orbit @'+str(a)+' is beyond the limits for a Hot Jupiter')
                 e = roll(0.001, 0.09)  # migration
                 i = roll(10, 170)
 

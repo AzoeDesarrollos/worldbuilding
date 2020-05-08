@@ -1,5 +1,4 @@
 from pint import UnitRegistry
-from .frontend import *
 from .backend import *
 
 ureg = UnitRegistry()
