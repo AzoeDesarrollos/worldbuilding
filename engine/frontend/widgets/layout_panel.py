@@ -26,7 +26,7 @@ class LayoutPanel(BaseWidget):
         self.panels.add(self.panel_planet)
 
         self.cycler = cycle(self.panels)
-        self.current = self.panel_star
+        self.current = next(self.cycler)
         self.current.show()
 
         a = Arrow(self, 180, self.rect.left+16, self.rect.bottom)
