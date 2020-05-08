@@ -56,7 +56,7 @@ class PlanetarySystem:
                     i = roll(0.0, 180.0)
                 self.stable_orbits.append(Orbit(a, e, i))
 
-            elif planet.clase in ('Gas Giant', 'Puffy Giant'):
+            elif planet.clase == 'Gas Giant':
                 # if this is the largest, it should occupy the fist orbit away from the frostline
                 it_is_the_largest = True
                 for p in [j for j in self.planets if j.clase == 'Gas Giant']:
@@ -100,11 +100,11 @@ class PlanetarySystem:
                 # no data. only resonant orbits
                 pass
 
-            elif planet.clase == 'Hot Jupiter':
+            elif planet.clase in ('Hot Jupiter', 'Puffy Giant'):
                 other = [o for o in self.raw_orbits if o.temperature == 'hot' and o not in self.stable_orbits]
                 a = round(min([o for o in other]).a.m, 3)
                 if not 0.001 <= a <= 0.09:
-                    raise OrbitException('The orbit @'+str(a)+' is beyond the limits for a Hot Jupiter')
+                    raise OrbitException('The orbit @'+str(a)+' is beyond the limits for a '+planet.clase)
                 e = roll(0.001, 0.09)  # migration
                 i = roll(10, 170)
 
