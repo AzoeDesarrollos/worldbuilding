@@ -1,8 +1,8 @@
 from engine.frontend.globales import Renderer, COLOR_BOX, COLOR_TEXTO, WidgetHandler
+from engine.frontend.widgets.panels.base_panel import BasePanel
+from engine.frontend.widgets.object_type import ObjectType
+from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planet import Planet
-from .object_type import ObjectType
-from .basewidget import BaseWidget
-from .base_panel import BasePanel
 from itertools import cycle
 from pygame import font
 
@@ -13,7 +13,7 @@ class PlanetPanel(BasePanel):
         super().__init__('Planet')
         self.current = PlanetType(self)
 
-        self.unit = Unit(self, 'Earth', 0, 400)
+        self.unit = Unit(self, 0, 400)
         self.current.properties.add(self.unit)
 
 
@@ -57,14 +57,14 @@ class Unit(BaseWidget):
     img_sel = None
     name = None
 
-    def __init__(self, parent, name, x, y):
+    def __init__(self, parent, x, y):
         super().__init__(parent)
         self.f1 = font.SysFont('Verdana', 12)
         self.f2 = font.SysFont('Verdana', 12, bold=True)
         self.base_rect = self.parent.image.blit(self.f2.render('Unit: ', 1, COLOR_TEXTO, COLOR_BOX), (x, y))
-        self.name = name
-        self.create()
         self.cycler = cycle(['Earth', 'Jupiter'])
+        self.name = next(self.cycler)
+        self.create()
 
     def show(self):
         Renderer.add_widget(self, layer=5000)

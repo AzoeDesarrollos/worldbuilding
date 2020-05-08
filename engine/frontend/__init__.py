@@ -1,4 +1,4 @@
 from .globales import *
-from .widgets.layout_panel import LayoutPanel
+from engine.frontend.widgets.panels.layout_panel import LayoutPanel
 
 LayoutPanel()

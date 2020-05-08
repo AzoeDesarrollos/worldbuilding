@@ -1,6 +1,6 @@
-from .sprite_star import StarSprite
-from .object_type import ObjectType
-from .base_panel import BasePanel
+from engine.frontend.widgets.panels.base_panel import BasePanel
+from engine.frontend.widgets.sprite_star import StarSprite
+from engine.frontend.widgets.object_type import ObjectType
 
 
 class StarPanel(BasePanel):

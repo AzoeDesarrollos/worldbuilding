@@ -1,6 +1,6 @@
-from ..globales import ANCHO, ALTO, Renderer, WidgetHandler
+from engine.frontend.globales import ANCHO, ALTO, Renderer, WidgetHandler
+from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface, font, transform
-from .basewidget import BaseWidget
 
 
 class BasePanel(BaseWidget):

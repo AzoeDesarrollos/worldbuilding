@@ -1,10 +1,9 @@
-from pygame.sprite import LayeredUpdates
-from .basewidget import BaseWidget
-from .star_panel import StarPanel
-from .planet_panel import PlanetPanel
-from engine.frontend.globales import ALTO, ANCHO
-from pygame import Surface, draw, transform, SRCALPHA
 from engine.frontend.globales import Renderer, WidgetHandler
+from engine.frontend.widgets.basewidget import BaseWidget
+from pygame import Surface, draw, transform, SRCALPHA
+from engine.frontend.globales import ALTO, ANCHO
+from engine.frontend.widgets import panels
+from pygame.sprite import LayeredUpdates
 from itertools import cycle
 
 
@@ -19,11 +18,8 @@ class LayoutPanel(BaseWidget):
 
         self.panels = LayeredUpdates()
         self.properties = LayeredUpdates()
-        self.panel_star = StarPanel()
-        self.panel_planet = PlanetPanel()
-
-        self.panels.add(self.panel_star)
-        self.panels.add(self.panel_planet)
+        for panel in panels:
+            self.panels.add(panel())
 
         self.cycler = cycle(self.panels)
         self.current = next(self.cycler)
