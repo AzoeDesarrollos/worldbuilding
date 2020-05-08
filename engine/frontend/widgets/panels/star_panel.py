@@ -4,8 +4,8 @@ from engine.frontend.widgets.object_type import ObjectType
 
 
 class StarPanel(BasePanel):
-    def __init__(self):
-        super().__init__('Star')
+    def __init__(self, parent):
+        super().__init__('Star', parent)
         self.current = StarType(self)
 
 
@@ -16,6 +16,7 @@ class StarType(ObjectType):
                          ['Volume', 'Density', 'Circumference', 'Surface', 'Classification'])
 
     def set_star(self, star):
+        self.parent.parent.set_system(star)
         self.current = star
         self.has_values = True
         self.fill()

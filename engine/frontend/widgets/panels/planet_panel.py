@@ -9,12 +9,14 @@ from pygame import font
 
 class PlanetPanel(BasePanel):
 
-    def __init__(self):
-        super().__init__('Planet')
+    def __init__(self, parent):
+        super().__init__('Planet', parent)
         self.current = PlanetType(self)
 
         self.unit = Unit(self, 0, 400)
         self.current.properties.add(self.unit)
+
+        # button add_planet
 
 
 class PlanetType(ObjectType):

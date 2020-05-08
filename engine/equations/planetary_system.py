@@ -23,7 +23,7 @@ class PlanetarySystem:
         self._axes = []
         self.planets = []
 
-        body_mass = q(star.mass * 1.4672, 'jupiter_mass')
+        body_mass = q(star.mass.m * 1.4672, 'jupiter_mass')
         self.gigant_mass = q(body_mass.m * 0.998, 'jupiter_mass')
         self.terra_mass = q(body_mass.m * 6.356, 'earth_mass')
 

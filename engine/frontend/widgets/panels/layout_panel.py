@@ -1,3 +1,4 @@
+from engine.equations.planetary_system import PlanetarySystem
 from engine.frontend.globales import Renderer, WidgetHandler
 from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface, draw, transform, SRCALPHA
@@ -8,6 +9,8 @@ from itertools import cycle
 
 
 class LayoutPanel(BaseWidget):
+    system = None
+
     def __init__(self):
         super().__init__()
         self.image = Surface((ANCHO, ALTO))
@@ -19,7 +22,7 @@ class LayoutPanel(BaseWidget):
         self.panels = LayeredUpdates()
         self.properties = LayeredUpdates()
         for panel in panels:
-            self.panels.add(panel())
+            self.panels.add(panel(self))
 
         self.cycler = cycle(self.panels)
         self.current = next(self.cycler)
@@ -35,6 +38,9 @@ class LayoutPanel(BaseWidget):
         self.current.hide()
         self.current = next(self.cycler)
         self.current.show()
+
+    def set_system(self, star):
+        self.system = PlanetarySystem(star)
 
 
 class Arrow(BaseWidget):

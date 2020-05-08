@@ -48,9 +48,10 @@ class ValueText(BaseWidget):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            if self.parent.parent.unit.name == 'Earth':
+            if self.parent.parent.name != 'Star' and self.parent.parent.unit.name == 'Earth':
                 self.active = True
-                data = graph_loop()
+                lim = self.parent.parent.parent.system.terra_mass
+                data = graph_loop(mass_upper_limit=lim.m)
                 for elemento in self.parent.properties.get_sprites_from_layer(1):
                     if elemento.text.lower() in data:
                         elemento.text_area.value = str(data[elemento.text.lower()])

@@ -7,8 +7,8 @@ class BasePanel(BaseWidget):
     current = None
     relative_mode = True
 
-    def __init__(self, name):
-        super().__init__()
+    def __init__(self, name, parent):
+        super().__init__(parent)
         bg = 125, 125, 125
         fg = 0, 0, 0
         self.name = name
