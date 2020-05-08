@@ -1,5 +1,6 @@
 from engine.backend.eventhandler import EventHandler
 from engine.frontend import Renderer, WidgetHandler
+from engine.frontend.graph.graph import graph_loop
 from engine.equations import Star
 from .basewidget import BaseWidget
 from pygame import font, Surface
@@ -47,8 +48,19 @@ class ValueText(BaseWidget):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            self.active = True
-            self.text_area.enable()
+            if self.parent.parent.unit.name == 'Earth':
+                self.active = True
+                data = graph_loop()
+                for elemento in self.parent.properties.get_sprites_from_layer(1):
+                    if elemento.text.lower() in data:
+                        elemento.text_area.value = str(data[elemento.text.lower()])
+                        elemento.text_area.update()
+                        elemento.text_area.show()
+                self.parent.check_values()
+                Renderer.reset()
+            else:
+                self.active = True
+                self.text_area.enable()
 
     def on_mousebuttonup(self, event):
         if event.button == 1:

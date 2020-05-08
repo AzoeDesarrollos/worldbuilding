@@ -6,12 +6,12 @@ from .base_panel import BasePanel
 class StarPanel(BasePanel):
     def __init__(self):
         super().__init__('Star')
-        self.current = StarType(self, 0, 30)
+        self.current = StarType(self)
 
 
 class StarType(ObjectType):
-    def __init__(self, parent, x, y):
-        super().__init__(parent, 'Star', x, y,
+    def __init__(self, parent):
+        super().__init__(parent,
                          ['Mass', 'Luminosity', 'Radius', 'Lifetime', 'Temperature'],
                          ['Volume', 'Density', 'Circumference', 'Surface', 'Classification'])
 

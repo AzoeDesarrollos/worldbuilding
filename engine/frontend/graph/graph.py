@@ -282,9 +282,9 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                     data['composition'] = ', '.join(compo)
 
                     if hydrogen or helium:
-                        data['class'] = 'Gas Dwarf'
+                        data['clase'] = 'Gas Dwarf'
                     else:
-                        data['class'] = 'Terrestial Planet'
+                        data['clase'] = 'Terrestial Planet'
 
         mass_value = pos_to_keys(linea_v.rect.x, mass_keys, exes, 'gt')
         radius_value = pos_to_keys(linea_h.rect.y, radius_keys, yes, 'lt')

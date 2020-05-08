@@ -1,8 +1,6 @@
 from .basewidget import BaseWidget
-from engine.frontend.globales import Renderer, WidgetHandler
 from pygame.sprite import LayeredUpdates
 from engine.backend import EventHandler
-from pygame import font
 from .values import ValueText
 
 
@@ -10,45 +8,31 @@ class ObjectType(BaseWidget):
     current = None
     has_values = False
 
-    def __init__(self, parent, text, x, y, relative_values, absolute_values):
+    def __init__(self, parent, relative_values, absolute_values):
         super().__init__(parent)
-        bg = 125, 125, 125
-        fg = 0, 0, 0
-
-        f1 = font.SysFont('Verdana', 16)
-        f2 = font.SysFont('Verdana', 16)
-        f2.set_underline(True)
-
-        self.text = text
-        self.image = f1.render(text, 1, fg, bg)
-        self.rect = self.image.get_rect(topleft=(x, y))
         EventHandler.register(self.clear_selection, 'Clear')
 
         self.properties = LayeredUpdates()
         self.relatives = LayeredUpdates()
         for i, button in enumerate(relative_values):
             if len(relative_values) == 5:
-                vt = ValueText(self, button, self.rect.x + 50, self.rect.bottom + 5 + i * 15 * 2)
+                vt = ValueText(self, button, 50, 55 + i * 15 * 2)
             else:
-                vt = ValueText(self, button, self.rect.x + 50, self.rect.bottom + 5 + i * 20 * 2)
+                vt = ValueText(self, button, 50, 55 + i * 20 * 2)
             self.relatives.add(vt)
-            self.properties.add(vt)
+            self.properties.add(vt, layer=1)
 
         self.absolutes = LayeredUpdates()
         for i, button in enumerate(absolute_values):
-            vt = ValueText(self, button, self.rect.x + 50, self.rect.bottom + 160 + i * 15 * 2)
+            vt = ValueText(self, button, 50, 210 + i * 15 * 2)
             self.absolutes.add(vt)
-            self.properties.add(vt)
+            self.properties.add(vt, layer=1)
 
     def show(self):
-        Renderer.add_widget(self)
-        WidgetHandler.add_widget(self)
         for p in self.properties:
             p.show()
 
     def hide(self):
-        Renderer.del_widget(self)
-        WidgetHandler.del_widget(self)
         for p in self.properties:
             p.hide()
 

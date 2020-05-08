@@ -36,7 +36,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         if gravity:
             self.gravity = q(gravity, unit + '_gravity')
 
-        self.clase = data['class'] if 'class' in data else self.set_class(self.mass, self.radius)
+        self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)
 
         if not self.gravity:
             self.gravity = q(mass / (radius ** 2), unit + '_gravity')
