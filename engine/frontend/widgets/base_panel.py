@@ -7,12 +7,12 @@ class BasePanel(BaseWidget):
     current = None
     relative_mode = True
 
-    def __init__(self, name, x, y):
+    def __init__(self, name):
         super().__init__()
         bg = 125, 125, 125
         fg = 0, 0, 0
         self.name = name
-        self.image = Surface((ANCHO, ALTO))
+        self.image = Surface((ANCHO, ALTO-32))
         self.rect = self.image.get_rect()
 
         self.f = font.SysFont('Verdana', 16)
@@ -21,7 +21,7 @@ class BasePanel(BaseWidget):
         f2 = font.SysFont('Verdana', 16)
         self.rt1_uns = transform.rotate(f2.render('Relative Values', 1, fg, bg), 90)
         self.rt1_sel = transform.rotate(f2.render('Absolute Values', 1, fg, bg), 90)
-        rt1_rect = self.rt1_uns.get_rect(x=x, y=y)
+        rt1_rect = self.rt1_uns.get_rect(x=12, y=70)
         self.relative_text = self.rt1_uns
         self.relative_text_area = rt1_rect.inflate(10, 10)
 

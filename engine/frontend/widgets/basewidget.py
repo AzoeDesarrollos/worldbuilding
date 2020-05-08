@@ -14,10 +14,10 @@ class BaseWidget(Sprite):
     def on_keyup(self, key):
         pass
 
-    def on_mousebuttondown(self, button):
+    def on_mousebuttondown(self, event):
         pass
 
-    def on_mousebuttonup(self, button):
+    def on_mousebuttonup(self, event):
         pass
 
     def on_mousemotion(self, rel):

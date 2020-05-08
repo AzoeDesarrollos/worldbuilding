@@ -10,8 +10,8 @@ from itertools import cycle
 class PlanetPanel(BasePanel):
 
     def __init__(self):
-        super().__init__('Planet', 12, 90)
-        x, y = 0, 50
+        super().__init__('Planet')
+        x, y = 0, 30
         self.planet_types = LayeredUpdates()
         t = TerrestialType(self, x, y)
         p1 = PlanetType(self, 'Gas Giant', x, y)
@@ -22,15 +22,6 @@ class PlanetPanel(BasePanel):
 
 
 class PlanetType(ObjectType):
-    selected = False
-
-    mass = 0
-    radius = 0
-    density = 0
-    gravity = 0
-
-    has_values = False
-
     def __init__(self, parent, text, x, y):
         super().__init__(parent, text, x, y,
                          ['Mass', 'Radius', 'Gravity', 'escape_velocity'],

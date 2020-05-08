@@ -8,6 +8,7 @@ from .values import ValueText
 
 class ObjectType(BaseWidget):
     current = None
+    has_values = False
 
     def __init__(self, parent, text, x, y, relative_values, absolute_values):
         super().__init__(parent)
@@ -26,7 +27,10 @@ class ObjectType(BaseWidget):
         self.properties = LayeredUpdates()
         self.relatives = LayeredUpdates()
         for i, button in enumerate(relative_values):
-            vt = ValueText(self, button, self.rect.x + 50, self.rect.bottom + 1 + i * 15 * 2)
+            if len(relative_values) == 5:
+                vt = ValueText(self, button, self.rect.x + 50, self.rect.bottom + 5 + i * 15 * 2)
+            else:
+                vt = ValueText(self, button, self.rect.x + 50, self.rect.bottom + 5 + i * 20 * 2)
             self.relatives.add(vt)
             self.properties.add(vt)
 
