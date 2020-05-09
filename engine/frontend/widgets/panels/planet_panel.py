@@ -37,17 +37,27 @@ class PlanetType(ObjectType):
         attrs = {}
         for button in self.properties.get_sprites_from_layer(1):
             if button.text_area.value:  # not empty
+                string = button.text_area.value.split(' ')[0]
                 try:
-                    setattr(self, button.text.lower(), float(button.text_area.value))
-                    attrs[button.text.lower()] = float(button.text_area.value)
+                    setattr(self, button.text.lower(), float(string))
+                    attrs[button.text.lower()] = float(string)
                 except ValueError:
                     setattr(self, button.text.lower(), button.text_area.value)
                     attrs[button.text.lower()] = button.text_area.value
 
         if len(attrs) > 1:
-            attrs['unit'] = self.parent.unit.name.lower()
+            unit = self.parent.unit.name.lower()
+            attrs['unit'] = unit
             self.current = Planet(attrs)
-            self.parent.button.enable()
+            if unit == 'earth' and self.current.mass <= self.parent.parent.system.terra_mass:
+                self.parent.button.enable()
+                self.parent.unit.mass_color = COLOR_TEXTO
+            elif unit == 'jupiter' and self.current.mass <= self.parent.parent.system.gigant_mass:
+                self.parent.button.enable()
+                self.parent.unit.mass_color = COLOR_TEXTO
+            else:
+                self.parent.button.disable()
+                self.parent.unit.mass_color = 200, 0, 0
             self.has_values = True
             self.fill()
 
@@ -66,6 +76,7 @@ class Unit(BaseWidget):
     img_uns = None
     img_sel = None
     name = None
+    mass_color = COLOR_TEXTO
 
     def __init__(self, parent, x, y):
         super().__init__(parent)
@@ -78,7 +89,7 @@ class Unit(BaseWidget):
         self.name = next(self.cycler)
         self.create()
         render = self.f2.render('Available mass: ', 1, COLOR_TEXTO, COLOR_BOX)
-        self.mass_rect = render.get_rect(bottomleft=(x+100, y))
+        self.mass_rect = render.get_rect(bottomleft=(x + 100, y))
         self.parent.image.blit(render, self.mass_rect)
 
     def show(self):
@@ -103,8 +114,8 @@ class Unit(BaseWidget):
         else:
             mass = self.parent.parent.system.gigant_mass
         attr = '{:,g}'.format((round(mass, 3)))
-        render = self.f1.render(str(attr), 1, COLOR_TEXTO, COLOR_BOX)
-        render_rect = render.get_rect(left=self.mass_rect.right+6, bottom=self.mass_rect.bottom)
+        render = self.f1.render(str(attr), 1, self.mass_color, COLOR_BOX)
+        render_rect = render.get_rect(left=self.mass_rect.right + 6, bottom=self.mass_rect.bottom)
         render_rect.inflate_ip(16, 0)
         self.parent.image.fill(COLOR_BOX, render_rect)
         self.parent.image.blit(render, render_rect)
@@ -157,6 +168,10 @@ class TextButton(BaseWidget):
 
     def enable(self):
         self.enabled = True
+
+    def disable(self):
+        self.enabled = False
+        self.image = self.img_dis
 
     def update(self):
         if self.enabled:
