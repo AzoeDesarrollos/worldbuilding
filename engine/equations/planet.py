@@ -59,7 +59,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         jm = 'jupiter_mass'
         jr = 'jupiter_radius'
         if q(0.0001, em) < mass < q(0.1, em) and radius > q(0.03, 'earth_radius'):
-            return 'Dwarf planet'
+            return 'Dwarf Planet'
         elif q(10, em) < mass < q(13, jm):
             return 'Gas Giant'
         elif mass < q(2, jm) and radius > q(1, jr):
