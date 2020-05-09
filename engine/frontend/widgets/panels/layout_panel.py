@@ -30,7 +30,7 @@ class LayoutPanel(BaseWidget):
 
         a = Arrow(self, 180, self.rect.left+16, self.rect.bottom)
         b = Arrow(self, 0, self.rect.right-16, self.rect.bottom)
-        self.properties.add(a, b)
+        self.properties.add(a, b, layer=3)
         Renderer.add_widget(a)
         Renderer.add_widget(b)
 
@@ -40,11 +40,15 @@ class LayoutPanel(BaseWidget):
         self.current.show()
 
     def set_system(self, star):
+        for arrow in self.properties.get_sprites_from_layer(3):
+            # noinspection PyUnresolvedReferences
+            arrow.enable()
         self.system = PlanetarySystem(star)
 
 
 class Arrow(BaseWidget):
     selected = False
+    enabled = False
 
     def __init__(self, parent, angulo, centerx, y):
         super().__init__(parent)
@@ -66,13 +70,18 @@ class Arrow(BaseWidget):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             if self.rect.collidepoint(event.pos):
-                self.parent.cycle()
+                if self.enabled:
+                    self.parent.cycle()
 
     def on_mouseover(self):
         self.select()
 
     def select(self):
-        self.selected = True
+        if self.enabled:
+            self.selected = True
+
+    def enable(self):
+        self.enabled = True
 
     def update(self):
         if self.selected:

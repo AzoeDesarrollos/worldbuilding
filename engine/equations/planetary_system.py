@@ -27,8 +27,13 @@ class PlanetarySystem:
         self.gigant_mass = q(body_mass.m * 0.998, 'jupiter_mass')
         self.terra_mass = q(body_mass.m * 6.356, 'earth_mass')
 
-    def add_planet(self, data):
-        pass
+    def add_planet(self, planet):
+        if planet not in self.planets:
+            if planet.unit == 'earth':
+                self.terra_mass -= planet.mass
+            elif planet.unit == 'jupiter':
+                self.gigant_mass -= planet.mass
+            self.planets.append(planet)
 
     def remove_planet(self, planet):
         pass
@@ -38,7 +43,7 @@ class PlanetarySystem:
         primero, y colocar los planetas en las órbitas precalculadas.
         """
 
-        self.planets.append(planet)
+        self.add_planet(planet)
         avg_e = round(0.584 * (len(self.planets) ** (-1.2)), 3)
         avg_i = 2  # éste valor es arbitrario y es igual al de nuestro sistema solar.
 

@@ -1,30 +1,11 @@
 from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_RETURN, K_LCTRL, K_LSHIFT, QUIT
 from pygame import font, Surface, Rect, image, mouse, event, Color as Clr, mask
 from pygame import display, init as py_init, quit as py_quit
+from engine.backend.util import abrir_json
 from pygame.sprite import LayeredUpdates
 from os import environ, getcwd, path
+from .objects import Linea, Punto
 import sys
-import json
-
-if __name__ == '__main__':
-    # noinspection PyUnresolvedReferences
-    from objects import Linea, Punto
-
-    if len(sys.argv) > 1:
-        parameters = [(float(i)) for i in sys.argv[1:]]
-    else:
-        parameters = []
-
-
-    def abrir_json(archivo, encoding='utf-8'):
-        with open(archivo, encoding=encoding) as file:
-            return json.load(file)
-
-else:
-    from .objects import Linea, Punto
-    from engine.backend.util import abrir_json
-
-    parameters = []
 
 
 def average(a, b):
@@ -56,10 +37,7 @@ mass_keys += [float(i * 1000) for i in range(1, 5)]
 mass_keys.sort()
 
 radius_keys = [0.1] + [i / 10 for i in range(2, 10, 2)] + [float(i) for i in range(1, 12)]
-if __name__ == '__main__':
-    ruta = path.join(getcwd(), 'data')
-else:
-    ruta = path.join(getcwd(), 'engine', 'frontend', 'graph', 'data')
+ruta = path.join(getcwd(), 'engine', 'frontend', 'graph', 'data')
 
 graph = image.load(path.join(ruta, 'graph.png'))
 exes = [59, 93, 114, 128, 139, 148, 156, 162, 169, 173, 209, 229, 244, 254, 263, 271, 278, 284, 288, 325, 345, 360, 370,
@@ -122,12 +100,7 @@ def keys_to_pos(delta, keys, puntos, comparison):
 
 
 def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.0, radius_upper_limit=0.0):
-    if not __name__ == '__main__':
-        fondo = display.set_mode((witdh, height))
-        font.init()
-    else:
-        fondo = display.get_surface()
-
+    fondo = display.set_mode((witdh, height))
     rect = Rect(60, 2, 529, 476)
     lineas = LayeredUpdates()
 
@@ -345,9 +318,3 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
 
     display.quit()
     return data
-
-
-if __name__ == '__main__':
-    display.set_mode((witdh, height))
-    info = graph_loop(*parameters)
-    print(info)

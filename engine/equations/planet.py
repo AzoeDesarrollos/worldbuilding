@@ -27,6 +27,7 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.has_name = True
 
         unit = data.get('unit', "earth")
+        self.unit = unit
         self.habitable = data['habitable'] if 'habitable' in data else False
 
         if mass:

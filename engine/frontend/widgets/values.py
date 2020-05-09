@@ -1,3 +1,4 @@
+from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX
 from engine.backend.eventhandler import EventHandler
 from engine.frontend import Renderer, WidgetHandler
 from engine.frontend.graph.graph import graph_loop
@@ -112,6 +113,10 @@ class NumberArea(BaseWidget):
                 elif self.parent.parent.name == 'Star':
                     self.parent.set_star(Star({self.name.lower(): float(self.value)}))  # for stars
 
+    def clear(self):
+        self.value = ''
+        self.update()
+
     def enable(self):
         self.enabled = True
         self.show()
@@ -128,7 +133,5 @@ class NumberArea(BaseWidget):
         Renderer.del_widget(self)
 
     def update(self):
-        bg = 125, 125, 125
-        fg = 0, 0, 0
-        self.image = self.f.render(self.value, 1, fg, bg)
+        self.image = self.f.render(self.value, 1, COLOR_TEXTO, COLOR_BOX)
         self.rect = self.image.get_rect(topleft=self.rect.topleft)
