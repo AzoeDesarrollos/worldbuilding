@@ -46,8 +46,8 @@ class ValueText(BaseWidget):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            p = self.parent.parent
-            if hasattr(p, 'name') and p.name != 'Star' and p.unit is not None and p.unit.name == 'Earth':
+            p = self.parent
+            if p.parent.name == 'Planet' and p.parent.unit.name == 'Earth' and not p.has_values:
                 self.active = True
                 lim = self.parent.parent.parent.system.terra_mass
                 data = graph_loop(mass_upper_limit=lim.m)
@@ -83,6 +83,9 @@ class ValueText(BaseWidget):
         if not self.active:
             self.deselect()
 
+    def __repr__(self):
+        return self.text
+
 
 class NumberArea(BaseWidget):
     value = None
@@ -113,6 +116,8 @@ class NumberArea(BaseWidget):
                     self.parent.set_star(Star({self.name.lower(): float(self.value)}))  # for stars
                 elif self.parent.parent.name == 'Satellite':
                     self.parent.calculate()  # for moons
+                elif self.parent.parent.name == 'Orbit':
+                    self.parent.fill()
 
     def clear(self):
         self.value = ''

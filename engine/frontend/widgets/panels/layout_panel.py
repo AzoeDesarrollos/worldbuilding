@@ -30,6 +30,7 @@ class LayoutPanel(BaseWidget):
         self.forward_cycler = cycle(self.forward)
 
         self.current = next(self.forward_cycler)
+        next(self.backward)  # get the cycle going
         self.current.show()
 
         a = Arrow(self, 'backward', 180, self.rect.left + 16, self.rect.bottom)

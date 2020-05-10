@@ -11,6 +11,7 @@ from pygame import font
 class PlanetPanel(BasePanel):
     curr_x = 0
     curr_y = 440
+    unit = None
 
     def __init__(self, parent):
         super().__init__('Planet', parent)
@@ -41,7 +42,7 @@ class PlanetType(ObjectType):
     def __init__(self, parent):
         super().__init__(parent,
                          ['Mass', 'Radius', 'Gravity', 'escape_velocity'],
-                         ['Density', 'Volume', 'Surface', 'Circumference', 'Clase']
+                         ['Density', 'Volume', 'Surface', 'Circumference', 'Albedo', 'Greenhouse', 'Clase']
                          )
         f = font.SysFont('Verdana', 14)
         f.set_underline(True)
@@ -109,7 +110,7 @@ class Meta:
 
     def hide(self):
         Renderer.del_widget(self)
-        WidgetHandler.add_widget(self)
+        WidgetHandler.del_widget(self)
 
     def enable(self):
         self.enabled = True
@@ -132,7 +133,7 @@ class Meta:
 
 
 class Unit(Meta, BaseWidget):
-    name = None
+    name = ''
     mass_color = COLOR_TEXTO
     enabled = True
 

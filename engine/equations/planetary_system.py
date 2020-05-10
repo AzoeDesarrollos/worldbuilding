@@ -1,4 +1,4 @@
-from engine.backend.randomness import roll, choice
+from engine.backend.randomness import roll
 from .orbit import RawOrbit, Orbit
 from engine import q
 
@@ -38,12 +38,16 @@ class PlanetarySystem:
             self.planets.append(planet)
 
     def set_current(self, planet):
-        self.current = planet
+        if planet.orbit is None:
+            self.current = planet
+
+    def clear(self):
+        self.current = None
 
     def remove_planet(self, planet):
         pass
 
-    def put_in_star_orbit(self, planet, last_planet=False):
+    def put_in_star_orbit(self, planet, orbit, last_planet=False):
         """Se puede correr éste metodo primero, añadiendo planetas en orbitas aleatorias o se puede correr add_orbits()
         primero, y colocar los planetas en las órbitas precalculadas.
         """
@@ -56,15 +60,11 @@ class PlanetarySystem:
         try:
             if planet.clase == 'Terrestial Planet':
                 if planet.habitable:
-                    a = round([o for o in self.raw_orbits if o.temperature == 'habitable'][0].a.m, 3)
                     e = round(roll(avg_e-0.2, avg_e+0.2), 3)
                     i = 0
                 else:
-                    other = [o for o in self.raw_orbits if o.temperature == 'hot' and o not in self.stable_orbits]
-                    a = round(choice(other).a.m, 3)
                     e = roll(avg_e-0.2, avg_e+0.2)
                     i = roll(0.0, 180.0)
-                self.stable_orbits.append(Orbit(a, e, i))
 
             elif planet.clase == 'Gas Giant':
                 # if this is the largest, it should occupy the fist orbit away from the frostline
@@ -73,36 +73,34 @@ class PlanetarySystem:
                     if p != planet and planet.mass < p.mass:
                         it_is_the_largest = False
 
-                if it_is_the_largest:
+                if it_is_the_largest and orbit is None:
                     a = round(min([o for o in self.raw_orbits if o.temperature == 'cold']).a.m, 3)
                 else:
-                    other = [o for o in self.raw_orbits if o.temperature == 'cold' and o not in self.stable_orbits]
-                    if len(other):
-                        a = round(min([o for o in other]).a.m, 3)
-                    else:
-                        raise OrbitException('There are no more cold orbits to occupy')
+                    if orbit is None:
+                        other = [o for o in self.raw_orbits if o.temperature == 'cold' and o not in self.stable_orbits]
+                        if len(other):
+                            a = round(min([o for o in other]).a.m, 3)
+                        else:
+                            raise OrbitException('There are no more cold orbits to occupy')
                 e = roll(avg_e-0.2, avg_e+0.2)
                 i = roll(0.0, 90.0)
-                self.stable_orbits.append(Orbit(a, e, i))
 
             elif planet.clase == 'Super Jupiter':
-                a = roll(0.04, self.star.frost_line + 1.2)  # migration
                 e = roll(0.001, 0.09)
                 i = roll(0.0, 90.0)
 
             elif planet.clase == 'Gas Dwarf':
-                other = [o for o in self.raw_orbits if o.temperature == 'cold' and o not in self.stable_orbits]
-                if len(other):
-                    # for extra added realism, the orbit should be very distant.
-                    a = round(max([o for o in other]).a.m, 3)
-                else:
-                    raise OrbitException('There are no more cold orbits to occupy')
+                if orbit is None:
+                    other = [o for o in self.raw_orbits if o.temperature == 'cold' and o not in self.stable_orbits]
+                    if len(other):
+                        # for extra added realism, the orbit should be very distant.
+                        a = round(max([o for o in other]).a.m, 3)
+                    else:
+                        raise OrbitException('There are no more cold orbits to occupy')
                 i = roll(0.0, 90.0)
                 e = roll(0.001, 0.09)
 
             elif planet.clase == 'Eccentric Jupiter':
-                other = [o for o in self.raw_orbits if o.temperature != 'habitable' and o not in self.stable_orbits]
-                a = round(choice(other).a.m, 3)
                 e = roll(avg_e-0.2, avg_e+0.2) if any([p.habitable for p in self.planets]) else roll(0.1, 0.9)
                 i = roll(0.0, 90.0)
 
@@ -111,10 +109,11 @@ class PlanetarySystem:
                 pass
 
             elif planet.clase in ('Hot Jupiter', 'Puffy Giant'):
-                other = [o for o in self.raw_orbits if o.temperature == 'hot' and o not in self.stable_orbits]
-                a = round(min([o for o in other]).a.m, 3)
-                if not 0.001 <= a <= 0.09:
-                    raise OrbitException('The orbit @'+str(a)+' is beyond the limits for a '+planet.clase)
+                if orbit is None:
+                    other = [o for o in self.raw_orbits if o.temperature == 'hot' and o not in self.stable_orbits]
+                    a = round(min([o for o in other]).a.m, 3)
+                    if not 0.001 <= a <= 0.09:
+                        raise OrbitException('The orbit @'+str(a)+' is beyond the limits for a '+planet.clase)
                 e = roll(0.001, 0.09)  # migration
                 i = roll(10, 170)
 
@@ -136,7 +135,10 @@ class PlanetarySystem:
                     else:
                         orbit.inclination += 0.01
 
-        print(a, round(e, 3), round(i, 3))
+        a = orbit.semi_major_axis
+        orb = Orbit(a, e, i)
+        self.stable_orbits.append(orb)
+        planet.set_orbit(self.star, orb)
 
     def check_orbits(self):
         """Run this method only after adding all the orbits"""

@@ -14,6 +14,11 @@ class Planet(BodyInHydrostaticEquilibrium):
     has_name = False
     habitable = True
 
+    orbit = None
+    albedo = 29
+    greenhouse = 1
+    temperature = 0
+
     def __init__(self, data):
         name = data.get('name', None)
         mass = data.get('mass', False)
@@ -28,7 +33,6 @@ class Planet(BodyInHydrostaticEquilibrium):
 
         unit = data.get('unit', "earth")
         self.unit = unit
-        self.habitable = data['habitable'] if 'habitable' in data else False
 
         if mass:
             self.mass = q(mass, unit + '_masses')
@@ -38,6 +42,8 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.gravity = q(gravity, unit + '_gravity')
 
         self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)
+        self.albedo = data['albedo'] if 'albedo' in data else 29
+        self.greenhouse = data['greenhouse'] if 'albedo' in data else 1
 
         if not self.gravity:
             self.gravity = q(mass / (radius ** 2), unit + '_gravity')
@@ -46,12 +52,32 @@ class Planet(BodyInHydrostaticEquilibrium):
         if not self.mass:
             self.mass = q(gravity * radius ** 2, unit + '_masses')
 
+        self.habitable = self.set_habitability()
+
         self.density = self.calculate_density(self.mass.to('grams'), self.radius.to('centimeters'))
         self.volume = self.calculate_volume(self.radius.to('kilometers'))
         self.surface = self.calculate_surface_area(self.radius.to('kilometers'))
         self.circumference = self.calculate_circumference(self.radius.to('kilometers'))
         self.escape_velocity = q(sqrt(self.mass.to('kg').m / self.radius.to('km').m), unit+'_escape_velocity')
         self.composition = {}
+
+    def set_habitability(self):
+        mass = self.mass
+        radius = self.radius
+        gravity = self.gravity
+
+        habitable = q(0.1, 'earth_mass') < mass < q(3.5, 'earth_mass')
+        habitable = habitable and q(0.5, 'earth_radius') < radius < q(1.5, 'earth_radius')
+        habitable = habitable and q(0.4, 'earth_gravity') < gravity < q(1.6, 'earth_gravity')
+        return habitable
+
+    def set_temperature(self, star_mass, semi_major_axis):
+        return planet_temperature(star_mass, semi_major_axis, self.albedo, self.greenhouse)
+
+    def set_orbit(self, star, orbit):
+        self.temperature = self.set_temperature(star.mass.m, orbit.a.m)
+        print(self.temperature)
+        self.orbit = orbit
 
     @staticmethod
     def set_class(mass, radius):
@@ -69,7 +95,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         return self.clase+' '+str(self.mass.m)
 
 
-def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse=1):
+def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
     """
 
     :rtype: q

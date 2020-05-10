@@ -17,14 +17,20 @@ class ObjectType(BaseWidget):
         for i, button in enumerate(relative_values):
             if len(relative_values) == 5:
                 vt = ValueText(self, button, 50, 55 + i * 15 * 2)
+            elif len(relative_values) == 6:
+                vt = ValueText(self, button, 50, 55 + i * 13 * 2)
             else:
-                vt = ValueText(self, button, 50, 55 + i * 20 * 2)
+                vt = ValueText(self, button, 50, 55 + i * 15 * 2)
             self.relatives.add(vt)
             self.properties.add(vt, layer=1)
 
         self.absolutes = LayeredUpdates()
         for i, button in enumerate(absolute_values):
-            vt = ValueText(self, button, 50, 210 + i * 15 * 2)
+            vt = None
+            if len(absolute_values) == 5:
+                vt = ValueText(self, button, 50, 210 + i * 15 * 2)
+            elif len(absolute_values) == 7:
+                vt = ValueText(self, button, 50, 180 + i * 15 * 2)
             self.absolutes.add(vt)
             self.properties.add(vt, layer=1)
 

@@ -6,6 +6,7 @@ from pygame import Surface, font, transform
 class BasePanel(BaseWidget):
     current = None
     relative_mode = True
+    name = None
 
     def __init__(self, name, parent):
         super().__init__(parent)

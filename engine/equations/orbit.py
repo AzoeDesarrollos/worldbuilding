@@ -51,7 +51,8 @@ class RawOrbit:
         return other.semi_major_axis.m == self.semi_major_axis.m
 
     def __repr__(self):
-        return 'Orbit @' + str(round(self.semi_major_axis.m, 3))
+        # noinspection PyStringFormat
+        return 'Orbit @' + '{:~g}'.format(round(self.semi_major_axis, 3))
 
     def complete(self, e, i):
         return Orbit(self.semi_major_axis.m, e, i, self.unit)
@@ -70,11 +71,11 @@ class Orbit:
     _e = 0
     _i = 0
 
-    def __init__(self, a: float, e: float, i: float, unit='au'):
+    def __init__(self, a, e: float, i: float, unit='au'):
         self.unit = unit
         self._e = float(e)
         self._i = float(i)
-        self.semi_major_axis = q(float(a), unit)
+        self.semi_major_axis = q(float(a.m), unit)
 
         self.semi_minor_axis = q(a * sqrt(1 - e ** 2), unit)
         self.periapsis = q(a * (1 - e), unit)
