@@ -20,8 +20,9 @@ class PlanetarySystem:
         self.star = star
         self.raw_orbits = []
         self.stable_orbits = []
-        self._axes = []
         self.planets = []
+
+        self.current = None
 
         body_mass = q(star.mass.m * 1.4672, 'jupiter_mass')
         self.gigant_mass = q(body_mass.m * 0.998, 'jupiter_mass')
@@ -33,7 +34,11 @@ class PlanetarySystem:
                 self.terra_mass -= planet.mass
             elif planet.unit == 'jupiter':
                 self.gigant_mass -= planet.mass
+            self.set_current(planet)
             self.planets.append(planet)
+
+    def set_current(self, planet):
+        self.current = planet
 
     def remove_planet(self, planet):
         pass
@@ -190,8 +195,6 @@ class PlanetarySystem:
                 orbit.set_temperature('habitable')
             else:
                 orbit.set_temperature('hot')
-            self._axes.append(orbit.semi_major_axis.m)
-        self._axes.sort()
 
     def __repr__(self):
         return 'Planetary System of ' + self.star.name

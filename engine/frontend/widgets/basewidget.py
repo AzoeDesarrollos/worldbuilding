@@ -26,11 +26,17 @@ class BaseWidget(Sprite):
     def on_mouseover(self):
         pass
 
-    def update(self):
+    def enable(self):
         pass
 
-    def activate(self):
-        self.active = True
+    def disable(self):
+        pass
 
-    def deactivate(self):
-        self.active = False
+    def select(self):
+        pass
+
+    def deselect(self):
+        pass
+
+    def update(self):
+        pass

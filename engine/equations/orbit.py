@@ -3,14 +3,6 @@ from pygame import draw, Rect
 from engine import q
 
 
-def put_in_star_orbit(body, star, a):
-    body.orbit = PlanetOrbit(star.mass.magnitude, a)
-
-
-def put_in_planet_orbit(body, planet, satellite, a):
-    body.orbit = SatelliteOrbit(planet.mass.m, satellite.mass.m, a)
-
-
 class RawOrbit:
     unit = ''
     semi_major_axis = None
@@ -56,10 +48,10 @@ class RawOrbit:
         return self.semi_major_axis.m > other
 
     def __eq__(self, other):
-        return other.semi_major_axis == round(self.semi_major_axis, 3)
+        return other.semi_major_axis.m == self.semi_major_axis.m
 
     def __repr__(self):
-        return 'Orbit @'+str(round(self.semi_major_axis.m, 3))
+        return 'Orbit @' + str(round(self.semi_major_axis.m, 3))
 
     def complete(self, e, i):
         return Orbit(self.semi_major_axis.m, e, i, self.unit)
@@ -135,13 +127,15 @@ class Orbit:
         self._i = float(value)
 
 
-class PlanetOrbit:
-    def __init__(self, star_mass, a):
+class PlanetOrbit(Orbit):
+    def __init__(self, star_mass, a, e, i):
+        super().__init__(a, e, i, 'au')
         self.velocity = q(sqrt(star_mass / a), 'earth_orbital_velocity').to('kilometer per second')
         self.period = q(sqrt((a ** 3) / star_mass), 'year')
 
 
-class SatelliteOrbit:
-    def __init__(self, planet_mass, moon_mass, a):
+class SatelliteOrbit(Orbit):
+    def __init__(self, planet_mass, moon_mass, a, e, i):
+        super().__init__(a, e, i, 'earth_radius')
         self.velocity = q(sqrt(planet_mass / a), 'earth_orbital_velocity').to('kilometer per second')
         self.period = q(0.0588 * (a ** 3 / sqrt(planet_mass + moon_mass)), 'day')

@@ -33,6 +33,7 @@ class PlanetPanel(BasePanel):
             self.curr_x = 0
             self.curr_y += 32
         self.planet_buttons.add(button)
+        self.current.properties.add(button)
         button.show()
 
 
@@ -222,5 +223,6 @@ class PlanetButton(Meta, BaseWidget):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.current = self.planet_data
+            self.parent.parent.parent.system.set_current(self.planet_data)
             self.parent.has_values = True
             self.parent.fill()

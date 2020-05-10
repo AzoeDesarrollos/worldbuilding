@@ -20,24 +20,32 @@ class LayoutPanel(BaseWidget):
         Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
 
-        self.panels = LayeredUpdates()
+        self.forward = []
         self.properties = LayeredUpdates()
         for panel in panels:
-            self.panels.add(panel(self))
+            self.forward.append(panel(self))
+        self.backward = reversed(self.forward)
 
-        self.cycler = cycle(self.panels)
-        self.current = next(self.cycler)
+        self.backward_cycler = cycle(self.backward)
+        self.forward_cycler = cycle(self.forward)
+
+        self.current = next(self.forward_cycler)
         self.current.show()
 
-        a = Arrow(self, 180, self.rect.left + 16, self.rect.bottom)
-        b = Arrow(self, 0, self.rect.right - 16, self.rect.bottom)
+        a = Arrow(self, 'backward', 180, self.rect.left + 16, self.rect.bottom)
+        b = Arrow(self, 'forward', 0, self.rect.right - 16, self.rect.bottom)
         self.properties.add(a, b, layer=3)
         Renderer.add_widget(a)
         Renderer.add_widget(b)
 
-    def cycle(self):
+    def forward_cycle(self):
         self.current.hide()
-        self.current = next(self.cycler)
+        self.current = next(self.forward_cycler)
+        self.current.show()
+
+    def backward_cycle(self):
+        self.current.hide()
+        self.current = next(self.backward_cycler)
         self.current.show()
 
     def set_system(self, star):
@@ -48,9 +56,10 @@ class LayoutPanel(BaseWidget):
 
 
 class Arrow(Meta, BaseWidget):
-    def __init__(self, parent, angulo, centerx, y):
+    def __init__(self, parent, direccion, angulo, centerx, y):
         super().__init__(parent)
         WidgetHandler.add_widget(self)
+        self.direccion = direccion
 
         self.img_uns = self.create((255, 0, 0, 255), angulo)
         self.img_sel = self.create((0, 0, 255, 255), angulo)
@@ -70,4 +79,7 @@ class Arrow(Meta, BaseWidget):
         if event.button == 1:
             if self.rect.collidepoint(event.pos):
                 if self.enabled:
-                    self.parent.cycle()
+                    if self.direccion == 'forward':
+                        self.parent.forward_cycle()
+                    elif self.direccion == 'backward':
+                        self.parent.backward_cycle()

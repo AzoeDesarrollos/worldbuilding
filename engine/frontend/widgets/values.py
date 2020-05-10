@@ -11,11 +11,8 @@ class ValueText(BaseWidget):
     selected = False
     active = False
 
-    def __init__(self, parent, text, x, y):
+    def __init__(self, parent, text, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
         super().__init__(parent)
-
-        bg = 125, 125, 125
-        fg = 0, 0, 0
         self.text = text
 
         f1 = font.SysFont('Verdana', 16)
@@ -29,7 +26,7 @@ class ValueText(BaseWidget):
         self.rect = self.image.get_rect(topleft=(x, y))
         EventHandler.register(self.clear_selection, 'Clear')
 
-        self.text_area = NumberArea(self.parent, text, self.rect.right + 3, self.rect.y)
+        self.text_area = NumberArea(self.parent, text, self.rect.right + 3, self.rect.y, fg, bg)
 
     def select(self):
         self.selected = True
@@ -49,7 +46,8 @@ class ValueText(BaseWidget):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            if self.parent.parent.name != 'Star' and self.parent.parent.unit.name == 'Earth':
+            p = self.parent.parent
+            if hasattr(p, 'name') and p.name != 'Star' and p.unit is not None and p.unit.name == 'Earth':
                 self.active = True
                 lim = self.parent.parent.parent.system.terra_mass
                 data = graph_loop(mass_upper_limit=lim.m)
@@ -90,10 +88,11 @@ class NumberArea(BaseWidget):
     value = None
     enabled = False
 
-    def __init__(self, parent, name, x, y):
+    def __init__(self, parent, name, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
         super().__init__(parent)
         self.value = ''
         self.name = name
+        self.fg, self.bg = fg, bg
         self.f = font.SysFont('Verdana', 16)
         EventHandler.register(self.input, 'Key', 'BackSpace', 'Fin')
         self.image = Surface((0, self.f.get_height()))
@@ -112,6 +111,8 @@ class NumberArea(BaseWidget):
                     self.parent.check_values()  # for planets
                 elif self.parent.parent.name == 'Star':
                     self.parent.set_star(Star({self.name.lower(): float(self.value)}))  # for stars
+                elif self.parent.parent.name == 'Satellite':
+                    self.parent.calculate()  # for moons
 
     def clear(self):
         self.value = ''
@@ -133,5 +134,5 @@ class NumberArea(BaseWidget):
         Renderer.del_widget(self)
 
     def update(self):
-        self.image = self.f.render(self.value, 1, COLOR_TEXTO, COLOR_BOX)
+        self.image = self.f.render(self.value, 1, self.fg, self.bg)
         self.rect = self.image.get_rect(topleft=self.rect.topleft)
