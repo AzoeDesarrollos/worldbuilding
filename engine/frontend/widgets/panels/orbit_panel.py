@@ -132,11 +132,12 @@ class OrbitType(BaseWidget):
         self.properties = LayeredUpdates()
         for i, prop in enumerate(['semi_major_axis', 'temperature']):
             vt = ValueText(self, prop, 0, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
-            value = getattr(orbit, prop)
-            if not type(value) is str:
-                # noinspection PyStringFormat
-                value = '{:~,g}'.format((round(value, 3)))
+            _value = getattr(orbit, prop)
+            value = _value
+            if not type(_value) is str:
+                value = str(round(_value, 3))
             vt.text_area.value = value
+            vt.text_area.inner_value = _value if type(_value) is not str else None
             vt.text_area.update()
             self.properties.add(vt)
 
@@ -144,14 +145,13 @@ class OrbitType(BaseWidget):
         value = None
         for elemento in self.properties:
             if elemento.text == 'semi_major_axis':
-                value = q(float(elemento.text_area.value), 'au')
-                print(value)
+                value = q(*elemento.text_area.value.split(' '))
             elif elemento.text == 'temperature':
                 value = str(elemento.text_area.value)
             setattr(self.data, elemento.text.lower(), value)
             self.parent.reverse_match(self.data)
-            # noinspection PyStringFormat
-            elemento.text_area.value = '{:~g}'.format(value) if type(value) is not str else value
+            elemento.text_area.value = value
+            elemento.text_area.inner_value = value
             elemento.text_area.update()
             elemento.text_area.show()
 

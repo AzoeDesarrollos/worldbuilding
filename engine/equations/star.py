@@ -1,7 +1,7 @@
 from .general import BodyInHydrostaticEquilibrium
 from engine import q
 from bisect import bisect_right
-from math import sqrt
+from math import sqrt, pow
 from pygame import Color
 
 
@@ -14,6 +14,12 @@ class Star(BodyInHydrostaticEquilibrium):
     classification = 'G'
     name = None
     has_name = False
+
+    habitable_inner = 0
+    habitable_outer = 0
+    inner_boundry = 0
+    outer_boundry = 0
+    frost_line = 0
 
     def __init__(self, data):
         mass = data.get('mass', False)
@@ -29,45 +35,56 @@ class Star(BodyInHydrostaticEquilibrium):
             self.name = "NoName"
 
         if mass:
-            self.mass = q(mass, 'sol_mass')
+            self._mass = mass
         elif luminosity:
-            self.luminosity = q(luminosity, 'sol_luminosity')
+            self._luminosity = luminosity
 
         if not mass and luminosity:
-            self.mass = q(luminosity ** (1/3.5),'sol_mass')
+            self._mass = pow(luminosity, (1 / 3.5))
+
         elif not luminosity and mass:
-            self.luminosity = q(mass ** 3.5, 'sol_luminosity')
+            self._luminosity = pow(mass, 3.5)
 
-        if self.mass.m < 1:
-            self.radius = q(self.mass.m ** 0.8, 'sol_radius')
-        elif self.mass.m > 1:
-            self.radius = q(self.mass.m ** 0.5, 'sol_radius')
+        if self._mass < 1:
+            self._radius = pow(self._mass, 0.8)
+        elif self._mass > 1:
+            self._radius = pow(self._mass, 0.5)
         else:
-            self.radius = q(1, 'sol_radius')
+            self._radius = 1
 
-        self.lifetime = q(self.mass.m / self.luminosity.m, 'sol_lifetime')
-        self.temperature = q((self.luminosity.m / (self.radius.m ** 2)) ** (1 / 4), 'sol_temperature')
+        self._lifetime = self._mass / self._luminosity
+        self._temperature = pow((self._luminosity / pow(self._radius, 2)), (1 / 4))
+        self._habitable_inner = round(sqrt(self._luminosity / 1.1), 3)
+        self._habitable_outer = round(sqrt(self._luminosity / 0.53), 3)
+        self._inner_boundry = self._mass * 0.01
+        self._outer_boundry = self._mass * 40
+        self._frost_line = round(4.85 * sqrt(self._luminosity), 3)
+
+        self.classification = self.stellar_classification()
+        self.cls = self.classification
+        self.set_qs()
+        self.color = self.true_color()
+
+    def set_qs(self):
+        self.mass = q(self._mass, 'sol_mass')
+        self.luminosity = q(self._luminosity, 'sol_luminosity')
+        self.radius = q(self._radius, 'sol_radius')
+        self.lifetime = q(self._lifetime, 'sol_lifetime')
+        self.temperature = q(self._temperature, 'sol_temperature')
         self.volume = q(self.calculate_volume(self.radius.to('km').m), 'km^3')
         self.density = q(self.calculate_density(self.mass.to('g').m, self.radius.to('cm').m), 'g/cm^3')
         self.circumference = q(self.calculate_circumference(self.radius.to('km').m), 'km')
         self.surface = q(self.calculate_surface_area(self.radius.to('km').m), 'km^2')
-        self.classification = self.stellar_classification(self.mass.m)
-        self.cls = self.classification
+        self.habitable_inner = q(self._habitable_inner, 'au')
+        self.habitable_outer = q(self._habitable_outer, 'au')
+        self.inner_boundry = q(self._inner_boundry, 'au')
+        self.outer_boundry = q(self._outer_boundry, 'au')
+        self.frost_line = q(self._frost_line, 'au')
 
-        self.habitable_inner = q(round(sqrt(self.luminosity.magnitude / 1.1), 3), 'au')
-        self.habitable_outer = q(round(sqrt(self.luminosity.magnitude / 0.53), 3), 'au')
-
-        self.inner_boundry = q(self.mass.m * 0.01, 'au')
-        self.outer_boundry = q(self.mass.m * 40, 'au')
-
-        self.frost_line = q(round(4.85 * sqrt(self.luminosity.magnitude), 3), 'au')
-        self.color = self.true_color()
-
-    @staticmethod
-    def stellar_classification(mass):
+    def stellar_classification(self):
         masses = [0.08, 0.45, 0.8, 1.04, 1.4, 2.1, 16]
         classes = ["M", "K", "G", "F", "A", "B", "O"]
-        idx = bisect_right(masses, mass)
+        idx = bisect_right(masses, self._mass)
         return classes[idx - 1:idx][0]
 
     def true_color(self):

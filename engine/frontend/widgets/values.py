@@ -5,6 +5,8 @@ from engine.frontend.graph.graph import graph_loop
 from engine.equations import Star
 from .basewidget import BaseWidget
 from pygame import font, Surface
+from math import pow
+from engine import q
 
 
 class ValueText(BaseWidget):
@@ -89,7 +91,12 @@ class ValueText(BaseWidget):
 
 class NumberArea(BaseWidget):
     value = None
+    inner_value = None
     enabled = False
+    ticks = 0
+    clicks = 0
+    increment = 0
+    potencia = 0
 
     def __init__(self, parent, name, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
         super().__init__(parent)
@@ -109,15 +116,35 @@ class NumberArea(BaseWidget):
                     self.value += char
             elif event.tipo == 'BackSpace':
                 self.value = self.value[0:len(self.value) - 1]
-            elif event.tipo == 'Fin':
+            elif event.tipo == 'Fin' and len(self.value):
                 if self.parent.parent.name == 'Planet':
                     self.parent.check_values()  # for planets
                 elif self.parent.parent.name == 'Star':
-                    self.parent.set_star(Star({self.name.lower(): float(self.value)}))  # for stars
+                    value = self.value.split(' ')[0]
+                    self.parent.set_star(Star({self.name.lower(): float(value)}))  # for stars
                 elif self.parent.parent.name == 'Satellite':
                     self.parent.calculate()  # for moons
                 elif self.parent.parent.name == 'Orbit':
                     self.parent.fill()
+
+    def on_mousebuttondown(self, event):
+        self.ticks = 0
+        if self.clicks == 10:
+            self.potencia += 1
+            self.clicks = 2
+        else:
+            self.clicks += 1
+        self.increment = round((0.001 * (pow(10, self.potencia))), 4)
+
+        if self.inner_value is not None and not type(self.inner_value) is str:
+            if event.button == 5:  # rueda abajo
+                self.inner_value += q(self.increment, self.inner_value.u)
+                self.increment = 0
+            elif event.button == 4 and self.inner_value > 0:  # rueda arriba
+                self.inner_value -= q(self.increment, self.inner_value.u)
+                self.increment = 0
+
+            self.value = str(round(self.inner_value, 4))
 
     def clear(self):
         self.value = ''
@@ -139,5 +166,11 @@ class NumberArea(BaseWidget):
         Renderer.del_widget(self)
 
     def update(self):
-        self.image = self.f.render(self.value, 1, self.fg, self.bg)
+        self.ticks += 1
+        if self.ticks >= 60:
+            self.clicks = 0
+            self.increment = 0
+            self.potencia = 0
+
+        self.image = self.f.render(str(self.value), 1, self.fg, self.bg)
         self.rect = self.image.get_rect(topleft=self.rect.topleft)

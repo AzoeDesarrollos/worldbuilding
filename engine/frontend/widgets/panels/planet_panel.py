@@ -6,6 +6,7 @@ from engine.equations.planet import Planet
 from pygame.sprite import LayeredUpdates
 from itertools import cycle
 from pygame import font
+# from re import compile
 
 
 class PlanetPanel(BasePanel):
@@ -62,7 +63,7 @@ class PlanetType(ObjectType):
         attrs = {}
         for button in self.properties.get_sprites_from_layer(1):
             if button.text_area.value:  # not empty
-                string = button.text_area.value.split(' ')[0]
+                string = str(button.text_area.value).split(' ')[0]
                 try:
                     setattr(self, button.text.lower(), float(string))
                     attrs[button.text.lower()] = float(string)

@@ -1,5 +1,5 @@
 from .general import BodyInHydrostaticEquilibrium
-from math import sqrt, pi
+from math import sqrt, pi, pow
 from engine import q
 
 
@@ -35,31 +35,35 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.unit = unit
 
         if mass:
-            self.mass = q(mass, unit + '_masses')
+            self._mass = mass
         if radius:
-            self.radius = q(radius, unit + '_radius')
+            self._radius = radius
         if gravity:
-            self.gravity = q(gravity, unit + '_gravity')
+            self._gravity = gravity
 
-        self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)
-        self.albedo = data['albedo'] if 'albedo' in data else 29
-        self.greenhouse = data['greenhouse'] if 'albedo' in data else 1
+        if not self._gravity:
+            self._gravity = mass / pow(radius, 2)
+        if not self._radius:
+            self._radius = sqrt(mass / gravity)
+        if not self._mass:
+            self._mass = gravity * pow(radius, 2)
 
-        if not self.gravity:
-            self.gravity = q(mass / (radius ** 2), unit + '_gravity')
-        if not self.radius:
-            self.radius = q(sqrt(mass / gravity), unit + '_radius')
-        if not self.mass:
-            self.mass = q(gravity * radius ** 2, unit + '_masses')
-
+        self.set_qs(unit)
+        self.composition = {}
         self.habitable = self.set_habitability()
+        self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)
+        self.albedo = q(data['albedo']) if 'albedo' in data else q(29)
+        self.greenhouse = q(data['greenhouse']) if 'albedo' in data else q(1)
 
+    def set_qs(self, unit):
+        self.mass = q(self._mass, unit + '_masses')
+        self.radius = q(self._radius, unit + '_radius')
+        self.gravity = q(self._gravity, unit + '_gravity')
         self.density = self.calculate_density(self.mass.to('grams'), self.radius.to('centimeters'))
         self.volume = self.calculate_volume(self.radius.to('kilometers'))
         self.surface = self.calculate_surface_area(self.radius.to('kilometers'))
         self.circumference = self.calculate_circumference(self.radius.to('kilometers'))
-        self.escape_velocity = q(sqrt(self.mass.to('kg').m / self.radius.to('km').m), unit+'_escape_velocity')
-        self.composition = {}
+        self.escape_velocity = q(sqrt(self.mass.to('kg').m / self.radius.to('km').m), unit + '_escape_velocity')
 
     def set_habitability(self):
         mass = self.mass

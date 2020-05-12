@@ -1,4 +1,4 @@
-from math import sqrt
+from math import sqrt, pow
 from pygame import draw, Rect
 from engine import q
 
@@ -39,7 +39,7 @@ class RawOrbit:
         return new_a.m
 
     def __float__(self):
-        return self.semi_major_axis.m
+        return float(self.semi_major_axis.m)
 
     def __lt__(self, other):
         return self.semi_major_axis.m < other
@@ -52,34 +52,34 @@ class RawOrbit:
 
     def __repr__(self):
         # noinspection PyStringFormat
-        return 'Orbit @' + '{:~g}'.format(round(self.semi_major_axis, 3))
+        return 'Orbit @' + '{:}'.format(round(float(self), 3))
 
     def complete(self, e, i):
         return Orbit(self.semi_major_axis.m, e, i, self.unit)
 
 
 class Orbit:
-    semi_major_axis = 0
-    semi_minor_axis = 0
-    periapsis = 0
-    apoapsis = 0
-
     period = 0
     velocity = 0
     motion = ''
 
-    _e = 0
-    _i = 0
+    _e = 0  # eccentricity
+    _i = 0  # inclination
+    _a = 0  # semi-major axis
+    _b = 0  # semi-minor axis
+    _q = 0  # periapsis
+    _Q = 0  # apoapsis
 
     def __init__(self, a, e: float, i: float, unit='au'):
         self.unit = unit
         self._e = float(e)
         self._i = float(i)
-        self.semi_major_axis = q(float(a.m), unit)
+        self._a = float(a.m)
+        self._b = self._a * sqrt(1 - pow(self._e, 2))
+        self._Q = self._a * (1 + self._e)
+        self._q = self._a * (1 - self._e)
 
-        self.semi_minor_axis = q(a * sqrt(1 - e ** 2), unit)
-        self.periapsis = q(a * (1 - e), unit)
-        self.apoapsis = q(a * (1 + e), unit)
+        self.unit = unit
 
         if self.inclination in (0, 180):
             self.motion = 'equatorial'
@@ -102,6 +102,22 @@ class Orbit:
 
     def __repr__(self):
         return 'Orbit @' + str(round(self.semi_major_axis.m, 3))
+
+    @property
+    def semi_major_axis(self):
+        return q(self._a, self.unit)
+
+    @property
+    def semi_minor_axis(self):
+        return q(self._b, self.unit)
+
+    @property
+    def periapsis(self):
+        return q(self._q, self.unit)
+
+    @property
+    def apoapsis(self):
+        return q(self._Q, self.unit)
 
     @property
     def eccentricity(self):

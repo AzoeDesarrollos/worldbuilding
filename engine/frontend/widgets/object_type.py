@@ -60,12 +60,14 @@ class ObjectType(BaseWidget):
                 attr = getattr(self.current, elemento.text.lower())
             else:
                 attr = getattr(self.current, elemento.text.lower()).to(tos[elemento.text.capitalize()])
-            elemento.text_area.value = '{:,g}'.format((round(attr, 3))) if type(attr) is not str else attr
+            elemento.text_area.value = str(round(attr, 3)) if type(attr) is not str else attr
+            elemento.text_area.inner_value = attr
             elemento.text_area.update()
             elemento.text_area.show()
 
         for elemento in self.absolutes:
             attr = getattr(self.current, elemento.text.lower())
-            elemento.text_area.value = '{:,g}'.format((round(attr, 3))) if type(attr) is not str else attr
+            elemento.text_area.inner_value = attr
+            elemento.text_area.value = attr
             elemento.text_area.update()
             elemento.text_area.show()
