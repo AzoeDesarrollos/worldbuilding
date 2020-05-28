@@ -1,7 +1,7 @@
 from .basewidget import BaseWidget
-from pygame.sprite import LayeredUpdates
 from engine.backend import EventHandler
 from .values import ValueText
+from ..globales.group import WidgetGroup
 
 
 class ObjectType(BaseWidget):
@@ -12,8 +12,8 @@ class ObjectType(BaseWidget):
         super().__init__(parent)
         EventHandler.register(self.clear_selection, 'Clear')
 
-        self.properties = LayeredUpdates()
-        self.relatives = LayeredUpdates()
+        self.properties = WidgetGroup()
+        self.relatives = WidgetGroup()
         for i, button in enumerate(relative_values):
             if len(relative_values) == 5:
                 vt = ValueText(self, button, 50, 55 + i * 15 * 2)
@@ -24,7 +24,7 @@ class ObjectType(BaseWidget):
             self.relatives.add(vt)
             self.properties.add(vt, layer=1)
 
-        self.absolutes = LayeredUpdates()
+        self.absolutes = WidgetGroup()
         for i, button in enumerate(absolute_values):
             vt = None
             if len(absolute_values) == 5:

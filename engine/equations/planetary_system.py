@@ -139,6 +139,8 @@ class PlanetarySystem:
         orb = Orbit(a, e, i)
         self.stable_orbits.append(orb)
         planet.set_orbit(self.star, orb)
+        orb.set_planet(planet)
+        return orb
 
     def check_orbits(self):
         """Run this method only after adding all the orbits"""

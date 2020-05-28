@@ -303,8 +303,8 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
             else:
                 fondo.blit(fuente1.render(mass_text, 1, mass_color), (5, rect.bottom + 43))
                 fondo.blit(fuente1.render(radius_text, 1, radius_color), (140, rect.bottom + 43))
-                fondo.blit(fuente1.render(density_text, 1, negro), (130*2-5, rect.bottom + 43))
-                fondo.blit(fuente1.render(gravity_text, 1, negro), (140*3, rect.bottom + 43))
+                fondo.blit(fuente1.render(density_text, 1, negro), (130 * 2 - 5, rect.bottom + 43))
+                fondo.blit(fuente1.render(gravity_text, 1, negro), (140 * 3, rect.bottom + 43))
                 if data.get('composition', False):
                     composition_text = 'Composition:' + data['composition']
                     fondo.blit(fuente1.render(composition_text, 1, negro, blanco), (5, rect.bottom + 64))

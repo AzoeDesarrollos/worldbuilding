@@ -1,6 +1,6 @@
 from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO, COLOR_TEXTO, COLOR_BOX, COLOR_AREA
 from engine.frontend.widgets.basewidget import BaseWidget
-from pygame.sprite import LayeredUpdates
+from engine.frontend.globales.group import WidgetGroup
 from pygame import Surface, font
 from ..values import ValueText
 from .planet_panel import Meta
@@ -34,9 +34,9 @@ class OrbitPanel(BaseWidget):
         self.image.blit(r, rr)
 
         self.f3 = font.SysFont('Verdana', 16)
-        self.orbits = LayeredUpdates()
-        self.orbit_buttons = LayeredUpdates()
-        self.properties = LayeredUpdates()
+        self.orbits = WidgetGroup()
+        self.orbit_buttons = WidgetGroup()
+        self.properties = WidgetGroup()
 
     def populate(self):
         self.parent.system.add_orbits()
@@ -61,6 +61,7 @@ class OrbitPanel(BaseWidget):
         for btn in self.orbit_buttons:
             btn.unlock()
         button.lock()
+        self.current.clear()
         self.current.show()
         self.ask()
 
@@ -83,11 +84,10 @@ class OrbitPanel(BaseWidget):
             yes.show()
             no.show()
 
-    # noinspection PyUnresolvedReferences
     def organize_buttons(self):
         self.curr_x = 0
         self.curr_y = 440
-        for button in [o for o in self.orbit_buttons.sprites() if not o.hidden]:
+        for button in [o for o in self.orbit_buttons.widgets() if not o.hidden]:
             button.rect.topleft = self.curr_x, self.curr_y
             if self.curr_x + button.w + 10 < self.rect.w - button.w + 10:
                 self.curr_x += button.w + 10
@@ -97,15 +97,16 @@ class OrbitPanel(BaseWidget):
 
     def vinculate(self, planet, orbit):
         self.clear()
-        self.parent.system.put_in_star_orbit(planet, orbit)
+        orb = self.parent.system.put_in_star_orbit(planet, orbit)
+        self.current.data = orb
+        self.current.create()
         self.organize_buttons()
         self.parent.system.clear()
 
     def clear(self):
         self.current.hide()
         self.image.fill(COLOR_BOX, [0, 50, self.rect.w, 300])
-        for sprite in self.properties.get_sprites_from_layer(40):
-            # noinspection PyUnresolvedReferences
+        for sprite in self.properties.get_widgets_from_layer(40):
             sprite.hide()
         for btn in self.orbit_buttons:
             btn.unlock()
@@ -113,26 +114,38 @@ class OrbitPanel(BaseWidget):
     def show(self):
         if not len(self.orbits):
             self.populate()
+        if self.current is not None:
+            self.current.show()
         Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
         for b in self.orbit_buttons:
             b.show()
 
     def hide(self):
+        if self.current is not None:
+            self.current.hide()
         Renderer.del_widget(self)
         WidgetHandler.del_widget(self)
         for b in self.orbit_buttons:
             b.hide()
+
+    def __repr__(self):
+        return 'Orbit Panel'
 
 
 class OrbitType(BaseWidget):
     def __init__(self, parent, orbit):
         super().__init__(parent)
         self.data = orbit
-        self.properties = LayeredUpdates()
-        for i, prop in enumerate(['semi_major_axis', 'temperature']):
+        self.properties = WidgetGroup()
+        self.create()
+
+    def create(self):
+        props = ['semi_major_axis', 'semi_minor_axis', 'eccentricity', 'inclination',
+                 'periapsis', 'apoapsis', 'motion', 'temperature']
+        for i, prop in enumerate([j for j in props if hasattr(self.data, j)]):
+            _value = getattr(self.data, prop)
             vt = ValueText(self, prop, 0, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
-            _value = getattr(orbit, prop)
             value = _value
             if not type(_value) is str:
                 value = str(round(_value, 3))
@@ -142,11 +155,10 @@ class OrbitType(BaseWidget):
             self.properties.add(vt)
 
     def fill(self):
-        value = None
         for elemento in self.properties:
-            if elemento.text == 'semi_major_axis':
+            if elemento.text not in ['motion', 'temperature']:
                 value = q(*elemento.text_area.value.split(' '))
-            elif elemento.text == 'temperature':
+            else:
                 value = str(elemento.text_area.value)
             setattr(self.data, elemento.text.lower(), value)
             self.parent.reverse_match(self.data)
@@ -155,12 +167,19 @@ class OrbitType(BaseWidget):
             elemento.text_area.update()
             elemento.text_area.show()
 
+    def clear(self):
+        self.properties.empty()
+
     def show(self):
+        if not len(self.properties):
+            self.create()
+
         for p in self.properties:
             p.show()
 
     def hide(self):
         for p in self.properties:
+            p.text_area.hide()
             p.hide()
 
 

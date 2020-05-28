@@ -34,12 +34,9 @@ class Planet(BodyInHydrostaticEquilibrium):
         unit = data.get('unit', "earth")
         self.unit = unit
 
-        if mass:
-            self._mass = mass
-        if radius:
-            self._radius = radius
-        if gravity:
-            self._gravity = gravity
+        self._mass = None if not mass else mass
+        self._radius = None if not radius else mass
+        self._gravity = None if not gravity else gravity
 
         if not self._gravity:
             self._gravity = mass / pow(radius, 2)

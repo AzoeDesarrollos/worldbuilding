@@ -59,3 +59,6 @@ class BasePanel(BaseWidget):
         Renderer.del_widget(self)
         WidgetHandler.del_widget(self)
         self.current.hide()
+
+    def __repr__(self):
+        return self.name + ' Panel'

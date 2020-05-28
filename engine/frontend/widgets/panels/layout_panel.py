@@ -2,15 +2,14 @@ from engine.equations.planetary_system import PlanetarySystem
 from engine.frontend.globales import Renderer, WidgetHandler
 from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface, draw, transform, SRCALPHA
-from engine.frontend.globales import ALTO, ANCHO
+from engine.frontend.globales import ALTO, ANCHO, WidgetGroup
 from engine.frontend.widgets import panels
-from pygame.sprite import LayeredUpdates
 from .planet_panel import Meta
-from itertools import cycle
 
 
 class LayoutPanel(BaseWidget):
     system = None
+    curr_idx = 0
 
     def __init__(self):
         super().__init__()
@@ -20,17 +19,12 @@ class LayoutPanel(BaseWidget):
         Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
 
-        self.forward = []
-        self.properties = LayeredUpdates()
+        self.panels = []
+        self.properties = WidgetGroup()
         for panel in panels:
-            self.forward.append(panel(self))
-        self.backward = reversed(self.forward)
+            self.panels.append(panel(self))
 
-        self.backward_cycler = cycle(self.backward)
-        self.forward_cycler = cycle(self.forward)
-
-        self.current = next(self.forward_cycler)
-        next(self.backward)  # get the cycle going
+        self.current = self.panels[self.curr_idx]
         self.current.show()
 
         a = Arrow(self, 'backward', 180, self.rect.left + 16, self.rect.bottom)
@@ -39,19 +33,15 @@ class LayoutPanel(BaseWidget):
         Renderer.add_widget(a)
         Renderer.add_widget(b)
 
-    def forward_cycle(self):
+    def cycle(self, delta):
         self.current.hide()
-        self.current = next(self.forward_cycler)
-        self.current.show()
-
-    def backward_cycle(self):
-        self.current.hide()
-        self.current = next(self.backward_cycler)
+        if 0 <= self.curr_idx+delta < len(self.panels):
+            self.curr_idx += delta
+            self.current = self.panels[self.curr_idx]
         self.current.show()
 
     def set_system(self, star):
-        for arrow in self.properties.get_sprites_from_layer(3):
-            # noinspection PyUnresolvedReferences
+        for arrow in self.properties.get_widgets_from_layer(3):
             arrow.enable()
         self.system = PlanetarySystem(star)
 
@@ -81,6 +71,6 @@ class Arrow(Meta, BaseWidget):
             if self.rect.collidepoint(event.pos):
                 if self.enabled:
                     if self.direccion == 'forward':
-                        self.parent.forward_cycle()
+                        self.parent.cycle(+1)
                     elif self.direccion == 'backward':
-                        self.parent.backward_cycle()
+                        self.parent.cycle(-1)

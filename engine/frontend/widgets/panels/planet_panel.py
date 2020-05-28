@@ -6,7 +6,6 @@ from engine.equations.planet import Planet
 from pygame.sprite import LayeredUpdates
 from itertools import cycle
 from pygame import font
-# from re import compile
 
 
 class PlanetPanel(BasePanel):
@@ -51,6 +50,10 @@ class PlanetType(ObjectType):
         render_rect = render.get_rect(y=420)
         self.parent.image.blit(render, render_rect)
 
+        f = font.SysFont('Verdana', 16, bold=True)
+        self.habitable = f.render('Habitable', 1, (0, 255, 0), COLOR_BOX)
+        self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right-10, y=self.parent.rect.y + 50)
+
     def clear_values(self):
         self.parent.parent.system.add_planet(self.current)
         for button in self.properties.get_sprites_from_layer(1):
@@ -58,6 +61,13 @@ class PlanetType(ObjectType):
         self.parent.button.disable()
         self.parent.add_button(self.current)
         self.has_values = False
+        self.parent.image.fill(COLOR_BOX, self.hab_rect)
+
+    def toggle_habitable(self):
+        if self.current.habitable:
+            self.parent.image.blit(self.habitable, self.hab_rect)
+        else:
+            self.parent.image.fill(COLOR_BOX, self.hab_rect)
 
     def check_values(self):
         attrs = {}
@@ -75,6 +85,7 @@ class PlanetType(ObjectType):
             unit = self.parent.unit.name.lower()
             attrs['unit'] = unit if ('earth' in unit or 'jupiter' in unit) else 'earth'
             self.current = Planet(attrs)
+            self.toggle_habitable()
             if unit in ('earth', 'dwarf') and self.current.mass <= self.parent.parent.system.terra_mass:
                 self.parent.button.enable()
                 self.parent.unit.mass_color = COLOR_TEXTO
