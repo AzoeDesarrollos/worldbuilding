@@ -114,26 +114,21 @@ class Star(BodyInHydrostaticEquilibrium):
         else:
             # interpolación lineal
             despues = bisect_right(kelvin, t)
-            antes = despues-1
+            antes = despues - 1
 
         x1 = kelvin[antes]
         x2 = kelvin[despues]
 
-        yr1 = Color((hexs[antes])).r
-        yg1 = Color((hexs[antes])).g
-        yb1 = Color((hexs[antes])).b
+        y1 = Color((hexs[antes]))
+        y2 = Color((hexs[despues]))
 
-        yr2 = Color((hexs[despues])).r
-        yg2 = Color((hexs[despues])).g
-        yb2 = Color((hexs[despues])).b
+        ar = (y2.r - y1.r) / (x2 - x1)
+        ag = (y2.g - y1.g) / (x2 - x1)
+        ab = (y2.b - y1.b) / (x2 - x1)
 
-        ar = (yr2 - yr1) / (x2 - x1)
-        ag = (yg2 - yg1) / (x2 - x1)
-        ab = (yb2 - yb1) / (x2 - x1)
-
-        br = yr1 - ar * x1
-        bg = yg1 - ag * x1
-        bb = yb1 - ab * x1
+        br = y1.r - ar * x1
+        bg = y1.g - ag * x1
+        bb = y1.b - ab * x1
 
         x = t - x1 if t > x1 else x1 - t
 
