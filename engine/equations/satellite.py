@@ -29,8 +29,9 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         self.circumference = q(self.calculate_circumference(self.radius.to('km').m), 'km')
         self.escape_velocity = q(sqrt(self.mass.magnitude / self.radius.magnitude), 'earth_escape')
 
+    # noinspection PyUnusedLocal
     @staticmethod
-    def set_density():
+    def set_density(composition):
         return NotImplemented
 
 
@@ -52,8 +53,9 @@ class Minor(Satellite):
         _a, _b, _c = self.a, self.b, self.c
         self.mass = q(self.density.to('kg/m^3').m * (4 / 3) * pi * _a.to('m').m * _b.to('m').m * _c.to('m').m, 'kg')
 
+    # noinspection PyUnusedLocal
     @staticmethod
-    def set_density():
+    def set_density(composition):
         return NotImplemented
 
     def __repr__(self):

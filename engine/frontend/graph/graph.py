@@ -22,11 +22,11 @@ witdh, height = (590, 630)
 frect = Rect(0, 0, witdh, height)
 
 r = fuente2.render
-texto1 = r('- Hold Shift to lock mass or Control to lock radius -', 1, negro, blanco)
+texto1 = r('- Hold Shift to lock mass or Control to lock radius -', True, negro, blanco)
 rectT1 = texto1.get_rect(centerx=frect.centerx, centery=600)
-texto2 = r("Mass and Radii values are relative to Earth's", 1, negro, blanco)
+texto2 = r("Mass and Radii values are relative to Earth's", True, negro, blanco)
 rectT2 = texto2.get_rect(centerx=frect.centerx, centery=620)
-texto3 = r('The cursor is beyond the parameters selected for this world type.', 1, negro, blanco)
+texto3 = r('The cursor is beyond the parameters selected for this world type.', True, negro, blanco)
 rectT3 = texto3.get_rect(centerx=frect.centerx, y=530)
 
 mass_keys = [(i + 1) / 10 for i in range(0, 9)]
@@ -301,13 +301,13 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
             if punto.disabled:
                 fondo.blit(texto3, rectT3)
             else:
-                fondo.blit(fuente1.render(mass_text, 1, mass_color), (5, rect.bottom + 43))
-                fondo.blit(fuente1.render(radius_text, 1, radius_color), (140, rect.bottom + 43))
-                fondo.blit(fuente1.render(density_text, 1, negro), (130 * 2 - 5, rect.bottom + 43))
-                fondo.blit(fuente1.render(gravity_text, 1, negro), (140 * 3, rect.bottom + 43))
+                fondo.blit(fuente1.render(mass_text, True, mass_color), (5, rect.bottom + 43))
+                fondo.blit(fuente1.render(radius_text, True, radius_color), (140, rect.bottom + 43))
+                fondo.blit(fuente1.render(density_text, True, negro), (130 * 2 - 5, rect.bottom + 43))
+                fondo.blit(fuente1.render(gravity_text, True, negro), (140 * 3, rect.bottom + 43))
                 if data.get('composition', False):
                     composition_text = 'Composition:' + data['composition']
-                    fondo.blit(fuente1.render(composition_text, 1, negro, blanco), (5, rect.bottom + 64))
+                    fondo.blit(fuente1.render(composition_text, True, negro, blanco), (5, rect.bottom + 64))
 
             fondo.blit(texto1, rectT1)
             fondo.blit(texto2, rectT2)

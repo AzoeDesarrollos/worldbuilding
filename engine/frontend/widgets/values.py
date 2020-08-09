@@ -21,8 +21,8 @@ class ValueText(BaseWidget):
         f2 = font.SysFont('Verdana', 16)
         f2.set_underline(True)
 
-        self.img_uns = f1.render(text + ':', 1, fg, bg)
-        self.img_sel = f2.render(text + ':', 1, fg, bg)
+        self.img_uns = f1.render(text + ':', True, fg, bg)
+        self.img_sel = f2.render(text + ':', True, fg, bg)
 
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))
@@ -116,6 +116,7 @@ class NumberArea(BaseWidget):
                     self.value += char
             elif event.tipo == 'BackSpace':
                 self.value = self.value[0:len(self.value) - 1]
+                self.update_inner_value(self.value)
             elif event.tipo == 'Fin' and len(self.value):
                 if self.parent.parent.name == 'Planet':
                     self.parent.check_values()  # for planets
@@ -144,7 +145,12 @@ class NumberArea(BaseWidget):
                 self.inner_value -= q(self.increment, self.inner_value.u)
                 self.increment = 0
 
-            self.value = str(round(self.inner_value, 4))
+            elif event.button != 1:
+                self.value = str(round(self.inner_value, 4))
+
+    def update_inner_value(self, new):
+        if self.inner_value is not None:
+            self.inner_value = q(new, self.inner_value.u)
 
     def clear(self):
         self.value = ''
@@ -172,5 +178,5 @@ class NumberArea(BaseWidget):
             self.increment = 0
             self.potencia = 0
 
-        self.image = self.f.render(str(self.value), 1, self.fg, self.bg)
+        self.image = self.f.render(str(self.value), True, self.fg, self.bg)
         self.rect = self.image.get_rect(topleft=self.rect.topleft)

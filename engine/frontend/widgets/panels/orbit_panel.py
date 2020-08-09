@@ -23,13 +23,13 @@ class OrbitPanel(BaseWidget):
 
         self.f = font.SysFont('Verdana', 16)
         self.f.set_underline(True)
-        render = self.f.render(self.name + ' Panel', 1, COLOR_TEXTO, COLOR_BOX)
+        render = self.f.render(self.name + ' Panel', True, COLOR_TEXTO, COLOR_BOX)
         render_rect = render.get_rect(centerx=self.rect.centerx, y=0)
         self.image.blit(render, render_rect)
 
         f2 = font.SysFont('Verdana', 14)
         f2.set_underline(True)
-        r = f2.render('Orbits', 1, COLOR_TEXTO, COLOR_AREA)
+        r = f2.render('Orbits', True, COLOR_TEXTO, COLOR_AREA)
         rr = r.get_rect(topleft=(0, 420))
         self.image.blit(r, rr)
 
@@ -53,12 +53,12 @@ class OrbitPanel(BaseWidget):
 
     def match(self, button):
         self.image.fill(COLOR_BOX, [0, 64, 100, 100])
-        for orbit in self.orbits:
+        for orbit in self.orbits.widgets():
             orbit.hide()
             if orbit.data == button.data:
                 self.current = orbit
 
-        for btn in self.orbit_buttons:
+        for btn in self.orbit_buttons.widgets():
             btn.unlock()
         button.lock()
         self.current.clear()
@@ -66,7 +66,7 @@ class OrbitPanel(BaseWidget):
         self.ask()
 
     def reverse_match(self, orbit):
-        for button in self.orbit_buttons:
+        for button in self.orbit_buttons.widgets():
             if button.data == orbit:
                 button.create(orbit)
                 break
@@ -75,11 +75,13 @@ class OrbitPanel(BaseWidget):
         p = self.parent.system.current
         if p is not None:
             o = self.current.data
-            question = self.f3.render('Put planet {a} at orbit {b}?'.format(a=p, b=str(o)), 1, COLOR_TEXTO, COLOR_BOX)
+            text = 'Put planet {a} at orbit {b}?'.format(a=p, b=str(o))
+            question = self.f3.render(text, True, COLOR_TEXTO, COLOR_BOX)
             qrect = question.get_rect(centerx=self.rect.centerx, centery=self.rect.centerx - 50)
             self.image.blit(question, qrect)
             yes = ConfirmationButton(self, 'Yes', qrect.centerx - 50, qrect.bottom + 16, lambda: self.vinculate(p, o))
             no = ConfirmationButton(self, 'No', qrect.centerx + 45, qrect.bottom + 16, lambda: self.clear())
+            # noinspection PyTypeChecker
             self.properties.add(yes, no, layer=40)
             yes.show()
             no.show()
@@ -108,7 +110,7 @@ class OrbitPanel(BaseWidget):
         self.image.fill(COLOR_BOX, [0, 50, self.rect.w, 300])
         for sprite in self.properties.get_widgets_from_layer(40):
             sprite.hide()
-        for btn in self.orbit_buttons:
+        for btn in self.orbit_buttons.widgets():
             btn.unlock()
 
     def show(self):
@@ -118,7 +120,7 @@ class OrbitPanel(BaseWidget):
             self.current.show()
         Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
-        for b in self.orbit_buttons:
+        for b in self.orbit_buttons.widgets():
             b.show()
 
     def hide(self):
@@ -126,7 +128,7 @@ class OrbitPanel(BaseWidget):
             self.current.hide()
         Renderer.del_widget(self)
         WidgetHandler.del_widget(self)
-        for b in self.orbit_buttons:
+        for b in self.orbit_buttons.widgets():
             b.hide()
 
     def __repr__(self):
@@ -155,7 +157,7 @@ class OrbitType(BaseWidget):
             self.properties.add(vt)
 
     def fill(self):
-        for elemento in self.properties:
+        for elemento in self.properties.widgets():
             if elemento.text not in ['motion', 'temperature']:
                 value = q(*elemento.text_area.value.split(' '))
             else:
@@ -163,7 +165,7 @@ class OrbitType(BaseWidget):
             setattr(self.data, elemento.text.lower(), value)
             self.parent.reverse_match(self.data)
             elemento.text_area.value = value
-            elemento.text_area.inner_value = value
+            elemento.text_area.update_inner_value(value)
             elemento.text_area.update()
             elemento.text_area.show()
 
@@ -174,11 +176,11 @@ class OrbitType(BaseWidget):
         if not len(self.properties):
             self.create()
 
-        for p in self.properties:
+        for p in self.properties.widgets():
             p.show()
 
     def hide(self):
-        for p in self.properties:
+        for p in self.properties.widgets():
             p.text_area.hide()
             p.hide()
 
@@ -198,9 +200,9 @@ class OrbitButton(Meta, BaseWidget):
         self.rect = self.image.get_rect(topleft=(x, y))
 
     def create(self, orbit):
-        self.img_uns = self.f1.render(str(orbit), 1, COLOR_TEXTO, COLOR_AREA)
-        self.img_sel = self.f2.render(str(orbit), 1, COLOR_TEXTO, COLOR_AREA)
-        self.img_dis = self.f1.render(str(orbit), 1, (200, 200, 200), COLOR_AREA)
+        self.img_uns = self.f1.render(str(orbit), True, COLOR_TEXTO, COLOR_AREA)
+        self.img_sel = self.f2.render(str(orbit), True, COLOR_TEXTO, COLOR_AREA)
+        self.img_dis = self.f1.render(str(orbit), True, (200, 200, 200), COLOR_AREA)
 
     def show(self):
         super().show()
@@ -239,8 +241,8 @@ class ConfirmationButton(Meta, BaseWidget):
         self.function = function
         f1 = font.SysFont('Verdana', 16)
         f2 = font.SysFont('Verdana', 16, bold=True)
-        self.img_uns = f1.render(texto, 1, COLOR_TEXTO, COLOR_BOX)
-        self.img_sel = f2.render(texto, 1, COLOR_TEXTO, COLOR_BOX)
+        self.img_uns = f1.render(texto, True, COLOR_TEXTO, COLOR_BOX)
+        self.img_sel = f2.render(texto, True, COLOR_TEXTO, COLOR_BOX)
         self.image = self.img_uns
         self.rect = self.image.get_rect(center=(x, y))
 

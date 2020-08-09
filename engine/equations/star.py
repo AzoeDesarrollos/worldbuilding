@@ -3,6 +3,7 @@ from engine import q
 from bisect import bisect_right
 from math import sqrt, pow
 from pygame import Color
+from engine.backend.util import decimal_round
 
 
 class Star(BodyInHydrostaticEquilibrium):
@@ -88,13 +89,7 @@ class Star(BodyInHydrostaticEquilibrium):
         return classes[idx - 1:idx][0]
 
     def true_color(self):
-        def hex_to_rgb(value):
-            # from: https://stackoverflow.com/questions/29643352/converting-hex-to-rgb-value-in-python
-            value = value.lstrip('#')
-            lv = len(value)
-            return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
-
-        t = self.temperature.to('kelvin').m
+        t = decimal_round(self.temperature.to('kelvin').m)
 
         kelvin = [2660, 3120, 3230, 3360, 3500, 3680, 3920, 4410, 4780, 5240, 5490, 5610, 5780, 5920, 6200, 6540, 6930,
                   7240, 8190, 8620, 9730, 10800, 12400, 13400, 14500, 15400, 16400, 18800, 22100, 24200, 27000, 30000,
@@ -105,11 +100,57 @@ class Star(BodyInHydrostaticEquilibrium):
                 '#e3e8ff', '#dde4ff', '#d2dcff', '#cad6ff', '#c1d0ff', '#bccdff', '#b9caff', '#b6c8ff', '#b4c6ff',
                 '#afc2ff', '#abbfff', '#a9bdff', '#a7bcff', '#a5baff', '#a4baff', '#a3b8ff', '#a2b8ff']
 
-        idx = bisect_right(kelvin, t)
-        if idx > len(kelvin) - 1:
-            return Color(hex_to_rgb(hexs[-1]))
+        if t in kelvin:
+            return Color(hexs[kelvin.index(t)])
+
+        elif t < kelvin[0]:
+            # "extrapolación" lineal positiva
+            despues = 1
+            antes = 0
+        elif t > kelvin[-1]:
+            # "extrapolación" lineal nagativa
+            despues = -1
+            antes = -2
         else:
-            return Color(hex_to_rgb(hexs[idx]))
+            # interpolación lineal
+            despues = bisect_right(kelvin, t)
+            antes = despues-1
+
+        x1 = kelvin[antes]
+        x2 = kelvin[despues]
+
+        yr1 = Color((hexs[antes])).r
+        yg1 = Color((hexs[antes])).g
+        yb1 = Color((hexs[antes])).b
+
+        yr2 = Color((hexs[despues])).r
+        yg2 = Color((hexs[despues])).g
+        yb2 = Color((hexs[despues])).b
+
+        ar = (yr2 - yr1) / (x2 - x1)
+        ag = (yg2 - yg1) / (x2 - x1)
+        ab = (yb2 - yb1) / (x2 - x1)
+
+        br = yr1 - ar * x1
+        bg = yg1 - ag * x1
+        bb = yb1 - ab * x1
+
+        x = t - x1 if t > x1 else x1 - t
+
+        def cap(number):
+            if number >= 255:
+                return 255
+            elif number <= 0:
+                return abs(number)
+            else:
+                return number
+
+        r = cap(decimal_round(ar * x + br))
+        g = cap(decimal_round(ag * x + bg))
+        b = cap(decimal_round(ab * x + bb))
+
+        color = Color(r, g, b)
+        return color
 
     def __repr__(self):
         return "Star " + self.name

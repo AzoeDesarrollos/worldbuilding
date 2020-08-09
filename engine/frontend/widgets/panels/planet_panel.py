@@ -46,12 +46,12 @@ class PlanetType(ObjectType):
                          )
         f = font.SysFont('Verdana', 14)
         f.set_underline(True)
-        render = f.render('Planets', 1, COLOR_TEXTO, COLOR_AREA)
+        render = f.render('Planets', True, COLOR_TEXTO, COLOR_AREA)
         render_rect = render.get_rect(y=420)
         self.parent.image.blit(render, render_rect)
 
         f = font.SysFont('Verdana', 16, bold=True)
-        self.habitable = f.render('Habitable', 1, (0, 255, 0), COLOR_BOX)
+        self.habitable = f.render('Habitable', True, (0, 255, 0), COLOR_BOX)
         self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right-10, y=self.parent.rect.y + 50)
 
     def clear_values(self):
@@ -153,13 +153,13 @@ class Unit(Meta, BaseWidget):
         super().__init__(parent)
         self.f1 = font.SysFont('Verdana', 12)
         self.f2 = font.SysFont('Verdana', 12, bold=True)
-        render = self.f2.render('Unit: ', 1, COLOR_TEXTO, COLOR_BOX)
+        render = self.f2.render('Unit: ', True, COLOR_TEXTO, COLOR_BOX)
         render_rect = render.get_rect(bottomleft=(x, y))
         self.base_rect = self.parent.image.blit(render, render_rect)
         self.cycler = cycle(['Earth', 'Jupiter', 'Dwarf'])
         self.name = next(self.cycler)
         self.create()
-        render = self.f2.render('Available mass: ', 1, COLOR_TEXTO, COLOR_BOX)
+        render = self.f2.render('Available mass: ', True, COLOR_TEXTO, COLOR_BOX)
         self.mass_rect = render.get_rect(bottomleft=(x + 100, y))
         self.parent.image.blit(render, self.mass_rect)
 
@@ -174,15 +174,15 @@ class Unit(Meta, BaseWidget):
         else:
             mass = self.parent.parent.system.gigant_mass
         attr = '{:,g}'.format((round(mass, 3)))
-        render = self.f1.render(str(attr), 1, self.mass_color, COLOR_BOX)
+        render = self.f1.render(str(attr), True, self.mass_color, COLOR_BOX)
         render_rect = render.get_rect(left=self.mass_rect.right + 6, bottom=self.mass_rect.bottom)
         render_rect.inflate_ip(16, 0)
         self.parent.image.fill(COLOR_BOX, render_rect)
         self.parent.image.blit(render, render_rect)
 
     def create(self):
-        self.img_uns = self.f1.render(self.name, 1, COLOR_TEXTO, COLOR_BOX)
-        self.img_sel = self.f2.render(self.name, 1, COLOR_TEXTO, COLOR_BOX)
+        self.img_uns = self.f1.render(self.name, True, COLOR_TEXTO, COLOR_BOX)
+        self.img_sel = self.f2.render(self.name, True, COLOR_TEXTO, COLOR_BOX)
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(self.base_rect.right, self.base_rect.y))
 
@@ -196,9 +196,9 @@ class TextButton(Meta, BaseWidget):
         super().__init__(parent)
         self.f1 = font.SysFont('Verdana', 16)
         self.f2 = font.SysFont('Verdana', 16, bold=True)
-        self.img_dis = self.f1.render('Add Planet', 1, (200, 200, 200), COLOR_BOX)
-        self.img_uns = self.f1.render('Add Planet', 1, COLOR_TEXTO, COLOR_BOX)
-        self.img_sel = self.f2.render('Add Planet', 1, COLOR_TEXTO, COLOR_BOX)
+        self.img_dis = self.f1.render('Add Planet', True, (200, 200, 200), COLOR_BOX)
+        self.img_uns = self.f1.render('Add Planet', True, COLOR_TEXTO, COLOR_BOX)
+        self.img_sel = self.f2.render('Add Planet', True, COLOR_TEXTO, COLOR_BOX)
 
         self.image = self.img_dis
         self.rect = self.image.get_rect(bottomleft=(x, y))
@@ -227,8 +227,8 @@ class PlanetButton(Meta, BaseWidget):
             name = 'Gas Dwarf'
         elif planet.clase == 'Dwarf Planet':
             name = 'Dwarf'
-        self.img_uns = self.f1.render(name, 1, COLOR_TEXTO, COLOR_AREA)
-        self.img_sel = self.f2.render(name, 1, COLOR_TEXTO, COLOR_AREA)
+        self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)
+        self.img_sel = self.f2.render(name, True, COLOR_TEXTO, COLOR_AREA)
         self.w = self.img_sel.get_width()
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))

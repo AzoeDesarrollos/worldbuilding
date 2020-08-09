@@ -22,6 +22,7 @@ class ObjectType(BaseWidget):
             else:
                 vt = ValueText(self, button, 50, 55 + i * 15 * 2)
             self.relatives.add(vt)
+            # noinspection PyTypeChecker
             self.properties.add(vt, layer=1)
 
         self.absolutes = WidgetGroup()
@@ -32,14 +33,15 @@ class ObjectType(BaseWidget):
             elif len(absolute_values) == 7:
                 vt = ValueText(self, button, 50, 180 + i * 15 * 2)
             self.absolutes.add(vt)
+            # noinspection PyTypeChecker
             self.properties.add(vt, layer=1)
 
     def show(self):
-        for p in self.properties:
+        for p in self.properties.widgets():
             p.show()
 
     def hide(self):
-        for p in self.properties:
+        for p in self.properties.widgets():
             p.hide()
 
     def clear_selection(self, event):
@@ -55,7 +57,7 @@ class ObjectType(BaseWidget):
             EventHandler.trigger('Clear', self)
 
     def fill(self, tos):
-        for elemento in self.relatives:
+        for elemento in self.relatives.widgets():
             if self.parent.relative_mode:
                 attr = getattr(self.current, elemento.text.lower())
             else:
@@ -65,7 +67,7 @@ class ObjectType(BaseWidget):
             elemento.text_area.update()
             elemento.text_area.show()
 
-        for elemento in self.absolutes:
+        for elemento in self.absolutes.widgets():
             attr = getattr(self.current, elemento.text.lower())
             elemento.text_area.inner_value = attr
             elemento.text_area.value = attr

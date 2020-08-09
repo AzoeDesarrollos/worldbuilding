@@ -18,16 +18,16 @@ class BasePanel(BaseWidget):
         self.f.set_underline(True)
 
         f2 = font.SysFont('Verdana', 16)
-        self.rt1_uns = transform.rotate(f2.render('Relative Values', 1, COLOR_TEXTO, COLOR_BOX), 90)
-        self.rt1_sel = transform.rotate(f2.render('Absolute Values', 1, COLOR_TEXTO, COLOR_BOX), 90)
+        self.rt1_uns = transform.rotate(f2.render('Relative Values', True, COLOR_TEXTO, COLOR_BOX), 90)
+        self.rt1_sel = transform.rotate(f2.render('Absolute Values', True, COLOR_TEXTO, COLOR_BOX), 90)
         rt1_rect = self.rt1_uns.get_rect(x=12, y=70)
         self.relative_text = self.rt1_uns
         self.relative_text_area = rt1_rect.inflate(10, 10)
 
-        rt2 = transform.rotate(f2.render('Absolute Values', 1, COLOR_TEXTO, COLOR_BOX), 90)
+        rt2 = transform.rotate(f2.render('Absolute Values', True, COLOR_TEXTO, COLOR_BOX), 90)
         rt2_rect = rt2.get_rect(x=6, y=220)
 
-        render = self.f.render(name+' Panel', 1, COLOR_TEXTO, COLOR_BOX)
+        render = self.f.render(name+' Panel', True, COLOR_TEXTO, COLOR_BOX)
         render_rect = render.get_rect(centerx=self.rect.centerx, y=0)
 
         self.image.fill(COLOR_BOX)

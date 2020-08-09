@@ -1,6 +1,20 @@
 from .eventhandler import EventHandler
 import csv
 import json
+from math import trunc, ceil, floor
+
+
+def decimal_round(number: float):
+    """
+    :rtype: int
+    """
+    entero = trunc(number)
+    decimal = number-entero
+    assert type(number) is float
+    if decimal >= 0.5:
+        return int(ceil(number))
+    else:
+        return int(floor(number))
 
 
 class MyCSV(csv.excel):
@@ -15,6 +29,7 @@ def read_csv(ruta):
         data = csv.reader(file, dialect=MyCSV)
         for row in data:
             for i, value in enumerate(row[1:], 1):
+                # noinspection PyTypeChecker
                 row[i] = float(row[i])
             table.append(row)
 
@@ -58,4 +73,5 @@ __all__ = [
     'guardar_json',
     'abrir_json',
     'load_from_data',
+    'decimal_round'
 ]

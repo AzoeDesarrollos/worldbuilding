@@ -1,8 +1,8 @@
 from engine.equations.planetary_system import PlanetarySystem
 from engine.frontend.globales import Renderer, WidgetHandler
 from engine.frontend.widgets.basewidget import BaseWidget
-from pygame import Surface, draw, transform, SRCALPHA
-from engine.frontend.globales import ALTO, ANCHO, WidgetGroup
+from pygame import Surface, draw, transform, SRCALPHA, font
+from engine.frontend.globales import ALTO, ANCHO, WidgetGroup, COLOR_TEXTO, COLOR_BOX
 from engine.frontend.widgets import panels
 from .planet_panel import Meta
 
@@ -29,9 +29,13 @@ class LayoutPanel(BaseWidget):
 
         a = Arrow(self, 'backward', 180, self.rect.left + 16, self.rect.bottom)
         b = Arrow(self, 'forward', 0, self.rect.right - 16, self.rect.bottom)
+        c = SaveButton(self, self.rect.centerx, self.rect.bottom-26)
+        # noinspection PyTypeChecker
         self.properties.add(a, b, layer=3)
         Renderer.add_widget(a)
         Renderer.add_widget(b)
+        Renderer.add_widget(c)
+        WidgetHandler.add_widget(c)
 
     def cycle(self, delta):
         self.current.hide()
@@ -74,3 +78,20 @@ class Arrow(Meta, BaseWidget):
                         self.parent.cycle(+1)
                     elif self.direccion == 'backward':
                         self.parent.cycle(-1)
+
+
+class SaveButton(Meta, BaseWidget):
+    enabled = True
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent)
+        f1 = font.SysFont('Verdana', 16)
+        f2 = font.SysFont('Verdana', 16, bold=1)
+        self.img_uns = f1.render('Guardar', True, COLOR_TEXTO, COLOR_BOX)
+        self.img_sel = f2.render('Guardar', True, COLOR_TEXTO, COLOR_BOX)
+        self.image = self.img_uns
+        self.rect = self.image.get_rect(centerx=x, y=y)
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1:
+            pass

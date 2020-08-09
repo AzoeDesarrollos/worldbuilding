@@ -16,7 +16,7 @@ class SatellitePanel(BasePanel):
         self.image.fill(COLOR_AREA, [0, 420, self.rect.w // 2, 200])
         f = font.SysFont('Verdana', 16)
         f.set_underline(True)
-        render = f.render('Composition', 1, COLOR_TEXTO, COLOR_AREA)
+        render = f.render('Composition', True, COLOR_TEXTO, COLOR_AREA)
         render_rect = render.get_rect(topleft=(0, 420))
         self.image.blit(render, render_rect)
 
