@@ -36,6 +36,7 @@ class PlanetarySystem:
                 self.gigant_mass -= planet.mass
             self.set_current(planet)
             self.planets.append(planet)
+            planet.set_orbit(self.star, 1)
 
     def set_current(self, planet):
         if planet.orbit is None:

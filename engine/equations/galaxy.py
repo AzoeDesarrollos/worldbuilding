@@ -74,7 +74,7 @@ class StarGroup:
             raise KeyError
 
     def append(self, value):
-        numkey = value.cls+'#'+str(self._lenght)
+        numkey = value.cls + '#' + str(self._lenght)
         if numkey not in self._group:
             self._group[numkey] = value  # key should be the star's name; its ID
             self._indexes.append(value)

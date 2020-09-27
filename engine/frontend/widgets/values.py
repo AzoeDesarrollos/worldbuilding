@@ -36,6 +36,10 @@ class ValueText(BaseWidget):
     def deselect(self):
         self.selected = False
 
+    def disable(self):
+        super().disable()
+        self.text_area.disable()
+
     def show(self):
         Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
@@ -104,7 +108,7 @@ class NumberArea(BaseWidget):
         self.name = name
         self.fg, self.bg = fg, bg
         self.f = font.SysFont('Verdana', 16)
-        EventHandler.register(self.input, 'Key', 'BackSpace', 'Fin')
+        # EventHandler.register(self.input, 'Key', 'BackSpace', 'Fin')
         self.image = Surface((0, self.f.get_height()))
         self.rect = self.image.get_rect(topleft=(x, y))
 
@@ -164,12 +168,15 @@ class NumberArea(BaseWidget):
     def disable(self):
         self.enabled = False
         WidgetHandler.del_widget(self)
+        EventHandler.deregister(self.input, 'key')
 
     def show(self):
         Renderer.add_widget(self, layer=50)
+        EventHandler.register(self.input, 'Key', 'BackSpace', 'Fin')
 
     def hide(self):
         Renderer.del_widget(self)
+        EventHandler.deregister(self.input, 'key')
 
     def update(self):
         self.ticks += 1

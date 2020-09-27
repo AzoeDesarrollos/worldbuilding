@@ -35,7 +35,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.unit = unit
 
         self._mass = None if not mass else mass
-        self._radius = None if not radius else mass
+        self._radius = None if not radius else radius
         self._gravity = None if not gravity else gravity
 
         if not self._gravity:
@@ -53,14 +53,17 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.greenhouse = q(data['greenhouse']) if 'albedo' in data else q(1)
 
     def set_qs(self, unit):
-        self.mass = q(self._mass, unit + '_masses')
-        self.radius = q(self._radius, unit + '_radius')
+        m = unit + '_masses'
+        r = unit + '_radius'
+
+        self.mass = q(self._mass, m)
+        self.radius = q(self._radius, r)
         self.gravity = q(self._gravity, unit + '_gravity')
         self.density = self.calculate_density(self.mass.to('grams'), self.radius.to('centimeters'))
         self.volume = self.calculate_volume(self.radius.to('kilometers'))
         self.surface = self.calculate_surface_area(self.radius.to('kilometers'))
         self.circumference = self.calculate_circumference(self.radius.to('kilometers'))
-        self.escape_velocity = q(sqrt(self.mass.to('kg').m / self.radius.to('km').m), unit + '_escape_velocity')
+        self.escape_velocity = q(sqrt(self.mass.m / self.radius.m), unit + '_escape_velocity')
 
     def set_habitability(self):
         mass = self.mass

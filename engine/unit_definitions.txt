@@ -7,9 +7,10 @@ earth_escape_velocity = 11.186 km/s = earth_escape
 earth_orbital_period = year = earth_year
 earth_day = day
 earth_orbital_velocity = 29.78 km/s = earth_orbital_speed
+earth_temperature = 288 kelvin
 
 # Jupiter Units
-jupiter_mass = 11.209 earth_masses = jupiter_masses
+jupiter_mass = 317.8 earth_masses = jupiter_masses
 jupiter_radius = 71492 km = jupiter_radii
 jupiter_gravity = 24,79 m/s ** 2
 jupiter_density = 1326 kg/m ** 3

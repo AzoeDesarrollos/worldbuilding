@@ -3,6 +3,8 @@ from pygame.sprite import Sprite
 
 class BaseWidget(Sprite):
     active = False
+    enabled = False
+    selected = False
 
     def __init__(self, parent=None):
         super().__init__()

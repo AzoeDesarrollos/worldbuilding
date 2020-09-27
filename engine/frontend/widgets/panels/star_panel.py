@@ -33,3 +33,8 @@ class StarType(ObjectType):
 
         sprite = StarSprite(self.current, 460, 100)
         self.parent.image.blit(sprite.image, sprite.rect)
+
+    def hide(self):
+        super().hide()
+        for value in self.properties.widgets():
+            value.disable()

@@ -21,7 +21,7 @@ class PlanetPanel(BasePanel):
         self.unit = Unit(self, 0, 416)
         self.current.properties.add(self.unit)
 
-        self.button = TextButton(self, 490, 416)
+        self.button = TextButton(self, 'Add Planet', 490, 416)
         self.current.properties.add(self.button)
 
         self.planet_buttons = LayeredUpdates()
@@ -192,13 +192,13 @@ class Unit(Meta, BaseWidget):
 
 
 class TextButton(Meta, BaseWidget):
-    def __init__(self, parent, x, y):
+    def __init__(self, parent, text, x, y):
         super().__init__(parent)
         self.f1 = font.SysFont('Verdana', 16)
         self.f2 = font.SysFont('Verdana', 16, bold=True)
-        self.img_dis = self.f1.render('Add Planet', True, (200, 200, 200), COLOR_BOX)
-        self.img_uns = self.f1.render('Add Planet', True, COLOR_TEXTO, COLOR_BOX)
-        self.img_sel = self.f2.render('Add Planet', True, COLOR_TEXTO, COLOR_BOX)
+        self.img_dis = self.f1.render(text, True, (200, 200, 200), COLOR_BOX)
+        self.img_uns = self.f1.render(text, True, COLOR_TEXTO, COLOR_BOX)
+        self.img_sel = self.f2.render(text, True, COLOR_TEXTO, COLOR_BOX)
 
         self.image = self.img_dis
         self.rect = self.image.get_rect(bottomleft=(x, y))

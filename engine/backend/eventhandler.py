@@ -30,7 +30,7 @@ class EventHandler:
         :param listener:la funcion que desea borrarse
         :param events:lista de string con los eventos que desean borrarse
         :type listener:(AzoeEvent)->None
-        :type events:tuple
+
         :return:None
         """
         for event in events:
