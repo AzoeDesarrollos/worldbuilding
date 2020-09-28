@@ -16,15 +16,19 @@ class PlanetarySystem:
     stable_orbits = None
     planets = None
     star = None
+    planet_counter = 0
 
-    def __init__(self, star):
-        self.star = star
+    def __init__(self):
         self.raw_orbits = []
         self.stable_orbits = []
         self.planets = []
 
         self.current = None
+        self.gigant_mass = 0
+        self.terra_mass = 0
 
+    def set_star(self, star):
+        self.star = star
         body_mass = q(star.mass.m * 1.4672, 'jupiter_mass')
         self.gigant_mass = q(body_mass.m * 0.998, 'jupiter_mass')
         self.terra_mass = q(body_mass.m * 6.356, 'earth_mass')
@@ -211,3 +215,10 @@ class PlanetarySystem:
 
     def __repr__(self):
         return 'Planetary System of ' + self.star.name
+
+
+system = PlanetarySystem()
+
+__all__ = [
+    'system'
+]

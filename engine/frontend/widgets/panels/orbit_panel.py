@@ -1,6 +1,7 @@
 from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO, COLOR_TEXTO, COLOR_BOX, COLOR_AREA
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.frontend.globales.group import WidgetGroup
+from engine.equations.planetary_system import system
 from pygame import Surface, font
 from ..values import ValueText
 from .planet_panel import Meta
@@ -114,7 +115,7 @@ class OrbitPanel(BaseWidget):
             btn.unlock()
 
     def show(self):
-        if not len(self.orbits):
+        if system is not None:
             self.populate()
         if self.current is not None:
             self.current.show()

@@ -30,6 +30,8 @@ class Planet(BodyInHydrostaticEquilibrium):
         if name:
             self.name = name
             self.has_name = True
+        else:
+            self.name = ''
 
         unit = data.get('unit', "earth")
         self.unit = unit
@@ -37,6 +39,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self._mass = None if not mass else mass
         self._radius = None if not radius else radius
         self._gravity = None if not gravity else gravity
+        self._temperature = 0
 
         if not self._gravity:
             self._gravity = mass / pow(radius, 2)
@@ -76,11 +79,13 @@ class Planet(BodyInHydrostaticEquilibrium):
         return habitable
 
     def set_temperature(self, star_mass, semi_major_axis):
-        return planet_temperature(star_mass, semi_major_axis, self.albedo, self.greenhouse)
+        t = planet_temperature(star_mass, semi_major_axis, self.albedo, self.greenhouse)
+        self._temperature = round(t.to('earth_temperature'))
+        return t
 
     def set_orbit(self, star, orbit):
-        self.temperature = self.set_temperature(star.mass.m, orbit.a.m)
-        print(self.temperature)
+        self.temperature = self.set_temperature(star.mass.m, orbit)
+        print(self.temperature, self._temperature)
         self.orbit = orbit
 
     @staticmethod

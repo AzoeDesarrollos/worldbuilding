@@ -2,6 +2,7 @@ from engine.frontend.globales import Renderer, COLOR_BOX, COLOR_TEXTO, WidgetHan
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
+from engine.equations.planetary_system import system
 from engine.equations.planet import Planet
 from pygame.sprite import LayeredUpdates
 from itertools import cycle
@@ -39,6 +40,8 @@ class PlanetPanel(BasePanel):
 
 
 class PlanetType(ObjectType):
+    counter = 0
+
     def __init__(self, parent):
         super().__init__(parent,
                          ['Mass', 'Radius', 'Gravity', 'escape_velocity'],
@@ -55,7 +58,7 @@ class PlanetType(ObjectType):
         self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right-10, y=self.parent.rect.y + 50)
 
     def clear_values(self):
-        self.parent.parent.system.add_planet(self.current)
+        system.add_planet(self.current)
         for button in self.properties.get_sprites_from_layer(1):
             button.text_area.clear()
         self.parent.button.disable()
@@ -86,10 +89,10 @@ class PlanetType(ObjectType):
             attrs['unit'] = unit if ('earth' in unit or 'jupiter' in unit) else 'earth'
             self.current = Planet(attrs)
             self.toggle_habitable()
-            if unit in ('earth', 'dwarf') and self.current.mass <= self.parent.parent.system.terra_mass:
+            if unit in ('earth', 'dwarf') and self.current.mass <= system.terra_mass:
                 self.parent.button.enable()
                 self.parent.unit.mass_color = COLOR_TEXTO
-            elif unit == 'jupiter' and self.current.mass <= self.parent.parent.system.gigant_mass:
+            elif unit == 'jupiter' and self.current.mass <= system.gigant_mass:
                 self.parent.button.enable()
                 self.parent.unit.mass_color = COLOR_TEXTO
             else:
@@ -170,9 +173,9 @@ class Unit(Meta, BaseWidget):
 
     def show_mass(self):
         if self.name in ('Earth', 'Dwarf'):
-            mass = self.parent.parent.system.terra_mass
+            mass = system.terra_mass
         else:
-            mass = self.parent.parent.system.gigant_mass
+            mass = system.gigant_mass
         attr = '{:,g}'.format((round(mass, 3)))
         render = self.f1.render(str(attr), True, self.mass_color, COLOR_BOX)
         render_rect = render.get_rect(left=self.mass_rect.right + 6, bottom=self.mass_rect.bottom)
@@ -236,6 +239,6 @@ class PlanetButton(Meta, BaseWidget):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.current = self.planet_data
-            self.parent.parent.parent.system.set_current(self.planet_data)
+            system.set_current(self.planet_data)
             self.parent.has_values = True
             self.parent.fill()

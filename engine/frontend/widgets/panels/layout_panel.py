@@ -1,16 +1,15 @@
 from engine.frontend.globales import ALTO, ANCHO, WidgetGroup, COLOR_TEXTO, COLOR_BOX
-from engine.equations.planetary_system import PlanetarySystem
 from engine.frontend.globales import Renderer, WidgetHandler
 from pygame import Surface, draw, transform, SRCALPHA, font
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.backend.util import guardar_json, abrir_json
+from engine.equations.planetary_system import system
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets import panels
 from .planet_panel import Meta
 
 
 class LayoutPanel(BaseWidget):
-    system = None
     curr_idx = 0
 
     def __init__(self):
@@ -62,7 +61,7 @@ class LayoutPanel(BaseWidget):
         for arrow in self.properties.get_widgets_from_layer(3):
             arrow.enable()
         self.properties.get_widgets_from_layer(4)[0].enable()
-        self.system = PlanetarySystem(star)
+        system.set_star(star)
 
 
 class Arrow(Meta, BaseWidget):
@@ -114,7 +113,7 @@ class SaveButton(BaseButton):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            data = self.parent.system.return_data()
+            data = system.return_data()
             guardar_json('D:/Python/worldbuilding/data/savedata.json', data)
 
 

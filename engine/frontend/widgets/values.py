@@ -1,4 +1,5 @@
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX
+from engine.equations.planetary_system import system
 from engine.backend.eventhandler import EventHandler
 from engine.frontend import Renderer, WidgetHandler
 from engine.frontend.graph.graph import graph_loop
@@ -55,7 +56,7 @@ class ValueText(BaseWidget):
             p = self.parent
             if p.parent.name == 'Planet' and p.parent.unit.name == 'Earth' and not p.has_values:
                 self.active = True
-                lim = self.parent.parent.parent.system.terra_mass
+                lim = system.terra_mass
                 data = graph_loop(mass_upper_limit=lim.m)
                 for elemento in self.parent.properties.get_sprites_from_layer(1):
                     if elemento.text.lower() in data:
