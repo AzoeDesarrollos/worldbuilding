@@ -15,6 +15,7 @@ class PlanetarySystem:
     raw_orbits = None
     stable_orbits = None
     planets = None
+    star = None
 
     def __init__(self, star):
         self.star = star
@@ -27,6 +28,13 @@ class PlanetarySystem:
         body_mass = q(star.mass.m * 1.4672, 'jupiter_mass')
         self.gigant_mass = q(body_mass.m * 0.998, 'jupiter_mass')
         self.terra_mass = q(body_mass.m * 6.356, 'earth_mass')
+
+    def return_data(self):
+        data = {'star': None, 'planets': None, 'orbits': None, 'satellites': None}
+        if self.star is not None:
+            data['star'] = self.star.mass.m
+
+        return data
 
     def add_planet(self, planet):
         if planet not in self.planets:

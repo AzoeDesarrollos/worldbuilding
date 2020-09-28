@@ -24,6 +24,7 @@ class StarSprite(BaseWidget):
         self.draw_rays()
         Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
+        star.sprite = self
 
     def create(self):
         image = Surface((2 * self.radius, 2 * self.radius), SRCALPHA)

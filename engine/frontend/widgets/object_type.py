@@ -78,6 +78,10 @@ class ObjectType(BaseWidget):
             elemento.text_area.update()
             elemento.text_area.show()
 
+    def erase(self):
+        for elemento in self.relatives.widgets() + self.absolutes.widgets():
+            elemento.text_area.clear()
+
     @staticmethod
     def add_decimal(text):
         if 'e' in text:

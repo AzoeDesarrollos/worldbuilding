@@ -8,10 +8,6 @@ from .objects import Linea, Punto
 import sys
 
 
-def average(a, b):
-    return (a + b) / 2
-
-
 py_init()
 fuente1 = font.SysFont('verdana', 15)
 fuente2 = font.SysFont('verdana', 14)
@@ -49,18 +45,22 @@ composiciones = abrir_json(path.join(ruta, 'compositions.json'))
 mascara = mask.from_threshold(image.load(path.join(ruta, 'mask.png')), (255, 0, 255), (250, 1, 250))
 
 
-def pos_to_keys(delta, keys, puntos, comparison):
-    if delta in puntos:
-        idx = puntos.index(delta)
-        return keys[idx]
+def average(a, b):
+    return (a + b) / 2
+
+
+def _convert(delta, grupo_a, grupo_b, comparison):
+    if delta in grupo_b:
+        idx = grupo_b.index(delta)
+        return grupo_a[idx]
     else:
         diffs = None
         up = 0
         down = 1
         if comparison == 'gt':
-            diffs = [delta > j for j in puntos]
+            diffs = [delta > j for j in grupo_b]
         elif comparison == 'lt':
-            diffs = [delta < j for j in puntos]
+            diffs = [delta < j for j in grupo_b]
 
         for i, b in enumerate(diffs):
             if b:
@@ -69,34 +69,18 @@ def pos_to_keys(delta, keys, puntos, comparison):
                 up = i
                 break
 
-        d = (puntos[down] - delta) / (puntos[down] - puntos[up])
-        e = keys[up] - keys[down]
-        return round(e * d + keys[down], 3)
+        d = (grupo_b[down] - delta) / (grupo_b[down] - grupo_b[up])
+        e = grupo_a[up] - grupo_a[down]
+
+        return e * d + grupo_a[down]
+
+
+def pos_to_keys(delta, keys, puntos, comparison):
+    return round(_convert(delta, keys, puntos, comparison), 3)
 
 
 def keys_to_pos(delta, keys, puntos, comparison):
-    if delta in keys:
-        idx = keys.index(delta)
-        return puntos[idx]
-    else:
-
-        diffs = None
-        up = 0
-        down = 1
-        if comparison == 'gt':
-            diffs = [delta > j for j in keys]
-        elif comparison == 'lt':
-            diffs = [delta < j for j in keys]
-        for i, b in enumerate(diffs):
-            if b:
-                down = i
-            else:
-                up = i
-                break
-        d = (keys[down] - delta) / (keys[down] - keys[up])
-        e = puntos[up] - puntos[down]
-
-        return round(e * d + puntos[down])
+    return round(_convert(delta, puntos, keys, comparison))
 
 
 def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.0, radius_upper_limit=0.0):
