@@ -135,4 +135,4 @@ class NewButton(BaseButton):
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
-            EventHandler.trigger('ClearData', 'NewButton', {'value': True})
+            EventHandler.trigger('ClearData', 'NewButton', {'panel': self.parent.current})

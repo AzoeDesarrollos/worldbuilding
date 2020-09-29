@@ -30,7 +30,7 @@ class StarType(ObjectType):
         self.set_star(Star({'mass': mass}))
 
     def clear(self, event):
-        if event.data['value'] is True:
+        if event.data['panel'] is self:
             self.erase()
         self.current.sprite.kill()
 

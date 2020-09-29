@@ -119,11 +119,15 @@ class Meta:
     selected = False
     image = None
 
+    is_visible = False
+
     def show(self):
+        self.is_visible = True
         Renderer.add_widget(self, layer=5000)
         WidgetHandler.add_widget(self)
 
     def hide(self):
+        self.is_visible = False
         Renderer.del_widget(self)
         WidgetHandler.del_widget(self)
 
