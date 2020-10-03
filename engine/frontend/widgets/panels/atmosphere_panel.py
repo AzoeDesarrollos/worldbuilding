@@ -30,6 +30,7 @@ class AtmospherePanel(BaseWidget):
         self.write(self.name + ' Panel', f1, centerx=self.rect.centerx, y=0)
         self.write('Composition', self.f3, centerx=65, y=35)
         EventHandler.register(self.load_atmosphere, 'LoadData')
+        EventHandler.register(self.clear, 'ClearData')
 
         for i, element in enumerate(molecular_weight):
             name = molecular_weight[element]['name']
@@ -47,6 +48,12 @@ class AtmospherePanel(BaseWidget):
         render = fuente.render(text, True, COLOR_TEXTO, COLOR_BOX)
         render_rect = render.get_rect(**kwargs)
         self.image.blit(render, render_rect)
+
+    def clear(self, event):
+        if event.data['panel'] is self:
+            for element in self.elements.widgets():
+                element.percent.value = ''
+        self.image.fill(COLOR_BOX, [3, ALTO - 87, 190, 21])
 
     def set_atmosphere(self, pressure):
         planet = system.current

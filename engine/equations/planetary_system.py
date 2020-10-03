@@ -187,33 +187,6 @@ class PlanetarySystem:
         return j
 
     def add_orbits(self):
-        # # our largest gas giant will form close to, but not ON the frost line
-        # # 1 to 1.2 away from the frost line is perfect
-        # initial_orbit = RawOrbit(roll(self.star.frost_line.m + 1.0, self.star.frost_line.m + 1.2), 'au')
-        # self.raw_orbits.append(initial_orbit)
-        #
-        # # starting at our gas giant we simply multiply it's distance from the star,
-        # next_orbit = initial_orbit
-        # # by a number anywhere from 1.4 and 2
-        # factor = roll(1.4, 2.0)
-        #
-        # # repeat this process until you reach the system outer boundry, then stop.
-        # while next_orbit * factor < self.star.outer_boundry.m:
-        #     next_orbit = RawOrbit(next_orbit * factor, 'au')
-        #     self.raw_orbits.append(next_orbit)
-        #     # and hey presto, we have the next stable orbit away from our star
-        #     factor = roll(1.4, 2.0)
-        #
-        # # next step is to start again at our gas giant
-        # next_orbit = initial_orbit
-        # factor = roll(1.4, 2.0)
-        # # repeat this process until you reach the system inner boundry, then stop.
-        # while next_orbit / factor > self.star.inner_boundry.m:
-        #     # but this time simply work inward, and istead of multiplying, simply divide
-        #     next_orbit = RawOrbit(next_orbit / factor, 'au')
-        #     self.raw_orbits.append(next_orbit)
-        #     factor = roll(1.4, 2.0)
-
         f = 1
         while f:
             f = self.check_orbits()

@@ -63,6 +63,7 @@ class PlanetType(ObjectType):
         self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right-10, y=self.parent.rect.y + 50)
         EventHandler.register(self.save_planet, 'Save')
         EventHandler.register(self.load_planet, 'LoadData')
+        EventHandler.register(self.clear, 'ClearData')
 
     def save_planet(self, event):
         p = self.current
@@ -77,9 +78,16 @@ class PlanetType(ObjectType):
 
     def load_planet(self, event):
         self.current = Planet(event.data['Planets'][0])
-        self.clear_values()
+        self.create_button()
 
-    def clear_values(self):
+    def clear(self, event):
+        if event.data['panel'] is self.parent:
+            for button in self.properties.get_sprites_from_layer(1):
+                button.text_area.clear()
+        self.has_values = False
+        self.parent.image.fill(COLOR_BOX, self.hab_rect)
+
+    def create_button(self):
         system.add_planet(self.current)
         for button in self.properties.get_sprites_from_layer(1):
             button.text_area.clear()
@@ -234,7 +242,7 @@ class TextButton(Meta, BaseWidget):
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
-            self.parent.current.clear_values()
+            self.parent.current.create_button()
 
 
 class PlanetButton(Meta, BaseWidget):

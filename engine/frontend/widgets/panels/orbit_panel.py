@@ -128,6 +128,9 @@ class OrbitPanel(BaseWidget):
         for position in self._loaded_orbits:
             self.add_orbit_marker(q(position, 'au'))
 
+        # borrar las órbitas cargadas para evitar que se dupliquen.
+        self._loaded_orbits.clear()
+
     def show(self):
         if system is not None and not self.markers:
             self.populate()
