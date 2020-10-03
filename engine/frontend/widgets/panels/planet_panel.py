@@ -88,13 +88,14 @@ class PlanetType(ObjectType):
         self.parent.image.fill(COLOR_BOX, self.hab_rect)
 
     def create_button(self):
-        system.add_planet(self.current)
-        for button in self.properties.get_sprites_from_layer(1):
-            button.text_area.clear()
-        self.parent.button.disable()
-        self.parent.add_button(self.current)
-        self.has_values = False
-        self.parent.image.fill(COLOR_BOX, self.hab_rect)
+        create = system.add_planet(self.current)
+        if create:
+            for button in self.properties.get_sprites_from_layer(1):
+                button.text_area.clear()
+            self.parent.button.disable()
+            self.parent.add_button(self.current)
+            self.has_values = False
+            self.parent.image.fill(COLOR_BOX, self.hab_rect)
 
     def toggle_habitable(self):
         if self.current.habitable:
@@ -276,6 +277,7 @@ class PlanetButton(Meta, BaseWidget):
             system.set_current(self.planet_data)
             self.parent.has_values = True
             self.parent.fill()
+            self.parent.toggle_habitable()
 
     def update(self):
         super().update()

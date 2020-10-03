@@ -106,13 +106,17 @@ class Planet(BodyInHydrostaticEquilibrium):
     def set_atmosphere(self, data):
         self.atmosphere.update(data)
 
+    def __eq__(self, other):
+        a = (self.mass.m, self.radius.m, self.clase, self.orbit, self.unit, self.name)
+        b = (other.mass.m, other.radius.m, other.clase, self.orbit, other.unit, other.name)
+        return a == b
+
     def __repr__(self):
         return self.clase+' '+str(self.mass.m)
 
 
 def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
     """
-
     :rtype: q
     """
     # adapted from http://www.astro.indiana.edu/ala/PlanetTemp/index.html

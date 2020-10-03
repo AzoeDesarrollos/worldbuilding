@@ -49,7 +49,9 @@ class PlanetarySystem:
             self.planets.append(planet)
             if not planet.has_name:
                 planet.name = planet.clase+' #'+str(self.planets.index(planet))
-            planet.set_orbit(self.star, 1)
+            return True
+        else:
+            return False
 
     def set_current(self, planet):
         if planet.orbit is None:
