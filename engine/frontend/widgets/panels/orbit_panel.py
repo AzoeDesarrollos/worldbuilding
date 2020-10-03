@@ -1,10 +1,12 @@
 from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO, COLOR_TEXTO, COLOR_BOX, COLOR_AREA
+from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.frontend.globales.group import WidgetGroup
 from engine.backend.eventhandler import EventHandler
 from engine.equations.planetary_system import system
-from engine.backend import roll
+from engine.equations.orbit import RawOrbit
 from pygame import Surface, font
+from engine.backend import roll
 # from ..values import ValueText
 from .planet_panel import Meta
 from engine import q
@@ -13,6 +15,7 @@ from engine import q
 class OrbitPanel(BaseWidget):
     current = None
     curr_idx = 0
+    _loaded_orbits = None
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -26,8 +29,8 @@ class OrbitPanel(BaseWidget):
         self.f.set_underline(True)
         self.write(self.name + ' Panel', self.f, centerx=self.rect.centerx, y=0)
 
-        self.orbits = WidgetGroup()
-        self.orbit_buttons = WidgetGroup()
+        self.orbits = []
+        self._loaded_orbits = []
         self.properties = WidgetGroup()
         self.markers = []
 
@@ -37,6 +40,8 @@ class OrbitPanel(BaseWidget):
         self.antes.rect.right = centerx - 2
         self.despues.rect.left = centerx
         EventHandler.register(self.clear, 'ClearData')
+        EventHandler.register(self.save_orbits, 'Save')
+        EventHandler.register(self.load_orbits, 'LoadData')
 
     def write(self, text, fuente, **kwargs):
         render = fuente.render(text, True, COLOR_TEXTO, COLOR_BOX)
@@ -60,8 +65,9 @@ class OrbitPanel(BaseWidget):
         inner = system.star.inner_boundry
         outer = system.star.outer_boundry
         if inner < position < outer:
-            new = OrbitMarker(self, 'Orbit', round(position, 3))
+            new = OrbitMarker(self, 'Orbit', round(position, 3), is_orbit=True)
             self.markers.append(new)
+            self.orbits.append(new.value)
             self.sort_markers()
             return True
         return False
@@ -95,6 +101,15 @@ class OrbitPanel(BaseWidget):
         self.antes.lock()
         self.despues.lock()
 
+    def anchor_maker(self, marker):
+        self.get_idx(marker)
+
+        self.antes.link(marker.value)
+        self.despues.link(marker.value)
+
+        self.antes.show()
+        self.despues.show()
+
     def clear(self, event):
         if event.data['panel'] is self:
             for marker in self.markers:
@@ -102,11 +117,25 @@ class OrbitPanel(BaseWidget):
             self.markers.clear()
             self.populate()
 
+    def save_orbits(self, event):
+        EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Star': {'Orbits': [orbit.m for orbit in self.orbits]}})
+
+    def load_orbits(self, event):
+        for position in event.data['Star']['Orbits']:
+            self._loaded_orbits.append(position)
+
+    def set_loaded_orbits(self):
+        for position in self._loaded_orbits:
+            self.add_orbit_marker(q(position, 'au'))
+
     def show(self):
         if system is not None and not self.markers:
             self.populate()
         for marker in self.markers:
             marker.show()
+        if len(self._loaded_orbits):
+            self.set_loaded_orbits()
+
         Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
 
@@ -172,30 +201,39 @@ class OrbitPanel(BaseWidget):
 #             p.hide()
 
 
-class OrbitMarker(Meta, BaseWidget):
+class OrbitMarker(Meta, BaseWidget, IncrementalValue):
     enabled = True
     name = ''
 
-    ticks = 0
-    potencia = 0
-    clicks = 0
-    increment = 0
-
     locked = False
+    orbit = None
 
-    def __init__(self, parent, name, value):
+    def __init__(self, parent, name, value, is_orbit=False):
         super().__init__(parent)
         self.f1 = font.SysFont('Verdana', 15)
         self.f2 = font.SysFont('Verdana', 15, bold=True)
-        # noinspection PyStringFormat
         self.text = '{:~}'.format(value)
         self.name = name
-        self.value = value
+        self._value = value
+        if is_orbit:
+            self.orbit = RawOrbit(value)
         self.update()
         self.image = self.img_uns
         self.rect = self.image.get_rect(x=3)
         Renderer.add_widget(self, layer=50)
         WidgetHandler.add_widget(self)
+
+    @property
+    def value(self):
+        if self.orbit is not None:
+            return round(self.orbit.a, 3)
+        else:
+            return self._value
+
+    @value.setter
+    def value(self, new_value):
+        if self.orbit is not None:
+            self.orbit.a = new_value
 
     def disable(self):
         self.enabled = not self.enabled
@@ -204,34 +242,24 @@ class OrbitMarker(Meta, BaseWidget):
         if event.button == 1:
             if self.locked:
                 self.disable()
-            self.parent.get_idx(self)
-
-            self.parent.antes.link(self.value)
-            self.parent.despues.link(self.value)
-
-            self.parent.antes.show()
-            self.parent.despues.show()
+            self.parent.anchor_maker(self)
 
         elif not self. locked:
-            self.ticks = 0
-            if self.clicks == 10:
-                self.potencia += 1
-                self.clicks = 2
-            else:
-                self.clicks += 1
-            self.increment = round((0.001 * (pow(10, self.potencia))), 4)
+            self.increment = self.update_increment()
 
             if event.button == 4:
-                self.value -= q(self.increment, self.value.u)
-                self.parent.sort_markers()
+                self.increment *= -1
 
             elif event.button == 5:
-                self.value += q(self.increment, self.value.u)
-                self.parent.sort_markers()
+                self.increment *= +1
+
+            self.value += q(self.increment, self.value.u)
+            self.increment = 0
+            self.parent.sort_markers()
 
     def update(self):
         super().update()
-        # noinspection PyStringFormat
+        self.reset_power()
         self.text = '{:~}'.format(self.value)
         self.img_sel = self.f2.render(self.name + ' @ ' + self.text, True, COLOR_TEXTO, COLOR_BOX)
         self.img_uns = self.f1.render(self.name + ' @ ' + self.text, True, COLOR_TEXTO, COLOR_BOX)

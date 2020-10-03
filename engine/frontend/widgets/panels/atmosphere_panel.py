@@ -11,6 +11,8 @@ from math import sqrt
 class AtmospherePanel(BaseWidget):
     current = None
     curr_idx = 0
+    pre_loaded = False
+    pressure = None
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -27,6 +29,7 @@ class AtmospherePanel(BaseWidget):
 
         self.write(self.name + ' Panel', f1, centerx=self.rect.centerx, y=0)
         self.write('Composition', self.f3, centerx=65, y=35)
+        EventHandler.register(self.load_atmosphere, 'LoadData')
 
         for i, element in enumerate(molecular_weight):
             name = molecular_weight[element]['name']
@@ -45,15 +48,39 @@ class AtmospherePanel(BaseWidget):
         render_rect = render.get_rect(**kwargs)
         self.image.blit(render, render_rect)
 
+    def set_atmosphere(self, pressure):
+        planet = system.current
+        elements = [i for i in self.elements.widgets() if i.percent.value != '']
+        data = dict(zip([e.symbol for e in elements], [float(e.percent.value) for e in elements]))
+        data.update({'pressure_at_sea_level': {'value': pressure.m, 'unit': str(pressure.u)}})
+        planet.set_atmosphere(data)
+
+    def load_atmosphere(self, event):
+        atmosphere = event.data['Planets'][0]['atmosphere']
+        elements = [e.symbol for e in self.elements.widgets()]
+        for key in atmosphere:
+            if key != 'pressure_at_sea_level':
+                idx = elements.index(key)
+                element = self.elements.widgets()[idx]
+                element.percent.value = str(atmosphere[key])
+            else:
+                value = atmosphere[key]['value']
+                unit = atmosphere[key]['unit']
+                self.pressure = q(value, unit)
+        self.pre_loaded = True
+
     def show(self):
         Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
         for element in self.elements.widgets():
             element.show()
         self.atmograph.show()
+        text = 'Atmosphere of planet'
         planet = system.current
-        idx = system.planets.index(planet)
-        text = 'Atmosphere of planet #' + str(idx) + ' (' + planet.clase + ')'
+        if planet is not None:
+            idx = system.planets.index(planet)
+            text += ' #' + str(idx) + ' (' + planet.clase + ')'
+
         self.write(text, self.f2, centerx=self.rect.centerx, y=21)
 
     def hide(self):
@@ -86,8 +113,10 @@ class AtmospherePanel(BaseWidget):
 
         self.write('Total: ' + str(total) + '%', self.f3, x=3, y=ALTO - 87)
         a = self.atmograph
-        # noinspection PyStringFormat
-        p = '{:~}'.format(round(a.pressure.to('atm'), 3))
+        if not self.pre_loaded:
+            p = '{:~}'.format(round(a.pressure.to('atm'), 3))
+        else:
+            p = '{:~}'.format(round(self.pressure.to('atm'), 3))
         self.write('Pressure at Sea Level: ' + p, self.f3, x=a.rect.x, centery=a.rect.bottom + 10)
 
 
@@ -251,8 +280,9 @@ class Atmograph(BaseWidget):
         self.rect = self.image.get_rect(topleft=(x, y))
 
     def on_mousebuttondown(self, event):
-        o2 = self.parent.elements.widgets()[12]
-        self.pressure = atmograph(o2.percent.get_value(), self.rect)
+        nitrogen = self.parent.elements.widgets()[9]
+        self.pressure = atmograph(nitrogen.percent.get_value(), self.rect)
+        self.parent.set_atmosphere(self.pressure)
 
     def hide(self):
         Renderer.del_widget(self)

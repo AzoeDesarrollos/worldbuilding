@@ -19,6 +19,8 @@ class Planet(BodyInHydrostaticEquilibrium):
     greenhouse = 1
     temperature = 0
 
+    atmosphere = None
+
     def __init__(self, data):
         name = data.get('name', None)
         mass = data.get('mass', False)
@@ -50,6 +52,7 @@ class Planet(BodyInHydrostaticEquilibrium):
 
         self.set_qs(unit)
         self.composition = {}
+        self.atmosphere = {}
         self.habitable = self.set_habitability()
         self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)
         self.albedo = q(data['albedo']) if 'albedo' in data else q(29)
@@ -99,6 +102,9 @@ class Planet(BodyInHydrostaticEquilibrium):
             return 'Gas Giant'
         elif mass < q(2, jm) and radius > q(1, jr):
             return 'Puffy Giant'
+
+    def set_atmosphere(self, data):
+        self.atmosphere.update(data)
 
     def __repr__(self):
         return self.clase+' '+str(self.mass.m)

@@ -1,10 +1,10 @@
-from engine.frontend.globales import Renderer, COLOR_BOX, COLOR_TEXTO, WidgetHandler, COLOR_AREA
+from engine.frontend.globales import Renderer, COLOR_BOX, COLOR_TEXTO, WidgetHandler, COLOR_AREA, WidgetGroup
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import system
+from engine.backend.eventhandler import EventHandler
 from engine.equations.planet import Planet
-from pygame.sprite import LayeredUpdates
 from itertools import cycle
 from pygame import font
 
@@ -13,6 +13,7 @@ class PlanetPanel(BasePanel):
     curr_x = 0
     curr_y = 440
     unit = None
+    is_visible = False
 
     def __init__(self, parent):
         super().__init__('Planet', parent)
@@ -25,7 +26,11 @@ class PlanetPanel(BasePanel):
         self.button = TextButton(self, 'Add Planet', 490, 416)
         self.current.properties.add(self.button)
 
-        self.planet_buttons = LayeredUpdates()
+        self.planet_buttons = WidgetGroup()
+
+    def show(self):
+        super().show()
+        self.is_visible = True
 
     def add_button(self, planet):
         button = PlanetButton(self.current, planet, self.curr_x, self.curr_y)
@@ -56,6 +61,23 @@ class PlanetType(ObjectType):
         f = font.SysFont('Verdana', 16, bold=True)
         self.habitable = f.render('Habitable', True, (0, 255, 0), COLOR_BOX)
         self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right-10, y=self.parent.rect.y + 50)
+        EventHandler.register(self.save_planet, 'Save')
+        EventHandler.register(self.load_planet, 'LoadData')
+
+    def save_planet(self, event):
+        p = self.current
+        data = {
+            'name': p.name,
+            'mass': p.mass.m,
+            'radius': p.radius.m,
+            'unit': p.unit,
+            'atmosphere': p.atmosphere,
+            'clase': p.clase}
+        EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": [data]})
+
+    def load_planet(self, event):
+        self.current = Planet(event.data['Planets'][0])
+        self.clear_values()
 
     def clear_values(self):
         system.add_planet(self.current)
@@ -246,3 +268,10 @@ class PlanetButton(Meta, BaseWidget):
             system.set_current(self.planet_data)
             self.parent.has_values = True
             self.parent.fill()
+
+    def update(self):
+        super().update()
+        if self.parent.parent.is_visible:
+            self.show()
+        else:
+            self.hide()

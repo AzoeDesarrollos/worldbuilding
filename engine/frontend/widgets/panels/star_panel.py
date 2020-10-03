@@ -18,6 +18,7 @@ class StarType(ObjectType):
                          ['Volume', 'Density', 'Circumference', 'Surface', 'Classification'])
         EventHandler.register(self.load_star, 'LoadData')
         EventHandler.register(self.clear, 'ClearData')
+        EventHandler.register(self.save_star, 'Save')
 
     def set_star(self, star):
         self.parent.parent.set_system(star)
@@ -26,11 +27,16 @@ class StarType(ObjectType):
         self.fill()
 
     def load_star(self, event):
-        mass = event.data['star']
-        self.set_star(Star({'mass': mass}))
+        if not isinstance(self.current, Star):
+            mass = event.data['Star']['mass']
+            self.set_star(Star({'mass': mass}))
+
+    def save_star(self, event):
+        EventHandler.trigger(event.tipo + 'Data', 'Star',
+                             {'Star': {'name': self.current.name, 'mass': self.current.mass.m}})
 
     def clear(self, event):
-        if event.data['panel'] is self:
+        if event.data['panel'] is self.parent:
             self.erase()
         self.current.sprite.kill()
 

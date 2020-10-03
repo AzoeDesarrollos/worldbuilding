@@ -3,10 +3,10 @@ from engine.equations.planetary_system import system
 from engine.backend.eventhandler import EventHandler
 from engine.frontend import Renderer, WidgetHandler
 from engine.frontend.graph.graph import graph_loop
-from engine.equations import Star
+from .incremental_value import IncrementalValue
 from .basewidget import BaseWidget
+from engine.equations import Star
 from pygame import font, Surface
-from math import pow
 from engine import q
 
 
@@ -94,14 +94,9 @@ class ValueText(BaseWidget):
         return self.text
 
 
-class NumberArea(BaseWidget):
+class NumberArea(BaseWidget, IncrementalValue):
     value = None
     inner_value = None
-    enabled = False
-    ticks = 0
-    clicks = 0
-    increment = 0
-    potencia = 0
 
     def __init__(self, parent, name, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
         super().__init__(parent)
@@ -134,14 +129,7 @@ class NumberArea(BaseWidget):
                     self.parent.fill()
 
     def on_mousebuttondown(self, event):
-        self.ticks = 0
-        if self.clicks == 10:
-            self.potencia += 1
-            self.clicks = 2
-        else:
-            self.clicks += 1
-        self.increment = round((0.001 * (pow(10, self.potencia))), 4)
-
+        self.increment = self.update_increment()
         if self.inner_value is not None and not type(self.inner_value) is str:
             if event.button == 5:  # rueda abajo
                 self.inner_value += q(self.increment, self.inner_value.u)
@@ -180,11 +168,6 @@ class NumberArea(BaseWidget):
         EventHandler.deregister(self.input, 'key')
 
     def update(self):
-        self.ticks += 1
-        if self.ticks >= 60:
-            self.clicks = 0
-            self.increment = 0
-            self.potencia = 0
-
+        self.reset_power()
         self.image = self.f.render(str(self.value), True, self.fg, self.bg)
         self.rect = self.image.get_rect(topleft=self.rect.topleft)

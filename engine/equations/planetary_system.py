@@ -1,5 +1,7 @@
+from engine.backend.util import abrir_json, guardar_json
+from engine.backend.eventhandler import EventHandler
 from engine.backend.randomness import roll
-from .orbit import RawOrbit, Orbit
+from .orbit import Orbit
 from engine import q
 
 
@@ -26,19 +28,16 @@ class PlanetarySystem:
         self.current = None
         self.gigant_mass = 0
         self.terra_mass = 0
+        self.save_data = {}
+
+        EventHandler.register(self.save, "SaveDataFile")
+        EventHandler.register(self.compound_save_data, "SaveData")
 
     def set_star(self, star):
         self.star = star
         body_mass = q(star.mass.m * 1.4672, 'jupiter_mass')
         self.gigant_mass = q(body_mass.m * 0.998, 'jupiter_mass')
         self.terra_mass = q(body_mass.m * 6.356, 'earth_mass')
-
-    def return_data(self):
-        data = {'star': None, 'planets': None, 'orbits': None, 'satellites': None}
-        if self.star is not None:
-            data['star'] = self.star.mass.m
-
-        return data
 
     def add_planet(self, planet):
         if planet not in self.planets:
@@ -48,14 +47,13 @@ class PlanetarySystem:
                 self.gigant_mass -= planet.mass
             self.set_current(planet)
             self.planets.append(planet)
+            if not planet.has_name:
+                planet.name = planet.clase+' #'+str(self.planets.index(planet))
             planet.set_orbit(self.star, 1)
 
     def set_current(self, planet):
         if planet.orbit is None:
             self.current = planet
-
-    def clear(self):
-        self.current = None
 
     def remove_planet(self, planet):
         pass
@@ -155,6 +153,21 @@ class PlanetarySystem:
         orb.set_planet(planet)
         return orb
 
+    @staticmethod
+    def save(event):
+        data = abrir_json('D:/Python/worldbuilding/data/savedata.json')
+        data.update(event.data)
+        guardar_json('D:/Python/worldbuilding/data/savedata.json', data)
+
+    def compound_save_data(self, event):
+        for key in event.data:
+            if key in self.save_data:
+                self.save_data[key].update(event.data[key])
+            else:
+                self.save_data.update(event.data)
+        if not EventHandler.is_quequed('SaveDataFile'):
+            EventHandler.trigger('SaveDataFile', 'EngineData', self.save_data)
+
     def check_orbits(self):
         """Run this method only after adding all the orbits"""
         self.raw_orbits.sort(key=lambda orbit: orbit.semi_major_axis)
@@ -174,32 +187,32 @@ class PlanetarySystem:
         return j
 
     def add_orbits(self):
-        # our largest gas giant will form close to, but not ON the frost line
-        # 1 to 1.2 away from the frost line is perfect
-        initial_orbit = RawOrbit(roll(self.star.frost_line.m + 1.0, self.star.frost_line.m + 1.2), 'au')
-        self.raw_orbits.append(initial_orbit)
-
-        # starting at our gas giant we simply multiply it's distance from the star,
-        next_orbit = initial_orbit
-        # by a number anywhere from 1.4 and 2
-        factor = roll(1.4, 2.0)
-
-        # repeat this process until you reach the system outer boundry, then stop.
-        while next_orbit * factor < self.star.outer_boundry.m:
-            next_orbit = RawOrbit(next_orbit * factor, 'au')
-            self.raw_orbits.append(next_orbit)
-            # and hey presto, we have the next stable orbit away from our star
-            factor = roll(1.4, 2.0)
-
-        # next step is to start again at our gas giant
-        next_orbit = initial_orbit
-        factor = roll(1.4, 2.0)
-        # repeat this process until you reach the system inner boundry, then stop.
-        while next_orbit / factor > self.star.inner_boundry.m:
-            # but this time simply work inward, and istead of multiplying, simply divide
-            next_orbit = RawOrbit(next_orbit / factor, 'au')
-            self.raw_orbits.append(next_orbit)
-            factor = roll(1.4, 2.0)
+        # # our largest gas giant will form close to, but not ON the frost line
+        # # 1 to 1.2 away from the frost line is perfect
+        # initial_orbit = RawOrbit(roll(self.star.frost_line.m + 1.0, self.star.frost_line.m + 1.2), 'au')
+        # self.raw_orbits.append(initial_orbit)
+        #
+        # # starting at our gas giant we simply multiply it's distance from the star,
+        # next_orbit = initial_orbit
+        # # by a number anywhere from 1.4 and 2
+        # factor = roll(1.4, 2.0)
+        #
+        # # repeat this process until you reach the system outer boundry, then stop.
+        # while next_orbit * factor < self.star.outer_boundry.m:
+        #     next_orbit = RawOrbit(next_orbit * factor, 'au')
+        #     self.raw_orbits.append(next_orbit)
+        #     # and hey presto, we have the next stable orbit away from our star
+        #     factor = roll(1.4, 2.0)
+        #
+        # # next step is to start again at our gas giant
+        # next_orbit = initial_orbit
+        # factor = roll(1.4, 2.0)
+        # # repeat this process until you reach the system inner boundry, then stop.
+        # while next_orbit / factor > self.star.inner_boundry.m:
+        #     # but this time simply work inward, and istead of multiplying, simply divide
+        #     next_orbit = RawOrbit(next_orbit / factor, 'au')
+        #     self.raw_orbits.append(next_orbit)
+        #     factor = roll(1.4, 2.0)
 
         f = 1
         while f:

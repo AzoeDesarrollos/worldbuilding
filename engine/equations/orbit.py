@@ -8,9 +8,9 @@ class RawOrbit:
     semi_major_axis = None
     temperature = ''
 
-    def __init__(self, a, unit):
-        self.semi_major_axis = q(float(a), unit)
-        self._unit = unit
+    def __init__(self, a):
+        self.semi_major_axis = a
+        self._unit = a.u
         self.a = self.semi_major_axis
 
     def set_temperature(self, t):
