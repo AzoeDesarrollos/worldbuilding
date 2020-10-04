@@ -1,4 +1,5 @@
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX
+from engine.frontend.dwarfgraph import dwarfgraph_loop
 from engine.equations.planetary_system import system
 from engine.backend.eventhandler import EventHandler
 from engine.frontend import Renderer, WidgetHandler
@@ -54,10 +55,13 @@ class ValueText(BaseWidget):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             p = self.parent
-            if p.parent.name == 'Planet' and p.parent.unit.name == 'Earth' and not p.has_values:
+            if p.parent.name == 'Planet' and p.parent.unit.name != 'Jupiter' and not p.has_values:
                 self.active = True
                 lim = system.terra_mass
-                data = graph_loop(mass_upper_limit=lim.m)
+                if p.parent.unit.name == 'Earth':
+                    data = graph_loop(mass_upper_limit=lim.m)
+                else:
+                    data = dwarfgraph_loop()
                 for elemento in self.parent.properties.get_sprites_from_layer(1):
                     if elemento.text.lower() in data:
                         elemento.text_area.value = str(data[elemento.text.lower()])

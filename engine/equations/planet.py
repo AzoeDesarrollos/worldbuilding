@@ -146,7 +146,7 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
 # PuffyGiant less than 2 Jupiter masses
 
 # Radius:
-# Dwarf planet: greater than 0.03 earth radius
+# Dwarf planet: 0.03 to 0.5 earth radius
 # Super earth:  1.25 to 2 earth radius
 # Gas Giant:
 # ------- if mass <= 2 Jupiter masses: 1.10 Jupiter radius or more

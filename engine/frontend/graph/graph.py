@@ -76,7 +76,7 @@ def _convert(delta, grupo_a, grupo_b, comparison):
 
 
 def pos_to_keys(delta, keys, puntos, comparison):
-    return round(_convert(delta, keys, puntos, comparison), 3)
+    return _convert(delta, keys, puntos, comparison)
 
 
 def keys_to_pos(delta, keys, puntos, comparison):
