@@ -1,11 +1,12 @@
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_DISABLED
 from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO
 from engine.frontend.widgets.incremental_value import IncrementalValue
+from engine.equations.orbit import RawOrbit, PseudoOrbit, Orbit
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.frontend.globales.group import WidgetGroup
 from engine.backend.eventhandler import EventHandler
 from engine.equations.planetary_system import system
-from engine.equations.orbit import RawOrbit
+from .planet_panel import PlanetButton
 from pygame import Surface, font, Rect
 from engine.backend import roll
 from ..values import ValueText
@@ -19,7 +20,7 @@ class OrbitPanel(BaseWidget):
     _loaded_orbits = None
 
     curr_x = 3
-    curr_y = 421+21
+    curr_y = 421 + 21
 
     visible_markers = True
     current_orbit = None
@@ -31,14 +32,17 @@ class OrbitPanel(BaseWidget):
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
         self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
+        self.properties = WidgetGroup()
 
         self.f = font.SysFont('Verdana', 16)
         self.f.set_underline(True)
         self.write(self.name + ' Panel', self.f, centerx=self.rect.centerx, y=0)
 
+        self.planet_area = PlanetArea(self, ANCHO - 200, 32)
+        self.properties.add(self.planet_area, layer=2)
+
         self.orbits = []
         self._loaded_orbits = []
-        self.properties = WidgetGroup()
         self.buttons = WidgetGroup()
         self.markers = []
         self.orbit_descriptions = WidgetGroup()
@@ -95,8 +99,8 @@ class OrbitPanel(BaseWidget):
         orbit_type.link_marker(marker)
         button.link_marker(marker)
         self.orbit_descriptions.add(orbit_type)
-        if self.curr_x + button.rect.w + 10 < self.rect.w - button.rect.w + 10:
-            self.curr_x += button.rect.w + 10
+        if self.curr_x + button.rect.w + 15 < self.rect.w - button.rect.w + 15:
+            self.curr_x += button.rect.w + 15
         else:
             self.curr_x = 0
             self.curr_y += 32
@@ -207,6 +211,15 @@ class OrbitPanel(BaseWidget):
     def hide_orbit_types(self):
         for orbit_type in self.orbit_descriptions.widgets():
             orbit_type.hide()
+        for orbit_button in self.buttons.widgets():
+            orbit_button.unlock()
+
+    def link_planet_to_orbit(self, planet):
+        locked = [i for i in self.buttons.widgets() if i.locked]
+        if len(locked):
+            locked[0].linked_marker.orbit = PseudoOrbit(locked[0].linked_marker.orbit)
+            locked[0].linked_type.show()
+            # planet.set_orbit(system.star, orbit)
 
     def __repr__(self):
         return 'Orbit Panel'
@@ -242,11 +255,26 @@ class OrbitType(BaseWidget):
             vt = ValueText(self, prop, 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
             value = _value
             if not type(_value) is str:
-                value = str(round(_value, 3))
+                value = q(round(_value, 3))
             vt.text_area.value = value
             vt.text_area.inner_value = _value if type(_value) is not str else None
             vt.text_area.update()
             self.properties.add(vt)
+
+    def fill(self):
+        parametros = []
+        for elemento in self.properties.widgets():
+            if elemento.text not in ['motion', 'temperature']:
+                value = q(*elemento.text_area.value.split(' '))
+            else:
+                value = 'au'
+            parametros.append(value)
+
+        self.linked_marker.orbit = Orbit(*parametros)
+        # elemento.text_area.value = value
+        # elemento.text_area.update_inner_value(value)
+        # elemento.text_area.update()
+        # elemento.text_area.show()
 
     def clear(self):
         for prop in self.properties.widgets():
@@ -430,11 +458,12 @@ class OrbitButton(Meta, BaseWidget):
             self.parent.hide_orbit_types()
             self.parent.markers_button.enable()
             self.linked_type.show()
+            self.lock()
 
     def update(self):
-        super().update()
-        self.create()
         if not self.locked:
+            super().update()
+            self.create()
             self.selected = False
 
 
@@ -454,3 +483,54 @@ class ShowMarkersButton(Meta, BaseWidget):
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
             self.parent.toggle_markers()
+
+
+class PlanetArea(BaseWidget):
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent)
+        self.image = Surface((200, 350))
+        self.image.fill(COLOR_AREA)
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.planets = WidgetGroup()
+
+        self.f = font.SysFont('Verdana', 14)
+        self.f.set_underline(True)
+        self.write('Planets', self.f, midtop=(self.rect.w / 2, 0))
+
+    def write(self, text, fuente, **kwargs):
+        render = fuente.render(text, True, COLOR_TEXTO, COLOR_AREA)
+        render_rect = render.get_rect(**kwargs)
+        self.image.blit(render, render_rect)
+
+    def populate(self):
+        planets = [i for i in system.planets if i.orbit is None]
+        for i, planet in enumerate(planets):
+            listed = ListedPlanet(self, planet, self.rect.x+3, i*16+self.rect.y+21)
+            self.planets.add(listed)
+            listed.show()
+
+    def show(self):
+        self.populate()
+        Renderer.add_widget(self, layer=5)
+        WidgetHandler.add_widget(self)
+
+    def hide(self):
+        for listed in self.planets.widgets():
+            listed.hide()
+        Renderer.del_widget(self)
+        WidgetHandler.del_widget(self)
+
+
+class ListedPlanet(PlanetButton):
+    def on_mousebuttondown(self, event):
+        self.enabled = False
+        self.parent.parent.link_planet_to_orbit(self.planet_data)
+
+    def update(self):
+        if self.enabled:
+            if self.selected:
+                self.image = self.img_sel
+            else:
+                self.image = self.img_uns
+            self.selected = False

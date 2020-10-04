@@ -88,7 +88,6 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     def set_orbit(self, star, orbit):
         self.temperature = self.set_temperature(star.mass.m, orbit)
-        print(self.temperature, self._temperature)
         self.orbit = orbit
 
     @staticmethod
@@ -140,13 +139,12 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
 
 
 # Mass
-# Dwarf planet: 0.0001 to 0.1 earth masses
 # terrestial: 0.1 to 10 earth masses (not earth-like)
 # Gas Giant: 10 earth masses to 13 Jupiter masses
 # PuffyGiant less than 2 Jupiter masses
 
 # Radius:
-# Dwarf planet: 0.03 to 0.5 earth radius
+# Mini neptune 1.7 to 3.9 earth radius
 # Super earth:  1.25 to 2 earth radius
 # Gas Giant:
 # ------- if mass <= 2 Jupiter masses: 1.10 Jupiter radius or more

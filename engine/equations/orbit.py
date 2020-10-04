@@ -65,6 +65,17 @@ class RawOrbit:
         return Orbit(self.semi_major_axis.m, e, i, self._unit)
 
 
+class PseudoOrbit:
+    eccentricity = 0
+    inclination = 0
+    semi_major_axis = 0
+    temperature = 0
+
+    def __init__(self, orbit):
+        self.semi_major_axis = orbit.semi_major_axis
+        self.temperature = orbit.temperature
+
+
 class Orbit:
     period = 0
     velocity = 0
