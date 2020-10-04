@@ -6,7 +6,9 @@ from engine.equations.planetary_system import system
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets import panels
 from engine.backend.util import abrir_json
+from os.path import exists, join
 from .planet_panel import Meta
+from os import getcwd
 
 
 class LayoutPanel(BaseWidget):
@@ -100,7 +102,7 @@ class BaseButton(Meta, BaseWidget):
     def __init__(self, parent, x, y, text):
         super().__init__(parent)
         f1 = font.SysFont('Verdana', 16)
-        f2 = font.SysFont('Verdana', 16, bold=1)
+        f2 = font.SysFont('Verdana', 16, bold=True)
         self.img_uns = f1.render(text, True, COLOR_TEXTO, COLOR_BOX)
         self.img_sel = f2.render(text, True, COLOR_TEXTO, COLOR_BOX)
         self.image = self.img_uns
@@ -121,8 +123,9 @@ class LoadButton(BaseButton):
         super().__init__(parent, x, y, 'Cargar')
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
-            data = abrir_json('D:/Python/worldbuilding/data/savedata.json')
+        ruta = join(getcwd(), 'data', 'savedata.json')
+        if event.button == 1 and exists(ruta):
+            data = abrir_json(ruta)
             EventHandler.trigger('LoadData', 'LoadButton', data)
 
 

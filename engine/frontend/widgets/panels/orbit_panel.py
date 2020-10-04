@@ -1,13 +1,14 @@
-from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO, COLOR_TEXTO, COLOR_BOX, COLOR_AREA
+from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_DISABLED
+from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.frontend.globales.group import WidgetGroup
 from engine.backend.eventhandler import EventHandler
 from engine.equations.planetary_system import system
 from engine.equations.orbit import RawOrbit
-from pygame import Surface, font
+from pygame import Surface, font, Rect
 from engine.backend import roll
-# from ..values import ValueText
+from ..values import ValueText
 from .planet_panel import Meta
 from engine import q
 
@@ -16,6 +17,12 @@ class OrbitPanel(BaseWidget):
     current = None
     curr_idx = 0
     _loaded_orbits = None
+
+    curr_x = 3
+    curr_y = 421+21
+
+    visible_markers = True
+    current_orbit = None
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -32,7 +39,10 @@ class OrbitPanel(BaseWidget):
         self.orbits = []
         self._loaded_orbits = []
         self.properties = WidgetGroup()
+        self.buttons = WidgetGroup()
         self.markers = []
+        self.orbit_descriptions = WidgetGroup()
+        self.markers_button = ShowMarkersButton(self, 3, 421)
 
         centerx = self.rect.centerx
         self.antes = PositionButton(self, 'Inward', 550)
@@ -67,10 +77,28 @@ class OrbitPanel(BaseWidget):
         if inner < position < outer:
             new = OrbitMarker(self, 'Orbit', round(position, 3), is_orbit=True)
             self.markers.append(new)
-            self.orbits.append(new.value)
+            self.orbits.append(new)
             self.sort_markers()
+            self.add_button(new)
             return True
         return False
+
+    def add_button(self, marker):
+        orbit_type = OrbitType(self)
+        button = OrbitButton(self, self.curr_x, self.curr_y)
+        orbit_type.link_buton(button)
+        button.link_type(orbit_type)
+        orbit_type.link_marker(marker)
+        button.link_marker(marker)
+        self.orbit_descriptions.add(orbit_type)
+        if self.curr_x + button.rect.w + 10 < self.rect.w - button.rect.w + 10:
+            self.curr_x += button.rect.w + 10
+        else:
+            self.curr_x = 0
+            self.curr_y += 32
+        self.buttons.add(button)
+        button.enable()
+        button.show()
 
     def sort_markers(self):
         self.markers.sort(key=lambda m: m.value)
@@ -101,6 +129,13 @@ class OrbitPanel(BaseWidget):
         self.antes.lock()
         self.despues.lock()
 
+    def disable_all(self):
+        for marker in self.markers:
+            marker.disable()
+
+        self.antes.lock()
+        self.despues.lock()
+
     def anchor_maker(self, marker):
         self.get_idx(marker)
 
@@ -118,7 +153,8 @@ class OrbitPanel(BaseWidget):
             self.populate()
 
     def save_orbits(self, event):
-        EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Star': {'Orbits': [orbit.m for orbit in self.orbits]}})
+        data = {'Star': {'Orbits': [marker.orbit.semi_major_axis.m for marker in self.orbits]}}
+        EventHandler.trigger(event.tipo + 'Data', 'Orbit', data)
 
     def load_orbits(self, event):
         for position in event.data['Star']['Orbits']:
@@ -138,6 +174,7 @@ class OrbitPanel(BaseWidget):
             marker.show()
         if len(self._loaded_orbits):
             self.set_loaded_orbits()
+        self.markers_button.show()
 
         Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
@@ -149,59 +186,75 @@ class OrbitPanel(BaseWidget):
             marker.hide()
         self.antes.hide()
         self.despues.hide()
+        self.markers_button.hide()
+
+    def toggle_markers(self):
+        if self.visible_markers:
+            for marker in self.markers:
+                marker.hide()
+            self.visible_markers = False
+        else:
+            for orbit_type in self.orbit_descriptions.widgets():
+                orbit_type.hide()
+            for marker in self.markers:
+                marker.show()
+            self.visible_markers = True
+
+    def hide_orbit_types(self):
+        for orbit_type in self.orbit_descriptions.widgets():
+            orbit_type.hide()
 
     def __repr__(self):
         return 'Orbit Panel'
 
 
-# class OrbitType(BaseWidget):
-#     def __init__(self, parent, orbit):
-#         super().__init__(parent)
-#         self.data = orbit
-#         self.properties = WidgetGroup()
-#         self.create()
-#
-#     def create(self):
-#         props = ['semi_major_axis', 'semi_minor_axis', 'eccentricity', 'inclination',
-#                  'periapsis', 'apoapsis', 'motion', 'temperature']
-#         for i, prop in enumerate([j for j in props if hasattr(self.data, j)]):
-#             _value = getattr(self.data, prop)
-#             vt = ValueText(self, prop, 0, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
-#             value = _value
-#             if not type(_value) is str:
-#                 value = str(round(_value, 3))
-#             vt.text_area.value = value
-#             vt.text_area.inner_value = _value if type(_value) is not str else None
-#             vt.text_area.update()
-#             self.properties.add(vt)
-#
-#     def fill(self):
-#         for elemento in self.properties.widgets():
-#             if elemento.text not in ['motion', 'temperature']:
-#                 value = q(*elemento.text_area.value.split(' '))
-#             else:
-#                 value = str(elemento.text_area.value)
-#             setattr(self.data, elemento.text.lower(), value)
-#             self.parent.reverse_match(self.data)
-#             elemento.text_area.value = value
-#             elemento.text_area.update_inner_value(value)
-#             elemento.text_area.update()
-#             elemento.text_area.show()
-#
-#     def clear(self):
-#         self.properties.empty()
-#
-#     def show(self):
-#         if not len(self.properties):
-#             self.create()
-#
-#         for p in self.properties.widgets():
-#             p.show()
-#
-#     def hide(self):
-#         for p in self.properties.widgets():
-#             p.text_area.hide()
-#             p.hide()
+class OrbitType(BaseWidget):
+    linked_button = None
+    linked_marker = None
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.properties = WidgetGroup()
+
+    def link_buton(self, button):
+        """
+        @type button: OrbitButton
+        """
+        self.linked_button = button
+
+    def link_marker(self, marker):
+        """
+        @type marker: OrbitMarker
+        """
+        self.linked_marker = marker
+
+    def create(self):
+        orbit = self.linked_marker.orbit
+        self.properties.empty()
+        props = ['semi_major_axis', 'semi_minor_axis', 'eccentricity', 'inclination',
+                 'periapsis', 'apoapsis', 'motion', 'temperature']
+        for i, prop in enumerate([j for j in props if hasattr(orbit, j)]):
+            _value = getattr(orbit, prop)
+            vt = ValueText(self, prop, 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
+            value = _value
+            if not type(_value) is str:
+                value = str(round(_value, 3))
+            vt.text_area.value = value
+            vt.text_area.inner_value = _value if type(_value) is not str else None
+            vt.text_area.update()
+            self.properties.add(vt)
+
+    def clear(self):
+        self.properties.empty()
+
+    def show(self):
+        self.create()
+
+        for p in self.properties.widgets():
+            p.show()
+
+    def hide(self):
+        self.clear()
 
 
 class OrbitMarker(Meta, BaseWidget, IncrementalValue):
@@ -229,14 +282,14 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue):
     @property
     def value(self):
         if self.orbit is not None:
-            return round(self.orbit.a, 3)
+            return round(self.orbit.semi_major_axis, 3)
         else:
             return self._value
 
     @value.setter
     def value(self, new_value):
         if self.orbit is not None:
-            self.orbit.a = new_value
+            self.orbit.semi_major_axis = new_value
 
     def disable(self):
         self.enabled = not self.enabled
@@ -247,7 +300,7 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue):
                 self.disable()
             self.parent.anchor_maker(self)
 
-        elif not self. locked:
+        elif not self.locked:
             self.increment = self.update_increment()
 
             if event.button == 4:
@@ -313,3 +366,83 @@ class PositionButton(Meta, BaseWidget):
 
     def lock(self):
         self.locked = True
+
+
+class OrbitButton(Meta, BaseWidget):
+    locked = False
+    hidden = False
+
+    linked_type = None
+    linked_marker = None
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent)
+        self.f1 = font.SysFont('Verdana', 14)
+        self.f2 = font.SysFont('Verdana', 14, bold=True)
+        self.image = self.img_uns
+        self._rect = Rect(x, y, 0, 21)
+
+    def link_type(self, orbit_type):
+        """
+        @type orbit_type: OrbitType
+        """
+        self.linked_type = orbit_type
+
+    def link_marker(self, marker):
+        """
+        @type marker: OrbitMarker
+        """
+        self.linked_marker = marker
+        self.create()
+
+    def create(self):
+        orbit = self.linked_marker.orbit.semi_major_axis
+        t = 'Orbit @{:~}'.format(round(orbit, 3))
+        self.img_uns = self.f1.render(t, True, COLOR_TEXTO, COLOR_AREA)
+        self.img_sel = self.f2.render(t, True, COLOR_TEXTO, COLOR_AREA)
+        self.img_dis = self.f1.render(t, True, COLOR_DISABLED, COLOR_AREA)
+        self.rect = self.img_uns.get_rect(topleft=self._rect.topleft)
+
+    def show(self):
+        super().show()
+        self.hidden = False
+
+    def hide(self):
+        super().hide()
+        self.hidden = True
+
+    def lock(self):
+        self.locked = True
+
+    def unlock(self):
+        self.locked = False
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1:
+            if self.parent.visible_markers:
+                self.parent.toggle_markers()
+            self.parent.hide_orbit_types()
+            self.linked_type.show()
+
+    def update(self):
+        super().update()
+        self.create()
+        if not self.locked:
+            self.selected = False
+
+
+class ShowMarkersButton(Meta, BaseWidget):
+    enabled = True
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent)
+        f1 = font.SysFont('Verdana', 14)
+        f2 = font.SysFont('Verdana', 14, bold=True)
+        self.img_uns = f1.render('Markers', True, COLOR_TEXTO, COLOR_AREA)
+        self.img_sel = f2.render('Markers', True, COLOR_TEXTO, COLOR_AREA)
+        self.image = self.img_uns
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1:
+            self.parent.toggle_markers()

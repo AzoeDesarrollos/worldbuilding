@@ -1,3 +1,4 @@
+from engine.equations.planetary_system import system
 from math import sqrt, pow
 from pygame import draw, Rect
 from engine import q
@@ -12,6 +13,13 @@ class RawOrbit:
         self.semi_major_axis = a
         self._unit = a.u
         self.a = self.semi_major_axis
+
+        if self.a.m > system.star.frost_line.m:
+            self.set_temperature('cold')
+        elif system.star.habitable_inner.m < self.a.m < system.star.habitable_outer.m:
+            self.set_temperature('habitable')
+        else:
+            self.set_temperature('hot')
 
     def set_temperature(self, t):
         self.temperature = t

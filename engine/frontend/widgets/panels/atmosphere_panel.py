@@ -63,18 +63,19 @@ class AtmospherePanel(BaseWidget):
         planet.set_atmosphere(data)
 
     def load_atmosphere(self, event):
-        atmosphere = event.data['Planets'][0]['atmosphere']
-        elements = [e.symbol for e in self.elements.widgets()]
-        for key in atmosphere:
-            if key != 'pressure_at_sea_level':
-                idx = elements.index(key)
-                element = self.elements.widgets()[idx]
-                element.percent.value = str(atmosphere[key])
-            else:
-                value = atmosphere[key]['value']
-                unit = atmosphere[key]['unit']
-                self.pressure = q(value, unit)
-        self.pre_loaded = True
+        if 'Planets' in event.data:
+            atmosphere = event.data['Planets'][0]['atmosphere']
+            elements = [e.symbol for e in self.elements.widgets()]
+            for key in atmosphere:
+                if key != 'pressure_at_sea_level':
+                    idx = elements.index(key)
+                    element = self.elements.widgets()[idx]
+                    element.percent.value = str(atmosphere[key])
+                else:
+                    value = atmosphere[key]['value']
+                    unit = atmosphere[key]['unit']
+                    self.pressure = q(value, unit)
+            self.pre_loaded = True
 
     def show(self):
         Renderer.add_widget(self)
@@ -105,7 +106,7 @@ class AtmospherePanel(BaseWidget):
         for elm in self.elements.widgets():
             elm.deselect()
             elm.disable()
-        if 0 <= self.curr_idx + delta < len(self.elements):
+        if 0 <= self.curr_idx + delta < len(self.elements.widgets()):
             self.curr_idx += delta
             self.current = self.elements.widgets()[self.curr_idx]
 

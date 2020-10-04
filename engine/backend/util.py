@@ -2,6 +2,8 @@ from .eventhandler import EventHandler
 import csv
 import json
 from math import trunc, ceil, floor
+from os.path import exists, join
+from os import getcwd
 
 
 def decimal_round(number: float):
@@ -63,6 +65,11 @@ def salir_handler(event):
     print('Saliendo...\nStatus: ' + data)
     quit()
     exit()
+
+
+ruta = join(getcwd(), 'data', 'savedata.json')
+if not exists(ruta):
+    guardar_json(ruta, {})
 
 
 EventHandler.register(salir_handler, 'salir')

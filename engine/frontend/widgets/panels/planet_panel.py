@@ -67,18 +67,20 @@ class PlanetType(ObjectType):
 
     def save_planet(self, event):
         p = self.current
-        data = {
-            'name': p.name,
-            'mass': p.mass.m,
-            'radius': p.radius.m,
-            'unit': p.unit,
-            'atmosphere': p.atmosphere,
-            'clase': p.clase}
-        EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": [data]})
+        if p is not None:
+            data = {
+                'name': p.name,
+                'mass': p.mass.m,
+                'radius': p.radius.m,
+                'unit': p.unit,
+                'atmosphere': p.atmosphere,
+                'clase': p.clase}
+            EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": [data]})
 
     def load_planet(self, event):
-        self.current = Planet(event.data['Planets'][0])
-        self.create_button()
+        if 'Planets' in event.data:
+            self.current = Planet(event.data['Planets'][0])
+            self.create_button()
 
     def clear(self, event):
         if event.data['panel'] is self.parent:
