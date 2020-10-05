@@ -1,4 +1,5 @@
 from .general import BodyInHydrostaticEquilibrium
+from .orbit import Orbit
 from math import sqrt, pi, pow
 from engine import q
 
@@ -86,9 +87,12 @@ class Planet(BodyInHydrostaticEquilibrium):
         self._temperature = round(t.to('earth_temperature'))
         return t
 
-    def set_orbit(self, star, orbit):
-        self.temperature = self.set_temperature(star.mass.m, orbit)
-        self.orbit = orbit
+    def set_orbit(self, star, orbital_parameters):
+        self.orbit = Orbit(*orbital_parameters)
+        self.temperature = self.set_temperature(star.mass.m, self.orbit.semi_minor_axis.m)
+        self.orbit.temperature = self.temperature
+        self.orbit.set_planet(self)
+        return self.orbit
 
     @staticmethod
     def set_class(mass, radius):

@@ -1,7 +1,7 @@
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_DISABLED
 from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO
 from engine.frontend.widgets.incremental_value import IncrementalValue
-from engine.equations.orbit import RawOrbit, PseudoOrbit, Orbit
+from engine.equations.orbit import RawOrbit, PseudoOrbit
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.frontend.globales.group import WidgetGroup
 from engine.backend.eventhandler import EventHandler
@@ -163,16 +163,32 @@ class OrbitPanel(BaseWidget):
             self.populate()
 
     def save_orbits(self, event):
-        data = {'Star': {'Orbits': [marker.orbit.semi_major_axis.m for marker in self.orbits]}}
-        EventHandler.trigger(event.tipo + 'Data', 'Orbit', data)
+        orbits = []
+        for marker in self.orbits:
+            orb = marker.orbit
+            d = {}
+            if hasattr(orb, 'semi_major_axis'):
+                d['a'] = orb.semi_major_axis.m
+            if hasattr(orb, 'inclination'):
+                d['i'] = orb.inclination.m
+            if hasattr(orb, 'eccentricity'):
+                d['e'] = orb.eccentricity.m
+            if hasattr(orb, 'planet'):
+                d['planet'] = orb.planet.name
+            orbits.append(d)
+
+        EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Star': {'Orbits': orbits}})
 
     def load_orbits(self, event):
         for position in event.data['Star']['Orbits']:
             self._loaded_orbits.append(position)
 
     def set_loaded_orbits(self):
-        for position in self._loaded_orbits:
-            self.add_orbit_marker(q(position, 'au'))
+        for orbit_data in self._loaded_orbits:
+            a = orbit_data['a']
+            # por el momento, las órbitas guardadas no se pueden cargar. Se cargan en blanco,
+            # como si solo fueran semi-major axis.
+            self.add_orbit_marker(q(a, 'au'))
 
         # borrar las órbitas cargadas para evitar que se dupliquen.
         self._loaded_orbits.clear()
@@ -205,6 +221,7 @@ class OrbitPanel(BaseWidget):
                 orbit_type.hide()
             for marker in self.markers:
                 marker.show()
+            self.unlock_every_button()
             self.markers_button.disable()
         self.visible_markers = not self.visible_markers
 
@@ -214,12 +231,16 @@ class OrbitPanel(BaseWidget):
         for orbit_button in self.buttons.widgets():
             orbit_button.unlock()
 
+    def unlock_every_button(self):
+        for orbit_button in self.buttons.widgets():
+            orbit_button.unlock()
+
     def link_planet_to_orbit(self, planet):
         locked = [i for i in self.buttons.widgets() if i.locked]
         if len(locked):
             locked[0].linked_marker.orbit = PseudoOrbit(locked[0].linked_marker.orbit)
             locked[0].linked_type.show()
-            # planet.set_orbit(system.star, orbit)
+            locked[0].linked_type.link_planet(planet)
 
     def __repr__(self):
         return 'Orbit Panel'
@@ -228,6 +249,7 @@ class OrbitPanel(BaseWidget):
 class OrbitType(BaseWidget):
     linked_button = None
     linked_marker = None
+    linked_planet = None
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -245,18 +267,21 @@ class OrbitType(BaseWidget):
         """
         self.linked_marker = marker
 
+    def link_planet(self, planet):
+        self.linked_planet = planet
+
     def create(self):
         orbit = self.linked_marker.orbit
         self.clear()
         props = ['semi_major_axis', 'semi_minor_axis', 'eccentricity', 'inclination',
-                 'periapsis', 'apoapsis', 'motion', 'temperature']
+                 'periapsis', 'apoapsis', 'motion', 'temperature', 'velocity', 'period']
         for i, prop in enumerate([j for j in props if hasattr(orbit, j)]):
             _value = getattr(orbit, prop)
             vt = ValueText(self, prop, 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
             value = _value
             if not type(_value) is str:
                 value = q(round(_value, 3))
-            vt.text_area.value = value
+            vt.text_area.value = str(value)
             vt.text_area.inner_value = _value if type(_value) is not str else None
             vt.text_area.update()
             self.properties.add(vt)
@@ -264,17 +289,17 @@ class OrbitType(BaseWidget):
     def fill(self):
         parametros = []
         for elemento in self.properties.widgets():
-            if elemento.text not in ['motion', 'temperature']:
+            if elemento.text == 'inclination':
+                value = q(elemento.text_area.value, 'degree')
+            elif elemento.text not in ['motion', 'temperature']:
                 value = q(*elemento.text_area.value.split(' '))
             else:
                 value = 'au'
             parametros.append(value)
-
-        self.linked_marker.orbit = Orbit(*parametros)
-        # elemento.text_area.value = value
-        # elemento.text_area.update_inner_value(value)
-        # elemento.text_area.update()
-        # elemento.text_area.show()
+        orbit = self.linked_planet.set_orbit(system.star, parametros)
+        self.linked_marker.orbit = orbit
+        self.show()
+        self.parent.planet_area.delete_planet(self.linked_planet)
 
     def clear(self):
         for prop in self.properties.widgets():
@@ -298,7 +323,7 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue):
     locked = False
     orbit = None
 
-    def __init__(self, parent, name, value, is_orbit=False):
+    def __init__(self, parent, name, value, is_orbit=False, is_complete_orbit=False):
         super().__init__(parent)
         self.f1 = font.SysFont('Verdana', 16)
         self.f2 = font.SysFont('Verdana', 16, bold=True)
@@ -307,6 +332,8 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue):
         self._value = value
         if is_orbit:
             self.orbit = RawOrbit(value)
+        elif is_complete_orbit:
+            self.orbit = value
         self.update()
         self.image = self.img_uns
         self.rect = self.image.get_rect(x=3)
@@ -492,7 +519,7 @@ class PlanetArea(BaseWidget):
         self.image = Surface((200, 350))
         self.image.fill(COLOR_AREA)
         self.rect = self.image.get_rect(topleft=(x, y))
-        self.planets = WidgetGroup()
+        self.listed_planets = WidgetGroup()
 
         self.f = font.SysFont('Verdana', 14)
         self.f.set_underline(True)
@@ -507,7 +534,7 @@ class PlanetArea(BaseWidget):
         planets = [i for i in system.planets if i.orbit is None]
         for i, planet in enumerate(planets):
             listed = ListedPlanet(self, planet, self.rect.x+3, i*16+self.rect.y+21)
-            self.planets.add(listed)
+            self.listed_planets.add(listed)
             listed.show()
 
     def show(self):
@@ -516,16 +543,22 @@ class PlanetArea(BaseWidget):
         WidgetHandler.add_widget(self)
 
     def hide(self):
-        for listed in self.planets.widgets():
+        for listed in self.listed_planets.widgets():
             listed.hide()
         Renderer.del_widget(self)
         WidgetHandler.del_widget(self)
 
+    def delete_planet(self, planet):
+        for listed in self.listed_planets:
+            if listed.planet_data == planet:
+                listed.kill()
+
 
 class ListedPlanet(PlanetButton):
     def on_mousebuttondown(self, event):
-        self.enabled = False
-        self.parent.parent.link_planet_to_orbit(self.planet_data)
+        if not self.parent.parent.visible_markers:
+            self.enabled = False
+            self.parent.parent.link_planet_to_orbit(self.planet_data)
 
     def update(self):
         if self.enabled:

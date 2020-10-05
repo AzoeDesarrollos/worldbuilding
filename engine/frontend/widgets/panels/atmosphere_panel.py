@@ -21,6 +21,7 @@ class AtmospherePanel(BaseWidget):
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
         self.elements = WidgetGroup()
+        self.pressure = q(0, 'atm')
 
         f1 = font.SysFont('Verdana', 16)
         f1.set_underline(True)
@@ -121,6 +122,7 @@ class AtmospherePanel(BaseWidget):
 
         self.write('Total: ' + str(total) + '%', self.f3, x=3, y=ALTO - 87)
         a = self.atmograph
+        self.pressure = a.pressure
         if not self.pre_loaded:
             p = '{:~}'.format(round(a.pressure.to('atm'), 3))
         else:

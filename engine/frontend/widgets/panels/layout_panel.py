@@ -126,7 +126,8 @@ class LoadButton(BaseButton):
         ruta = join(getcwd(), 'data', 'savedata.json')
         if event.button == 1 and exists(ruta):
             data = abrir_json(ruta)
-            EventHandler.trigger('LoadData', 'LoadButton', data)
+            if len(data):
+                EventHandler.trigger('LoadData', 'LoadButton', data)
 
 
 class NewButton(BaseButton):

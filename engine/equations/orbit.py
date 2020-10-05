@@ -88,17 +88,17 @@ class Orbit:
     _q = 0  # periapsis
     _Q = 0  # apoapsis
 
-    def __init__(self, a, e: float, i: float, unit='au'):
+    planet = None
+    temperature = 0
+
+    def __init__(self, a, e, i, unit='au'):
         self._unit = unit
-        self._e = float(e)
-        self._i = float(i)
+        self._e = float(e.m)
+        self._i = float(i.m)
         self._a = float(a.m)
         self._b = self._a * sqrt(1 - pow(self._e, 2))
         self._Q = self._a * (1 + self._e)
         self._q = self._a * (1 - self._e)
-
-        self.planet = None
-        self.temperature = None
 
         if self.inclination in (0, 180):
             self.motion = 'equatorial'
@@ -123,8 +123,7 @@ class Orbit:
         return 'Orbit @' + str(round(self.semi_major_axis.m, 3))
 
     def set_planet(self, planet):
-        self.planet = planet
-        self.temperature = planet.temperature
+        planet.orbit = PlanetOrbit(system.star.mass, self.semi_major_axis, self.eccentricity, self.inclination)
 
     @property
     def semi_major_axis(self):
@@ -169,9 +168,9 @@ class Orbit:
 
 class PlanetOrbit(Orbit):
     def __init__(self, star_mass, a, e, i):
-        super().__init__(a, e, i, 'au')
-        self.velocity = q(sqrt(star_mass / a), 'earth_orbital_velocity').to('kilometer per second')
-        self.period = q(sqrt((a ** 3) / star_mass), 'year')
+        super().__init__(a, e, q(i, 'degree'), 'au')
+        self.velocity = q(sqrt(star_mass.m / a.m), 'earth_orbital_velocity').to('kilometer per second')
+        self.period = q(sqrt((a.m ** 3) / star_mass.m), 'year')
 
 
 class SatelliteOrbit(Orbit):

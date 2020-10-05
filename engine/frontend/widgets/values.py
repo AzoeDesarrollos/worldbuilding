@@ -117,10 +117,11 @@ class NumberArea(BaseWidget, IncrementalValue):
             if event.data is not None:
                 char = event.data['value']
                 if char.isdigit() or char == '.':
+                    self.value = str(self.value)
                     self.value += char
             elif event.tipo == 'BackSpace':
-                self.value = self.value[0:len(self.value) - 1]
-                self.update_inner_value(self.value)
+                self.value = self.value[0:len(str(self.value)) - 1]
+                # self.update_inner_value(self.value)
             elif event.tipo == 'Fin' and len(self.value):
                 if self.parent.parent.name == 'Planet':
                     self.parent.check_values()  # for planets
