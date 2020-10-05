@@ -108,12 +108,11 @@ class NumberArea(BaseWidget, IncrementalValue):
         self.name = name
         self.fg, self.bg = fg, bg
         self.f = font.SysFont('Verdana', 16)
-        # EventHandler.register(self.input, 'Key', 'BackSpace', 'Fin')
         self.image = Surface((0, self.f.get_height()))
         self.rect = self.image.get_rect(topleft=(x, y))
 
     def input(self, event):
-        if self.enabled:
+        if self.enabled and not self.parent.locked:
             if event.data is not None:
                 char = event.data['value']
                 if char.isdigit() or char == '.':

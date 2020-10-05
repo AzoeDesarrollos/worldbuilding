@@ -265,6 +265,7 @@ class OrbitType(BaseWidget):
     linked_button = None
     linked_marker = None
     linked_planet = None
+    locked = True
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -284,6 +285,7 @@ class OrbitType(BaseWidget):
 
     def link_planet(self, planet):
         self.linked_planet = planet
+        self.locked = False
 
     def create(self):
         orbit = self.linked_marker.orbit
@@ -296,7 +298,9 @@ class OrbitType(BaseWidget):
             vt = ValueText(self, prop, 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
             value = _value
             if hasattr(_value, '__round__'):
-                value = '{:~}'.format(round(_value, 3))
+                value = q(round(_value.m, 3), _value.u)
+                if str(_value.u) != 'year':
+                    value = '{:~}'.format(value)
             vt.text_area.value = str(value)
             vt.text_area.inner_value = _value if type(_value) is not str else None
             vt.text_area.update()
@@ -316,6 +320,7 @@ class OrbitType(BaseWidget):
         self.linked_marker.orbit = orbit
         self.show()
         self.parent.planet_area.delete_planet(self.linked_planet)
+        self.locked = True
 
     def clear(self):
         for prop in self.properties.widgets():

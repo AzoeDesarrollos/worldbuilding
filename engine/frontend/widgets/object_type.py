@@ -9,6 +9,8 @@ class ObjectType(BaseWidget):
     current = None
     has_values = False
 
+    locked = False
+
     def __init__(self, parent, relative_values, absolute_values):
         super().__init__(parent)
         EventHandler.register(self.clear_selection, 'Clear')

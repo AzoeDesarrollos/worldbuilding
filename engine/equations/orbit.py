@@ -66,8 +66,8 @@ class RawOrbit:
 
 
 class PseudoOrbit:
-    eccentricity = 0
-    inclination = 0
+    eccentricity = ''
+    inclination = ''
     semi_major_axis = 0
     temperature = 0
 
@@ -130,6 +130,15 @@ class Orbit:
     def semi_major_axis(self):
         return q(self._a, self._unit)
 
+    @semi_major_axis.setter
+    def semi_major_axis(self, quantity):
+        self._a = float(quantity.m)
+        self._b = self._a * sqrt(1 - pow(self._e, 2))
+        self._Q = self._a * (1 + self._e)
+        self._q = self._a * (1 - self._e)
+        self.temperature = self.planet.set_temperature(system.star.mass.m, self._a)
+        self.reset_period_and_speed(system.star.mass.m)
+
     @property
     def semi_minor_axis(self):
         return q(self._b, self._unit)
@@ -166,20 +175,30 @@ class Orbit:
     def inclination(self, value):
         self._i = float(value)
 
+    def reset_period_and_speed(self, main_body_mass):
+        raise NotImplementedError
+
 
 class PlanetOrbit(Orbit):
     def __init__(self, star_mass, a, e, i):
         super().__init__(a, e, q(i, 'degree'), 'au')
-        self.velocity = q(sqrt(star_mass.m / a.m), 'earth_orbital_velocity').to('kilometer per second')
-        self.period = q(sqrt((a.m ** 3) / star_mass.m), 'year')
+        self.reset_period_and_speed(star_mass.m)
 
     def reset_planet(self, planet):
         self.planet = planet
         self.temperature = planet.temperature
 
+    def reset_period_and_speed(self, main_body_mass):
+        self.period = q(sqrt(pow(self._a, 3) / main_body_mass), 'year')
+        self.velocity = q(sqrt(main_body_mass / self._a), 'earth_orbital_velocity').to('kilometer per second')
+
 
 class SatelliteOrbit(Orbit):
-    def __init__(self, planet_mass, moon_mass, a, e, i):
+    def __init__(self, planet_mass, a, e, i):
         super().__init__(a, e, i, 'earth_radius')
-        self.velocity = q(sqrt(planet_mass.m / a.m), 'earth_orbital_velocity').to('kilometer per second')
-        self.period = q(0.0588 * (a.m ** 3 / sqrt(planet_mass.m + moon_mass.m)), 'day')
+        self.reset_period_and_speed(planet_mass)
+
+    def reset_period_and_speed(self, main_body_mass):
+        satellite = self.planet.satellite
+        self.velocity = q(sqrt(main_body_mass.m / self._a), 'earth_orbital_velocity').to('kilometer per second')
+        self.period = q(0.0588 * (pow(self._a, 3) / sqrt(main_body_mass.m + satellite.mass.m)), 'day')
