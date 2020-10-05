@@ -55,6 +55,10 @@ class PlanetarySystem:
         else:
             return False
 
+    def get_planet_by_name(self, planet_name):
+        planet = [planet for planet in self.planets if planet.name == planet_name][0]
+        return planet
+
     def set_current(self, planet):
         if planet.orbit is None:
             self.current = planet

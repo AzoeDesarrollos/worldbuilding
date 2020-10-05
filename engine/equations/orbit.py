@@ -124,6 +124,7 @@ class Orbit:
 
     def set_planet(self, planet):
         planet.orbit = PlanetOrbit(system.star.mass, self.semi_major_axis, self.eccentricity, self.inclination)
+        planet.orbit.reset_planet(planet)
 
     @property
     def semi_major_axis(self):
@@ -172,9 +173,13 @@ class PlanetOrbit(Orbit):
         self.velocity = q(sqrt(star_mass.m / a.m), 'earth_orbital_velocity').to('kilometer per second')
         self.period = q(sqrt((a.m ** 3) / star_mass.m), 'year')
 
+    def reset_planet(self, planet):
+        self.planet = planet
+        self.temperature = planet.temperature
+
 
 class SatelliteOrbit(Orbit):
     def __init__(self, planet_mass, moon_mass, a, e, i):
         super().__init__(a, e, i, 'earth_radius')
-        self.velocity = q(sqrt(planet_mass / a), 'earth_orbital_velocity').to('kilometer per second')
-        self.period = q(0.0588 * (a ** 3 / sqrt(planet_mass + moon_mass)), 'day')
+        self.velocity = q(sqrt(planet_mass.m / a.m), 'earth_orbital_velocity').to('kilometer per second')
+        self.period = q(0.0588 * (a.m ** 3 / sqrt(planet_mass.m + moon_mass.m)), 'day')

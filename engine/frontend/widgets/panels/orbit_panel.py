@@ -81,8 +81,17 @@ class OrbitPanel(BaseWidget):
     def add_orbit_marker(self, position):
         inner = system.star.inner_boundry
         outer = system.star.outer_boundry
-        if inner < position < outer:
-            new = OrbitMarker(self, 'Orbit', round(position, 3), is_orbit=True)
+        if type(position) is q:
+            is_orbit = True
+            is_complete_orbit = False
+            test = inner < position < outer
+        else:  # type(position) is PlanetOrbit
+            is_orbit = False
+            is_complete_orbit = True
+            test = inner < position.semi_major_axis < outer
+
+        if test is True:
+            new = OrbitMarker(self, 'Orbit', position, is_orbit=is_orbit, is_complete_orbit=is_complete_orbit)
             self.markers.append(new)
             self.orbits.append(new)
             self.sort_markers()
@@ -185,10 +194,16 @@ class OrbitPanel(BaseWidget):
 
     def set_loaded_orbits(self):
         for orbit_data in self._loaded_orbits:
-            a = orbit_data['a']
-            # por el momento, las órbitas guardadas no se pueden cargar. Se cargan en blanco,
-            # como si solo fueran semi-major axis.
-            self.add_orbit_marker(q(a, 'au'))
+            a = q(orbit_data['a'], 'au')
+            if 'e' not in orbit_data:
+                self.add_orbit_marker(a)
+            else:
+                e = q(orbit_data['e'])
+                i = q(orbit_data['i'], 'degree')
+                planet = system.get_planet_by_name(orbit_data['planet'])
+                planet.set_orbit(system.star, [a, e, i])
+                self.add_orbit_marker(planet.orbit)
+                self.planet_area.delete_planet(planet)
 
         # borrar las órbitas cargadas para evitar que se dupliquen.
         self._loaded_orbits.clear()
@@ -274,13 +289,14 @@ class OrbitType(BaseWidget):
         orbit = self.linked_marker.orbit
         self.clear()
         props = ['semi_major_axis', 'semi_minor_axis', 'eccentricity', 'inclination',
-                 'periapsis', 'apoapsis', 'motion', 'temperature', 'velocity', 'period']
+                 'periapsis', 'apoapsis', 'motion', 'temperature', 'velocity', 'period',
+                 'planet']
         for i, prop in enumerate([j for j in props if hasattr(orbit, j)]):
             _value = getattr(orbit, prop)
             vt = ValueText(self, prop, 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
             value = _value
-            if not type(_value) is str:
-                value = q(round(_value, 3))
+            if hasattr(_value, '__round__'):
+                value = '{:~}'.format(round(_value, 3))
             vt.text_area.value = str(value)
             vt.text_area.inner_value = _value if type(_value) is not str else None
             vt.text_area.update()
@@ -327,13 +343,16 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue):
         super().__init__(parent)
         self.f1 = font.SysFont('Verdana', 16)
         self.f2 = font.SysFont('Verdana', 16, bold=True)
-        self.text = '{:~}'.format(value)
         self.name = name
         self._value = value
         if is_orbit:
-            self.orbit = RawOrbit(value)
+            self.orbit = RawOrbit(round(value, 3))
+            self.text = '{:~}'.format(value)
         elif is_complete_orbit:
             self.orbit = value
+            self.text = '{:~}'.format(value.a)
+        else:
+            self.text = '{:~}'.format(value)
         self.update()
         self.image = self.img_uns
         self.rect = self.image.get_rect(x=3)
@@ -549,7 +568,7 @@ class PlanetArea(BaseWidget):
         WidgetHandler.del_widget(self)
 
     def delete_planet(self, planet):
-        for listed in self.listed_planets:
+        for listed in self.listed_planets.widgets():
             if listed.planet_data == planet:
                 listed.kill()
 

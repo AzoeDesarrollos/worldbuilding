@@ -67,9 +67,9 @@ def salir_handler(event):
     exit()
 
 
-ruta = join(getcwd(), 'data', 'savedata.json')
-if not exists(ruta):
-    guardar_json(ruta, {})
+route = join(getcwd(), 'data', 'savedata.json')
+if not exists(route):
+    guardar_json(route, {})
 
 
 EventHandler.register(salir_handler, 'salir')

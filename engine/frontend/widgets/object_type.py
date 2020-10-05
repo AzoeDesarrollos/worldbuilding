@@ -23,7 +23,6 @@ class ObjectType(BaseWidget):
             else:
                 vt = ValueText(self, button, 50, 55 + i * 15 * 2)
             self.relatives.add(vt)
-            # noinspection PyTypeChecker
             self.properties.add(vt, layer=1)
 
         self.absolutes = WidgetGroup()
@@ -34,7 +33,6 @@ class ObjectType(BaseWidget):
             elif len(absolute_values) == 7:
                 vt = ValueText(self, button, 50, 180 + i * 15 * 2)
             self.absolutes.add(vt)
-            # noinspection PyTypeChecker
             self.properties.add(vt, layer=1)
 
     def show(self):
