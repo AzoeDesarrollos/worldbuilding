@@ -20,7 +20,8 @@ class StarType(ObjectType):
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_star, 'Save')
 
-    def set_star(self, star):
+    def set_star(self, star_data):
+        star = Star(star_data)
         self.parent.parent.set_system(star)
         self.current = star
         self.has_values = True
@@ -29,7 +30,7 @@ class StarType(ObjectType):
     def load_star(self, event):
         if not isinstance(self.current, Star):
             mass = event.data['Star']['mass']
-            self.set_star(Star({'mass': mass}))
+            self.set_star({'mass': mass})
 
     def save_star(self, event):
         EventHandler.trigger(event.tipo + 'Data', 'Star',

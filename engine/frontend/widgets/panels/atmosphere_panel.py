@@ -212,27 +212,29 @@ class PercentageCell(BaseWidget):
         self.name = 'Cell of ' + self.parent.symbol
         EventHandler.register(self.on_keydown, 'Arrow')
 
+        self.grandparent = self.parent.parent
+
     def on_keydown(self, key):
         if self.enabled and not self.disabled and self.selected:
             if key.data is not None and key.tipo == 'Key':
                 self.value += key.data['value']
 
             elif key.tipo == 'Fin' and key.origin == self.name:
-                self.parent.parent.cycle(+1)
+                self.grandparent.cycle(+1)
 
             elif key.tipo == 'BackSpace':
                 self.value = self.value[0:-1]
 
             elif key.tipo == 'Arrow' and key.origin == self.name:
-                self.parent.parent.cycle(key.data['delta'])
+                self.grandparent.cycle(key.data['delta'])
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            for element in self.parent.parent.elements:
+            for element in self.grandparent.elements:
                 element.percent.deselect()
             self.enabled = True
             self.select()
-            self.parent.parent.set_current(self.parent)
+            self.grandparent.set_current(self.parent)
             return self.__repr__()
 
     def show(self):

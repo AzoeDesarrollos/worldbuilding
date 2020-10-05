@@ -5,8 +5,8 @@ from engine.backend.eventhandler import EventHandler
 from engine.frontend import Renderer, WidgetHandler
 from engine.frontend.graph.graph import graph_loop
 from .incremental_value import IncrementalValue
+from engine.backend.util import add_decimal
 from .basewidget import BaseWidget
-from engine.equations import Star
 from pygame import font, Surface
 from engine import q
 
@@ -30,7 +30,11 @@ class ValueText(BaseWidget):
         self.rect = self.image.get_rect(topleft=(x, y))
         EventHandler.register(self.clear_selection, 'Clear')
 
-        self.text_area = NumberArea(self.parent, text, self.rect.right + 3, self.rect.y, fg, bg)
+        self.text_area = NumberArea(self, text, self.rect.right + 3, self.rect.y, fg, bg)
+
+    def elevate_changes(self, new_value, unit):
+        value = q(new_value, unit)
+        self.parent.elevate_changes(self.text, value)
 
     def select(self):
         self.selected = True
@@ -100,7 +104,7 @@ class ValueText(BaseWidget):
 
 class NumberArea(BaseWidget, IncrementalValue):
     value = None
-    inner_value = None
+    unit = None
 
     def __init__(self, parent, name, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
         super().__init__(parent)
@@ -111,43 +115,55 @@ class NumberArea(BaseWidget, IncrementalValue):
         self.image = Surface((0, self.f.get_height()))
         self.rect = self.image.get_rect(topleft=(x, y))
 
+        self.great_grandparent = self.parent.parent.parent
+        self.grandparent = self.parent.parent
+
     def input(self, event):
-        if self.enabled and not self.parent.locked:
+        if self.enabled and not self.grandparent.locked:
             if event.data is not None:
                 char = event.data['value']
                 if char.isdigit() or char == '.':
                     self.value = str(self.value)
                     self.value += char
+
             elif event.tipo == 'BackSpace':
                 self.value = self.value[0:len(str(self.value)) - 1]
-                # self.update_inner_value(self.value)
-            elif event.tipo == 'Fin' and len(self.value):
-                if self.parent.parent.name == 'Planet':
-                    self.parent.check_values()  # for planets
-                elif self.parent.parent.name == 'Star':
-                    value = self.value.split(' ')[0]
-                    self.parent.set_star(Star({self.name.lower(): float(value)}))  # for stars
-                elif self.parent.parent.name == 'Satellite':
-                    self.parent.calculate()  # for moons
-                elif self.parent.parent.name == 'Orbit':
-                    self.parent.fill()
+
+            elif event.tipo == 'Fin' and len(str(self.value)):
+                if self.great_grandparent.name == 'Planet':
+                    self.grandparent.check_values()
+
+                elif self.great_grandparent.name == 'Star':
+                    self.grandparent.set_star({self.parent.text.lower(): float(self.value)})  # for stars
+
+                elif self.great_grandparent.name == 'Satellite':
+                    self.grandparent.calculate()
+
+                elif self.great_grandparent.name == 'Orbit':
+                    self.grandparent.fill()
+
+    def set_value(self, quantity):
+        if type(quantity) is q:
+            self.value = float(quantity.m)
+            self.unit = str(quantity.u)
+
+        else:  # suponemos, un str
+            self.value = quantity
+            self.unit = None
 
     def on_mousebuttondown(self, event):
         self.increment = self.update_increment()
-        if self.inner_value is not None and not type(self.inner_value) is str:
+        if not type(self.value) is str:
             if event.button == 5:  # rueda abajo
-                self.inner_value += q(self.increment, self.inner_value.u)
+                self.value += self.increment
                 self.increment = 0
-            elif event.button == 4 and self.inner_value > 0:  # rueda arriba
-                self.inner_value -= q(self.increment, self.inner_value.u)
+            elif event.button == 4 and self.value > 0:  # rueda arriba
+                self.value -= self.increment
                 self.increment = 0
 
-            elif event.button != 1:
-                self.value = str(round(self.inner_value, 4))
-
-    def update_inner_value(self, new):
-        if self.inner_value is not None:
-            self.inner_value = q(new, self.inner_value.u)
+            if event.button != 1:
+                self.value = round(self.value, 4)
+                self.parent.elevate_changes(self.value, self.unit)
 
     def clear(self):
         self.value = ''
@@ -173,5 +189,12 @@ class NumberArea(BaseWidget, IncrementalValue):
 
     def update(self):
         self.reset_power()
-        self.image = self.f.render(str(self.value), True, self.fg, self.bg)
+        if hasattr(self.value, '__round__') and self.unit is not None:
+            value = q(add_decimal(str(round(self.value, 3))), self.unit)
+            if self.unit != 'year':
+                value = '{:~}'.format(value)
+            value = str(value)
+        else:
+            value = str(self.value)
+        self.image = self.f.render(value, True, self.fg, self.bg)
         self.rect = self.image.get_rect(topleft=self.rect.topleft)

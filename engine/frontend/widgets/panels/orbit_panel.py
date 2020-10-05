@@ -294,15 +294,9 @@ class OrbitType(BaseWidget):
                  'periapsis', 'apoapsis', 'motion', 'temperature', 'velocity', 'period',
                  'planet']
         for i, prop in enumerate([j for j in props if hasattr(orbit, j)]):
-            _value = getattr(orbit, prop)
+            value = getattr(orbit, prop)
             vt = ValueText(self, prop, 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
-            value = _value
-            if hasattr(_value, '__round__'):
-                value = q(round(_value.m, 3), _value.u)
-                if str(_value.u) != 'year':
-                    value = '{:~}'.format(value)
-            vt.text_area.value = str(value)
-            vt.text_area.inner_value = _value if type(_value) is not str else None
+            vt.text_area.set_value(value)
             vt.text_area.update()
             self.properties.add(vt)
 
@@ -312,7 +306,7 @@ class OrbitType(BaseWidget):
             if elemento.text == 'inclination':
                 value = q(elemento.text_area.value, 'degree')
             elif elemento.text not in ['motion', 'temperature']:
-                value = q(*elemento.text_area.value.split(' '))
+                value = q(elemento.text_area.value)
             else:
                 value = 'au'
             parametros.append(value)

@@ -19,6 +19,39 @@ def decimal_round(number: float):
         return int(floor(number))
 
 
+def add_decimal(text):
+    if 'e' in text:
+        txt = '{:0.3e}'.format(float(text))
+    else:
+        txt = text
+
+    decimal = []
+    count = 0
+    p_idx = txt.find('.')
+    if p_idx > 1:
+        last_p = 0
+
+        for i in reversed(range(len(txt[0:p_idx]))):
+            count += 1
+            if count == 3:
+                if i > last_p:
+                    decimal.append(txt[i:])
+                    last_p = i
+                else:
+                    decimal.append(txt[i:count + i])
+                count = 0
+        else:
+            if count > 0:
+                # noinspection PyUnboundLocalVariable
+                decimal.append(txt[i:count + i])
+
+        decimal.reverse()
+        return ','.join(decimal)
+
+    else:
+        return txt
+
+
 class MyCSV(csv.excel):
     delimiter = ';'
 
@@ -80,5 +113,6 @@ __all__ = [
     'guardar_json',
     'abrir_json',
     'load_from_data',
-    'decimal_round'
+    'decimal_round',
+    'add_decimal'
 ]

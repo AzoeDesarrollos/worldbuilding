@@ -22,6 +22,8 @@ class Star(BodyInHydrostaticEquilibrium):
     outer_boundry = 0
     frost_line = 0
 
+    sprite = None
+
     def __init__(self, data):
         mass = data.get('mass', False)
         luminosity = data.get('luminosity', False)
