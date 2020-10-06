@@ -7,6 +7,8 @@ from engine.backend.util import decimal_round
 
 
 class Star(BodyInHydrostaticEquilibrium):
+    celestial_type = 'star'
+
     mass = 1
     radius = 1
     luminosity = 1

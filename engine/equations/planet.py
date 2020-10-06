@@ -5,6 +5,8 @@ from engine import q
 
 
 class Planet(BodyInHydrostaticEquilibrium):
+    celestial_type = 'planet'
+
     mass = 0
     radius = 0
     gravity = 0

@@ -6,6 +6,7 @@ from engine.backend import roll
 
 class Satellite:
     density = None
+    celestial_type = 'satellite'
 
     @staticmethod
     def calculate_density(ice, silicate, iron):
@@ -50,8 +51,8 @@ class Minor(Satellite):
             self.shape = 'prolate'
         else:
             raise ValueError('object is not an ellipsoid')
-        _a, _b, _c = self.a, self.b, self.c
-        self.mass = q(self.density.to('kg/m^3').m * (4 / 3) * pi * _a.to('m').m * _b.to('m').m * _c.to('m').m, 'kg')
+        _a, _b, _c = self.a.to('m').m, self.b.to('m').m, self.c.to('m').m
+        self.mass = q(self.density.to('kg/m^3').m * (4 / 3) * pi * _a * _b * _c, 'kg')
 
     # noinspection PyUnusedLocal
     @staticmethod

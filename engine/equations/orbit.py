@@ -202,3 +202,28 @@ class SatelliteOrbit(Orbit):
         satellite = self.planet.satellite
         self.velocity = q(sqrt(main_body_mass.m / self._a), 'earth_orbital_velocity').to('kilometer per second')
         self.period = q(0.0588 * (pow(self._a, 3) / sqrt(main_body_mass.m + satellite.mass.m)), 'day')
+
+
+def from_resonance(reference, primary, resonance: str):
+    """Return the semi-major axis in AU of the resonant orbit.
+
+    The reference is the body around which the object orbits.
+    In the case of a resonant kupier belt object, the reference
+    is the star, while the primary is the last gas giant.
+
+    If the resonances are calculated for a gas giant's minor moons,
+    then the reference is the gas giant itself, and each moon in
+    turn is the primary of the others.
+
+    The resonance argument is a string in the form of 'x:y'
+    """
+
+    if primary.celestial_type == 'planet':
+        time_unit = 'year'
+    else:
+        time_unit = 'day'
+
+    x, y = [int(i) for i in resonance.split(':')]
+    period = q((y * primary.orbit.period.to(time_unit).m) / x, time_unit)
+    semi_major_axis = pow(pow(period.m, 2) * reference.mass.m, (1 / 3))
+    return semi_major_axis

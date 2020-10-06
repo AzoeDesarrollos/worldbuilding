@@ -8,6 +8,8 @@ class BodyInHydrostaticEquilibrium:
     volume = 0
     density = 0
 
+    celestial_type = ''
+
     @staticmethod
     def calculate_circumference(r):
         return 2 * pi * r
