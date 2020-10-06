@@ -168,6 +168,8 @@ class OrbitPanel(BaseWidget):
         if event.data['panel'] is self:
             for marker in self.markers:
                 marker.kill()
+            for orbit in self.buttons:
+                orbit.kill()
             self.markers.clear()
             self.populate()
 

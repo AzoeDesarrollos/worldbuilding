@@ -1,4 +1,5 @@
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX
+from engine.equations.planet import GasDwarf, Terrestial
 from engine.frontend.dwarfgraph import dwarfgraph_loop
 from engine.equations.planetary_system import system
 from engine.backend.eventhandler import EventHandler
@@ -59,11 +60,30 @@ class ValueText(BaseWidget):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             p = self.parent
-            if p.parent.name == 'Planet' and p.parent.unit.name != 'Jupiter' and not p.has_values:
+            if p.parent.name == 'Planet' and p.parent.unit.name != 'Gas Giant' and not p.has_values:
                 self.active = True
-                lim = system.terra_mass
-                if p.parent.unit.name == 'Earth':
-                    data = graph_loop(mass_upper_limit=lim.m)
+                available_mass = system.get_available_mass()
+                if p.parent.unit.name == 'Habitable':
+                    available_mass = available_mass.to('earth_mass').m
+                    m_low, m_high, r_low, r_high = Terrestial
+                    if available_mass < m_high:
+                        m_high = available_mass
+                    data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
+                                      radius_lower_limit=r_low, radius_upper_limit=r_high)
+                elif p.parent.unit.name == 'Terrestial':
+                    available_mass = available_mass.to('earth_mass').m
+                    data = graph_loop(mass_upper_limit=available_mass)
+
+                elif p.parent.unit.name == 'Gas Dwarf':
+                    m_low, m_high, r_low, r_high = GasDwarf
+                    data = None
+                    if available_mass < m_high:
+                        m_high = available_mass
+                        if m_high > 0.2:
+                            data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
+                                              radius_lower_limit=r_low, radius_upper_limit=r_high)
+                        else:
+                            raise ValueError()
                 else:
                     data = dwarfgraph_loop()
                 for elemento in self.parent.properties.get_sprites_from_layer(1):

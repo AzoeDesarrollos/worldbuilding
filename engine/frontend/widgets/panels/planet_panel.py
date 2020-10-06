@@ -60,7 +60,7 @@ class PlanetType(ObjectType):
 
         f = font.SysFont('Verdana', 16, bold=True)
         self.habitable = f.render('Habitable', True, (0, 255, 0), COLOR_BOX)
-        self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right-10, y=self.parent.rect.y + 50)
+        self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right - 10, y=self.parent.rect.y + 50)
         EventHandler.register(self.save_planet, 'Save')
         EventHandler.register(self.load_planet, 'LoadData')
         EventHandler.register(self.clear, 'ClearData')
@@ -119,18 +119,15 @@ class PlanetType(ObjectType):
 
         if len(attrs) > 1:
             unit = self.parent.unit.name.lower()
-            attrs['unit'] = unit if ('earth' in unit or 'jupiter' in unit) else 'earth'
+            attrs['unit'] = 'jupiter' if unit == 'gas giant' else 'earth'
             self.current = Planet(attrs)
             self.toggle_habitable()
-            if unit in ('earth', 'dwarf') and self.current.mass <= system.terra_mass:
+            if self.current.mass <= system.body_mass:
                 self.parent.button.enable()
-                self.parent.unit.mass_color = COLOR_TEXTO
-            elif unit == 'jupiter' and self.current.mass <= system.gigant_mass:
-                self.parent.button.enable()
-                self.parent.unit.mass_color = COLOR_TEXTO
+                self.parent.unit.mass_number.mass_color = COLOR_TEXTO
             else:
                 self.parent.button.disable()
-                self.parent.unit.mass_color = 200, 0, 0
+                self.parent.unit.mass_number.mass_color = 200, 0, 0
             self.has_values = True
             self.fill()
 
@@ -186,39 +183,33 @@ class Meta:
 
 class Unit(Meta, BaseWidget):
     name = ''
-    mass_color = COLOR_TEXTO
     enabled = True
 
     def __init__(self, parent, x, y):
         super().__init__(parent)
         self.f1 = font.SysFont('Verdana', 12)
         self.f2 = font.SysFont('Verdana', 12, bold=True)
-        render = self.f2.render('Unit: ', True, COLOR_TEXTO, COLOR_BOX)
+        render = self.f2.render('Type: ', True, COLOR_TEXTO, COLOR_BOX)
         render_rect = render.get_rect(bottomleft=(x, y))
         self.base_rect = self.parent.image.blit(render, render_rect)
-        self.cycler = cycle(['Earth', 'Jupiter', 'Dwarf'])
+        self.rect = self.base_rect.copy()
+        self.cycler = cycle(['Habitable', 'Terrestial', 'Dwarf Planet', 'Gas Dwarf', 'Gas Giant'])
+        self.mass_number = ShownMass(self)
         self.name = next(self.cycler)
         self.create()
-        render = self.f2.render('Available mass: ', True, COLOR_TEXTO, COLOR_BOX)
-        self.mass_rect = render.get_rect(bottomleft=(x + 100, y))
-        self.parent.image.blit(render, self.mass_rect)
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.name = next(self.cycler)
             self.create()
 
-    def show_mass(self):
-        if self.name in ('Earth', 'Dwarf'):
-            mass = system.terra_mass
-        else:
-            mass = system.gigant_mass
-        attr = '{:,g}'.format((round(mass, 3)))
-        render = self.f1.render(str(attr), True, self.mass_color, COLOR_BOX)
-        render_rect = render.get_rect(left=self.mass_rect.right + 6, bottom=self.mass_rect.bottom)
-        render_rect.inflate_ip(16, 0)
-        self.parent.image.fill(COLOR_BOX, render_rect)
-        self.parent.image.blit(render, render_rect)
+    def show(self):
+        super().show()
+        self.mass_number.show()
+
+    def hide(self):
+        super().hide()
+        self.mass_number.hide()
 
     def create(self):
         self.img_uns = self.f1.render(self.name, True, COLOR_TEXTO, COLOR_BOX)
@@ -226,9 +217,36 @@ class Unit(Meta, BaseWidget):
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(self.base_rect.right, self.base_rect.y))
 
+
+class ShownMass(Meta, BaseWidget):
+    show_jovian_mass = True
+    mass_color = COLOR_TEXTO
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.f1 = font.SysFont('Verdana', 12, bold=True)
+        self.f2 = font.SysFont('Verdana', 12)
+        self.image = self.f1.render('Available mass: ', True, COLOR_TEXTO, COLOR_BOX)
+        self.rect = self.image.get_rect(left=self.parent.rect.right + 100, bottom=self.parent.rect.bottom)
+        self.mass_img = self.f2.render(self.show_mass(), True, self.mass_color, COLOR_BOX)
+        self.mass_rect = self.mass_img.get_rect(left=self.rect.right + 6, bottom=self.rect.bottom)
+        self.parent.parent.image.blit(self.mass_img, self.mass_rect)
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1:
+            self.show_jovian_mass = not self.show_jovian_mass
+
+    def show_mass(self):
+        mass = system.get_available_mass()
+        if not self.show_jovian_mass:
+            mass = mass.to('earth_mass')
+        attr = '{:,g}'.format((round(mass, 3)))
+        return attr
+
     def update(self):
-        self.show_mass()
-        super().update()
+        self.mass_img = self.f2.render(self.show_mass(), True, self.mass_color, COLOR_BOX)
+        self.mass_rect = self.mass_img.get_rect(left=self.rect.right + 6, bottom=self.rect.bottom)
+        self.parent.parent.image.blit(self.mass_img, self.mass_rect)
 
 
 class TextButton(Meta, BaseWidget):

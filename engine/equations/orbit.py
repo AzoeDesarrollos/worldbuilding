@@ -1,3 +1,4 @@
+from engine.backend.util import collapse_factor_lists, prime_factors
 from engine.equations.planetary_system import system
 from math import sqrt, pow
 from pygame import draw, Rect
@@ -225,5 +226,18 @@ def from_resonance(reference, primary, resonance: str):
 
     x, y = [int(i) for i in resonance.split(':')]
     period = q((y * primary.orbit.period.to(time_unit).m) / x, time_unit)
-    semi_major_axis = pow(pow(period.m, 2) * reference.mass.m, (1 / 3))
+    semi_major_axis = q(pow(pow(period.m, 2) * reference.mass.m, (1 / 3)), 'au')
     return semi_major_axis
+
+
+def to_resonance(period_primary, period_secondary):
+    # resonances = ['1:1', '5:4', '4:3', '11:8', '3:2', '5:3', '7:4',
+    #               '9:5', '11:6', '2:1', '19:9', '9:4', '7:3', '12:5',
+    #               '5:2', '8:3', '3:1', '7:2', '11:3', '11:2']
+    """It takes a pair of orbital periods and returns their mean motion
+     resonance, if it exist. Otherwise, return False."""
+    a, b = prime_factors(period_primary), prime_factors(period_secondary)
+    x, y = collapse_factor_lists(a, b)
+    if x < period_primary and y < period_secondary:  # the MMR numbers should be small
+        return x, y
+    return False  # objects are not in mean motion resonance

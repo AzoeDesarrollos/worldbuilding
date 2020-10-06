@@ -11,7 +11,7 @@ def decimal_round(number: float):
     :rtype: int
     """
     entero = trunc(number)
-    decimal = number-entero
+    decimal = number - entero
     assert type(number) is float
     if decimal >= 0.5:
         return int(ceil(number))
@@ -52,6 +52,41 @@ def add_decimal(text):
         return txt
 
 
+def prime_factors(n):
+    """Returns all the prime factors of a positive integer"""
+
+    factors = []
+    d = 2
+    while n > 1:
+        while n % d == 0:
+            factors.append(d)
+            n //= d
+        d += 1
+        if d * d > n:
+            if n > 1:
+                factors.append(n)
+            break
+    return factors
+
+
+def collapse_factor_lists(a: list, b: list):
+    """Multiplies all the common factors in the
+    two lists, and returns them as a pair of
+    integers."""
+
+    def collapse(factors):
+        n = factors[0]
+        for factor in factors[1:]:
+            n *= factor
+        return n
+
+    for i in list(set(a).intersection(b)):
+        a.remove(i)
+        b.remove(i)
+
+    return collapse(a), collapse(b)
+
+
 class MyCSV(csv.excel):
     delimiter = ';'
 
@@ -64,7 +99,6 @@ def read_csv(ruta):
         data = csv.reader(file, dialect=MyCSV)
         for row in data:
             for i, value in enumerate(row[1:], 1):
-                # noinspection PyTypeChecker
                 row[i] = float(row[i])
             table.append(row)
 
@@ -104,7 +138,6 @@ route = join(getcwd(), 'data', 'savedata.json')
 if not exists(route):
     guardar_json(route, {})
 
-
 EventHandler.register(salir_handler, 'salir')
 
 __all__ = [
@@ -114,5 +147,7 @@ __all__ = [
     'abrir_json',
     'load_from_data',
     'decimal_round',
-    'add_decimal'
+    'add_decimal',
+    'collapse_factor_lists',
+    'prime_factors'
 ]

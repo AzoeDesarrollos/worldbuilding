@@ -28,8 +28,7 @@ class PlanetarySystem:
         self.planets = []
 
         self.current = None
-        self.gigant_mass = 0
-        self.terra_mass = 0
+        self.body_mass = 0
         self.save_data = {}
 
         EventHandler.register(self.save, "SaveDataFile")
@@ -37,16 +36,18 @@ class PlanetarySystem:
 
     def set_star(self, star):
         self.star = star
-        body_mass = q(star.mass.m * 1.4672, 'jupiter_mass')
-        self.gigant_mass = q(body_mass.m * 0.998, 'jupiter_mass')
-        self.terra_mass = q(body_mass.m * 6.356, 'earth_mass')
+        self.body_mass = q(star.mass.m * 1.4672, 'jupiter_mass')
+
+    def get_available_mass(self):
+        return self.body_mass
 
     def add_planet(self, planet):
         if planet not in self.planets:
+            minus_mass = planet.mass
             if planet.unit == 'earth':
-                self.terra_mass -= planet.mass
-            elif planet.unit == 'jupiter':
-                self.gigant_mass -= planet.mass
+                minus_mass = planet.mass.to('jupiter_mass')
+
+            self.body_mass -= minus_mass
             self.set_current(planet)
             self.planets.append(planet)
             if not planet.has_name:
