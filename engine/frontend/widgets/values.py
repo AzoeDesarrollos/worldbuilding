@@ -60,6 +60,7 @@ class ValueText(BaseWidget):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             p = self.parent
+            data = None
             if p.parent.name == 'Planet' and p.parent.unit.name != 'Gas Giant' and not p.has_values:
                 self.active = True
                 available_mass = system.get_available_mass()
@@ -76,9 +77,8 @@ class ValueText(BaseWidget):
 
                 elif p.parent.unit.name == 'Gas Dwarf':
                     m_low, m_high, r_low, r_high = GasDwarf
-                    data = None
-                    if available_mass < m_high:
-                        m_high = available_mass
+                    if available_mass.m < m_high:
+                        m_high = available_mass.m
                         if m_high > 0.2:
                             data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
                                               radius_lower_limit=r_low, radius_upper_limit=r_high)

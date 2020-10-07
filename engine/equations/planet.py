@@ -107,6 +107,8 @@ class Planet(BodyInHydrostaticEquilibrium):
             return 'Gas Giant'
         elif mass < q(2, jm) and radius > q(1, jr):
             return 'Puffy Giant'
+        else:
+            raise TypeError("couldn't class the planet")
 
     def set_atmosphere(self, data):
         self.atmosphere.update(data)
