@@ -1,4 +1,4 @@
-from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_RETURN, K_LCTRL, K_LSHIFT, QUIT
+from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_SPACE, K_LCTRL, K_LSHIFT, QUIT
 from pygame import font, Surface, Rect, image, mouse, event, Color as Clr, mask
 from pygame import display, init as py_init, quit as py_quit
 from engine.backend.util import abrir_json
@@ -172,7 +172,7 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                 elif e.key == K_LCTRL:
                     move_y = False
 
-                elif e.key == K_RETURN:
+                elif e.key == K_SPACE:
                     data['mass'] = round(mass_value, 3)
                     data['radius'] = round(radius_value, 3)
                     data['gravity'] = round(mass_value / (radius_value ** 2), 3)

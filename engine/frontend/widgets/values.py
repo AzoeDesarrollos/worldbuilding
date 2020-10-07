@@ -5,6 +5,7 @@ from engine.equations.planetary_system import system
 from engine.backend.eventhandler import EventHandler
 from engine.frontend import Renderer, WidgetHandler
 from engine.frontend.graph.graph import graph_loop
+from engine.frontend.gasgraph import gasgraph_loop
 from .incremental_value import IncrementalValue
 from engine.backend.util import add_decimal
 from .basewidget import BaseWidget
@@ -61,7 +62,7 @@ class ValueText(BaseWidget):
         if event.button == 1:
             p = self.parent
             data = None
-            if p.parent.name == 'Planet' and p.parent.unit.name != 'Gas Giant' and not p.has_values:
+            if p.parent.name == 'Planet' and not p.has_values:
                 self.active = True
                 available_mass = system.get_available_mass()
                 if p.parent.unit.name == 'Habitable':
@@ -74,7 +75,6 @@ class ValueText(BaseWidget):
                 elif p.parent.unit.name == 'Terrestial':
                     available_mass = available_mass.to('earth_mass').m
                     data = graph_loop(mass_upper_limit=available_mass)
-
                 elif p.parent.unit.name == 'Gas Dwarf':
                     m_low, m_high, r_low, r_high = GasDwarf
                     if available_mass.m < m_high:
@@ -84,6 +84,8 @@ class ValueText(BaseWidget):
                                               radius_lower_limit=r_low, radius_upper_limit=r_high)
                         else:
                             raise ValueError()
+                elif p.parent.unit.name == 'Gas Giant':
+                    data = gasgraph_loop()
                 else:
                     data = dwarfgraph_loop()
                 for elemento in self.parent.properties.get_sprites_from_layer(1):
