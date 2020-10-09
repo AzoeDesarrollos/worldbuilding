@@ -1,14 +1,15 @@
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_DISABLED
 from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO
 from engine.frontend.widgets.incremental_value import IncrementalValue
-from engine.equations.orbit import RawOrbit, PseudoOrbit
 from engine.frontend.widgets.basewidget import BaseWidget
+from engine.equations.orbit import RawOrbit, PseudoOrbit
+from pygame import Surface, font, Rect, MOUSEBUTTONDOWN
 from engine.frontend.globales.group import WidgetGroup
 from engine.backend.eventhandler import EventHandler
 from engine.equations.planetary_system import system
 from .planet_panel import PlanetButton
-from pygame import Surface, font, Rect
 from engine.backend import roll
+from pygame.event import Event
 from ..values import ValueText
 from .planet_panel import Meta
 from engine import q
@@ -144,13 +145,6 @@ class OrbitPanel(BaseWidget):
     def enable_all(self):
         for marker in self.markers:
             marker.enable()
-
-        self.antes.lock()
-        self.despues.lock()
-
-    def disable_all(self):
-        for marker in self.markers:
-            marker.disable()
 
         self.antes.lock()
         self.despues.lock()
@@ -357,6 +351,7 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue):
         self.update()
         self.image = self.img_uns
         self.rect = self.image.get_rect(x=3)
+        EventHandler.register(self.key_to_mouse, 'Arrow')
         Renderer.add_widget(self, layer=50)
         WidgetHandler.add_widget(self)
 
@@ -373,7 +368,7 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue):
             self.orbit.semi_major_axis = new_value
 
     def disable(self):
-        self.enabled = not self.enabled
+        self.enabled = False
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -393,6 +388,18 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue):
             self.value += q(self.increment, self.value.u)
             self.increment = 0
             self.parent.sort_markers()
+
+        return self
+
+    def key_to_mouse(self, event):
+        if event.origin == self:
+            key = event.data['word']
+            if key == 'arriba':
+                event = Event(MOUSEBUTTONDOWN, {'button': 4})
+                self.on_mousebuttondown(event)
+            elif key == 'abajo':
+                event = Event(MOUSEBUTTONDOWN, {'button': 5})
+                self.on_mousebuttondown(event)
 
     def update(self):
         super().update()
@@ -553,7 +560,7 @@ class PlanetArea(BaseWidget):
     def populate(self):
         planets = [i for i in system.planets if i.orbit is None]
         for i, planet in enumerate(planets):
-            listed = ListedPlanet(self, planet, self.rect.x+3, i*16+self.rect.y+21)
+            listed = ListedPlanet(self, planet, self.rect.x + 3, i * 16 + self.rect.y + 21)
             self.listed_planets.add(listed)
             listed.show()
 

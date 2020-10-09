@@ -65,9 +65,11 @@ class Star(BodyInHydrostaticEquilibrium):
         self._outer_boundry = self._mass * 40
         self._frost_line = round(4.85 * sqrt(self._luminosity), 3)
 
+        self.set_qs()
+        assert 0.08 <= self.mass.m < 120, 'Invalid Mass: Stellar mass must be between 0.08 and 120 solar masses.'
+
         self.classification = self.stellar_classification()
         self.cls = self.classification
-        self.set_qs()
         self.color = self.true_color()
 
     def set_qs(self):
@@ -140,7 +142,8 @@ class Star(BodyInHydrostaticEquilibrium):
             if number >= 255:
                 return 255
             elif number <= 0:
-                return abs(number)
+                v = abs(number)
+                return cap(v)
             else:
                 return number
 
