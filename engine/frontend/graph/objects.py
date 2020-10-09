@@ -7,20 +7,23 @@ gris = Color(125, 125, 125, 255)
 
 
 class Linea(Sprite):
-    def __init__(self, x, y, w, h, grupo):
+    def __init__(self, area, x, y, w, h, grupo):
         super().__init__(grupo)
         self.image = Surface((w, h))
         self.image.fill(cian)
 
         self.x, self.y, self.w, self.h = x, y, w, h
         self.rect = Rect(x, y, w, h)
+        self.area_rect = area.copy()
 
     def move_x(self, x):
-        if 59 < x < 589:
+        y = self.y
+        if self.area_rect.collidepoint((x, y)):
             self.rect.centerx = x
 
     def move_y(self, y):
-        if 2 < y < 480:
+        x = self.x
+        if self.area_rect.collidepoint((x, y)):
             self.rect.centery = y
 
 
@@ -28,7 +31,7 @@ class Punto(Sprite):
     disabled = False
     selected = False
 
-    def __init__(self, x, y, grupo):
+    def __init__(self, area, x, y, grupo):
         super().__init__(grupo)
         self.image_des = Surface((10, 10), SRCALPHA)
         self.image_sel = Surface((10, 10), SRCALPHA)
@@ -39,6 +42,7 @@ class Punto(Sprite):
 
         self.image = self.image_des
         self.rect = self.image.get_rect(center=[x, y])
+        self.area_rect = area.copy()
 
     def select(self):
         self.selected = True
@@ -53,11 +57,13 @@ class Punto(Sprite):
         self.disabled = True
 
     def move_x(self, x):
-        if 59 < x < 589:
+        y = self.rect.centery
+        if self.area_rect.collidepoint((x, y)):
             self.rect.centerx = x
 
     def move_y(self, y):
-        if 2 < y < 480:
+        x = self.rect.centerx
+        if self.area_rect.collidepoint((x, y)):
             self.rect.centery = y
 
     def update(self):

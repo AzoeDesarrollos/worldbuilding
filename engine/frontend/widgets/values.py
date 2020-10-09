@@ -76,8 +76,12 @@ class ValueText(BaseWidget):
                                       radius_lower_limit=r_low, radius_upper_limit=r_high)
                 elif p.parent.unit.name == 'Terrestial':
                     available_mass = available_mass.to('earth_mass').m
-                    assert available_mass < 0.1, not_enough_mass
-                    data = graph_loop(mass_upper_limit=available_mass)
+                    m_high = 10
+                    if available_mass < m_high:
+                        m_high = available_mass
+                    assert m_high > 0.1, not_enough_mass
+                    data = graph_loop(mass_upper_limit=m_high)
+
                 elif p.parent.unit.name == 'Gas Dwarf':
                     m_low, m_high, r_low, r_high = GasDwarf
                     if available_mass.m < m_high:

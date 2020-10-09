@@ -88,9 +88,9 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
     rect = Rect(60, 2, 529, 476)
     lineas = LayeredUpdates()
 
-    linea_h = Linea(rect.x, rect.centery, rect.w, 1, lineas)
-    linea_v = Linea(rect.centerx, rect.y, 1, rect.h, lineas)
-    punto = Punto(rect.centerx, rect.centery, lineas)
+    linea_h = Linea(rect, rect.x, rect.centery, rect.w, 1, lineas)
+    linea_v = Linea(rect,  rect.centerx, rect.y, 1, rect.h, lineas)
+    punto = Punto(rect, rect.centerx, rect.centery, lineas)
 
     data = {}
 
