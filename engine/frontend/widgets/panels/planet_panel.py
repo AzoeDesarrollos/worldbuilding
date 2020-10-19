@@ -153,7 +153,7 @@ class Meta:
 
     def show(self):
         self.is_visible = True
-        Renderer.add_widget(self, layer=5000)
+        Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
 
     def hide(self):

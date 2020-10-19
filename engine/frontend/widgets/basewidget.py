@@ -5,10 +5,13 @@ class BaseWidget(Sprite):
     active = False
     enabled = False
     selected = False
+    layer = 0
 
     def __init__(self, parent=None):
         super().__init__()
         self.parent = parent
+        if self.parent is not None:
+            self.layer = self.parent.layer + 1
 
     def on_keydown(self, key):
         pass

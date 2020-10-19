@@ -52,13 +52,13 @@ class WidgetHandler:
 
             elif e.type == MOUSEBUTTONDOWN:
                 widgets = [i for i in cls.contents.sprites() if i.rect.collidepoint(e.pos)]
-                for w in widgets:
-                    cls.origin = w.on_mousebuttondown(e)
+                widgets.sort(key=lambda o: o.layer, reverse=True)
+                cls.origin = widgets[0].on_mousebuttondown(e)
 
             elif e.type == MOUSEBUTTONUP:
                 widgets = [i for i in cls.contents.sprites() if i.rect.collidepoint(e.pos)]
-                for w in widgets:
-                    w.on_mousebuttonup(e)
+                widgets.sort(key=lambda o: o.layer, reverse=True)
+                widgets[0].on_mousebuttonup(e)
 
             elif e.type == MOUSEMOTION:
                 x, y = e.pos

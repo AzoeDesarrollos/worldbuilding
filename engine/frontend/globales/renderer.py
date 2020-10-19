@@ -20,6 +20,8 @@ class Renderer:
 
     @classmethod
     def add_widget(cls, widget, layer=1):
+        if hasattr(widget, 'layer'):
+            layer = widget.layer
         cls.contents.add(widget, layer=layer)
 
     @classmethod

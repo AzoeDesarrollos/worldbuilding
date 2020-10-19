@@ -22,6 +22,7 @@ class OrbitPanel(BaseWidget):
 
     curr_x = 3
     curr_y = 421 + 21
+    offset = 0
 
     visible_markers = True
     current_orbit = None
@@ -34,6 +35,7 @@ class OrbitPanel(BaseWidget):
         self.rect = self.image.get_rect()
         self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.properties = WidgetGroup()
+        self.marker_area = Rect(3, 58, 380, 20*16)
 
         self.f = font.SysFont('Verdana', 16)
         self.f.set_underline(True)
@@ -51,13 +53,8 @@ class OrbitPanel(BaseWidget):
         self.properties.add(self.markers_button, layer=2)
         self.markers_button.disable()
 
-        # centerx = self.rect.centerx
-        # self.antes = PositionButton(self, 'Inward', 550)
-        # self.despues = PositionButton(self, 'Outward', 550)
         self.add_orbits_button = AddOrbitButton(self, ANCHO - 100, 416)
         self.properties.add(self.add_orbits_button, layer=2)
-        # self.antes.rect.right = centerx - 2
-        # self.despues.rect.left = centerx
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
@@ -125,17 +122,31 @@ class OrbitPanel(BaseWidget):
     def sort_markers(self):
         self.markers.sort(key=lambda m: m.value)
         for i, marker in enumerate(self.markers, start=1):
-            marker.rect.y = i * 2 * 10 + 48
+            marker.rect.y = i * 2 * 10 + 38 + self.offset
+            if not self.marker_area.contains(marker.rect):
+                marker.hide()
+            else:
+                marker.show()
+
+    def on_mousebuttondown(self, event):
+        last_is_hidden = not self.markers[-1].is_visible
+        if len(self.markers) > 16:
+            if event.button == 4 and self.offset < 0:
+                self.offset += 20
+            elif event.button == 5 and last_is_hidden:
+                self.offset -= 20
+
+            self.sort_markers()
 
     def check_orbits(self):
         self.orbits.sort(key=lambda o: o.value.m)
         for x, p in enumerate(self.orbits[1:], start=1):
-            a = self.orbits[x-1] if x > 0 and len(self.orbits) else self.orbits[0]  # el anterior
-            assert a.value.m + 0.15 < p.value.m, 'Orbit @'+str(p.value.m)+'is too close to Orbit @'+str(a.value.m)
+            a = self.orbits[x - 1].value.m if x > 0 and len(self.orbits) else self.orbits[0].value.m  # el anterior
+            assert a + 0.15 < p.value.m, 'Orbit @' + str(p.value.m) + ' is too close to Orbit @' + str(a)
 
             if x + 1 < len(self.orbits):
                 b = self.orbits[x + 1].value.m  # el posterior
-                assert p.value.m < b - 0.15, 'Orbit @'+str(p.value.m)+'is too close to Orbit @'+str(b)
+                assert p.value.m < b - 0.15, 'Orbit @' + str(p.value.m) + ' is too close to Orbit @' + str(b)
 
     def cycle(self, delta):
         if 0 <= self.curr_idx + delta < len(self.markers):
@@ -158,27 +169,12 @@ class OrbitPanel(BaseWidget):
         for marker in self.markers:
             marker.enable()
 
-        # self.antes.lock()
-        # self.despues.lock()
-
     def anchor_maker(self, marker):
         self.get_idx(marker)
 
-        # self.antes.link(marker.value)
-        # self.despues.link(marker.value)
         self.add_orbits_button.link(marker.value)
 
-        # self.antes.show()
-        # self.despues.show()
         self.add_orbits_button.enable()
-
-    # def lock(self):
-    #     self.check_orbits()
-    #     for marker in self.markers:
-    #         marker.selected = False
-    #         marker.update()
-    #         # marker.disable()
-    #         # marker.locked = True
 
     def clear(self, event):
         if event.data['panel'] is self:
@@ -380,7 +376,7 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue):
         self.image = self.img_uns
         self.rect = self.image.get_rect(x=3)
         EventHandler.register(self.key_to_mouse, 'Arrow')
-        Renderer.add_widget(self, layer=50)
+        Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
 
     @property
@@ -438,50 +434,6 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue):
 
     def __repr__(self):
         return self.name + ' @' + self.text
-
-
-# class PositionButton(Meta, BaseWidget):
-#     enabled = True
-#     anchor = None
-#     locked = False
-#
-#     def __init__(self, parent, value, y):
-#         super().__init__(parent)
-#         self.f = font.SysFont('Verdana', 14)
-#         self.value = value
-#         self.img_sel = self.f.render(value, True, (255, 255, 255), (0, 125, 255))
-#         self.img_uns = self.f.render(value, True, (255, 255, 255), (125, 125, 255))
-#         self.image = self.img_uns
-#         self.rect = self.image.get_rect(y=y)
-#
-#     def on_mousebuttondown(self, event):
-#         factor = round(roll(1.4, 2.0), 2)
-#         if event.button == 1 and not self.locked:
-#             if self.value == 'Inward':
-#                 do_link = self.parent.add_orbit_marker(self.anchor / factor)
-#                 if do_link:
-#                     self.link(self.parent.cycle(-1))
-#                 else:
-#                     self.parent.get_disabled()
-#                     self.hide()
-#                     if not self.parent.despues.is_visible:
-#                         self.parent.enable_all()
-#
-#             elif self.value == 'Outward':
-#                 do_link = self.parent.add_orbit_marker(self.anchor * factor)
-#                 if do_link:
-#                     self.link(self.parent.cycle(+1))
-#                 else:
-#                     self.parent.get_disabled()
-#                     self.hide()
-#                     if not self.parent.antes.is_visible:
-#                         self.parent.enable_all()
-#
-#     def link(self, orbit):
-#         self.anchor = orbit
-#
-#     def lock(self):
-#         self.locked = True
 
 
 class OrbitButton(Meta, BaseWidget):
@@ -594,7 +546,7 @@ class PlanetArea(BaseWidget):
 
     def show(self):
         self.populate()
-        Renderer.add_widget(self, layer=5)
+        Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
 
     def hide(self):

@@ -65,6 +65,9 @@ class LayoutPanel(BaseWidget):
         self.properties.get_widgets_from_layer(4)[0].enable()
         system.set_star(star)
 
+    def __repr__(self):
+        return 'Layout Panel'
+
 
 class Arrow(Meta, BaseWidget):
     def __init__(self, parent, direccion, angulo, centerx, y):
@@ -94,6 +97,9 @@ class Arrow(Meta, BaseWidget):
                         self.parent.cycle(+1)
                     elif self.direccion == 'backward':
                         self.parent.cycle(-1)
+
+    def __repr__(self):
+        return 'Arrow ({})'.format(self.direccion)
 
 
 class BaseButton(Meta, BaseWidget):

@@ -147,7 +147,7 @@ class Element(BaseWidget):
         self.percent = PercentageCell(self, 45, y)
 
     def show(self):
-        Renderer.add_widget(self, layer=50)
+        Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
         self.percent.enable()
         self.percent.show()
@@ -238,7 +238,7 @@ class PercentageCell(BaseWidget):
             return self.__repr__()
 
     def show(self):
-        Renderer.add_widget(self, layer=5000)
+        Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
 
     def hide(self):
@@ -301,5 +301,5 @@ class Atmograph(BaseWidget):
         WidgetHandler.del_widget(self)
 
     def show(self):
-        Renderer.add_widget(self, layer=50)
+        Renderer.add_widget(self)
         WidgetHandler.add_widget(self)

@@ -209,7 +209,7 @@ class NumberArea(BaseWidget, IncrementalValue):
         EventHandler.deregister(self.input, 'key')
 
     def show(self):
-        Renderer.add_widget(self, layer=50)
+        Renderer.add_widget(self)
         EventHandler.register(self.input, 'Key', 'BackSpace', 'Fin')
 
     def hide(self):
