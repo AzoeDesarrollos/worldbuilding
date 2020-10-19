@@ -7,7 +7,7 @@ from pygame import Surface, font, Rect, MOUSEBUTTONDOWN
 from engine.frontend.globales.group import WidgetGroup
 from engine.backend.eventhandler import EventHandler
 from engine.equations.planetary_system import system
-from .planet_panel import PlanetButton
+from .planet_panel import PlanetButton, TextButton
 from engine.backend import roll
 from pygame.event import Event
 from ..values import ValueText
@@ -51,11 +51,13 @@ class OrbitPanel(BaseWidget):
         self.properties.add(self.markers_button, layer=2)
         self.markers_button.disable()
 
-        centerx = self.rect.centerx
-        self.antes = PositionButton(self, 'Inward', 550)
-        self.despues = PositionButton(self, 'Outward', 550)
-        self.antes.rect.right = centerx - 2
-        self.despues.rect.left = centerx
+        # centerx = self.rect.centerx
+        # self.antes = PositionButton(self, 'Inward', 550)
+        # self.despues = PositionButton(self, 'Outward', 550)
+        self.add_orbits_button = AddOrbitButton(self, ANCHO - 100, 416)
+        self.properties.add(self.add_orbits_button, layer=2)
+        # self.antes.rect.right = centerx - 2
+        # self.despues.rect.left = centerx
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
@@ -125,6 +127,16 @@ class OrbitPanel(BaseWidget):
         for i, marker in enumerate(self.markers, start=1):
             marker.rect.y = i * 2 * 10 + 48
 
+    def check_orbits(self):
+        self.orbits.sort(key=lambda o: o.value.m)
+        for x, p in enumerate(self.orbits[1:], start=1):
+            a = self.orbits[x-1] if x > 0 and len(self.orbits) else self.orbits[0]  # el anterior
+            assert a.value.m + 0.15 < p.value.m, 'Orbit @'+str(p.value.m)+'is too close to Orbit @'+str(a.value.m)
+
+            if x + 1 < len(self.orbits):
+                b = self.orbits[x + 1].value.m  # el posterior
+                assert p.value.m < b - 0.15, 'Orbit @'+str(p.value.m)+'is too close to Orbit @'+str(b)
+
     def cycle(self, delta):
         if 0 <= self.curr_idx + delta < len(self.markers):
             self.curr_idx += delta
@@ -146,17 +158,27 @@ class OrbitPanel(BaseWidget):
         for marker in self.markers:
             marker.enable()
 
-        self.antes.lock()
-        self.despues.lock()
+        # self.antes.lock()
+        # self.despues.lock()
 
     def anchor_maker(self, marker):
         self.get_idx(marker)
 
-        self.antes.link(marker.value)
-        self.despues.link(marker.value)
+        # self.antes.link(marker.value)
+        # self.despues.link(marker.value)
+        self.add_orbits_button.link(marker.value)
 
-        self.antes.show()
-        self.despues.show()
+        # self.antes.show()
+        # self.despues.show()
+        self.add_orbits_button.enable()
+
+    # def lock(self):
+    #     self.check_orbits()
+    #     for marker in self.markers:
+    #         marker.selected = False
+    #         marker.update()
+    #         # marker.disable()
+    #         # marker.locked = True
 
     def clear(self, event):
         if event.data['panel'] is self:
@@ -263,6 +285,8 @@ class OrbitType(BaseWidget):
     linked_planet = None
     locked = True
 
+    modifiable = False
+
     def __init__(self, parent):
         super().__init__(parent)
         self.properties = WidgetGroup()
@@ -300,7 +324,7 @@ class OrbitType(BaseWidget):
         parametros = []
         for elemento in self.properties.widgets():
             if elemento.text == 'inclination':
-                value = q(elemento.text_area.value, 'degree')
+                value = q(0 if elemento.text_area.value == '' else elemento.text_area.value, 'degree')
             elif elemento.text not in ['motion', 'temperature']:
                 value = q(elemento.text_area.value)
             else:
@@ -325,6 +349,10 @@ class OrbitType(BaseWidget):
 
     def hide(self):
         self.clear()
+
+    def elevate_changes(self, key, new_value):
+        # a hook to prevent errors
+        pass
 
 
 class OrbitMarker(Meta, BaseWidget, IncrementalValue):
@@ -412,48 +440,48 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue):
         return self.name + ' @' + self.text
 
 
-class PositionButton(Meta, BaseWidget):
-    enabled = True
-    anchor = None
-    locked = False
-
-    def __init__(self, parent, value, y):
-        super().__init__(parent)
-        self.f = font.SysFont('Verdana', 14)
-        self.value = value
-        self.img_sel = self.f.render(value, True, (255, 255, 255), (0, 125, 255))
-        self.img_uns = self.f.render(value, True, (255, 255, 255), (125, 125, 255))
-        self.image = self.img_uns
-        self.rect = self.image.get_rect(y=y)
-
-    def on_mousebuttondown(self, event):
-        factor = round(roll(1.4, 2.0), 2)
-        if event.button == 1 and not self.locked:
-            if self.value == 'Inward':
-                do_link = self.parent.add_orbit_marker(self.anchor / factor)
-                if do_link:
-                    self.link(self.parent.cycle(-1))
-                else:
-                    self.parent.get_disabled()
-                    self.hide()
-                    if not self.parent.despues.is_visible:
-                        self.parent.enable_all()
-
-            elif self.value == 'Outward':
-                do_link = self.parent.add_orbit_marker(self.anchor * factor)
-                if do_link:
-                    self.link(self.parent.cycle(+1))
-                else:
-                    self.parent.get_disabled()
-                    self.hide()
-                    if not self.parent.antes.is_visible:
-                        self.parent.enable_all()
-
-    def link(self, orbit):
-        self.anchor = orbit
-
-    def lock(self):
-        self.locked = True
+# class PositionButton(Meta, BaseWidget):
+#     enabled = True
+#     anchor = None
+#     locked = False
+#
+#     def __init__(self, parent, value, y):
+#         super().__init__(parent)
+#         self.f = font.SysFont('Verdana', 14)
+#         self.value = value
+#         self.img_sel = self.f.render(value, True, (255, 255, 255), (0, 125, 255))
+#         self.img_uns = self.f.render(value, True, (255, 255, 255), (125, 125, 255))
+#         self.image = self.img_uns
+#         self.rect = self.image.get_rect(y=y)
+#
+#     def on_mousebuttondown(self, event):
+#         factor = round(roll(1.4, 2.0), 2)
+#         if event.button == 1 and not self.locked:
+#             if self.value == 'Inward':
+#                 do_link = self.parent.add_orbit_marker(self.anchor / factor)
+#                 if do_link:
+#                     self.link(self.parent.cycle(-1))
+#                 else:
+#                     self.parent.get_disabled()
+#                     self.hide()
+#                     if not self.parent.despues.is_visible:
+#                         self.parent.enable_all()
+#
+#             elif self.value == 'Outward':
+#                 do_link = self.parent.add_orbit_marker(self.anchor * factor)
+#                 if do_link:
+#                     self.link(self.parent.cycle(+1))
+#                 else:
+#                     self.parent.get_disabled()
+#                     self.hide()
+#                     if not self.parent.antes.is_visible:
+#                         self.parent.enable_all()
+#
+#     def link(self, orbit):
+#         self.anchor = orbit
+#
+#     def lock(self):
+#         self.locked = True
 
 
 class OrbitButton(Meta, BaseWidget):
@@ -594,3 +622,47 @@ class ListedPlanet(PlanetButton):
             else:
                 self.image = self.img_uns
             self.selected = False
+
+
+class AddOrbitButton(TextButton):
+    value = 'Inward'
+    anchor = None
+    locked = False
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent, 'Add Orbit', x, y)
+
+    def on_mousebuttondown(self, event):
+        factor = round(roll(1.4, 2.0), 2)
+        if event.button == 1 and self.enabled and not self.locked:
+            if self.value == 'Inward':
+                do_link = self.parent.add_orbit_marker(self.anchor / factor)
+                if do_link:
+                    self.link(self.parent.cycle(-1))
+                else:
+                    self.parent.get_disabled()
+                    self.switch()
+
+            elif self.value == 'Outward':
+                do_link = self.parent.add_orbit_marker(self.anchor * factor)
+                if do_link:
+                    self.link(self.parent.cycle(+1))
+                else:
+                    self.parent.get_disabled()
+                    self.disable()
+            self.parent.check_orbits()
+
+    def switch(self):
+        if self.value == 'Inward':
+            self.value = 'Outward'
+        else:
+            self.value = 'Inward'
+
+    def lock(self):
+        self.locked = True
+
+    def unlock(self):
+        self.locked = False
+
+    def link(self, orbit):
+        self.anchor = orbit

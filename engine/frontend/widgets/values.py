@@ -182,7 +182,7 @@ class NumberArea(BaseWidget, IncrementalValue):
 
     def on_mousebuttondown(self, event):
         self.increment = self.update_increment()
-        if not type(self.value) is str:
+        if not type(self.value) is str and self.grandparent.modifiable:
             if event.button == 5:  # rueda abajo
                 self.value += self.increment
                 self.increment = 0
