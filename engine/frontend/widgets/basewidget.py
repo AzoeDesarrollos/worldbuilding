@@ -1,10 +1,12 @@
 from pygame.sprite import Sprite
+from engine.frontend.globales import WidgetHandler, Renderer
 
 
 class BaseWidget(Sprite):
     active = False
     enabled = False
     selected = False
+    is_visible = False
     layer = 0
 
     def __init__(self, parent=None):
@@ -45,3 +47,13 @@ class BaseWidget(Sprite):
 
     def update(self):
         pass
+
+    def show(self):
+        self.is_visible = True
+        Renderer.add_widget(self)
+        WidgetHandler.add_widget(self)
+
+    def hide(self):
+        self.is_visible = False
+        Renderer.del_widget(self)
+        WidgetHandler.del_widget(self)

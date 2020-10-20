@@ -33,7 +33,7 @@ class Renderer:
         fondo = display.get_surface()
         fondo.fill(COLOR_FONDO)
         cls.contents.draw(fondo)
-        display.flip()
+        display.update()
 
 
 Renderer.init()

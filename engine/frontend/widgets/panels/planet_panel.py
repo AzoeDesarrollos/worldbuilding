@@ -1,4 +1,4 @@
-from engine.frontend.globales import Renderer, COLOR_BOX, COLOR_TEXTO, WidgetHandler, COLOR_AREA, WidgetGroup
+from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, WidgetGroup
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
@@ -95,7 +95,7 @@ class PlanetType(ObjectType):
             for button in self.properties.get_sprites_from_layer(1):
                 button.text_area.clear()
             self.parent.button.disable()
-            self.parent.add_button(self.current)
+            self.parent.add_button_and_type(self.current)
             self.has_values = False
             self.parent.image.fill(COLOR_BOX, self.hab_rect)
 
@@ -150,16 +150,7 @@ class Meta:
     image = None
 
     is_visible = False
-
-    def show(self):
-        self.is_visible = True
-        Renderer.add_widget(self)
-        WidgetHandler.add_widget(self)
-
-    def hide(self):
-        self.is_visible = False
-        Renderer.del_widget(self)
-        WidgetHandler.del_widget(self)
+    has_mouseover = False
 
     def enable(self):
         self.enabled = True
@@ -169,16 +160,23 @@ class Meta:
         self.image = self.img_dis
 
     def on_mouseover(self):
+        self.has_mouseover = True
         if self.enabled:
-            self.selected = True
+            self.image = self.img_sel
+
+    def select(self):
+        self.selected = True
+        if self.enabled:
+            self.image = self.img_sel
+
+    def deselect(self):
+        self.selected = False
+        self.image = self.img_uns
 
     def update(self):
-        if self.enabled:
-            if self.selected:
-                self.image = self.img_sel
-            else:
-                self.image = self.img_uns
-            self.selected = False
+        if all([not self.has_mouseover, not self.selected, self.enabled]):
+            self.image = self.img_uns
+        self.has_mouseover = False
 
 
 class Unit(Meta, BaseWidget):
@@ -218,7 +216,7 @@ class Unit(Meta, BaseWidget):
         self.rect = self.image.get_rect(topleft=(self.base_rect.right, self.base_rect.y))
 
 
-class ShownMass(Meta, BaseWidget):
+class ShownMass(BaseWidget):
     show_jovian_mass = True
     mass_color = COLOR_TEXTO
 
@@ -230,7 +228,10 @@ class ShownMass(Meta, BaseWidget):
         self.rect = self.image.get_rect(left=self.parent.rect.right + 100, bottom=self.parent.rect.bottom)
         self.mass_img = self.f2.render(self.show_mass(), True, self.mass_color, COLOR_BOX)
         self.mass_rect = self.mass_img.get_rect(left=self.rect.right + 6, bottom=self.rect.bottom)
-        self.parent.parent.image.blit(self.mass_img, self.mass_rect)
+        self.mass_rect.width += 50
+
+        self.grandparent = self.parent.parent
+        self.grandparent.image.blit(self.mass_img, self.mass_rect)
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -244,8 +245,10 @@ class ShownMass(Meta, BaseWidget):
         return attr
 
     def update(self):
+        self.grandparent.image.fill(COLOR_BOX, self.mass_rect)
         self.mass_img = self.f2.render(self.show_mass(), True, self.mass_color, COLOR_BOX)
         self.mass_rect = self.mass_img.get_rect(left=self.rect.right + 6, bottom=self.rect.bottom)
+        self.mass_rect.width += 50
         self.parent.parent.image.blit(self.mass_img, self.mass_rect)
 
 

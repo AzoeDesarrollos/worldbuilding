@@ -190,7 +190,7 @@ class NumberArea(BaseWidget, IncrementalValue):
                 self.value -= self.increment
                 self.increment = 0
 
-            if event.button != 1:
+            if event.button in (4, 5):
                 self.value = round(self.value, 4)
                 self.parent.elevate_changes(self.value, self.unit)
 
