@@ -20,6 +20,7 @@ class OrbitPanel(BaseWidget):
     _loaded_orbits = None
 
     offset = 0
+    curr_x, curr_y = 3, 442
 
     visible_markers = True
     current_orbit = None
@@ -30,11 +31,12 @@ class OrbitPanel(BaseWidget):
         self.image = Surface((ANCHO, ALTO - 32))
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
-        self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.properties = WidgetGroup()
-        self.marker_area = Rect(3, 58, 380, 20 * 16)
-        self.modify_area = ModifyArea(self, ANCHO - 200, 399)
-        self.properties.add(self.modify_area, layer=2)
+        self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
+        self.area_markers = Rect(3, 58, 380, 20 * 16)
+        self.area_scroll = Rect(3, 32, 387, 388)
+        self.area_modify = ModifyArea(self, ANCHO - 200, 399)
+        self.properties.add(self.area_modify, layer=2)
 
         self.f = font.SysFont('Verdana', 16)
         self.f.set_underline(True)
@@ -120,15 +122,19 @@ class OrbitPanel(BaseWidget):
         self.markers.sort(key=lambda m: m.value)
         for i, marker in enumerate(self.markers, start=1):
             marker.rect.y = i * 2 * 10 + 38 + self.offset
-            if not self.marker_area.contains(marker.rect):
+            if not self.area_markers.contains(marker.rect):
                 marker.hide()
             else:
                 marker.show()
 
     def sort_buttons(self):
-        x, y = 3, 442
+        x, y = self.curr_x, self.curr_y
         for bt in sorted(self.buttons.widgets(), key=lambda b: b.get_value()):
             bt.move(x, y)
+            if not self.area_buttons.contains(bt.rect):
+                bt.hide()
+            else:
+                bt.show()
             if x + bt.rect.w + 15 < self.rect.w - bt.rect.w + 15:
                 x += bt.rect.w + 15
             else:
@@ -149,14 +155,27 @@ class OrbitPanel(BaseWidget):
             self.sort_buttons()
 
     def on_mousebuttondown(self, event):
-        last_is_hidden = not self.markers[-1].is_visible
-        if len(self.markers) > 16 and event.button in (4, 5):
-            if event.button == 4 and self.offset < 0:
-                self.offset += 20
-            elif event.button == 5 and last_is_hidden:
-                self.offset -= 20
 
-            self.sort_markers()
+        if self.area_scroll.collidepoint(event.pos):
+            last_is_hidden = not self.markers[-1].is_visible
+            if len(self.markers) > 16 and event.button in (4, 5):
+                if event.button == 4 and self.offset < 0:
+                    self.offset += 20
+                elif event.button == 5 and last_is_hidden:
+                    self.offset -= 20
+
+                self.sort_markers()
+
+        elif self.area_buttons.collidepoint(event.pos):
+            buttons = self.buttons.widgets()
+            buttons.sort(key=lambda b: b.get_value())
+            last_is_hidden = not buttons[-1].is_visible
+            first_is_hidden = not buttons[0].is_visible
+            if event.button == 4 and first_is_hidden:
+                self.curr_y += 32
+            elif event.button == 5 and last_is_hidden:
+                self.curr_y -= 32
+            self.sort_buttons()
 
         elif event.button == 1:
             for marker in self.markers:
@@ -195,7 +214,7 @@ class OrbitPanel(BaseWidget):
         self.get_idx(marker)
 
         self.add_orbits_button.link(marker.value)
-        self.modify_area.link(marker)
+        self.area_modify.link(marker)
 
         self.add_orbits_button.enable()
         self.add_orbits_button.unlock()
@@ -294,7 +313,7 @@ class OrbitPanel(BaseWidget):
             locked[0].linked_type.link_planet(planet)
 
     def update(self):
-        self.image.fill(COLOR_BOX, self.marker_area)
+        self.image.fill(COLOR_BOX, self.area_markers)
 
     def __repr__(self):
         return 'Orbit Panel'
@@ -483,7 +502,6 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue, Intertwined):
 
 class OrbitButton(Meta, BaseWidget, Intertwined):
     locked = False
-    hidden = False
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -510,14 +528,6 @@ class OrbitButton(Meta, BaseWidget, Intertwined):
     def move(self, x, y):
         self._rect.topleft = x, y
         self.create()
-
-    def show(self):
-        super().show()
-        self.hidden = False
-
-    def hide(self):
-        super().hide()
-        self.hidden = True
 
     def lock(self):
         self.locked = True
