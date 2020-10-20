@@ -93,8 +93,6 @@ def gasgraph_loop():
 
             elif e.type == MOUSEMOTION:
                 px, py = e.pos
-                dx = px - 30
-                dy = py - 14
 
                 if move_y:
                     linea_h.move_y(py)
@@ -103,6 +101,7 @@ def gasgraph_loop():
                     linea_v.move_x(px)
                     punto.move_x(px)
 
+                dx, dy = punto.rect.center
                 valid = [rect_puffy.collidepoint(dx, dy),
                          rect_giant.collidepoint(dx, dy),
                          rect_super.collidepoint(dx, dy)]

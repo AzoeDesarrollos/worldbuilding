@@ -150,11 +150,12 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                     linea_v.move_x(px)
                     punto.move_x(px)
 
-                if rect.collidepoint(px, py) and (move_x or move_y):
-                    if mascara.get_at((px, py)):
+                point_x, point_y = punto.rect.center
+                if rect.collidepoint(point_x, point_y) and (move_x or move_y):
+                    if mascara.get_at((point_x, point_y)):
                         punto.select()
                         for name in _lineas:
-                            if [px, py] in _lineas[name]:
+                            if [point_x, point_y] in _lineas[name]:
                                 data['composition'] = name
                                 break
                     else:
@@ -193,7 +194,7 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                     if not locky:
                         move_y = True
 
-        px, py = mouse.get_pos()
+        px, py = punto.rect.center
         alto, bajo = 0, 0
         if not data.get('composition', False):
             if rect.collidepoint((px, py)):
@@ -261,8 +262,9 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                 block.fill([0] * 3 + [alpha], (0, rect.y - 2, rect.w, lim_radius_b))
 
             block_mask = mask.from_surface(block)
-            if block_rect.collidepoint((px, py)):
-                if block_mask.get_at((px - rect.x, py - rect.y)):
+            point_x, point_y = punto.rect.center
+            if block_rect.collidepoint((point_x, point_y)):
+                if block_mask.get_at((point_x - rect.x, point_y - rect.y)):
                     punto.disable()
                     radius_color = rojo
                     mass_color = rojo

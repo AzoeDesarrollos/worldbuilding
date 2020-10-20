@@ -99,7 +99,8 @@ def dwarfgraph_loop():
                     linea_v.move_x(x)
                     punto.move_x(x)
 
-                if bg_rect.collidepoint(x, y):
+                dx, dy = punto.rect.center
+                if bg_rect.collidepoint(dx, dy):
                     mass = round(pos_to_keys(linea_h.rect.y - 26, mass_keys, yes, 'gt'), 5)
                     radius = round(pos_to_keys(linea_v.rect.x, radius_keys, exes, 'gt'), 3)
                     data.update({'mass': mass, 'radius': radius, 'clase': 'Dwarf Planet'})
