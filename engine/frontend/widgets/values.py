@@ -206,7 +206,7 @@ class NumberArea(BaseWidget, IncrementalValue):
     def disable(self):
         self.enabled = False
         WidgetHandler.del_widget(self)
-        EventHandler.deregister(self.input, 'key')
+        EventHandler.deregister(self.input, 'Key')
 
     def show(self):
         Renderer.add_widget(self)
@@ -214,7 +214,7 @@ class NumberArea(BaseWidget, IncrementalValue):
 
     def hide(self):
         Renderer.del_widget(self)
-        EventHandler.deregister(self.input, 'key')
+        EventHandler.deregister(self.input, 'Key')
 
     def update(self):
         self.reset_power()

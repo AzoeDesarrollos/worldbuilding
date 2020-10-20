@@ -11,8 +11,8 @@ class StarSprite(BaseWidget):
     has_mouseover = False
     clicked = False
 
-    def __init__(self, star, x, y):
-        super().__init__()
+    def __init__(self, parent, star, x, y):
+        super().__init__(parent)
         self.radius = round(star.radius.m * 10)
 
         if self.radius % 2 == 0:

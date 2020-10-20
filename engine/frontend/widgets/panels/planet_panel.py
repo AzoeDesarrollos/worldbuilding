@@ -17,7 +17,7 @@ class PlanetPanel(BasePanel):
 
     def __init__(self, parent):
         super().__init__('Planet', parent)
-        self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
+        self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.current = PlanetType(self)
 
         self.unit = Unit(self, 0, 416)
@@ -34,14 +34,34 @@ class PlanetPanel(BasePanel):
 
     def add_button(self, planet):
         button = PlanetButton(self.current, planet, self.curr_x, self.curr_y)
-        if self.curr_x + button.w + 10 < self.rect.w - button.w + 10:
-            self.curr_x += button.w + 10
-        else:
-            self.curr_x = 0
-            self.curr_y += 32
         self.planet_buttons.add(button)
-        self.current.properties.add(button)
-        button.show()
+        self.sort_buttons()
+        self.current.properties.add(button, layer=2)
+
+    def sort_buttons(self):
+        x, y = self.curr_x, self.curr_y
+        for bt in self.planet_buttons.widgets():
+            bt.move(x, y)
+            if not self.area_buttons.contains(bt.rect):
+                bt.hide()
+            else:
+                bt.show()
+            if x + bt.rect.w + 10 < self.rect.w - bt.rect.w + 10:
+                x += bt.rect.w + 10
+            else:
+                x = 3
+                y += 32
+
+    def on_mousebuttondown(self, event):
+        if self.area_buttons.collidepoint(event.pos):
+            buttons = self.planet_buttons.widgets()
+            last_is_hidden = not buttons[-1].is_visible
+            first_is_hidden = not buttons[0].is_visible
+            if event.button == 4 and first_is_hidden:
+                self.curr_y += 32
+            elif event.button == 5 and last_is_hidden:
+                self.curr_y -= 32
+            self.sort_buttons()
 
 
 class PlanetType(ObjectType):
@@ -95,7 +115,7 @@ class PlanetType(ObjectType):
             for button in self.properties.get_sprites_from_layer(1):
                 button.text_area.clear()
             self.parent.button.disable()
-            self.parent.add_button_and_type(self.current)
+            self.parent.add_button(self.current)
             self.has_values = False
             self.parent.image.fill(COLOR_BOX, self.hab_rect)
 
@@ -308,3 +328,6 @@ class PlanetButton(Meta, BaseWidget):
             self.show()
         else:
             self.hide()
+
+    def move(self, x, y):
+        self.rect.topleft = x, y

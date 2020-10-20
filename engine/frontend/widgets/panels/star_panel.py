@@ -51,7 +51,8 @@ class StarType(ObjectType):
         }
         super().fill(tos)
 
-        StarSprite(self.current, 460, 100)
+        a = StarSprite(self, self.current, 460, 100)
+        self.properties.add(a)
 
     def hide(self):
         super().hide()
