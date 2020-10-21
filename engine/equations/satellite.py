@@ -16,7 +16,7 @@ class Satellite:
 
 
 class Major(Satellite, BodyInHydrostaticEquilibrium):
-    def __init__(self, data, planet_name):
+    def __init__(self, data):
         name = data.get('name', None)
         if name:
             self.name = name
@@ -29,7 +29,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         self.surface = q(self.calculate_surface_area(self.radius.to('km').m), 'km^2')
         self.circumference = q(self.calculate_circumference(self.radius.to('km').m), 'km')
         self.escape_velocity = q(sqrt(self.mass.magnitude / self.radius.magnitude), 'earth_escape')
-        self.clase = 'Major Moon of '+planet_name
+        self.clase = 'Major Moon'
 
     # noinspection PyUnusedLocal
     @staticmethod
@@ -38,7 +38,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
 
 
 class Minor(Satellite):
-    def __init__(self, data, planet_name):
+    def __init__(self, data):
         self.density = self.set_density(data['composition'])
         a, b, c = data['a'], data['b'], data['c']
         self.a = q(a, 'km')
@@ -54,7 +54,7 @@ class Minor(Satellite):
             raise ValueError('object is not an ellipsoid')
         _a, _b, _c = self.a.to('m').m, self.b.to('m').m, self.c.to('m').m
         self.mass = q(self.density.to('kg/m^3').m * (4 / 3) * pi * _a * _b * _c, 'kg')
-        self.clase = self.__repr__()+'of '+planet_name
+        self.clase = self.__repr__()
 
     # noinspection PyUnusedLocal
     @staticmethod
@@ -125,4 +125,4 @@ def create_moon(planet, star, data):
 
     # dynamic moon creation
     moon = type('Moon', (moon_composition, moon_type), {})
-    return moon(data, planet.name)
+    return moon(data)

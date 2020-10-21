@@ -39,6 +39,8 @@ class SatellitePanel(BasePanel):
 
 
 class SatelliteType(ObjectType):
+    planet = None
+
     def __init__(self, parent):
         super().__init__(parent,
                          ['Mass', 'Radius', 'Gravity', 'escape_velocity'],
@@ -49,7 +51,6 @@ class SatelliteType(ObjectType):
 
     def calculate(self):
         star = system.star
-        planet = system.current
         data = {'composition': {}}
         for material in self.properties.get_sprites_from_layer(7):
             if material.text_area.value:  # not empty
@@ -58,9 +59,12 @@ class SatelliteType(ObjectType):
             if item.text_area.value:
                 data[item.text.lower()] = float(item.text_area.value)
 
-        self.current = create_moon(planet, star, data)
+        self.current = create_moon(self.planet, star, data)
         self.has_values = True
         self.fill()
+
+    def set_planet(self, planet):
+        self.planet = planet
 
     def fill(self, tos=None):
         tos = {

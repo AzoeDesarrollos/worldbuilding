@@ -272,6 +272,7 @@ class OrbitPanel(BaseWidget):
     def toggle_stellar_orbits(self):
         if self.visible_markers:
             self.area_modify.color_alert()
+            self.add_orbits_button.disable()
             for marker in self.markers:
                 marker.hide()
         else:
@@ -279,6 +280,7 @@ class OrbitPanel(BaseWidget):
                 marker.show()
             self.hide_orbit_types()
             self.star_orbits_button.disable()
+            self.add_orbits_button.enable()
             self.area_modify.color_standby()
         self.visible_markers = not self.visible_markers
 

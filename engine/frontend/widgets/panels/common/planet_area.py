@@ -30,6 +30,11 @@ class PlanetArea(BaseWidget):
         for listed in self.listed_planets.widgets():
             if listed.planet_data == planet:
                 listed.kill()
+        self.sort()
+
+    def sort(self):
+        for i, planet in enumerate(self.listed_planets.widgets()):
+            planet.rect.y = i * 16 + self.rect.y + 21
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
