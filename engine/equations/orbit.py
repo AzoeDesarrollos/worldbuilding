@@ -7,23 +7,29 @@ from engine import q
 
 class RawOrbit:
     _unit = ''
-    semi_major_axis = None
     temperature = ''
 
     def __init__(self, a):
-        self.semi_major_axis = a
         self._unit = a.u
-        self.a = self.semi_major_axis
+        self.a = a
+        self.set_temperature()
 
+    def set_temperature(self):
         if self.a.m > system.star.frost_line.m:
-            self.set_temperature('cold')
-        elif system.star.habitable_inner.m < self.a.m < system.star.habitable_outer.m:
-            self.set_temperature('habitable')
+            self.temperature = 'cold'
+        elif system.star.habitable_inner.m <= self.a.m <= system.star.habitable_outer.m:
+            self.temperature = 'habitable'
         else:
-            self.set_temperature('hot')
+            self.temperature = 'hot'
 
-    def set_temperature(self, t):
-        self.temperature = t
+    @property
+    def semi_major_axis(self):
+        return q(self.a.m, self._unit)
+
+    @semi_major_axis.setter
+    def semi_major_axis(self, quantity):
+        self.a = quantity
+        self.set_temperature()
 
     def __mul__(self, other):
         new_a = None

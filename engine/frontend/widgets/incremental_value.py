@@ -8,6 +8,8 @@ class IncrementalValue:
         self.ticks = 0
         if self.clicks == 10:
             self.potencia += 1
+            if self.potencia > 3:
+                self.potencia = 3
             self.clicks = 2
         else:
             self.clicks += 1
@@ -16,7 +18,7 @@ class IncrementalValue:
 
     def reset_power(self):
         self.ticks += 1
-        if self.ticks >= 60:
+        if self.ticks >= 30:
             self.clicks = 0
             self.increment = 0
             self.potencia = 0
