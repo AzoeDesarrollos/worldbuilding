@@ -1,8 +1,8 @@
 # Earth Units
-earth_mass = 5.97237e+24 kg = earth_masses
-earth_radius = 6378.1 km = earth_radii
-earth_gravity = 9.807 m/s ** 2
-earth_density = 5.514 g/cm ** 3
+earth_mass = 5.97237e+24 kg = Me
+earth_radius = 6378.1 km = Re
+earth_gravity = 9.807 m/s ** 2 = Ge
+earth_density = 5.514 g/cm ** 3 = De
 earth_escape_velocity = 11.186 km/s = earth_escape
 earth_orbital_period = year = earth_year
 earth_day = day
@@ -10,8 +10,8 @@ earth_orbital_velocity = 29.78 km/s = earth_orbital_speed
 earth_temperature = 288 kelvin
 
 # Jupiter Units
-jupiter_mass = 317.8 earth_masses = jupiter_masses
-jupiter_radius = 71492 km = jupiter_radii
+jupiter_mass = 317.8 earth_mass = Jm
+jupiter_radius = 71492 km = Jr
 jupiter_gravity = 24,79 m/s ** 2
 jupiter_density = 1326 kg/m ** 3
 jupiter_escape_velocity = 59.5 km/s

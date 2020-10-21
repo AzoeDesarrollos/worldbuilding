@@ -62,7 +62,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.greenhouse = q(data['greenhouse']) if 'albedo' in data else q(1)
 
     def set_qs(self, unit):
-        m = unit + '_masses'
+        m = unit + '_mass'
         r = unit + '_radius'
 
         self.mass = q(self._mass, m)

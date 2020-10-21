@@ -89,12 +89,16 @@ class AtmospherePanel(BaseWidget):
             element.show()
         self.atmograph.show()
         self.planets.show()
+        self.show_name()
+
+    def show_name(self):
         text = 'Atmosphere of planet'
         planet = self.curr_planet
         if planet is not None:
             idx = system.planets.index(planet)
             text += ' #' + str(idx) + ' (' + planet.clase + ')'
 
+        self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
         self.write(text, self.f2, centerx=self.rect.centerx, y=21)
 
     def hide(self):
@@ -110,6 +114,7 @@ class AtmospherePanel(BaseWidget):
 
     def set_planet(self, planet):
         self.curr_planet = planet
+        self.show_name()
 
     def cycle(self, delta):
         for elm in self.elements.widgets():

@@ -1,4 +1,5 @@
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_DISABLED
+from engine.frontend.globales import COLOR_SELECTED, COLOR_PLANETORBIT, COLOR_STARORBIT
 from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.panels.common import PlanetArea
@@ -41,6 +42,7 @@ class OrbitPanel(BaseWidget):
         self.f = font.SysFont('Verdana', 16)
         self.f.set_underline(True)
         self.write(self.name + ' Panel', self.f, centerx=self.rect.centerx, y=0)
+        self.image.blit(font.SysFont('Verdana', 14).render(' | ', True, COLOR_TEXTO, COLOR_AREA), (104, 421))
 
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 350)
         self.properties.add(self.planet_area, layer=2)
@@ -50,9 +52,11 @@ class OrbitPanel(BaseWidget):
         self.buttons = WidgetGroup()
         self.markers = []
         self.orbit_descriptions = WidgetGroup()
-        self.markers_button = ShowMarkersButton(self, 3, 421)
-        self.properties.add(self.markers_button, layer=2)
-        self.markers_button.disable()
+        self.star_orbits_button = ToggleableButton(self, 'Stellar Orbits', self.toggle_stellar_orbits, 3, 421)
+        self.planet_orbit_button = ToggleableButton(self, 'Planetary Orbits', self.toggle_planetary_orbits, 123, 421)
+        self.properties.add(self.star_orbits_button, self.planet_orbit_button, layer=2)
+        self.star_orbits_button.disable()
+        self.planet_orbit_button.disable()
 
         self.add_orbits_button = AddOrbitButton(self, ANCHO - 100, 416)
         self.properties.add(self.add_orbits_button, layer=2)
@@ -83,27 +87,32 @@ class OrbitPanel(BaseWidget):
         inner = system.star.inner_boundry
         outer = system.star.outer_boundry
         if type(position) is q:
-            is_orbit = True
-            is_complete_orbit = False
+            bool_a = True
+            bool_b = False
             test = inner < position < outer
+            color = COLOR_TEXTO
         else:  # type(position) is PlanetOrbit
-            is_orbit = False
-            is_complete_orbit = True
+            bool_a = False
+            bool_b = True
             test = inner < position.semi_major_axis < outer
+            if position.primary == 'Star':
+                color = COLOR_STARORBIT
+            else:
+                color = COLOR_PLANETORBIT
 
         if test is True:
-            new = OrbitMarker(self, 'Orbit', position, is_orbit=is_orbit, is_complete_orbit=is_complete_orbit)
+            new = OrbitMarker(self, 'Orbit', position, is_orbit=bool_a, is_complete_orbit=bool_b)
             self.markers.append(new)
             self.orbits.append(new)
             self.sort_markers()
-            self.add_button_and_type(new)
+            self.add_button_and_type(new, color)
             self.properties.add(new, layer=2)
             return True
         return False
 
-    def add_button_and_type(self, marker):
+    def add_button_and_type(self, marker, color):
         orbit_type = OrbitType(self)
-        button = OrbitButton(self)
+        button = OrbitButton(self, color)
         self.buttons.add(button)
 
         # Buttons, OrbitTypes and Markers are all Intertwined.
@@ -129,7 +138,7 @@ class OrbitPanel(BaseWidget):
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
-        for bt in sorted(self.buttons.widgets(), key=lambda b: b.get_value()):
+        for bt in sorted(self.buttons.widgets(), key=lambda b: b.get_value().m):
             bt.move(x, y)
             if not self.area_buttons.contains(bt.rect):
                 bt.hide()
@@ -168,7 +177,7 @@ class OrbitPanel(BaseWidget):
 
         elif self.area_buttons.collidepoint(event.pos):
             buttons = self.buttons.widgets()
-            buttons.sort(key=lambda b: b.get_value())
+            buttons.sort(key=lambda b: b.get_value().m)
             last_is_hidden = not buttons[-1].is_visible
             first_is_hidden = not buttons[0].is_visible
             if event.button == 4 and first_is_hidden:
@@ -273,7 +282,7 @@ class OrbitPanel(BaseWidget):
         self.visible_markers = True
         if len(self._loaded_orbits):
             self.set_loaded_orbits()
-        self.markers_button.show()
+        self.star_orbits_button.show()
 
         super().show()
 
@@ -282,26 +291,25 @@ class OrbitPanel(BaseWidget):
         for item in self.properties.widgets():
             item.hide()
 
-    def toggle_markers(self):
+    def toggle_stellar_orbits(self):
         if self.visible_markers:
             for marker in self.markers:
                 marker.hide()
         else:
-            for orbit_type in self.orbit_descriptions.widgets():
-                orbit_type.hide()
             for marker in self.markers:
                 marker.show()
-            self.unlock_every_button()
-            self.markers_button.disable()
+            self.hide_orbit_types()
+            self.star_orbits_button.disable()
         self.visible_markers = not self.visible_markers
+
+    def toggle_planetary_orbits(self):
+        if self.visible_markers:
+            for marker in self.markers:
+                marker.hide()
 
     def hide_orbit_types(self):
         for orbit_type in self.orbit_descriptions.widgets():
             orbit_type.hide()
-        for orbit_button in self.buttons.widgets():
-            orbit_button.unlock()
-
-    def unlock_every_button(self):
         for orbit_button in self.buttons.widgets():
             orbit_button.unlock()
 
@@ -421,6 +429,7 @@ class OrbitType(BaseWidget, Intertwined):
 class OrbitMarker(Meta, BaseWidget, IncrementalValue, Intertwined):
     enabled = True
     name = ''
+    color = None
 
     locked = False
     orbit = None
@@ -434,10 +443,13 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue, Intertwined):
         if is_orbit:
             self.orbit = RawOrbit(round(value, 3))
             self.text = '{:~}'.format(value)
+            self.color = COLOR_SELECTED
         elif is_complete_orbit:
             self.orbit = value
             self.text = '{:~}'.format(value.a)
+            self.color = COLOR_SELECTED
         else:
+            self.color = COLOR_TEXTO
             self.text = '{:~}'.format(value)
         self.update()
         self.image = self.img_uns
@@ -490,8 +502,8 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue, Intertwined):
     def update(self):
         self.reset_power()
         self.text = '{:~}'.format(self.value)
-        self.img_sel = self.f2.render(self.name + ' @ ' + self.text, True, COLOR_TEXTO, COLOR_BOX)
-        self.img_uns = self.f1.render(self.name + ' @ ' + self.text, True, COLOR_TEXTO, COLOR_BOX)
+        self.img_sel = self.f2.render(self.name + ' @ ' + self.text, True, self.color, COLOR_BOX)
+        self.img_uns = self.f1.render(self.name + ' @ ' + self.text, True, self.color, COLOR_BOX)
         super().update()
         if self.selected:
             self.image = self.img_sel
@@ -503,26 +515,26 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue, Intertwined):
 class OrbitButton(Meta, BaseWidget, Intertwined):
     locked = False
 
-    def __init__(self, parent):
+    def __init__(self, parent, color):
         super().__init__(parent)
         self.f1 = font.SysFont('Verdana', 14)
         self.f2 = font.SysFont('Verdana', 14, bold=True)
-        self.image = self.img_uns
         self._rect = Rect(3, 442, 0, 21)
+        self.color = color
 
     def link_marker(self, marker):
         super().link_marker(marker)
         self.create()
 
     def get_value(self):
-        return self.linked_marker.orbit.semi_major_axis.m
+        return self.linked_marker.orbit.semi_major_axis
 
     def create(self):
-        orbit = self.linked_marker.orbit.semi_major_axis
-        t = 'Orbit @{:~}'.format(round(orbit, 3))
-        self.img_uns = self.f1.render(t, True, COLOR_TEXTO, COLOR_AREA)
-        self.img_sel = self.f2.render(t, True, COLOR_TEXTO, COLOR_AREA)
+        t = 'Orbit @{:~}'.format(round(self.get_value(), 3))
+        self.img_uns = self.f1.render(t, True, self.color, COLOR_AREA)
+        self.img_sel = self.f2.render(t, True, self.color, COLOR_AREA)
         self.img_dis = self.f1.render(t, True, COLOR_DISABLED, COLOR_AREA)
+        self.image = self.img_uns
         self.rect = self.img_uns.get_rect(topleft=self._rect.topleft)
 
     def move(self, x, y):
@@ -538,9 +550,9 @@ class OrbitButton(Meta, BaseWidget, Intertwined):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             if self.parent.visible_markers:
-                self.parent.toggle_markers()
+                self.parent.toggle_stellar_orbits()
             self.parent.hide_orbit_types()
-            self.parent.markers_button.enable()
+            self.parent.star_orbits_button.enable()
             self.linked_type.show()
             self.lock()
 
@@ -554,22 +566,23 @@ class OrbitButton(Meta, BaseWidget, Intertwined):
         return 'B.Orbit @' + str(self.get_value())
 
 
-class ShowMarkersButton(Meta, BaseWidget):
+class ToggleableButton(Meta, BaseWidget):
     enabled = True
 
-    def __init__(self, parent, x, y):
+    def __init__(self, parent, text, method, x, y):
         super().__init__(parent)
         f1 = font.SysFont('Verdana', 14)
         f2 = font.SysFont('Verdana', 14, bold=True)
-        self.img_uns = f1.render('Markers', True, COLOR_TEXTO, COLOR_AREA)
-        self.img_sel = f2.render('Markers', True, COLOR_TEXTO, COLOR_AREA)
-        self.img_dis = f1.render('Markers', True, COLOR_DISABLED, COLOR_AREA)
+        self.img_uns = f1.render(text, True, COLOR_TEXTO, COLOR_AREA)
+        self.img_sel = f2.render(text, True, COLOR_TEXTO, COLOR_AREA)
+        self.img_dis = f1.render(text, True, COLOR_DISABLED, COLOR_AREA)
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))
+        self.method = method
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
-            self.parent.toggle_markers()
+            self.method()
 
 
 class AvailablePlanets(PlanetArea):

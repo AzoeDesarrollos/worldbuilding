@@ -14,7 +14,7 @@ class PlanetArea(BaseWidget):
 
         self.f = font.SysFont('Verdana', 14)
         self.f.set_underline(True)
-        self.write('Planets', self.f, midtop=(self.rect.w / 2, 0))
+        self.write('Astronomical Objects', self.f, midtop=(self.rect.w / 2, 0))
 
     def write(self, text, fuente, **kwargs):
         render = fuente.render(text, True, COLOR_TEXTO, COLOR_AREA)

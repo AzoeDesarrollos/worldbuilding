@@ -54,15 +54,19 @@ class PlanetPanel(BasePanel):
                 y += 32
 
     def on_mousebuttondown(self, event):
-        if self.area_buttons.collidepoint(event.pos):
+        if event.button == 1:
+            super().on_mousebuttondown(event)
+
+        elif event.button in (4, 5):
             buttons = self.planet_buttons.widgets()
-            last_is_hidden = not buttons[-1].is_visible
-            first_is_hidden = not buttons[0].is_visible
-            if event.button == 4 and first_is_hidden:
-                self.curr_y += 32
-            elif event.button == 5 and last_is_hidden:
-                self.curr_y -= 32
-            self.sort_buttons()
+            if self.area_buttons.collidepoint(event.pos) and len(buttons):
+                last_is_hidden = not buttons[-1].is_visible
+                first_is_hidden = not buttons[0].is_visible
+                if event.button == 4 and first_is_hidden:
+                    self.curr_y += 32
+                elif event.button == 5 and last_is_hidden:
+                    self.curr_y -= 32
+                self.sort_buttons()
 
 
 class PlanetType(ObjectType):

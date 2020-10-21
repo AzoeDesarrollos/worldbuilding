@@ -1,4 +1,5 @@
-from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO
+from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, COLOR_TERRESTIAL, COLOR_GASDWARF
+from engine.frontend.globales import COLOR_GASGIANT, COLOR_PUFFYGIANT, COLOR_DWARFPLANET
 from engine.equations.planetary_system import system
 from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import font
@@ -13,19 +14,26 @@ class PlanetButton(Meta, BaseWidget):
         self.planet_data = planet
         self.f1 = font.SysFont('Verdana', 13)
         self.f2 = font.SysFont('Verdana', 13, bold=True)
-        name = 'Terrestial'
+        name = ''
+        color = COLOR_TEXTO
         if planet.clase == 'Terrestial Planet':
             name = 'Terrestial'
+            color = COLOR_TERRESTIAL
         elif planet.clase == 'Gas Giant':
             name = 'Giant'
+            color = COLOR_GASGIANT
         elif planet.clase == 'Puffy Giant':
             name = 'Puffy'
+            color = COLOR_PUFFYGIANT
         elif planet.clase == 'Gas Dwarf':
             name = 'Gas Dwarf'
+            color = COLOR_GASDWARF
         elif planet.clase == 'Dwarf Planet':
             name = 'Dwarf'
-        self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)
-        self.img_sel = self.f2.render(name, True, COLOR_TEXTO, COLOR_AREA)
+            color = COLOR_DWARFPLANET
+
+        self.img_uns = self.f1.render(name, True, color, COLOR_AREA)
+        self.img_sel = self.f2.render(name, True, color, COLOR_AREA)
         self.w = self.img_sel.get_width()
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))
