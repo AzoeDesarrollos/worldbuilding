@@ -20,7 +20,7 @@ class Planet(BodyInHydrostaticEquilibrium):
     orbit = None
     albedo = 29
     greenhouse = 1
-    temperature = 0
+    temperature = q(0, 'celsius')
 
     atmosphere = None
 

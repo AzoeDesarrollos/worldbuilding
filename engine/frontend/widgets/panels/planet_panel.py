@@ -4,6 +4,7 @@ from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import system
 from engine.backend.eventhandler import EventHandler
+from .common import PlanetButton, TextButton, Meta
 from engine.equations.planet import Planet
 from itertools import cycle
 from pygame import font
@@ -161,44 +162,6 @@ class PlanetType(ObjectType):
         super().fill(tos)
 
 
-class Meta:
-    enabled = False
-    img_sel = None
-    img_uns = None
-    img_dis = None
-    selected = False
-    image = None
-
-    is_visible = False
-    has_mouseover = False
-
-    def enable(self):
-        self.enabled = True
-
-    def disable(self):
-        self.enabled = False
-        self.image = self.img_dis
-
-    def on_mouseover(self):
-        self.has_mouseover = True
-        if self.enabled:
-            self.image = self.img_sel
-
-    def select(self):
-        self.selected = True
-        if self.enabled:
-            self.image = self.img_sel
-
-    def deselect(self):
-        self.selected = False
-        self.image = self.img_uns
-
-    def update(self):
-        if all([not self.has_mouseover, not self.selected, self.enabled]):
-            self.image = self.img_uns
-        self.has_mouseover = False
-
-
 class Unit(Meta, BaseWidget):
     name = ''
     enabled = True
@@ -270,64 +233,3 @@ class ShownMass(BaseWidget):
         self.mass_rect = self.mass_img.get_rect(left=self.rect.right + 6, bottom=self.rect.bottom)
         self.mass_rect.width += 50
         self.parent.parent.image.blit(self.mass_img, self.mass_rect)
-
-
-class TextButton(Meta, BaseWidget):
-    def __init__(self, parent, text, x, y):
-        super().__init__(parent)
-        self.f1 = font.SysFont('Verdana', 16)
-        self.f2 = font.SysFont('Verdana', 16, bold=True)
-        self.img_dis = self.f1.render(text, True, (200, 200, 200), COLOR_BOX)
-        self.img_uns = self.f1.render(text, True, COLOR_TEXTO, COLOR_BOX)
-        self.img_sel = self.f2.render(text, True, COLOR_TEXTO, COLOR_BOX)
-
-        self.image = self.img_dis
-        self.rect = self.image.get_rect(bottomleft=(x, y))
-
-    def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
-            self.parent.current.create_button()
-
-
-class PlanetButton(Meta, BaseWidget):
-    enabled = True
-
-    def __init__(self, parent, planet, x, y):
-        super().__init__(parent)
-        self.planet_data = planet
-        self.f1 = font.SysFont('Verdana', 13)
-        self.f2 = font.SysFont('Verdana', 13, bold=True)
-        name = 'Terrestial'
-        if planet.clase == 'Terrestial Planet':
-            name = 'Terrestial'
-        elif planet.clase == 'Gas Giant':
-            name = 'Giant'
-        elif planet.clase == 'Puffy Giant':
-            name = 'Puffy'
-        elif planet.clase == 'Gas Dwarf':
-            name = 'Gas Dwarf'
-        elif planet.clase == 'Dwarf Planet':
-            name = 'Dwarf'
-        self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)
-        self.img_sel = self.f2.render(name, True, COLOR_TEXTO, COLOR_AREA)
-        self.w = self.img_sel.get_width()
-        self.image = self.img_uns
-        self.rect = self.image.get_rect(topleft=(x, y))
-
-    def on_mousebuttondown(self, event):
-        if event.button == 1:
-            self.parent.current = self.planet_data
-            system.set_current(self.planet_data)
-            self.parent.has_values = True
-            self.parent.fill()
-            self.parent.toggle_habitable()
-
-    def update(self):
-        super().update()
-        if self.parent.parent.is_visible:
-            self.show()
-        else:
-            self.hide()
-
-    def move(self, x, y):
-        self.rect.topleft = x, y

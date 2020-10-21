@@ -1,16 +1,16 @@
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_DISABLED
 from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO
 from engine.frontend.widgets.incremental_value import IncrementalValue
+from engine.frontend.widgets.panels.common import PlanetArea
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.orbit import RawOrbit, PseudoOrbit
 from engine.frontend.globales.group import WidgetGroup
 from engine.backend.eventhandler import EventHandler
 from engine.equations.planetary_system import system
-from .planet_panel import PlanetButton, TextButton
+from .common import TextButton, Meta, PlanetButton
 from pygame import Surface, font, Rect
 from engine.backend import roll
 from ..values import ValueText
-from .planet_panel import Meta
 from engine import q
 
 
@@ -42,7 +42,7 @@ class OrbitPanel(BaseWidget):
         self.f.set_underline(True)
         self.write(self.name + ' Panel', self.f, centerx=self.rect.centerx, y=0)
 
-        self.planet_area = PlanetArea(self, ANCHO - 200, 32)
+        self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 350)
         self.properties.add(self.planet_area, layer=2)
 
         self.orbits = []
@@ -572,44 +572,18 @@ class ShowMarkersButton(Meta, BaseWidget):
             self.parent.toggle_markers()
 
 
-class PlanetArea(BaseWidget):
-
-    def __init__(self, parent, x, y):
-        super().__init__(parent)
-        self.image = Surface((200, 350))
-        self.image.fill(COLOR_AREA)
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.listed_planets = WidgetGroup()
-
-        self.f = font.SysFont('Verdana', 14)
-        self.f.set_underline(True)
-        self.write('Planets', self.f, midtop=(self.rect.w / 2, 0))
-
-    def write(self, text, fuente, **kwargs):
-        render = fuente.render(text, True, COLOR_TEXTO, COLOR_AREA)
-        render_rect = render.get_rect(**kwargs)
-        self.image.blit(render, render_rect)
-
-    def populate(self):
-        planets = [i for i in system.planets if i.orbit is None]
+class AvailablePlanets(PlanetArea):
+    def populate(self, planets):
         for i, planet in enumerate(planets):
             listed = ListedPlanet(self, planet, self.rect.x + 3, i * 16 + self.rect.y + 21)
             self.listed_planets.add(listed)
-            listed.show()
 
     def show(self):
-        self.populate()
+        planets = [i for i in system.planets if i.orbit is None]
+        self.populate(planets)
+        for listed in self.listed_planets.widgets():
+            listed.show()
         super().show()
-
-    def hide(self):
-        for listed in self.listed_planets.widgets():
-            listed.hide()
-        super().hide()
-
-    def delete_planet(self, planet):
-        for listed in self.listed_planets.widgets():
-            if listed.planet_data == planet:
-                listed.kill()
 
 
 class ListedPlanet(PlanetButton):
@@ -617,14 +591,6 @@ class ListedPlanet(PlanetButton):
         if not self.parent.parent.visible_markers:
             self.enabled = False
             self.parent.parent.link_planet_to_orbit(self.planet_data)
-
-    def update(self):
-        if self.enabled:
-            if self.selected:
-                self.image = self.img_sel
-            else:
-                self.image = self.img_uns
-            self.selected = False
 
 
 class AddOrbitButton(TextButton):

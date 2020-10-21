@@ -1,9 +1,12 @@
-from engine.frontend.globales import COLOR_TEXTO, COLOR_AREA
+from engine.frontend.globales import COLOR_TEXTO, COLOR_AREA, ANCHO
 from engine.frontend.widgets.values import ValueText
-# from engine.equations.satellite import create_moon
+from engine.equations.planetary_system import system
+from engine.equations.satellite import create_moon
+from engine.frontend.globales import WidgetGroup
 from engine import material_densities
 from ..object_type import ObjectType
 from .base_panel import BasePanel
+from .common import PlanetArea, PlanetButton
 from pygame import font
 
 
@@ -19,6 +22,20 @@ class SatellitePanel(BasePanel):
         render = f.render('Composition', True, COLOR_TEXTO, COLOR_AREA)
         render_rect = render.get_rect(topleft=(0, 420))
         self.image.blit(render, render_rect)
+        self.properties = WidgetGroup()
+        self.area_planets = AvailablePlanets(self, ANCHO - 200, 32, 200, 350)
+        self.properties.add(self.area_planets)
+
+    def show(self):
+        super().show()
+        self.is_visible = True
+        for pr in self.properties.widgets():
+            pr.show()
+
+    def hide(self):
+        super().hide()
+        for pr in self.properties.widgets():
+            pr.hide()
 
 
 class SatelliteType(ObjectType):
@@ -31,12 +48,43 @@ class SatelliteType(ObjectType):
             self.properties.add(a, layer=7)
 
     def calculate(self):
-        star = self.parent.parent.system.star
-        planet = self.parent.parent.system.current
-        print(star, planet)
-        # total = 0
-        # for material in self.properties.get_sprites_from_layer(7):
-        #     if material.text_area.value:  # not empty
-        #         print(material.text, material.text_area.value)
-        #         total += float(material.text_area.value)
-        # print(total)
+        star = system.star
+        planet = system.current
+        data = {'composition': {}}
+        for material in self.properties.get_sprites_from_layer(7):
+            if material.text_area.value:  # not empty
+                data['composition'][material.text.lower()] = float(material.text_area.value)
+        for item in self.properties.get_widgets_from_layer(1):
+            if item.text_area.value:
+                data[item.text.lower()] = float(item.text_area.value)
+
+        self.current = create_moon(planet, star, data)
+        self.has_values = True
+        self.fill()
+
+    def fill(self, tos=None):
+        tos = {
+            'Mass': 'kg',
+            'Radius': 'km',
+            'Gravity': 'm/s**2',
+            'Escape_velocity': 'km/s'
+        }
+        super().fill(tos)
+
+
+class AvailablePlanets(PlanetArea):
+    def populate(self, planets):
+        for i, planet in enumerate(planets):
+            listed = ListedPlanet(self, planet, self.rect.x + 3, i * 16 + self.rect.y + 21)
+            self.listed_planets.add(listed)
+
+    def show(self):
+        super().show()
+        self.populate(system.planets)
+        for listed in self.listed_planets.widgets():
+            listed.show()
+
+
+class ListedPlanet(PlanetButton):
+    def on_mousebuttondown(self, event):
+        pass

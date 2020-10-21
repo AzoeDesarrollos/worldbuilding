@@ -3,6 +3,7 @@ from .panels.star_panel import StarPanel
 from .panels.satellite_panel import SatellitePanel
 from .panels.orbit_panel import OrbitPanel
 from .panels.atmosphere_panel import AtmospherePanel
+from .basewidget import BaseWidget
 
 panels = [
     StarPanel,
