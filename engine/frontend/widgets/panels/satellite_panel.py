@@ -6,7 +6,7 @@ from engine.frontend.globales import WidgetGroup
 from engine import material_densities
 from ..object_type import ObjectType
 from .base_panel import BasePanel
-from .common import PlanetArea, PlanetButton
+from .common import ListedArea, PlanetButton
 from pygame import font
 
 
@@ -76,16 +76,16 @@ class SatelliteType(ObjectType):
         super().fill(tos)
 
 
-class AvailablePlanets(PlanetArea):
+class AvailablePlanets(ListedArea):
     def populate(self, planets):
         for i, planet in enumerate(planets):
             listed = ListedPlanet(self, planet, self.rect.x + 3, i * 16 + self.rect.y + 21)
-            self.listed_planets.add(listed)
+            self.listed_objects.add(listed)
 
     def show(self):
         super().show()
         self.populate(system.planets)
-        for listed in self.listed_planets.widgets():
+        for listed in self.listed_objects.widgets():
             listed.show()
 
 

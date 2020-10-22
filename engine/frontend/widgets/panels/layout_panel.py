@@ -37,12 +37,10 @@ class LayoutPanel(BaseWidget):
         d = LoadButton(self, 300, self.rect.bottom - 26)
         e = NewButton(self, 150, self.rect.bottom - 26)
 
-        # noinspection PyTypeChecker
         self.properties.add(a, b, layer=3)
         Renderer.add_widget(a)
         Renderer.add_widget(b)
 
-        # noinspection PyTypeChecker
         self.properties.add(e, layer=4)
         Renderer.add_widget(c)
         Renderer.add_widget(d)
@@ -70,6 +68,8 @@ class LayoutPanel(BaseWidget):
 
 
 class Arrow(Meta, BaseWidget):
+    enabled = True
+
     def __init__(self, parent, direccion, angulo, centerx, y):
         super().__init__(parent)
         WidgetHandler.add_widget(self)
@@ -137,7 +137,6 @@ class LoadButton(BaseButton):
 
 
 class NewButton(BaseButton):
-    enabled = False
 
     def __init__(self, parent, x, y):
         super().__init__(parent, x, y, 'Nuevo')

@@ -79,7 +79,9 @@ class ObjectType(BaseWidget):
             elemento.text_area.set_value(attr)
             elemento.text_area.update()
             elemento.text_area.show()
+        self.has_values = True
 
     def erase(self):
+        self.has_values = False
         for elemento in self.relatives.widgets() + self.absolutes.widgets():
             elemento.text_area.clear()

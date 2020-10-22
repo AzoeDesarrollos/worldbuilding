@@ -40,8 +40,8 @@ class PlanetButton(Meta, BaseWidget):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            self.parent.current = self.planet_data
-            system.set_current(self.planet_data)
+            self.parent.planet = self.planet_data
+            system.set_current_planet(self.planet_data)
             self.parent.has_values = True
             self.parent.fill()
             self.parent.toggle_habitable()

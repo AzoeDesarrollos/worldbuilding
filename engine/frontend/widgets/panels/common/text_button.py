@@ -15,7 +15,3 @@ class TextButton(Meta, BaseWidget):
 
         self.image = self.img_dis
         self.rect = self.image.get_rect(bottomleft=(x, y))
-
-    def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
-            self.parent.current.create_button()

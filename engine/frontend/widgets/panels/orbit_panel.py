@@ -2,7 +2,7 @@ from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_D
 from engine.frontend.globales import COLOR_SELECTED, COLOR_PLANETORBIT, COLOR_STARORBIT
 from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO
 from engine.frontend.widgets.incremental_value import IncrementalValue
-from engine.frontend.widgets.panels.common import PlanetArea
+from engine.frontend.widgets.panels.common import ListedArea
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.orbit import RawOrbit, PseudoOrbit
 from engine.frontend.globales.group import WidgetGroup
@@ -44,7 +44,7 @@ class OrbitPanel(BaseWidget):
         self.write(self.name + ' Panel', self.f, centerx=self.rect.centerx, y=0)
         self.image.blit(font.SysFont('Verdana', 14).render(' | ', True, COLOR_TEXTO, COLOR_AREA), (104, 421))
 
-        self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 350)
+        self.planet_area = AvailableObjects(self, ANCHO - 200, 32, 200, 350)
         self.properties.add(self.planet_area, layer=2)
 
         self.orbits = []
@@ -63,11 +63,6 @@ class OrbitPanel(BaseWidget):
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
-
-    def write(self, text, fuente, **kwargs):
-        render = fuente.render(text, True, COLOR_TEXTO, COLOR_BOX)
-        render_rect = render.get_rect(**kwargs)
-        self.image.blit(render, render_rect)
 
     def populate(self):
         markers = {'Inner Boundary': system.star.inner_boundry,
@@ -247,14 +242,14 @@ class OrbitPanel(BaseWidget):
                 planet = system.get_planet_by_name(orbit_data['planet'])
                 planet.set_orbit(system.star, [a, e, i])
                 self.add_orbit_marker(planet.orbit)
-                self.planet_area.delete_planet(planet)
+                self.planet_area.delete_objects(planet)
 
         # borrar las órbitas cargadas para evitar que se dupliquen.
         self._loaded_orbits.clear()
 
     def show(self):
-        if system is not None and not self.markers:
-            self.populate()
+        # if system is not None and not self.markers:
+        #     self.populate()
         for prop in self.properties.get_widgets_from_layer(2):
             prop.show()
         self.visible_markers = True
@@ -393,7 +388,7 @@ class OrbitType(BaseWidget, Intertwined):
         orbit = self.linked_planet.set_orbit(system.star, parametros)
         self.linked_marker.orbit = orbit
         self.show()
-        self.parent.planet_area.delete_planet(self.linked_planet)
+        self.parent.planet_area.delete_objects(self.linked_planet)
         self.locked = True
         self.has_values = True
 
@@ -575,25 +570,50 @@ class ToggleableButton(Meta, BaseWidget):
             self.method()
 
 
-class AvailablePlanets(PlanetArea):
-    def populate(self, planets):
-        for i, planet in enumerate(planets):
-            listed = ListedPlanet(self, planet, self.rect.x + 3, i * 16 + self.rect.y + 21)
-            self.listed_planets.add(listed)
+class AvailableObjects(ListedArea):
+    def populate(self, population):
+        listed = None
+        for i, obj in enumerate(population):
+            x = self.rect.x + 3
+            y = i * 16 + self.rect.y + 21
+            if obj.celestial_type == 'planet':
+                listed = ListedPlanet(self, obj, x, y)
+
+            elif obj.celestial_type == 'star':
+                listed = ListedStar(self, obj, i, x, y)
+
+            elif obj.celestial_type == 'satellite':
+                pass
+
+            self.listed_objects.add(listed)
 
     def show(self):
         planets = [i for i in system.planets if i.orbit is None]
-        self.populate(planets)
-        for listed in self.listed_planets.widgets():
+        stars = [i for i in system.stars]
+        self.populate(planets + stars)
+        for listed in self.listed_objects.widgets():
             listed.show()
         super().show()
 
 
 class ListedPlanet(PlanetButton):
+    def __init__(self, parent, planet, x, y):
+        super().__init__(parent, planet, x, y)
+        self.object_data = planet
+
     def on_mousebuttondown(self, event):
         if not self.parent.parent.visible_markers:
             self.enabled = False
-            self.parent.parent.link_planet_to_orbit(self.planet_data)
+            self.parent.parent.link_planet_to_orbit(self.object_data)
+
+
+class ListedStar(TextButton):
+    def __init__(self, parent, star, idx, x, y):
+        name = star.classification + '#{}'.format(idx)
+        super().__init__(parent, name, x, y)
+
+    def on_mousebuttondown(self, event):
+        pass
 
 
 class AddOrbitButton(TextButton):

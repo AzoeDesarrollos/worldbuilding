@@ -3,33 +3,49 @@ from engine.frontend.widgets.sprite_star import StarSprite
 from engine.frontend.widgets.object_type import ObjectType
 from engine.equations.star import Star
 from engine.backend.eventhandler import EventHandler
-from engine.frontend.globales import COLOR_AREA, WidgetGroup
-from engine.frontend.widgets.panels.common import TextButton, Meta
+from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, WidgetGroup
+from engine.frontend.widgets.panels.common import TextButton, Meta, ListedArea
 from engine.frontend.widgets.basewidget import BaseWidget
+from engine.equations.planetary_system import system
 from pygame import font
 
 
 class StarPanel(BasePanel):
-    curr_x = 0
+    curr_x = 3
     curr_y = 440
 
     def __init__(self, parent):
         super().__init__('Star', parent)
         self.current = StarType(self)
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
+        f = font.SysFont('Verdana', 14)
+        f.set_underline(True)
+        render = f.render('Stars', True, COLOR_TEXTO, COLOR_AREA)
+        self.image.blit(render, self.area_buttons.topleft)
         self.button = AddStarButton(self.current, 490, 416)
         self.current.properties.add(self.button)
         self.stars = WidgetGroup()
 
     def show(self):
         super().show()
-        self.is_visible = True
+        self.button.show()
+        for star in self.stars.widgets():
+            star.show()
+
+    def hide(self):
+        super().hide()
+        self.button.hide()
+        for star in self.stars.widgets():
+            star.hide()
 
     def add_button(self, star):
         button = StarButton(self.current, star, self.curr_x, self.curr_y)
         self.stars.add(button)
+        system.stars.append(star)
         self.sort_buttons()
         self.current.properties.add(button, layer=2)
+        self.current.erase()
+        self.button.disable()
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
@@ -72,9 +88,13 @@ class StarType(ObjectType):
 
     def set_star(self, star_data):
         star = Star(star_data)
-        self.parent.parent.set_system(star)
+        self.parent.button.enable()
         self.current = star
-        self.has_values = True
+        self.fill()
+
+    def set_current(self, star):
+        self.erase()
+        self.current = star
         self.fill()
 
     def load_star(self, event):
@@ -89,7 +109,12 @@ class StarType(ObjectType):
     def clear(self, event):
         if event.data['panel'] is self.parent:
             self.erase()
-        self.current.sprite.kill()
+
+    def erase(self):
+        if self.has_values:
+            self.current.sprite.kill()
+        self.current = None
+        super().erase()
 
     def fill(self, tos=None):
         tos = {
@@ -101,8 +126,8 @@ class StarType(ObjectType):
         }
         super().fill(tos)
 
-        a = StarSprite(self, self.current, 460, 100)
-        self.properties.add(a)
+        self.current.sprite = StarSprite(self, self.current, 460, 100)
+        self.properties.add(self.current.sprite)
 
     def hide(self):
         super().hide()
@@ -115,32 +140,37 @@ class AddStarButton(TextButton):
         super().__init__(parent, 'Add Star', x, y)
 
     def on_mousebuttondown(self, event):
-        star = self.parent.current
-        self.parent.parent.add_button(star)
+        if self.enabled and self.parent.has_values:
+            star = self.parent.current
+            self.parent.parent.add_button(star)
+            self.disable()
+
+
+class AvailableStars(ListedArea):
+    def populate(self, stars):
+        for i, planet in enumerate(stars):
+            listed = StarButton(self, planet, self.rect.x + 3, i * 16 + self.rect.y + 21)
+            self.listed_objects.add(listed)
 
 
 class StarButton(Meta, BaseWidget):
+    enabled = True
+
     def __init__(self, parent, star, x, y):
         super().__init__(parent)
-        self.planet_data = star
+        self.star_data = star
         self.f1 = font.SysFont('Verdana', 13)
         self.f2 = font.SysFont('Verdana', 13, bold=True)
-        name = star.classification+' #{}'.format(len(self.parent.parent.stars))
-        self.img_uns = self.f1.render(name, True, star.color, COLOR_AREA)
-        self.img_sel = self.f2.render(name, True, star.color, COLOR_AREA)
+        name = star.classification + ' #{}'.format(len(self.parent.parent.stars))
+        self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)
+        self.img_sel = self.f2.render(name, True, COLOR_TEXTO, COLOR_AREA)
         self.w = self.img_sel.get_width()
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))
 
     def on_mousebuttondown(self, event):
-        pass
-
-    def update(self):
-        super().update()
-        if self.parent.parent.is_visible:
-            self.show()
-        else:
-            self.hide()
+        if event.button == 1:
+            self.parent.set_current(self.star_data)
 
     def move(self, x, y):
         self.rect.topleft = x, y

@@ -3,7 +3,7 @@ from engine.frontend.atmograph.atmograph import graph, atmograph
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.backend.eventhandler import EventHandler
 from engine.equations.planetary_system import system
-from .common import PlanetArea, PlanetButton
+from .common import ListedArea, PlanetButton
 from engine import molecular_weight, q
 from pygame import Surface, font
 from math import sqrt
@@ -50,11 +50,6 @@ class AtmospherePanel(BaseWidget):
         self.planets = AvailablePlanets(self, ANCHO - 200, 460, 200, 132)
         self.properties.add(self.planets)
 
-    def write(self, text, fuente, **kwargs):
-        render = fuente.render(text, True, COLOR_TEXTO, COLOR_BOX)
-        render_rect = render.get_rect(**kwargs)
-        self.image.blit(render, render_rect)
-
     def clear(self, event):
         if event.data['panel'] is self:
             for element in self.elements.widgets():
@@ -62,7 +57,7 @@ class AtmospherePanel(BaseWidget):
         self.image.fill(COLOR_BOX, [3, ALTO - 87, 190, 21])
 
     def set_atmosphere(self, pressure):
-        planet = system.current
+        planet = system.planet
         elements = [i for i in self.elements.widgets() if i.percent.value != '']
         data = dict(zip([e.symbol for e in elements], [float(e.percent.value) for e in elements]))
         data.update({'pressure_at_sea_level': {'value': pressure.m, 'unit': str(pressure.u)}})
@@ -317,20 +312,24 @@ class Atmograph(BaseWidget):
         WidgetHandler.add_widget(self)
 
 
-class AvailablePlanets(PlanetArea):
+class AvailablePlanets(ListedArea):
     def populate(self, planets):
         for i, planet in enumerate(planets):
             listed = ListedPlanet(self, planet, self.rect.x + 3, i * 16 + self.rect.y + 21)
-            self.listed_planets.add(listed)
+            self.listed_objects.add(listed)
 
     def show(self):
         super().show()
         self.populate(system.planets)
-        for listed in self.listed_planets.widgets():
+        for listed in self.listed_objects.widgets():
             listed.show()
 
 
 class ListedPlanet(PlanetButton):
+    def __init__(self, parent, planet, x, y):
+        super().__init__(parent, planet, x, y)
+        self.object_data = planet
+
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            self.parent.parent.set_planet(self.planet_data)
+            self.parent.parent.set_planet(self.object_data)

@@ -1,4 +1,4 @@
-from engine.frontend.globales import ANCHO, ALTO, Renderer, WidgetHandler, COLOR_TEXTO, COLOR_BOX
+from engine.frontend.globales import ANCHO, ALTO, COLOR_TEXTO, COLOR_BOX
 from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface, font, transform
 
@@ -51,13 +51,11 @@ class BasePanel(BaseWidget):
                 self.image.blit(self.relative_text, self.relative_text_area)
 
     def show(self):
-        Renderer.add_widget(self)
-        WidgetHandler.add_widget(self)
+        super().show()
         self.current.show()
 
     def hide(self):
-        Renderer.del_widget(self)
-        WidgetHandler.del_widget(self)
+        super().hide()
         self.current.hide()
 
     def __repr__(self):

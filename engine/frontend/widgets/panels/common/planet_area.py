@@ -3,14 +3,14 @@ from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface, font
 
 
-class PlanetArea(BaseWidget):
+class ListedArea(BaseWidget):
 
     def __init__(self, parent, x, y, w, h):
         super().__init__(parent)
         self.image = Surface((w, h))
         self.image.fill(COLOR_AREA)
         self.rect = self.image.get_rect(topleft=(x, y))
-        self.listed_planets = WidgetGroup()
+        self.listed_objects = WidgetGroup()
 
         self.f = font.SysFont('Verdana', 14)
         self.f.set_underline(True)
@@ -21,20 +21,23 @@ class PlanetArea(BaseWidget):
         render_rect = render.get_rect(**kwargs)
         self.image.blit(render, render_rect)
 
+    def populate(self, objects):
+        return NotImplemented
+
     def hide(self):
-        for listed in self.listed_planets.widgets():
+        for listed in self.listed_objects.widgets():
             listed.hide()
         super().hide()
 
-    def delete_planet(self, planet):
-        for listed in self.listed_planets.widgets():
-            if listed.planet_data == planet:
+    def delete_objects(self, astronomical_object):
+        for listed in self.listed_objects.widgets():
+            if listed.object_data == astronomical_object:
                 listed.kill()
         self.sort()
 
     def sort(self):
-        for i, planet in enumerate(self.listed_planets.widgets()):
-            planet.rect.y = i * 16 + self.rect.y + 21
+        for i, listed in enumerate(self.listed_objects.widgets()):
+            listed.rect.y = i * 16 + self.rect.y + 21
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))

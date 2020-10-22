@@ -1,5 +1,5 @@
 from pygame.sprite import Sprite
-from engine.frontend.globales import WidgetHandler, Renderer
+from engine.frontend.globales import WidgetHandler, Renderer, COLOR_BOX, COLOR_TEXTO
 
 
 class BaseWidget(Sprite):
@@ -57,3 +57,8 @@ class BaseWidget(Sprite):
         self.is_visible = False
         Renderer.del_widget(self)
         WidgetHandler.del_widget(self)
+
+    def write(self, text, fuente, **kwargs):
+        render = fuente.render(text, True, COLOR_TEXTO, COLOR_BOX)
+        render_rect = render.get_rect(**kwargs)
+        self.image.blit(render, render_rect)

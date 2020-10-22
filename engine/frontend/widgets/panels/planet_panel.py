@@ -24,14 +24,10 @@ class PlanetPanel(BasePanel):
         self.unit = Unit(self, 0, 416)
         self.current.properties.add(self.unit)
 
-        self.button = TextButton(self, 'Add Planet', 490, 416)
+        self.button = AddPlanetButton(self, 490, 416)
         self.current.properties.add(self.button)
 
         self.planet_buttons = WidgetGroup()
-
-    def show(self):
-        super().show()
-        self.is_visible = True
 
     def add_button(self, planet):
         button = PlanetButton(self.current, planet, self.curr_x, self.curr_y)
@@ -153,7 +149,6 @@ class PlanetType(ObjectType):
             else:
                 self.parent.button.disable()
                 self.parent.unit.mass_number.mass_color = 200, 0, 0
-            self.has_values = True
             self.fill()
 
     def fill(self, tos=None):
@@ -237,3 +232,12 @@ class ShownMass(BaseWidget):
         self.mass_rect = self.mass_img.get_rect(left=self.rect.right + 6, bottom=self.rect.bottom)
         self.mass_rect.width += 50
         self.parent.parent.image.blit(self.mass_img, self.mass_rect)
+
+
+class AddPlanetButton(TextButton):
+    def __init__(self, parent, x, y):
+        super().__init__(parent, 'Add Planet', x, y)
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1 and self.enabled:
+            self.parent.current.create_button()
