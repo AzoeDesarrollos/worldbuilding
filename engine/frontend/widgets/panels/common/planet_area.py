@@ -31,7 +31,7 @@ class ListedArea(BaseWidget):
 
     def delete_objects(self, astronomical_object):
         for listed in self.listed_objects.widgets():
-            if listed.object_data == astronomical_object:
+            if listed.object_data is astronomical_object:
                 listed.kill()
         self.sort()
 

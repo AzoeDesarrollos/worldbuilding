@@ -34,6 +34,14 @@ class ValueText(BaseWidget):
 
         self.text_area = NumberArea(self, text, self.rect.right + 3, self.rect.y, fg, bg)
 
+    @property
+    def value(self):
+        return self.text_area.value
+
+    @value.setter
+    def value(self, quantity):
+        self.text_area.set_value(quantity)
+
     def elevate_changes(self, new_value, unit):
         value = q(new_value, unit)
         self.parent.elevate_changes(self.text, value)
@@ -134,6 +142,7 @@ class ValueText(BaseWidget):
 
         if not self.active:
             self.deselect()
+        self.text_area.update()
 
     def __repr__(self):
         return self.text
@@ -164,7 +173,8 @@ class NumberArea(BaseWidget, IncrementalValue):
                     self.value += char
 
             elif event.tipo == 'BackSpace':
-                self.value = self.value[0:len(str(self.value)) - 1]
+                if type(self.value) is str:
+                    self.value = self.value[0:len(str(self.value)) - 1]
 
             elif event.tipo == 'Fin' and len(str(self.value)):
                 if self.great_grandparent.name == 'Planet':
@@ -172,6 +182,9 @@ class NumberArea(BaseWidget, IncrementalValue):
 
                 elif self.great_grandparent.name == 'Star':
                     self.grandparent.set_star({self.parent.text.lower(): float(self.value)})  # for stars
+
+                elif self.great_grandparent.name == 'Star System':
+                    self.grandparent.fill()
 
                 elif self.great_grandparent.name == 'Satellite':
                     self.grandparent.calculate()
@@ -184,7 +197,11 @@ class NumberArea(BaseWidget, IncrementalValue):
             self.value = float(quantity.m)
             self.unit = str(quantity.u)
 
-        else:  # suponemos, un str
+        elif type(quantity) is str:
+            self.value = quantity
+            self.unit = None
+
+        elif hasattr(quantity, 'name'):
             self.value = quantity
             self.unit = None
 

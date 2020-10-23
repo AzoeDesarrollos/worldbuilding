@@ -11,6 +11,9 @@ class WidgetGroup(LayeredUpdates):
     def widgets(self):
         return super().sprites()
 
+    def get_widget(self, idx):
+        return super().get_sprite(idx)
+
     def remove(self, *sprites) -> None:
         super().remove(*sprites)
         for sp in sprites:

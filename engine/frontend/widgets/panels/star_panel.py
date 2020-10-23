@@ -4,7 +4,7 @@ from engine.frontend.widgets.object_type import ObjectType
 from engine.equations.star import Star
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, WidgetGroup
-from engine.frontend.widgets.panels.common import TextButton, Meta, ListedArea
+from engine.frontend.widgets.panels.common import TextButton, Meta
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import system
 from pygame import font
@@ -129,11 +129,6 @@ class StarType(ObjectType):
         self.current.sprite = StarSprite(self, self.current, 460, 100)
         self.properties.add(self.current.sprite)
 
-    def hide(self):
-        super().hide()
-        for value in self.properties.widgets():
-            value.disable()
-
 
 class AddStarButton(TextButton):
     def __init__(self, parent, x, y):
@@ -144,13 +139,6 @@ class AddStarButton(TextButton):
             star = self.parent.current
             self.parent.parent.add_button(star)
             self.disable()
-
-
-class AvailableStars(ListedArea):
-    def populate(self, stars):
-        for i, planet in enumerate(stars):
-            listed = StarButton(self, planet, self.rect.x + 3, i * 16 + self.rect.y + 21)
-            self.listed_objects.add(listed)
 
 
 class StarButton(Meta, BaseWidget):

@@ -1,8 +1,9 @@
 from engine.frontend.globales import WidgetGroup, ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_TEXTO
 from engine.frontend.widgets.panels.common import ListedArea, Meta, TextButton
-from engine.equations.star_systems import PTypeSystem, STypeSystem
 from engine.frontend.widgets.basewidget import BaseWidget
+from engine.equations.star_systems import system_type
 from engine.equations.planetary_system import system
+from engine.backend.eventhandler import EventHandler
 from pygame import Surface, font
 from ..values import ValueText
 
@@ -20,26 +21,27 @@ class StarSystemPanel(BaseWidget):
         self.f = font.SysFont('Verdana', 16)
         self.f.set_underline(True)
         self.write(self.name + ' Panel', self.f, centerx=self.rect.centerx, y=0)
-
+        self.f2 = font.SysFont('Verdana', 16)
         self.stars_area = AvailableStars(self, ANCHO - 200, 32, 200, 350)
-        self.properties.add(self.stars_area, layer=2)
+        self.properties.add(self.stars_area)
         self.current = SystemType(self)
-        self.properties.add(self.current, layer=2)
+        self.properties.add(self.current)
 
         self.setup_button = SetupButton(self, 490, 416)
-        self.properties.add(self.setup_button, layer=2)
+        self.properties.add(self.setup_button)
 
         self.stars = []
 
     def setup(self, star):
-        self.stars.append(star)
-        self.stars_area.delete_objects(star)
-        if len(self.stars) >= 2:
-            pass
+        self.stars.append(star.object_data)
+        self.stars_area.delete_objects(star.object_data)
+        if len(self.stars) == 2:
+            self.stars.sort(key=lambda s: s.mass.m, reverse=True)
+            self.current.set_stars(*self.stars)
 
     def show(self):
         super().show()
-        for prop in self.properties.get_widgets_from_layer(2):
+        for prop in self.properties.widgets():
             prop.show()
 
     def hide(self):
@@ -47,37 +49,70 @@ class StarSystemPanel(BaseWidget):
         for prop in self.properties.widgets():
             prop.hide()
 
+    def update(self):
+        text = 'Stars in System: {}'.format(len(self.stars))
+        self.write(text, self.f2, x=self.stars_area.rect.x, y=420)
+
 
 class SystemType(BaseWidget):
     locked = False
+    has_values = False
 
     def __init__(self, parent):
         super().__init__(parent)
         self.properties = WidgetGroup()
+        self.primary = None
+        self.secondary = None
+        self.separation = None
+        self.ecc_p = None
+        self.ecc_s = None
+        self.create()
+        EventHandler.register(self.clear, 'ClearData')
 
-    def create(self, sistema):
-        props = {
-            'Primary Star': 'primary',
-            'Secondary Star': 'secondary',
-            'Average Separation': 'average_separation',
-            'Eccentriciy (primary)': 'e_p',
-            'Eccentricty (secondary)': 'e_s',
-            'Barycenter': 'barycenter',
-            'Maximun Separation': 'max_sep',
-            'Minimun Separation': 'min_sep',
-            'Forbbiden Zone Inner edge': 'inner_forbbiden_zone',
-            'Forbbiden Zone Outer edge': 'outer_forbbiden_zone'
-        }
-        for i, prop in enumerate([j for j in props if hasattr(sistema, props[j])]):
-            value = getattr(sistema, props[prop])
-            vt = ValueText(self, prop, 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
-            vt.text_area.set_value(value)
-            vt.text_area.update()
-            self.properties.add(vt)
+    def create(self):
+        props = [
+            'Primary Star', 'Secondary Star', 'Average Separation',  'Eccentriciy (primary)', 'Eccentricty (secondary)',
+            'Barycenter', 'Maximun Separation', 'Minimun Separation', 'Forbbiden Zone Inner edge',
+            'Forbbiden Zone Outer edge', 'System Type']
+
+        for i, prop in enumerate([j for j in props]):
+            self.properties.add(ValueText(self, prop, 3, 64 + i * 25, COLOR_TEXTO, COLOR_BOX))
+
+        attrs = ['primary', 'secondary', 'separation', 'ecc_p', 'ecc_s']
+        for idx, attr in enumerate(attrs):
+            setattr(self, attr, self.properties.get_sprite(idx))
+
+    def set_stars(self, primary, secondary):
+        self.primary.value = primary
+        self.secondary.value = secondary
+
+    def get_determinants(self):
+        names = ['primary', 'secondary', 'separation', 'ecc_p', 'ecc_s']
+        dets = [self.primary.value, self.secondary.value]
+        return dets + [float(getattr(self, name).value) for name in names if name not in ('primary', 'secondary')]
+
+    def fill(self):
+        if all([vt.value != '' for vt in self.properties.widgets()[0:4]]):
+            sistema = system_type(self.separation.value)(*self.get_determinants())
+            props = ['barycenter', 'max_sep', 'min_sep', 'inner_forbbiden_zone', 'outer_forbbiden_zone', 'system_name']
+            for i, attr in enumerate(props, start=5):
+                value = getattr(sistema, attr)
+                pr = self.properties.get_widget(i)
+                pr.value = value
+
+    def clear(self, event):
+        if event.data['panel'] is self.parent:
+            for button in self.properties.widgets():
+                button.text_area.clear()
+            self.has_values = False
 
     def show(self):
         for prop in self.properties.widgets():
             prop.show()
+
+    def hide(self):
+        for prop in self.properties.widgets():
+            prop.hide()
 
 
 class AvailableStars(ListedArea):
@@ -101,7 +136,7 @@ class ListedStar(Meta, BaseWidget):
         self.f1 = font.SysFont('Verdana', 13)
         self.f2 = font.SysFont('Verdana', 13, bold=True)
         name = star.classification + ' #{}'.format(idx)
-        self.star_data = star
+        self.object_data = star
         self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)
         self.img_sel = self.f2.render(name, True, COLOR_TEXTO, COLOR_AREA)
         self.w = self.img_sel.get_width()
@@ -112,13 +147,14 @@ class ListedStar(Meta, BaseWidget):
         if event.button == 1:
             self.select()
             self.parent.parent.selected = self
+            self.parent.parent.setup_button.enable()
 
     def move(self, x, y):
         self.rect.topleft = x, y
 
 
 class SetupButton(TextButton):
-    enabled = True
+    enabled = False
 
     def __init__(self, parent, x, y):
         name = 'Add Star'
@@ -127,3 +163,4 @@ class SetupButton(TextButton):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.setup(self.parent.selected)
+            self.disable()
