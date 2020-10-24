@@ -4,8 +4,8 @@ from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.star_systems import system_type
 from engine.equations.planetary_system import system
 from engine.backend.eventhandler import EventHandler
-from pygame import Surface, font
 from ..values import ValueText
+from pygame import Surface
 
 
 class StarSystemPanel(BaseWidget):
@@ -18,10 +18,8 @@ class StarSystemPanel(BaseWidget):
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
         self.properties = WidgetGroup()
-        self.f = font.SysFont('Verdana', 16)
-        self.f.set_underline(True)
-        self.write(self.name + ' Panel', self.f, centerx=self.rect.centerx, y=0)
-        self.f2 = font.SysFont('Verdana', 16)
+        self.f1 = self.crear_fuente(16, underline=True)
+        self.write(self.name + ' Panel', self.f1, centerx=self.rect.centerx, y=0)
         self.stars_area = AvailableStars(self, ANCHO - 200, 32, 200, 350)
         self.properties.add(self.stars_area)
         self.current = SystemType(self)
@@ -49,10 +47,6 @@ class StarSystemPanel(BaseWidget):
         for prop in self.properties.widgets():
             prop.hide()
 
-    def update(self):
-        text = 'Stars in System: {}'.format(len(self.stars))
-        self.write(text, self.f2, x=self.stars_area.rect.x, y=420)
-
 
 class SystemType(BaseWidget):
     locked = False
@@ -71,7 +65,7 @@ class SystemType(BaseWidget):
 
     def create(self):
         props = [
-            'Primary Star', 'Secondary Star', 'Average Separation',  'Eccentriciy (primary)', 'Eccentricty (secondary)',
+            'Primary Star', 'Secondary Star', 'Average Separation', 'Eccentriciy (primary)', 'Eccentricty (secondary)',
             'Barycenter', 'Maximun Separation', 'Minimun Separation', 'Forbbiden Zone Inner edge',
             'Forbbiden Zone Outer edge', 'System Type']
 
@@ -133,8 +127,8 @@ class ListedStar(Meta, BaseWidget):
 
     def __init__(self, parent, star, idx, x, y):
         super().__init__(parent)
-        self.f1 = font.SysFont('Verdana', 13)
-        self.f2 = font.SysFont('Verdana', 13, bold=True)
+        self.f1 = self.crear_fuente(13)
+        self.f2 = self.crear_fuente(13, bold=True)
         name = star.classification + ' #{}'.format(idx)
         self.object_data = star
         self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)

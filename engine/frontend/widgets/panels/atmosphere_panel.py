@@ -5,7 +5,7 @@ from engine.backend.eventhandler import EventHandler
 from engine.equations.planetary_system import system
 from .common import ListedArea, PlanetButton
 from engine import molecular_weight, q
-from pygame import Surface, font
+from pygame import Surface
 from math import sqrt
 
 
@@ -25,10 +25,9 @@ class AtmospherePanel(BaseWidget):
         self.elements = WidgetGroup()
         self.pressure = q(0, 'atm')
 
-        f1 = font.SysFont('Verdana', 16)
-        f1.set_underline(True)
-        self.f2 = font.SysFont('Verdana', 12)
-        self.f3 = font.SysFont('Verdana', 16)
+        f1 = self.crear_fuente(16, underline=True)
+        self.f2 = self.crear_fuente(12)
+        self.f3 = self.crear_fuente(16)
 
         self.write(self.name + ' Panel', f1, centerx=self.rect.centerx, y=0)
         self.write('Composition', self.f3, centerx=65, y=35)
@@ -149,7 +148,7 @@ class Element(BaseWidget):
         self.max_atm = max_atm
         self.idx = idx
 
-        f = font.SysFont('Verdana', 14, bold=True)
+        f = self.crear_fuente(14, bold=True)
         self.image = f.render(symbol, True, COLOR_TEXTO, COLOR_BOX)
         self.rect = self.image.get_rect(topleft=(x, y))
         self.percent = PercentageCell(self, 45, y)
@@ -199,7 +198,7 @@ class Element(BaseWidget):
             color = self.calculate_pressure()
         else:
             color = 0, 0, 0
-        f = font.SysFont('Verdana', 14, bold=True)
+        f = self.crear_fuente(14, bold=True)
         self.image = f.render(self.symbol, True, color, COLOR_BOX)
 
 
@@ -215,7 +214,7 @@ class PercentageCell(BaseWidget):
         self.rect = self.image.get_rect(topleft=(x, y))
         r = self.rect.inflate(-1, -1)
         self.image.fill(COLOR_BOX, (1, 1, r.w - 1, r.h - 1))
-        self.f = font.SysFont('Verdana', 14)
+        self.f = self.crear_fuente(14)
         self.name = 'Cell of ' + self.parent.symbol
         EventHandler.register(self.on_keydown, 'Arrow')
 

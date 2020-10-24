@@ -1,6 +1,6 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_TEXTO, COLOR_BOX
 from engine.frontend.widgets.basewidget import BaseWidget
-from pygame import Surface, font, transform
+from pygame import Surface, transform
 
 
 class BasePanel(BaseWidget):
@@ -14,10 +14,9 @@ class BasePanel(BaseWidget):
         self.image = Surface((ANCHO, ALTO-32))
         self.rect = self.image.get_rect()
 
-        self.f = font.SysFont('Verdana', 16)
-        self.f.set_underline(True)
+        self.f = self.crear_fuente(16, underline=True)
 
-        f2 = font.SysFont('Verdana', 16)
+        f2 = self.crear_fuente(16)
         self.rt1_uns = transform.rotate(f2.render('Relative Values', True, COLOR_TEXTO, COLOR_BOX), 90)
         self.rt1_sel = transform.rotate(f2.render('Absolute Values', True, COLOR_TEXTO, COLOR_BOX), 90)
         rt1_rect = self.rt1_uns.get_rect(x=12, y=70)

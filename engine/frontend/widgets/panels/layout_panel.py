@@ -1,11 +1,11 @@
 from engine.frontend.globales import ALTO, ANCHO, WidgetGroup, COLOR_TEXTO, COLOR_BOX
 from engine.frontend.globales import Renderer, WidgetHandler
-from pygame import Surface, draw, transform, SRCALPHA, font
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.equations.planetary_system import system
+from pygame import Surface, draw, transform, SRCALPHA
 from engine.backend.eventhandler import EventHandler
-from engine.frontend.widgets import panels
+from engine.equations.planetary_system import system
 from engine.backend.util import abrir_json
+from engine.frontend.widgets import panels
 from os.path import exists, join
 from .planet_panel import Meta
 from os import getcwd
@@ -107,8 +107,8 @@ class BaseButton(Meta, BaseWidget):
 
     def __init__(self, parent, x, y, text):
         super().__init__(parent)
-        f1 = font.SysFont('Verdana', 16)
-        f2 = font.SysFont('Verdana', 16, bold=True)
+        f1 = self.crear_fuente(16)
+        f2 = self.crear_fuente(16, bold=True)
         self.img_uns = f1.render(text, True, COLOR_TEXTO, COLOR_BOX)
         self.img_sel = f2.render(text, True, COLOR_TEXTO, COLOR_BOX)
         self.image = self.img_uns

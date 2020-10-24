@@ -1,5 +1,5 @@
-from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_DISABLED
 from engine.frontend.globales import COLOR_SELECTED, COLOR_PLANETORBIT, COLOR_STARORBIT
+from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_DISABLED
 from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.panels.common import ListedArea
@@ -9,7 +9,7 @@ from engine.frontend.globales.group import WidgetGroup
 from engine.backend.eventhandler import EventHandler
 from engine.equations.planetary_system import system
 from .common import TextButton, Meta, PlanetButton
-from pygame import Surface, font, Rect
+from pygame import Surface, Rect
 from engine.backend import roll
 from ..values import ValueText
 from engine import q
@@ -39,10 +39,9 @@ class OrbitPanel(BaseWidget):
         self.area_modify = ModifyArea(self, ANCHO - 200, 399)
         self.properties.add(self.area_modify, layer=2)
 
-        self.f = font.SysFont('Verdana', 16)
-        self.f.set_underline(True)
+        self.f = self.crear_fuente(16, underline=True)
         self.write(self.name + ' Panel', self.f, centerx=self.rect.centerx, y=0)
-        self.image.blit(font.SysFont('Verdana', 14).render(' | ', True, COLOR_TEXTO, COLOR_AREA), (104, 421))
+        self.image.blit(self.crear_fuente(14).render(' | ', True, COLOR_TEXTO, COLOR_AREA), (104, 421))
 
         self.planet_area = AvailableObjects(self, ANCHO - 200, 32, 200, 350)
         self.properties.add(self.planet_area, layer=2)
@@ -421,8 +420,8 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue, Intertwined):
 
     def __init__(self, parent, name, value, is_orbit=False, is_complete_orbit=False):
         super().__init__(parent)
-        self.f1 = font.SysFont('Verdana', 16)
-        self.f2 = font.SysFont('Verdana', 16, bold=True)
+        self.f1 = self.crear_fuente(16)
+        self.f2 = self.crear_fuente(16, bold=True)
         self.name = name
         self._value = value
         if is_orbit:
@@ -502,8 +501,8 @@ class OrbitButton(Meta, BaseWidget, Intertwined):
 
     def __init__(self, parent, color):
         super().__init__(parent)
-        self.f1 = font.SysFont('Verdana', 14)
-        self.f2 = font.SysFont('Verdana', 14, bold=True)
+        self.f1 = self.crear_fuente(14)
+        self.f2 = self.crear_fuente(14, bold=True)
         self._rect = Rect(3, 442, 0, 21)
         self.color = color
 
@@ -556,8 +555,8 @@ class ToggleableButton(Meta, BaseWidget):
 
     def __init__(self, parent, text, method, x, y):
         super().__init__(parent)
-        f1 = font.SysFont('Verdana', 14)
-        f2 = font.SysFont('Verdana', 14, bold=True)
+        f1 = self.crear_fuente(14)
+        f2 = self.crear_fuente(14, bold=True)
         self.img_uns = f1.render(text, True, COLOR_TEXTO, COLOR_AREA)
         self.img_sel = f2.render(text, True, COLOR_TEXTO, COLOR_AREA)
         self.img_dis = f1.render(text, True, COLOR_DISABLED, COLOR_AREA)

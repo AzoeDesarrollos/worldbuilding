@@ -3,11 +3,10 @@ from engine.frontend.widgets.values import ValueText
 from engine.equations.planetary_system import system
 from engine.equations.satellite import create_moon
 from engine.frontend.globales import WidgetGroup
+from .common import ListedArea, PlanetButton
 from engine import material_densities
 from ..object_type import ObjectType
 from .base_panel import BasePanel
-from .common import ListedArea, PlanetButton
-from pygame import font
 
 
 class SatellitePanel(BasePanel):
@@ -17,8 +16,7 @@ class SatellitePanel(BasePanel):
         super().__init__('Satellite', parent)
         self.current = SatelliteType(self)
         self.image.fill(COLOR_AREA, [0, 420, self.rect.w // 2, 200])
-        f = font.SysFont('Verdana', 16)
-        f.set_underline(True)
+        f = self.crear_fuente(16, underline=True)
         render = f.render('Composition', True, COLOR_TEXTO, COLOR_AREA)
         render_rect = render.get_rect(topleft=(0, 420))
         self.image.blit(render, render_rect)

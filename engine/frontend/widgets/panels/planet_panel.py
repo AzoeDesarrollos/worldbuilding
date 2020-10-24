@@ -7,7 +7,6 @@ from engine.backend.eventhandler import EventHandler
 from .common import PlanetButton, TextButton, Meta
 from engine.equations.planet import Planet
 from itertools import cycle
-from pygame import font
 
 
 class PlanetPanel(BasePanel):
@@ -73,13 +72,13 @@ class PlanetType(ObjectType):
                          ['Mass', 'Radius', 'Gravity', 'escape_velocity'],
                          ['Density', 'Volume', 'Surface', 'Circumference', 'Albedo', 'Greenhouse', 'Clase']
                          )
-        f = font.SysFont('Verdana', 14)
+        f = self.crear_fuente(14)
         f.set_underline(True)
         render = f.render('Planets', True, COLOR_TEXTO, COLOR_AREA)
         render_rect = render.get_rect(y=420)
         self.parent.image.blit(render, render_rect)
 
-        f = font.SysFont('Verdana', 16, bold=True)
+        f = self.crear_fuente(16, bold=True)
         self.habitable = f.render('Habitable', True, (0, 255, 0), COLOR_BOX)
         self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right - 10, y=self.parent.rect.y + 50)
         EventHandler.register(self.save_planet, 'Save')
@@ -167,8 +166,8 @@ class Unit(Meta, BaseWidget):
 
     def __init__(self, parent, x, y):
         super().__init__(parent)
-        self.f1 = font.SysFont('Verdana', 12)
-        self.f2 = font.SysFont('Verdana', 12, bold=True)
+        self.f1 = self.crear_fuente(12)
+        self.f2 = self.crear_fuente(12, bold=True)
         render = self.f2.render('Type: ', True, COLOR_TEXTO, COLOR_BOX)
         render_rect = render.get_rect(bottomleft=(x, y))
         self.base_rect = self.parent.image.blit(render, render_rect)
@@ -204,8 +203,8 @@ class ShownMass(BaseWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.f1 = font.SysFont('Verdana', 12, bold=True)
-        self.f2 = font.SysFont('Verdana', 12)
+        self.f1 = self.crear_fuente(12, bold=True)
+        self.f2 = self.crear_fuente(12)
         self.image = self.f1.render('Available mass: ', True, COLOR_TEXTO, COLOR_BOX)
         self.rect = self.image.get_rect(left=self.parent.rect.right + 100, bottom=self.parent.rect.bottom)
         self.mass_img = self.f2.render(self.show_mass(), True, self.mass_color, COLOR_BOX)

@@ -1,13 +1,12 @@
-from engine.frontend.widgets.panels.base_panel import BasePanel
-from engine.frontend.widgets.sprite_star import StarSprite
-from engine.frontend.widgets.object_type import ObjectType
-from engine.equations.star import Star
-from engine.backend.eventhandler import EventHandler
 from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, WidgetGroup
 from engine.frontend.widgets.panels.common import TextButton, Meta
+from engine.frontend.widgets.panels.base_panel import BasePanel
+from engine.frontend.widgets.object_type import ObjectType
+from engine.frontend.widgets.sprite_star import StarSprite
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import system
-from pygame import font
+from engine.backend.eventhandler import EventHandler
+from engine.equations.star import Star
 
 
 class StarPanel(BasePanel):
@@ -18,8 +17,7 @@ class StarPanel(BasePanel):
         super().__init__('Star', parent)
         self.current = StarType(self)
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
-        f = font.SysFont('Verdana', 14)
-        f.set_underline(True)
+        f = self.crear_fuente(14, underline=True)
         render = f.render('Stars', True, COLOR_TEXTO, COLOR_AREA)
         self.image.blit(render, self.area_buttons.topleft)
         self.button = AddStarButton(self.current, 490, 416)
@@ -147,8 +145,8 @@ class StarButton(Meta, BaseWidget):
     def __init__(self, parent, star, x, y):
         super().__init__(parent)
         self.star_data = star
-        self.f1 = font.SysFont('Verdana', 13)
-        self.f2 = font.SysFont('Verdana', 13, bold=True)
+        self.f1 = self.crear_fuente(13)
+        self.f2 = self.crear_fuente(13, bold=True)
         name = star.classification + ' #{}'.format(len(self.parent.parent.stars))
         self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)
         self.img_sel = self.f2.render(name, True, COLOR_TEXTO, COLOR_AREA)

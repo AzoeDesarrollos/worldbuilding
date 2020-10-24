@@ -1,7 +1,7 @@
+from engine.frontend.globales import Renderer, WidgetHandler
 from pygame import draw, Surface, SRCALPHA
 from math import sin, cos, radians
 from .basewidget import BaseWidget
-from engine.frontend.globales import Renderer, WidgetHandler
 
 
 class StarSprite(BaseWidget):

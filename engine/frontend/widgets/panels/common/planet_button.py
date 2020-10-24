@@ -1,8 +1,7 @@
 from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, COLOR_TERRESTIAL, COLOR_GASDWARF
 from engine.frontend.globales import COLOR_GASGIANT, COLOR_PUFFYGIANT, COLOR_DWARFPLANET
-from engine.equations.planetary_system import system
 from engine.frontend.widgets.basewidget import BaseWidget
-from pygame import font
+from engine.equations.planetary_system import system
 from .meta import Meta
 
 
@@ -12,8 +11,8 @@ class PlanetButton(Meta, BaseWidget):
     def __init__(self, parent, planet, x, y):
         super().__init__(parent)
         self.planet_data = planet
-        self.f1 = font.SysFont('Verdana', 13)
-        self.f2 = font.SysFont('Verdana', 13, bold=True)
+        self.f1 = self.crear_fuente(13)
+        self.f2 = self.crear_fuente(13, bold=True)
         name = ''
         color = COLOR_TEXTO
         if planet.clase == 'Terrestial Planet':

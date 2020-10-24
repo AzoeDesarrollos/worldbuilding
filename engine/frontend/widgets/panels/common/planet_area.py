@@ -1,6 +1,6 @@
 from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, WidgetGroup
 from engine.frontend.widgets.basewidget import BaseWidget
-from pygame import Surface, font
+from pygame import Surface
 
 
 class ListedArea(BaseWidget):
@@ -12,8 +12,7 @@ class ListedArea(BaseWidget):
         self.rect = self.image.get_rect(topleft=(x, y))
         self.listed_objects = WidgetGroup()
 
-        self.f = font.SysFont('Verdana', 14)
-        self.f.set_underline(True)
+        self.f = self.crear_fuente(14, underline=True)
         self.write('Astronomical Objects', self.f, midtop=(self.rect.w / 2, 0))
 
     def write(self, text, fuente, **kwargs):

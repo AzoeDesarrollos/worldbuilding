@@ -1,7 +1,7 @@
-from .basewidget import BaseWidget
-from engine.backend import EventHandler
-from .values import ValueText
 from ..globales.group import WidgetGroup
+from engine.backend import EventHandler
+from .basewidget import BaseWidget
+from .values import ValueText
 from engine import q
 
 

@@ -1,15 +1,15 @@
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX
 from engine.equations.planet import GasDwarf, Terrestial
 from engine.frontend.dwarfgraph import dwarfgraph_loop
-from engine.equations.planetary_system import system
 from engine.backend.eventhandler import EventHandler
+from engine.equations.planetary_system import system
 from engine.frontend import Renderer, WidgetHandler
-from engine.frontend.graph.graph import graph_loop
 from engine.frontend.gasgraph import gasgraph_loop
+from engine.frontend.graph.graph import graph_loop
 from .incremental_value import IncrementalValue
 from engine.backend.util import add_decimal
 from .basewidget import BaseWidget
-from pygame import font, Surface
+from pygame import Surface
 from engine import q
 
 
@@ -21,9 +21,8 @@ class ValueText(BaseWidget):
         super().__init__(parent)
         self.text = text
 
-        f1 = font.SysFont('Verdana', 16)
-        f2 = font.SysFont('Verdana', 16)
-        f2.set_underline(True)
+        f1 = self.crear_fuente(16)
+        f2 = self.crear_fuente(16, underline=True)
 
         self.img_uns = f1.render(text + ':', True, fg, bg)
         self.img_sel = f2.render(text + ':', True, fg, bg)
@@ -157,7 +156,7 @@ class NumberArea(BaseWidget, IncrementalValue):
         self.value = ''
         self.name = name
         self.fg, self.bg = fg, bg
-        self.f = font.SysFont('Verdana', 16)
+        self.f = self.crear_fuente(16)
         self.image = Surface((0, self.f.get_height()))
         self.rect = self.image.get_rect(topleft=(x, y))
 
