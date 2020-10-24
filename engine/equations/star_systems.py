@@ -24,7 +24,7 @@ class BinarySystem:
         self.ecc_p = q(ep)
         self.ecc_s = q(es)
         self.average_separation = q(avgsep, 'au')
-        self.barycenter = q(avgsep * (self.secondary.mass / (self.primary.mass + self.secondary.mass)), 'au')
+        self.barycenter = q(avgsep * (self.secondary.mass.m / (self.primary.mass.m + self.secondary.mass.m)), 'au')
         self.primary_distance = round(self.barycenter, 2)
         self.secondary_distance = round(self.average_separation - self.primary_distance, 2)
 
@@ -32,8 +32,8 @@ class BinarySystem:
 
     @staticmethod
     def calculate_distances(e, ref):
-        max_sep = q((1 + e) * round(ref.m, 2), 'au')
-        min_sep = q((1 - e) * round(ref.m, 2), 'au')
+        max_sep = q((1 + e) * round(ref, 2), 'au')
+        min_sep = q((1 - e) * round(ref, 2), 'au')
         return max_sep, min_sep
 
     def __repr__(self):

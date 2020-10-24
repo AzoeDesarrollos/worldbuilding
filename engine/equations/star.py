@@ -155,7 +155,7 @@ class Star(BodyInHydrostaticEquilibrium):
         return color
 
     def __str__(self):
-        return "Star " + self.name
+        return "{}-Star ({})".format(self.cls, self.name)
 
     def __repr__(self):
         return "Star " + self.name + ' {}'.format(self.mass.m)
