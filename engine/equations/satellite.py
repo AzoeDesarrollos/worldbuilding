@@ -1,7 +1,8 @@
+from engine.frontend.globales import COLOR_ICYMOON, COLOR_ROCKYMOON
 from .general import BodyInHydrostaticEquilibrium
-from math import pi, sqrt
 from engine import q, material_densities
 from engine.backend import roll
+from math import pi, sqrt
 
 
 class Satellite:
@@ -10,7 +11,7 @@ class Satellite:
 
     @staticmethod
     def calculate_density(ice, silicate, iron):
-        comp = {'water ice': ice/100, 'silicates': silicate/100, 'iron': iron/100}
+        comp = {'water ice': ice / 100, 'silicates': silicate / 100, 'iron': iron / 100}
         density = q(sum([comp[material] * material_densities[material] for material in comp]), 'g/cm^3')
         return density
 
@@ -21,6 +22,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         if name:
             self.name = name
             self.has_name = True
+        self.composition = data['composition']
         self.radius = q(data['radius'], 'earth_radius')
         self.density = self.set_density(data['composition'])
         self.mass = q((self.radius.m ** 3 * self.density.to('earth_density').m), 'earth_mass')
@@ -30,6 +32,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         self.circumference = q(self.calculate_circumference(self.radius.to('km').m), 'km')
         self.escape_velocity = q(sqrt(self.mass.magnitude / self.radius.magnitude), 'earth_escape')
         self.clase = 'Major Moon'
+        self.cls = 'Major'
 
     # noinspection PyUnusedLocal
     @staticmethod
@@ -40,7 +43,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
 class Minor(Satellite):
     def __init__(self, data):
         self.density = self.set_density(data['composition'])
-        a, b, c = data['a'], data['b'], data['c']
+        a, b, c = data.get('a', 0), data.get('b', 0), data.get('c', 0)
         self.a = q(a, 'km')
         self.b = q(b, 'km')
         self.c = q(c, 'km')
@@ -68,6 +71,8 @@ class Minor(Satellite):
 class RockyMoon(Satellite):
     """A natural satellite made mostly of Silicates"""
 
+    color = COLOR_ROCKYMOON
+
     def set_density(self, composition):
         silicate = composition['silicates'] if 'silicates' in composition else roll(0.6, 0.9)
         ice = composition['water ice'] if 'water ice' in composition else roll(1 - silicate, 0.9 - silicate)
@@ -77,6 +82,8 @@ class RockyMoon(Satellite):
 
 class IcyMoon(Satellite):
     """A natural satellite made mostly of Ice"""
+
+    color = COLOR_ICYMOON
 
     def set_density(self, composition):
         ice = composition['water ice'] if 'water ice' in composition else roll(0.6, 0.9)
@@ -107,7 +114,7 @@ class LightMoon(Satellite):
 
 def create_moon(planet, star, data):
     moon_composition = None
-    # No planet is ever ON the frost line.
+    assert planet.orbit is not None, 'Planet needs an orbit first'
     if planet.orbit.a > star.frost_line:
         moon_composition = IcyMoon
     elif planet.orbit.a < star.frost_line:

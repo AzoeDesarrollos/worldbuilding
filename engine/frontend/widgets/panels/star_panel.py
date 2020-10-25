@@ -90,7 +90,7 @@ class StarType(ObjectType):
         self.current = star
         self.fill()
 
-    def set_current(self, star):
+    def show_current(self, star):
         self.erase()
         self.current = star
         self.fill()
@@ -111,7 +111,6 @@ class StarType(ObjectType):
     def erase(self):
         if self.has_values:
             self.current.sprite.kill()
-        self.current = None
         super().erase()
 
     def fill(self, tos=None):
@@ -124,8 +123,11 @@ class StarType(ObjectType):
         }
         super().fill(tos)
 
-        self.current.sprite = StarSprite(self, self.current, 460, 100)
-        self.properties.add(self.current.sprite)
+        if self.current.sprite is None:
+            self.current.sprite = StarSprite(self, self.current, 460, 100)
+            self.properties.add(self.current.sprite)
+        else:
+            self.current.sprite.show()
 
 
 class AddStarButton(TextButton):

@@ -1,4 +1,4 @@
-from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, WidgetGroup
+from engine.frontend.globales import COLOR_AREA, WidgetGroup
 from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface
 
