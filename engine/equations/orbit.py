@@ -1,5 +1,5 @@
 from engine.backend.util import collapse_factor_lists, prime_factors
-from engine.equations.planetary_system import system
+# from engine.equations.planetary_system import system
 from math import sqrt, pow
 from pygame import draw, Rect
 from engine import q
@@ -9,15 +9,16 @@ class RawOrbit:
     _unit = ''
     temperature = ''
 
-    def __init__(self, a):
+    def __init__(self, star, a):
         self._unit = a.u
         self.a = a
+        self.star = star
         self.set_temperature()
 
     def set_temperature(self):
-        if self.a.m > system.star.frost_line.m:
+        if self.a.m > self.star.frost_line.m:
             self.temperature = 'cold'
-        elif system.star.habitable_inner.m <= self.a.m <= system.star.habitable_outer.m:
+        elif self.star.habitable_inner.m <= self.a.m <= self.star.habitable_outer.m:
             self.temperature = 'habitable'
         else:
             self.temperature = 'hot'
@@ -97,6 +98,7 @@ class Orbit:
 
     planet = None
     temperature = 0
+    _star = None
 
     def __init__(self, a, e, i, unit='au'):
         self._unit = unit
@@ -129,8 +131,9 @@ class Orbit:
     def __repr__(self):
         return 'Orbit @' + str(round(self.semi_major_axis.m, 3))
 
-    def set_planet(self, planet):
-        planet.orbit = PlanetOrbit(system.star.mass, self.semi_major_axis, self.eccentricity, self.inclination)
+    def set_planet(self, star, planet):
+        self._star = star
+        planet.orbit = PlanetOrbit(star.mass, self.semi_major_axis, self.eccentricity, self.inclination)
         planet.orbit.reset_planet(planet)
 
     @property
@@ -143,8 +146,8 @@ class Orbit:
         self._b = self._a * sqrt(1 - pow(self._e, 2))
         self._Q = self._a * (1 + self._e)
         self._q = self._a * (1 - self._e)
-        self.temperature = self.planet.set_temperature(system.star.mass.m, self._a)
-        self.reset_period_and_speed(system.star.mass.m)
+        self.temperature = self.planet.set_temperature(self._star.mass.m, self._a)
+        self.reset_period_and_speed(self._star.mass.m)
 
     @property
     def semi_minor_axis(self):

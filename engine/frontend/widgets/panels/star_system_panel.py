@@ -1,9 +1,9 @@
 from engine.frontend.globales import WidgetGroup, ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_TEXTO
-from engine.frontend.widgets.panels.common import ListedArea, Meta, TextButton
+from engine.frontend.widgets.panels.common import ListedArea, ListedBody, TextButton, Meta
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.equations.star_systems import system_type
-from engine.equations.planetary_system import system
+from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
+from engine.equations.binary import system_type
 from ..values import ValueText
 from pygame import Surface
 
@@ -29,7 +29,7 @@ class StarSystemPanel(BaseWidget):
         self.properties.add(self.stars_area)
         self.current = SystemType(self)
         self.properties.add(self.current)
-
+        self.systems = []
         self.setup_button = SetupButton(self, 490, 416)
         self.properties.add(self.setup_button)
         self.system_buttons = WidgetGroup()
@@ -39,6 +39,7 @@ class StarSystemPanel(BaseWidget):
 
     def create_button(self, system_data):
         button = SystemButton(self, system_data, self.curr_x, self.curr_y)
+        self.systems.append(system_data)
         self.system_buttons.add(button)
         self.properties.add(button)
         self.sort_buttons()
@@ -66,6 +67,11 @@ class StarSystemPanel(BaseWidget):
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
+        if len(self.systems) or len(self.stars_area):
+            for s in self.systems+self.stars_area.objects():
+                Systems.set_system(s)
+
+        self.systems.clear()
 
 
 class SystemType(BaseWidget):
@@ -98,7 +104,7 @@ class SystemType(BaseWidget):
             setattr(self, attr, self.properties.get_sprite(idx))
 
     def set_star(self, star):
-        if self.primary.value == '':
+        if str(self.primary.value) == '':
             self.primary.value = star
         else:
             self.secondary.value = star
@@ -109,7 +115,7 @@ class SystemType(BaseWidget):
         return dets + [float(getattr(self, name).value) for name in names if name not in ('primary', 'secondary')]
 
     def fill(self):
-        if all([vt.value != '' for vt in self.properties.widgets()[0:4]]):
+        if all([str(vt.value) != '' for vt in self.properties.widgets()[0:4]]):
             self.current = system_type(self.separation.value)(*self.get_determinants())
             props = ['average_separation', 'ecc_p', 'ecc_s', 'barycenter', 'max_sep',
                      'min_sep', 'inner_forbbiden_zone', 'outer_forbbiden_zone', 'system_name']
@@ -154,31 +160,30 @@ class AvailableStars(ListedArea):
             listed = ListedStar(self, star, i, self.rect.x + 3, i * 16 + self.rect.y + 21)
             self.listed_objects.add(listed)
 
+    def __len__(self):
+        return len(self.listed_objects)
+
+    def objects(self):
+        return [o.object_data for o in self.listed_objects.widgets()]
+
     def show(self):
         super().show()
-        self.populate(system.stars)
+        self.populate(Systems.loose_stars)
         for listed in self.listed_objects.widgets():
             listed.show()
 
 
-class ListedStar(Meta, BaseWidget):
+class ListedStar(ListedBody):
     enabled = True
 
     def __init__(self, parent, star, idx, x, y):
-        super().__init__(parent)
-        self.f1 = self.crear_fuente(13)
-        self.f2 = self.crear_fuente(13, bold=True)
         name = star.classification + ' #{}'.format(idx)
-        self.object_data = star
-        self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)
-        self.img_sel = self.f2.render(name, True, COLOR_TEXTO, COLOR_AREA)
-        self.w = self.img_sel.get_width()
-        self.image = self.img_uns
-        self.rect = self.image.get_rect(topleft=(x, y))
+        super().__init__(parent, star, name, x, y)
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.parent.current.set_star(self.object_data)
+            Systems.del_star(self.object_data)
             self.kill()
             self.parent.sort()
 
@@ -218,7 +223,7 @@ class SystemButton(Meta, BaseWidget):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            self.parent.set_current(self.system_data)
+            self.parent.show_current(self.system_data)
 
     def move(self, x, y):
         self.rect.topleft = x, y

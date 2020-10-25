@@ -1,8 +1,8 @@
 from engine.frontend import Renderer, WidgetHandler, ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO, WidgetGroup, COLOR_DISABLED
 from engine.frontend.atmograph.atmograph import graph, atmograph
 from engine.frontend.widgets.basewidget import BaseWidget
+from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
-from engine.equations.planetary_system import system
 from .common import ListedArea, PlanetButton
 from engine import molecular_weight, q
 from pygame import Surface
@@ -56,7 +56,7 @@ class AtmospherePanel(BaseWidget):
         self.image.fill(COLOR_BOX, [3, ALTO - 87, 190, 21])
 
     def set_atmosphere(self, pressure):
-        planet = system.planet
+        planet = Systems.get_current().planet
         elements = [i for i in self.elements.widgets() if i.percent.value != '']
         data = dict(zip([e.symbol for e in elements], [float(e.percent.value) for e in elements]))
         data.update({'pressure_at_sea_level': {'value': pressure.m, 'unit': str(pressure.u)}})
@@ -89,7 +89,7 @@ class AtmospherePanel(BaseWidget):
         text = 'Atmosphere of planet'
         planet = self.curr_planet
         if planet is not None:
-            idx = system.planets.index(planet)
+            idx = Systems.get_current().planets.index(planet)
             text += ' #' + str(idx) + ' (' + planet.clase + ')'
 
         self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
@@ -319,7 +319,7 @@ class AvailablePlanets(ListedArea):
 
     def show(self):
         super().show()
-        self.populate(system.planets)
+        self.populate([planet for planet in Systems.get_current().planets if not len(planet.atmosphere)])
         for listed in self.listed_objects.widgets():
             listed.show()
 
@@ -331,4 +331,5 @@ class ListedPlanet(PlanetButton):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
+            self.select()
             self.parent.parent.set_planet(self.object_data)

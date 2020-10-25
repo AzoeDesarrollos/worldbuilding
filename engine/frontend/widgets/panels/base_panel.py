@@ -27,7 +27,7 @@ class BasePanel(BaseWidget):
         rt2_rect = rt2.get_rect(x=6, y=220)
 
         render = self.f.render(name+' Panel', True, COLOR_TEXTO, COLOR_BOX)
-        render_rect = render.get_rect(centerx=self.rect.centerx, y=0)
+        render_rect = render.get_rect(centerx=(ANCHO//4)*1.5, y=0)
 
         self.image.fill(COLOR_BOX)
         self.image.blit(render, render_rect)

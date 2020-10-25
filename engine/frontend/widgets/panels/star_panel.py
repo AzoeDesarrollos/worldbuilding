@@ -4,7 +4,7 @@ from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.sprite_star import StarSprite
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.equations.planetary_system import system
+from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.equations.star import Star
 
@@ -39,7 +39,7 @@ class StarPanel(BasePanel):
     def add_button(self, star):
         button = StarButton(self.current, star, self.curr_x, self.curr_y)
         self.stars.add(button)
-        system.stars.append(star)
+        Systems.add_star(star)
         self.sort_buttons()
         self.current.properties.add(button, layer=2)
         self.current.erase()
@@ -156,7 +156,7 @@ class StarButton(Meta, BaseWidget):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            self.parent.set_current(self.star_data)
+            self.parent.show_current(self.star_data)
 
     def move(self, x, y):
         self.rect.topleft = x, y

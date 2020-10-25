@@ -2,8 +2,8 @@ from engine.frontend.globales import ALTO, ANCHO, WidgetGroup, COLOR_TEXTO, COLO
 from engine.frontend.globales import Renderer, WidgetHandler
 from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface, draw, transform, SRCALPHA
+from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
-from engine.equations.planetary_system import system
 from engine.backend.util import abrir_json
 from engine.frontend.widgets import panels
 from os.path import exists, join
@@ -17,10 +17,11 @@ class LayoutPanel(BaseWidget):
     def __init__(self):
         super().__init__()
         self.image = Surface((ANCHO, ALTO))
-        self.image.fill((125, 125, 125))
+        self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
-        Renderer.add_widget(self)
-        WidgetHandler.add_widget(self)
+        self.show()
+
+        Systems.init()
 
         self.panels = []
         self.properties = WidgetGroup()
@@ -37,6 +38,8 @@ class LayoutPanel(BaseWidget):
         d = LoadButton(self, 300, self.rect.bottom - 26)
         e = NewButton(self, 150, self.rect.bottom - 26)
 
+        f = SwapSystem(self, ANCHO-200, 2)
+
         self.properties.add(a, b, layer=3)
         Renderer.add_widget(a)
         Renderer.add_widget(b)
@@ -45,6 +48,8 @@ class LayoutPanel(BaseWidget):
         Renderer.add_widget(c)
         Renderer.add_widget(d)
         Renderer.add_widget(e)
+
+        self.properties.add(f, layer=4)
 
         WidgetHandler.add_widget(c)
         WidgetHandler.add_widget(d)
@@ -56,12 +61,6 @@ class LayoutPanel(BaseWidget):
             self.curr_idx += delta
             self.current = self.panels[self.curr_idx]
         self.current.show()
-
-    def set_system(self, star):
-        for arrow in self.properties.get_widgets_from_layer(3):
-            arrow.enable()
-        self.properties.get_widgets_from_layer(4)[0].enable()
-        system.set_star(star)
 
     def __repr__(self):
         return 'Layout Panel'
@@ -144,3 +143,37 @@ class NewButton(BaseButton):
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
             EventHandler.trigger('ClearData', 'NewButton', {'panel': self.parent.current})
+
+
+class SwapSystem(Meta, BaseWidget):
+    enabled = True
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent)
+        self.layer = 7
+        self.f1 = self.crear_fuente(13, bold=True)
+        self.f2 = self.crear_fuente(13)
+        self.img_sel = self.f1.render('System: ', True, COLOR_TEXTO, COLOR_BOX)
+        self.img_uns = self.f2.render('System: ', True, COLOR_TEXTO, COLOR_BOX)
+        self.image = self.img_uns
+        self.rect = self.image.get_rect(topleft=(x, y))
+        self.system_image = SystemName(self, left=self.rect.right+6, y=2)
+        self.show()
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1:
+            Systems.cycle_systems()
+
+
+class SystemName(BaseWidget):
+    def __init__(self, parent, **kwargs):
+        super().__init__(parent)
+        self.f = self.crear_fuente(13)
+        self.image = self.f.render(str(Systems.get_current_star()), True, COLOR_TEXTO, COLOR_BOX)
+        self._rect = self.image.get_rect(**kwargs)
+        self.rect = self._rect.copy()
+        self.show()
+
+    def update(self):
+        self.image = self.f.render(str(Systems.get_current_star()), True, COLOR_TEXTO, COLOR_BOX)
+        self.rect = self.image.get_rect(topleft=self._rect.topleft)

@@ -13,12 +13,7 @@ class ListedArea(BaseWidget):
         self.listed_objects = WidgetGroup()
 
         self.f = self.crear_fuente(14, underline=True)
-        self.write('Astronomical Objects', self.f, midtop=(self.rect.w / 2, 0))
-
-    def write(self, text, fuente, **kwargs):
-        render = fuente.render(text, True, COLOR_TEXTO, COLOR_AREA)
-        render_rect = render.get_rect(**kwargs)
-        self.image.blit(render, render_rect)
+        self.write('Astronomical Objects', self.f, midtop=(self.rect.w / 2, 0), bg=COLOR_AREA)
 
     def populate(self, objects):
         return NotImplemented
@@ -37,6 +32,11 @@ class ListedArea(BaseWidget):
     def sort(self):
         for i, listed in enumerate(self.listed_objects.widgets()):
             listed.rect.y = i * 16 + self.rect.y + 21
+
+    def select_one(self, it):
+        for listed in self.listed_objects.widgets():
+            listed.deselect()
+        it.select()
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))

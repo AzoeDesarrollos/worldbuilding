@@ -2,7 +2,7 @@ from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX
 from engine.equations.planet import GasDwarf, Terrestial
 from engine.frontend.dwarfgraph import dwarfgraph_loop
 from engine.backend.eventhandler import EventHandler
-from engine.equations.planetary_system import system
+from engine.equations.planetary_system import Systems
 from engine.frontend import Renderer, WidgetHandler
 from engine.frontend.gasgraph import gasgraph_loop
 from engine.frontend.graph.graph import graph_loop
@@ -71,6 +71,7 @@ class ValueText(BaseWidget):
             p = self.parent
             data = None
             if p.parent.name == 'Planet' and not p.has_values:
+                system = Systems.get_current()
                 self.active = True
                 available_mass = system.get_available_mass()
                 if p.parent.unit.name == 'Habitable':
@@ -104,8 +105,7 @@ class ValueText(BaseWidget):
                     data = dwarfgraph_loop()
                 for elemento in self.parent.properties.get_sprites_from_layer(1):
                     if elemento.text.lower() in data:
-                        elemento.text_area.value = str(data[elemento.text.lower()])
-                        elemento.text_area.update()
+                        elemento.value = str(data[elemento.text.lower()])
                         elemento.text_area.show()
                 self.parent.check_values()
                 Renderer.reset()

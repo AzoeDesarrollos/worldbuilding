@@ -4,6 +4,7 @@ from bisect import bisect_right
 from math import sqrt, pow
 from pygame import Color
 from engine.backend.util import decimal_round
+from datetime import datetime
 
 
 class Star(BodyInHydrostaticEquilibrium):
@@ -25,12 +26,12 @@ class Star(BodyInHydrostaticEquilibrium):
     frost_line = 0
 
     sprite = None
+    letter = None
 
     def __init__(self, data):
         mass = data.get('mass', False)
         luminosity = data.get('luminosity', False)
-        if not mass and not luminosity:
-            raise ValueError('must specify at least mass or luminosity')
+        assert mass or luminosity, 'must specify at least mass or luminosity'
 
         name = data.get('name', None)
         if name is not None:
@@ -71,6 +72,9 @@ class Star(BodyInHydrostaticEquilibrium):
         self.classification = self.stellar_classification()
         self.cls = self.classification
         self.color = self.true_color()
+
+        # ID values make each star unique, even if they have the same mass and name.
+        self.id = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
 
     def set_qs(self):
         self.mass = q(self._mass, 'sol_mass')
@@ -159,3 +163,10 @@ class Star(BodyInHydrostaticEquilibrium):
 
     def __repr__(self):
         return "Star " + self.name + ' {}'.format(self.mass.m)
+
+    def __eq__(self, other):
+        test = all([self.mass.m == other.mass.m, self.name == other.name, self.id == other.id])
+        return test
+
+    def __hash__(self):
+        return hash((self.mass.m, self.name, self.id))

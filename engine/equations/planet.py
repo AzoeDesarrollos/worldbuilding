@@ -23,6 +23,7 @@ class Planet(BodyInHydrostaticEquilibrium):
     temperature = q(0, 'celsius')
 
     atmosphere = None
+    satellites = None
 
     def __init__(self, data):
         name = data.get('name', None)
@@ -61,6 +62,8 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.albedo = q(data['albedo']) if 'albedo' in data else q(29)
         self.greenhouse = q(data['greenhouse']) if 'albedo' in data else q(1)
 
+        self.satellites = []
+
     def set_qs(self, unit):
         m = unit + '_mass'
         r = unit + '_radius'
@@ -93,7 +96,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.orbit = Orbit(*orbital_parameters)
         self.temperature = self.set_temperature(star.mass.m, self.orbit.semi_minor_axis.m)
         self.orbit.temperature = self.temperature
-        self.orbit.set_planet(self)
+        self.orbit.set_planet(star, self)
         return self.orbit
 
     @staticmethod

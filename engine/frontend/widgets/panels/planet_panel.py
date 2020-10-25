@@ -2,11 +2,11 @@ from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, WidgetG
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.equations.planetary_system import system
+from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from .common import PlanetButton, TextButton, Meta
 from engine.equations.planet import Planet
-from itertools import cycle
+from engine import q
 
 
 class PlanetPanel(BasePanel):
@@ -14,29 +14,36 @@ class PlanetPanel(BasePanel):
     curr_y = 440
     unit = None
     is_visible = False
+    last_idx = None
 
     def __init__(self, parent):
         super().__init__('Planet', parent)
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.current = PlanetType(self)
+        self.properties = WidgetGroup()
 
         self.unit = Unit(self, 0, 416)
-        self.current.properties.add(self.unit)
+        self.properties.add(self.unit)
 
         self.button = AddPlanetButton(self, 490, 416)
-        self.current.properties.add(self.button)
-
+        self.properties.add(self.button)
         self.planet_buttons = WidgetGroup()
 
     def add_button(self, planet):
         button = PlanetButton(self.current, planet, self.curr_x, self.curr_y)
-        self.planet_buttons.add(button)
+        self.planet_buttons.add(button, layer=Systems.get_current_idx())
         self.sort_buttons()
         self.current.properties.add(button, layer=2)
 
+    def show_current(self, idx):
+        for button in self.planet_buttons.widgets():
+            button.hide()
+        for button in self.planet_buttons.get_widgets_from_layer(idx):
+            button.show()
+
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
-        for bt in self.planet_buttons.widgets():
+        for bt in self.planet_buttons.get_widgets_from_layer(Systems.get_current_idx()):
             bt.move(x, y)
             if not self.area_buttons.contains(bt.rect):
                 bt.hide()
@@ -62,6 +69,22 @@ class PlanetPanel(BasePanel):
                 elif event.button == 5 and last_is_hidden:
                     self.curr_y -= 32
                 self.sort_buttons()
+
+    def show(self):
+        super().show()
+        for item in self.properties.widgets():
+            item.show()
+
+    def hide(self):
+        super().hide()
+        for item in self.properties.widgets():
+            item.hide()
+
+    def update(self):
+        idx = Systems.get_current_idx()
+        if idx != self.last_idx:
+            self.show_current(idx)
+            self.last_idx = idx
 
 
 class PlanetType(ObjectType):
@@ -110,7 +133,7 @@ class PlanetType(ObjectType):
         self.parent.image.fill(COLOR_BOX, self.hab_rect)
 
     def create_button(self):
-        create = system.add_planet(self.current)
+        create = Systems.get_current().add_planet(self.current)
         if create:
             for button in self.properties.get_sprites_from_layer(1):
                 button.text_area.clear()
@@ -142,7 +165,7 @@ class PlanetType(ObjectType):
             attrs['unit'] = 'jupiter' if unit == 'gas giant' else 'earth'
             self.current = Planet(attrs)
             self.toggle_habitable()
-            if self.current.mass <= system.body_mass:
+            if self.current.mass <= Systems.get_current().body_mass:
                 self.parent.button.enable()
                 self.parent.unit.mass_number.mass_color = COLOR_TEXTO
             else:
@@ -163,6 +186,8 @@ class PlanetType(ObjectType):
 class Unit(Meta, BaseWidget):
     name = ''
     enabled = True
+    mass_number = None
+    curr_idx = 0
 
     def __init__(self, parent, x, y):
         super().__init__(parent)
@@ -172,18 +197,28 @@ class Unit(Meta, BaseWidget):
         render_rect = render.get_rect(bottomleft=(x, y))
         self.base_rect = self.parent.image.blit(render, render_rect)
         self.rect = self.base_rect.copy()
-        self.cycler = cycle(['Habitable', 'Terrestial', 'Dwarf Planet', 'Gas Dwarf', 'Gas Giant'])
-        self.mass_number = ShownMass(self)
-        self.name = next(self.cycler)
+        self.names = ['Habitable', 'Terrestial', 'Dwarf Planet', 'Gas Dwarf', 'Gas Giant']
+        self.name = self.names[self.curr_idx]
         self.create()
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            self.name = next(self.cycler)
-            self.create()
+            self.cycle(+1)
+
+        elif event.button == 3:
+            self.cycle(-1)
+
+    def cycle(self, delta):
+        self.curr_idx += delta
+        if not 0 <= abs(self.curr_idx) < len(self.names):
+            self.curr_idx = 0
+        self.name = self.names[self.curr_idx]
+        self.create()
 
     def show(self):
         super().show()
+        if self.mass_number is None:
+            self.mass_number = ShownMass(self)
         self.mass_number.show()
 
     def hide(self):
@@ -219,7 +254,10 @@ class ShownMass(BaseWidget):
             self.show_jovian_mass = not self.show_jovian_mass
 
     def show_mass(self):
-        mass = system.get_available_mass()
+        try:
+            mass = Systems.get_current().get_available_mass()
+        except AttributeError:
+            mass = q(0, 'jupiter_mass')
         if not self.show_jovian_mass:
             mass = mass.to('earth_mass')
         attr = '{:,g}'.format((round(mass, 3)))

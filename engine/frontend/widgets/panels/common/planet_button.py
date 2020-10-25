@@ -1,18 +1,13 @@
-from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, COLOR_TERRESTIAL, COLOR_GASDWARF
+from engine.frontend.globales import COLOR_TEXTO, COLOR_TERRESTIAL, COLOR_GASDWARF
 from engine.frontend.globales import COLOR_GASGIANT, COLOR_PUFFYGIANT, COLOR_DWARFPLANET
-from engine.frontend.widgets.basewidget import BaseWidget
-from engine.equations.planetary_system import system
-from .meta import Meta
+from engine.equations.planetary_system import Systems
+from .listed_body import ListedBody
 
 
-class PlanetButton(Meta, BaseWidget):
+class PlanetButton(ListedBody):
     enabled = True
 
     def __init__(self, parent, planet, x, y):
-        super().__init__(parent)
-        self.planet_data = planet
-        self.f1 = self.crear_fuente(13)
-        self.f2 = self.crear_fuente(13, bold=True)
         name = ''
         color = COLOR_TEXTO
         if planet.clase == 'Terrestial Planet':
@@ -30,27 +25,15 @@ class PlanetButton(Meta, BaseWidget):
         elif planet.clase == 'Dwarf Planet':
             name = 'Dwarf'
             color = COLOR_DWARFPLANET
-
-        self.img_uns = self.f1.render(name, True, color, COLOR_AREA)
-        self.img_sel = self.f2.render(name, True, color, COLOR_AREA)
-        self.w = self.img_sel.get_width()
-        self.image = self.img_uns
-        self.rect = self.image.get_rect(topleft=(x, y))
+        super().__init__(parent, planet, name, x, y, fg_color=color)
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            self.parent.planet = self.planet_data
-            system.set_current_planet(self.planet_data)
+            self.parent.planet = self.object_data
+            Systems.get_current().set_current_planet(self.object_data)
             self.parent.has_values = True
             self.parent.fill()
             self.parent.toggle_habitable()
-
-    def update(self):
-        super().update()
-        if self.parent.parent.is_visible:
-            self.show()
-        else:
-            self.hide()
 
     def move(self, x, y):
         self.rect.topleft = x, y
