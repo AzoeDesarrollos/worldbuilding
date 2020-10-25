@@ -1,4 +1,4 @@
-from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, K_SPACE, KEYUP, K_LSHIFT, K_LCTRL
+from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, KEYUP, K_LSHIFT, K_LCTRL
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO
 from engine.frontend.graph.graph import pos_to_keys, Linea, Punto
 from pygame import display, event, font, transform, image
@@ -83,7 +83,7 @@ def dwarfgraph_loop():
 
     move_x, move_y = True, True
     while not done:
-        for e in event.get([KEYDOWN, QUIT, MOUSEMOTION, KEYUP]):
+        for e in event.get([KEYDOWN, QUIT, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP]):
             if (e.type == KEYDOWN and e.key == K_ESCAPE) or e.type == QUIT:
                 quit()
                 exit()
@@ -112,6 +112,12 @@ def dwarfgraph_loop():
                     text_mass = 'Mass: N/A'
                     text_radius = 'Radius: N/A'
                     text_density = 'Density: N/A'
+
+            elif e.type == MOUSEBUTTONDOWN:
+                if e.button == 1:
+                    done = True
+                    # break
+
             elif e.type == KEYDOWN:
                 if e.key == K_SPACE:
                     done = True

@@ -33,7 +33,7 @@ class PlanetPanel(BasePanel):
         button = PlanetButton(self.current, planet, self.curr_x, self.curr_y)
         self.planet_buttons.add(button, layer=Systems.get_current_idx())
         self.sort_buttons()
-        self.current.properties.add(button, layer=2)
+        self.properties.add(button, layer=2)
 
     def show_current(self, idx):
         for button in self.planet_buttons.widgets():

@@ -128,15 +128,27 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                         if (not lockx) and (not move_x):
                             lockx = True
 
-                        if (not locky) and (not move_y):
+                        elif (not locky) and (not move_y):
                             locky = True
+
+                        else:
+                            data['mass'] = round(mass_value, 3)
+                            data['radius'] = round(radius_value, 3)
+                            data['gravity'] = round(mass_value / (radius_value ** 2), 3)
+                            data['density'] = round(mass_value / (radius_value ** 3), 3)
+                            if rect.collidepoint(px, py) and mascara.get_at((px, py)):
+                                for name in _lineas:
+                                    if [px, py] in _lineas[name]:
+                                        data['composition'] = composiciones[name]
+                                        break
+                            done = True
 
                 elif e.button == 3:
                     if lockx:
                         lockx = False
                         move_x = not lockx
 
-                    elif locky:
+                    if locky:
                         locky = False
                         move_y = not locky
 

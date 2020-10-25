@@ -1,8 +1,8 @@
-from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, K_SPACE, image, K_LSHIFT, K_LCTRL, KEYUP
+from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, image, K_LSHIFT, K_LCTRL, KEYUP
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, ANCHO, ALTO
-from pygame import init, quit, display, font, event, Rect
+from pygame import init, quit, display, font, event, Rect, Surface
+from engine.frontend.graph.graph import pos_to_keys, keys_to_pos
 from engine.frontend.graph.objects import Linea, Punto
-from engine.frontend.graph.graph import pos_to_keys
 from engine.frontend.globales import WidgetGroup
 from pygame.sprite import Sprite
 from sys import exit
@@ -40,7 +40,7 @@ class Number(Sprite):
         self.rect = self.image.get_rect(**kwargs)
 
 
-def gasgraph_loop():
+def gasgraph_loop(limit_mass):
     done = False
     data = {}
     text_mass = 'Mass: N/A'
@@ -70,14 +70,19 @@ def gasgraph_loop():
     for i in [i for i in range(len(mass_keys))]:
         n = Number(mass_imgs[i], right=30, centery=i * 20 + 21)
         numbers.add(n)
-        yes.append(n.rect.centery - 16)
+        yes.append(n.rect.centery)
 
     x = exes[radius_keys.index(1.02)]
     y = yes[mass_keys.index(2)]
 
-    rect_super = Rect(0, y, x - 3, img_rect.h)
-    rect_puffy = Rect(x - 3, 0, img_rect.w, y)
-    rect_giant = Rect(0, 0, x - 3, y)
+    rect_super = Rect(31, y + 16, x - 3, (img_rect.h / 2) - 60)
+    rect_puffy = Rect(x + 28, 16, (img_rect.w / 2) + 100, y)
+    rect_giant = Rect(31, 16, x - 3, y)
+
+    lim_y = keys_to_pos(limit_mass, mass_keys, yes, 'gt')
+    lim_rect = Rect(31, lim_y, img_rect.w, 236)
+    lim_img = Surface(lim_rect.size)
+    lim_img.set_alpha(150)
 
     lineas = WidgetGroup()
     linea_h = Linea(img_rect, img_rect.x, img_rect.centery, img_rect.w, 1, lineas)
@@ -86,7 +91,7 @@ def gasgraph_loop():
 
     move_x, move_y = True, True
     while not done:
-        for e in event.get([KEYDOWN, KEYUP, QUIT, MOUSEMOTION]):
+        for e in event.get([KEYDOWN, KEYUP, QUIT, MOUSEBUTTONDOWN, MOUSEMOTION]):
             if (e.type == KEYDOWN and e.key == K_ESCAPE) or e.type == QUIT:
                 quit()
                 exit()
@@ -105,10 +110,11 @@ def gasgraph_loop():
                 valid = [rect_puffy.collidepoint(dx, dy),
                          rect_giant.collidepoint(dx, dy),
                          rect_super.collidepoint(dx, dy)]
+                off_limit = lim_rect.collidepoint(dx, dy)
 
-                if img_rect.collidepoint(px, py) and any(valid):
+                if img_rect.collidepoint(px, py) and any(valid) and not off_limit:
                     invalid = False
-                    mass = round(pos_to_keys(linea_h.rect.y-15, mass_keys, yes, 'gt'), 5)
+                    mass = round(pos_to_keys(linea_h.rect.y+1, mass_keys, yes, 'gt'), 5)
                     radius = round(pos_to_keys(linea_v.rect.x, radius_keys, exes, 'gt'), 3)
                     clase = ''
                     if valid[0]:
@@ -129,6 +135,10 @@ def gasgraph_loop():
                     text_mass = 'Mass: N/A'
                     text_radius = 'Radius: N/A'
                     text_density = 'Density: N/A'
+
+            elif e.type == MOUSEBUTTONDOWN:
+                if e.button == 1:
+                    done = True
 
             elif e.type == KEYDOWN and not invalid:
                 if e.key == K_SPACE:
@@ -157,6 +167,7 @@ def gasgraph_loop():
         fondo.blit(render_density, (300, ALTO - 20))
 
         fondo.blit(img, img_rect)
+        fondo.blit(lim_img, lim_rect)
         numbers.draw(fondo)
         lineas.update()
         lineas.draw(fondo)

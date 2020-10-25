@@ -13,7 +13,7 @@ class PlanetButton(ListedBody):
         if planet.clase == 'Terrestial Planet':
             name = 'Terrestial'
             color = COLOR_TERRESTIAL
-        elif planet.clase == 'Gas Giant':
+        elif planet.clase in ('Gas Giant', 'Super Jupiter'):
             name = 'Giant'
             color = COLOR_GASGIANT
         elif planet.clase == 'Puffy Giant':

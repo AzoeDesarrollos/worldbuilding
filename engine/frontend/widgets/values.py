@@ -69,7 +69,6 @@ class ValueText(BaseWidget):
         not_enough_mass = 'There is not enough mass in the system to create new bodies of this type.'
         if event.button == 1:
             p = self.parent
-            data = None
             if p.parent.name == 'Planet' and not p.has_values:
                 system = Systems.get_current()
                 self.active = True
@@ -79,7 +78,7 @@ class ValueText(BaseWidget):
                     m_low, m_high, r_low, r_high = Terrestial
                     if available_mass < m_high:
                         m_high = available_mass
-                    assert m_high <= 3.5, not_enough_mass
+                    assert m_high >= 3.5, not_enough_mass
                     data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
                                       radius_lower_limit=r_low, radius_upper_limit=r_high)
                 elif p.parent.unit.name == 'Terrestial':
@@ -89,26 +88,26 @@ class ValueText(BaseWidget):
                         m_high = available_mass
                     assert m_high > 0.1, not_enough_mass
                     data = graph_loop(mass_upper_limit=m_high)
-
                 elif p.parent.unit.name == 'Gas Dwarf':
                     m_low, m_high, r_low, r_high = GasDwarf
-                    if available_mass.m < m_high:
+                    if available_mass.to('earth_mass').m < m_high:
                         m_high = available_mass.m
-                        assert m_high > 0.2, not_enough_mass
-                        data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
-                                          radius_lower_limit=r_low, radius_upper_limit=r_high)
+                    assert m_high > 0.2, not_enough_mass
+                    data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
+                                      radius_lower_limit=r_low, radius_upper_limit=r_high)
                 elif p.parent.unit.name == 'Gas Giant':
                     assert available_mass.m >= 0.03, not_enough_mass
-                    data = gasgraph_loop()
+                    data = gasgraph_loop(round(available_mass.m, 2))
                 else:
                     assert available_mass.to('earth_mass').m > 0.1, not_enough_mass
                     data = dwarfgraph_loop()
-                for elemento in self.parent.properties.get_sprites_from_layer(1):
-                    if elemento.text.lower() in data:
-                        elemento.value = str(data[elemento.text.lower()])
-                        elemento.text_area.show()
-                self.parent.check_values()
-                Renderer.reset()
+                if data is not None:
+                    for elemento in self.parent.properties.get_sprites_from_layer(1):
+                        if elemento.text.lower() in data:
+                            elemento.value = str(data[elemento.text.lower()])
+                            elemento.text_area.show()
+                    self.parent.check_values()
+                    Renderer.reset()
             elif p.parent.name == 'Orbit' and p.has_values:
                 text = self.text_area
                 if text.unit == 'year' and text.value < 0.01:
