@@ -45,10 +45,6 @@ class SatellitePanel(BasePanel):
                 x = 3
                 y += 32
 
-    def set_planet_satellite(self):
-        planet = self.current.planet
-        planet.satellites.append(self.current)
-
     def add_button(self):
         button = SatelliteButton(self.current, self.current.current, self.curr_x, self.curr_y)
         self.satellites.add(button, layer=Systems.get_current_idx())
@@ -68,12 +64,16 @@ class SatellitePanel(BasePanel):
 
 
 class SatelliteType(ObjectType):
-    planet = None
 
     def __init__(self, parent):
         super().__init__(parent,
                          ['Mass', 'Radius', 'Gravity', 'escape_velocity'],
                          ['Density', 'Volume', 'Surface', 'Circumference', 'Clase'])
+
+        for item in self.relatives:
+            item.rect.y += 16
+            item.text_area.rect.y += 16
+
         for i, name in enumerate(sorted(material_densities)):
             a = ValueText(self, name.capitalize(), 3, 420 + 21 + i * 21, bg=COLOR_AREA)
             self.properties.add(a, layer=7)
@@ -119,6 +119,13 @@ class SatelliteType(ObjectType):
             'Escape_velocity': 'km/s'
         }
         super().fill(tos)
+
+        for elemento in self.properties.get_widgets_from_layer(7):
+            got_attr = self.current.composition.get(elemento.text.lower(), 0)
+            attr = str(round(got_attr, 3)) + ' %'
+            elemento.value = attr
+            elemento.text_area.show()
+
 
 # dejo estas clases acá porque pueden servir para otro momento
 # class AvailablePlanets(ListedArea):

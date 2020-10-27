@@ -29,7 +29,7 @@ class AtmospherePanel(BaseWidget):
         self.f2 = self.crear_fuente(12)
         self.f3 = self.crear_fuente(16)
 
-        self.write(self.name + ' Panel', f1, centerx=self.rect.centerx, y=0)
+        self.write(self.name + ' Panel', f1, centerx=(ANCHO//4)*1.5, y=0)
         self.write('Composition', self.f3, centerx=65, y=35)
         EventHandler.register(self.load_atmosphere, 'LoadData')
         EventHandler.register(self.clear, 'ClearData')

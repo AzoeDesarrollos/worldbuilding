@@ -1,4 +1,4 @@
-from engine.frontend.globales import COLOR_ICYMOON, COLOR_ROCKYMOON
+from engine.frontend.globales import COLOR_ICYMOON, COLOR_ROCKYMOON, COLOR_IRONMOON
 from .general import BodyInHydrostaticEquilibrium
 from engine import q, material_densities
 from engine.backend import roll
@@ -42,22 +42,24 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
 
 class Minor(Satellite):
     def __init__(self, data):
+        self.composition = data['composition']
         self.density = self.set_density(data['composition'])
-        a, b, c = data.get('a', 0), data.get('b', 0), data.get('c', 0)
-        self.a = q(a, 'km')
-        self.b = q(b, 'km')
-        self.c = q(c, 'km')
+        a, b, c = data.get('a axis', 0), data.get('b axis', 0), data.get('c axis', 0)
+        self.a_axis = q(a, 'km')
+        self.b_axis = q(b, 'km')
+        self.c_axis = q(c, 'km')
         if a > b > c:
-            self.shape = 'triaxial'
+            self.shape = 'Tri-Axial Ellipsoid'
         elif a == b > c:
-            self.shape = 'obleate'
+            self.shape = 'Obleate Spheroid'
         elif a == b < c:
-            self.shape = 'prolate'
+            self.shape = 'Prolate Spheroid'
         else:
-            raise ValueError('object is not an ellipsoid')
-        _a, _b, _c = self.a.to('m').m, self.b.to('m').m, self.c.to('m').m
-        self.mass = q(self.density.to('kg/m^3').m * (4 / 3) * pi * _a * _b * _c, 'kg')
-        self.clase = self.__repr__()
+            raise AssertionError('object is not an ellipsoid')
+        _a, _b, _c = self.a_axis.to('m').m, self.b_axis.to('m').m, self.c_axis.to('m').m
+        self.volume = q((4 / 3) * pi * _a * _b * _c, 'km^3')
+        self.mass = q(self.density.to('kg/m^3').m * self.volume.m, 'kg')
+        self.cls = self.shape.split(' ')[0]
 
     # noinspection PyUnusedLocal
     @staticmethod
@@ -65,7 +67,7 @@ class Minor(Satellite):
         return NotImplemented
 
     def __repr__(self):
-        return super().__repr__() + ' ({} Ellipsoid)'.format(self.shape.title())
+        return self.cls
 
 
 class RockyMoon(Satellite):
@@ -89,27 +91,19 @@ class IcyMoon(Satellite):
         ice = composition['water ice'] if 'water ice' in composition else roll(0.6, 0.9)
         silicate = composition['silicates'] if 'silicates' in composition else roll(1 - ice, 0.9 - ice)
         iron = composition['iron'] if 'iron' in composition else 1.0 - (silicate + ice)
-        self.density = self.calculate_density(ice, silicate, iron)
+        return self.calculate_density(ice, silicate, iron)
 
 
-class HeavyMoon(Satellite):
-    """Fictional moon made mostly of Iron and Silicates"""
+class IronMoon(Satellite):
+    """Fictional moon made mostly of Iron"""
+
+    color = COLOR_IRONMOON
 
     def set_density(self, composition):
         iron = composition['iron'] if 'iron' in composition else roll(0.6, 0.9)
         silicate = composition['silicates'] if 'silicates' in composition else roll(1 - iron, 0.9 - iron)
         ice = composition['water ice'] if 'water ice' in composition else 1.0 - (silicate + iron)
-        self.density = self.calculate_density(ice, silicate, iron)
-
-
-class LightMoon(Satellite):
-    """Fictional moon made mostly of Iron and Ice"""
-
-    def set_density(self, composition):
-        iron = composition['iron'] if 'iron' in composition else roll(0.6, 0.9)
-        ice = composition['water ice'] if 'water ice' in composition else roll(1 - iron, 0.9 - iron)
-        silicate = composition['silicates'] if 'silicates' in composition else 1.0 - (ice + iron)
-        self.density = self.calculate_density(ice, silicate, iron)
+        return self.calculate_density(ice, silicate, iron)
 
 
 def create_moon(planet, star, data):
@@ -135,13 +129,30 @@ def create_moon(planet, star, data):
     return moon(data)
 
 
-def major_moon_by_composition(data):
-    ice = data.get('water ice', 0)
-    rock = data.get('silicates', 0)
-    if ice <= rock:
-        moon_composition = RockyMoon
-    else:
-        moon_composition = IcyMoon
+def _moon_composition(data):
+    ice = data['composition'].get('water ice', 0)
+    rock = data['composition'].get('silicates', 0)
+    iron = data['composition'].get('iron', 0)
 
+    if rock > ice + iron:
+        composition = RockyMoon
+    elif ice > rock + iron:
+        composition = IcyMoon
+    elif iron > rock + ice:
+        composition = IronMoon
+    else:
+        raise AssertionError('A satellite must be composed mostly of a single element')
+
+    return composition
+
+
+def major_moon_by_composition(data):
+    moon_composition = _moon_composition(data)
     moon = type('Moon', (moon_composition, Major), {})
+    return moon(data)
+
+
+def minor_moon_by_composition(data):
+    moon_composition = _moon_composition(data)
+    moon = type('Moon', (moon_composition, Minor), {})
     return moon(data)

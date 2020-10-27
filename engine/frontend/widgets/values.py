@@ -16,6 +16,7 @@ from engine import q
 class ValueText(BaseWidget):
     selected = False
     active = False
+    do_round = True
 
     def __init__(self, parent, text, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
         super().__init__(parent)
@@ -192,6 +193,9 @@ class NumberArea(BaseWidget, IncrementalValue):
                 elif self.great_grandparent.name == 'Orbit':
                     self.grandparent.fill()
 
+                elif self.great_grandparent.name == 'Asteroid':
+                    self.grandparent.calculate()
+
     def set_value(self, quantity):
         if type(quantity) is q:
             self.value = float(quantity.m)
@@ -244,7 +248,10 @@ class NumberArea(BaseWidget, IncrementalValue):
     def update(self):
         self.reset_power()
         if hasattr(self.value, '__round__') and self.unit is not None:
-            value = q(add_decimal(str(round(self.value, 3))), self.unit)
+            if self.parent.do_round:
+                value = q(add_decimal(str(round(self.value, 3))), self.unit)
+            else:
+                value = q(add_decimal(str(self.value)), self.unit)
             if self.unit != 'year':
                 value = '{:~}'.format(value)
             value = str(value)

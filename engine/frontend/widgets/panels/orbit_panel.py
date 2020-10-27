@@ -44,7 +44,7 @@ class OrbitPanel(BaseWidget):
         self.properties.add(self.area_modify, layer=2)
 
         self.f = self.crear_fuente(16, underline=True)
-        self.write(self.name + ' Panel', self.f, centerx=self.rect.centerx, y=0)
+        self.write(self.name + ' Panel', self.f, centerx=(ANCHO//4)*1.5, y=0)
         self.image.blit(self.crear_fuente(14).render(' | ', True, COLOR_TEXTO, COLOR_AREA), (104, 421))
 
         self.planet_area = AvailableObjects(self, ANCHO - 200, 32, 200, 350)

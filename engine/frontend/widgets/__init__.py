@@ -4,6 +4,7 @@ from .panels.satellite_panel import SatellitePanel
 from .panels.orbit_panel import OrbitPanel
 from .panels.atmosphere_panel import AtmospherePanel
 from .panels.star_system_panel import StarSystemPanel
+from .panels.asteroid_panel import AsteroidPanel
 from .basewidget import BaseWidget
 
 panels = [
@@ -12,5 +13,6 @@ panels = [
     PlanetPanel,
     OrbitPanel,
     SatellitePanel,
-    AtmospherePanel
+    AsteroidPanel,
+    AtmospherePanel,
 ]
