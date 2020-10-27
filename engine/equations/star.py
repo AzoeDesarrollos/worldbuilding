@@ -31,7 +31,7 @@ class Star(BodyInHydrostaticEquilibrium):
     def __init__(self, data):
         mass = data.get('mass', False)
         luminosity = data.get('luminosity', False)
-        assert mass or luminosity, 'must specify at least mass or luminosity'
+        assert mass or luminosity, 'Must specify at least mass or luminosity'
 
         name = data.get('name', None)
         if name is not None:

@@ -31,7 +31,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         radius = data.get('radius', False)
         gravity = data.get('gravity', False)
         if not mass and not radius and not gravity:
-            raise ValueError('must specify at least two values')
+            raise AssertionError('must specify at least two values')
 
         if name:
             self.name = name
@@ -111,7 +111,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         elif mass < q(2, jm) and radius > q(1, jr):
             return 'Puffy Giant'
         else:
-            raise TypeError("couldn't class the planet")
+            raise AssertionError("couldn't class the planet")
 
     def set_atmosphere(self, data):
         self.atmosphere.update(data)

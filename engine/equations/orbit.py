@@ -1,5 +1,4 @@
 from engine.backend.util import collapse_factor_lists, prime_factors
-# from engine.equations.planetary_system import system
 from math import sqrt, pow
 from pygame import draw, Rect
 from engine import q
