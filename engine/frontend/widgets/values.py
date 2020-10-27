@@ -108,6 +108,8 @@ class ValueText(BaseWidget):
                             elemento.text_area.show()
                     self.parent.check_values()
                     Renderer.reset()
+                else:
+                    self.parent.button.disable()
             elif p.parent.name == 'Orbit' and p.has_values:
                 text = self.text_area
                 if text.unit == 'year' and text.value < 0.01:

@@ -68,10 +68,12 @@ class Systems:
 
     @classmethod
     def set_system(cls, star):
+        if star in cls.loose_stars:
+            cls.loose_stars.remove(star)
         if star.letter == 'S':
             for sub in star:
                 cls.set_system(sub)
-        elif star.letter != 'S':
+        else:
             system = PlanetarySystem(star)
             if system not in cls._systems:
                 cls._systems.append(system)

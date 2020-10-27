@@ -56,10 +56,11 @@ class BinarySystem:
         return self.letter + '-Type Binary System'
 
     def __eq__(self, other):
-        return all([self.primary == other.primary,
-                    self.secondary == other.secondary,
-                    self.average_separation == other.average_separation,  # distinguishes P-type from S-type systems
-                    self.id == other.id])
+        return hasattr(other, 'primary') and all([
+            self.primary == other.primary,
+            self.secondary == other.secondary,
+            self.average_separation == other.average_separation,  # distinguishes P-type from S-type systems
+            self.id == other.id])
 
     def __hash__(self):
         return hash((hash(self.primary), hash(self.secondary), self.average_separation, self.id))

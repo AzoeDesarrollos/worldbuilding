@@ -23,6 +23,10 @@ class ListedArea(BaseWidget):
             listed.hide()
         super().hide()
 
+    def on_mousebuttondown(self, event):
+        if event.button == 1:
+            self.deselect_all()
+
     def delete_objects(self, astronomical_object):
         for listed in self.listed_objects.widgets():
             if listed.object_data is astronomical_object:
@@ -37,6 +41,10 @@ class ListedArea(BaseWidget):
         for listed in self.listed_objects.widgets():
             listed.deselect()
         it.select()
+
+    def deselect_all(self):
+        for listed in self.listed_objects.widgets():
+            listed.deselect()
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))

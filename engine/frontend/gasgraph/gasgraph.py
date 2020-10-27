@@ -80,7 +80,7 @@ def gasgraph_loop(limit_mass):
     rect_giant = Rect(31, 16, x - 3, y)
 
     lim_y = keys_to_pos(limit_mass, mass_keys, yes, 'gt')
-    lim_rect = Rect(31, lim_y, img_rect.w, 236)
+    lim_rect = Rect(31, lim_y, img_rect.w, img_rect.h-lim_y+img_rect.y)
     lim_img = Surface(lim_rect.size)
     lim_img.set_alpha(150)
 

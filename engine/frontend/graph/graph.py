@@ -131,7 +131,7 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                         elif (not locky) and (not move_y):
                             locky = True
 
-                        else:
+                        elif not punto.disabled:
                             data['mass'] = round(mass_value, 3)
                             data['radius'] = round(radius_value, 3)
                             data['gravity'] = round(mass_value / (radius_value ** 2), 3)
@@ -141,6 +141,9 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                                     if [px, py] in _lineas[name]:
                                         data['composition'] = composiciones[name]
                                         break
+                            done = True
+                        else:
+                            data = {}
                             done = True
 
                 elif e.button == 3:

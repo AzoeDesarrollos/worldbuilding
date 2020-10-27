@@ -133,3 +133,15 @@ def create_moon(planet, star, data):
     # dynamic moon creation
     moon = type('Moon', (moon_composition, moon_type), {})
     return moon(data)
+
+
+def major_moon_by_composition(data):
+    ice = data.get('water ice', 0)
+    rock = data.get('silicates', 0)
+    if ice <= rock:
+        moon_composition = RockyMoon
+    else:
+        moon_composition = IcyMoon
+
+    moon = type('Moon', (moon_composition, Major), {})
+    return moon(data)

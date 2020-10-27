@@ -1,11 +1,11 @@
-from .common import ListedArea, PlanetButton, TextButton, Meta
+from engine.equations.satellite import major_moon_by_composition
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.frontend.globales import COLOR_AREA, ANCHO
 from engine.equations.planetary_system import Systems
 from engine.frontend.widgets.values import ValueText
-from engine.equations.satellite import create_moon
 from engine.frontend.globales import WidgetGroup
+from engine.frontend.globales import COLOR_AREA
 from engine import material_densities
+from .common import TextButton, Meta
 from ..object_type import ObjectType
 from .base_panel import BasePanel
 
@@ -26,9 +26,9 @@ class SatellitePanel(BasePanel):
         self.write('Composition', f1, COLOR_AREA, topleft=(0, 420))
         self.write('Satellites', f2, COLOR_AREA, x=self.area_satellites.x + 3, y=self.area_satellites.y)
         self.properties = WidgetGroup()
-        self.area_planets = AvailablePlanets(self, ANCHO - 200, 32, 200, 350)
+
         self.button = AddMoonButton(self, 476, 416)
-        self.properties.add(self.area_planets, self.button)
+        self.properties.add(self.button)
         self.satellites = WidgetGroup()
 
     def sort_buttons(self):
@@ -45,19 +45,15 @@ class SatellitePanel(BasePanel):
                 x = 3
                 y += 32
 
-    def set_planet(self, planet):
-        self.current.set_planet(planet)
-
     def set_planet_satellite(self):
         planet = self.current.planet
         planet.satellites.append(self.current)
-        self.add_button()
-        self.current.erase()
 
     def add_button(self):
         button = SatelliteButton(self.current, self.current.current, self.curr_x, self.curr_y)
         self.satellites.add(button, layer=Systems.get_current_idx())
         self.sort_buttons()
+        self.current.erase()
 
     def show(self):
         super().show()
@@ -83,7 +79,6 @@ class SatelliteType(ObjectType):
             self.properties.add(a, layer=7)
 
     def calculate(self):
-        star = Systems.get_current().star_system
         data = {'composition': {}}
         for material in self.properties.get_sprites_from_layer(7):
             if material.text_area.value:  # not empty
@@ -92,11 +87,10 @@ class SatelliteType(ObjectType):
             if item.text_area.value:
                 data[item.text.lower()] = float(item.text_area.value)
 
-        assert self.planet, 'Must select a planet'
         self.has_values = True
 
         if self.current is None:
-            self.current = create_moon(self.planet, star, data)
+            self.current = major_moon_by_composition(data)
             self.parent.button.enable()
         else:
             for item in self.properties.get_widgets_from_layer(7):
@@ -117,9 +111,6 @@ class SatelliteType(ObjectType):
         for vt in self.properties:
             vt.value = ''
 
-    def set_planet(self, planet):
-        self.planet = planet
-
     def fill(self, tos=None):
         tos = {
             'Mass': 'kg',
@@ -129,25 +120,44 @@ class SatelliteType(ObjectType):
         }
         super().fill(tos)
 
-
-class AvailablePlanets(ListedArea):
-    def populate(self, planets):
-        for i, planet in enumerate(planets):
-            listed = ListedPlanet(self, planet, self.rect.x + 3, i * 16 + self.rect.y + 21)
-            self.listed_objects.add(listed)
-
-    def show(self):
-        super().show()
-        system = Systems.get_current()
-        self.populate([p for p in system.planets if not len(p.satellites)])
-        for listed in self.listed_objects.widgets():
-            listed.show()
-
-
-class ListedPlanet(PlanetButton):
-    def on_mousebuttondown(self, event):
-        self.select()
-        self.parent.parent.set_planet(self.object_data)
+# dejo estas clases acá porque pueden servir para otro momento
+# class AvailablePlanets(ListedArea):
+#     last_idx = 0
+#
+#     def populate(self, planets):
+#         for i, planet in enumerate(planets):
+#             listed = ListedPlanet(self, planet, self.rect.x + 3, i * 16 + self.rect.y + 21)
+#             self.listed_objects.add(listed, layer=Systems.get_current_idx())
+#         self.show()
+#
+#     def show(self):
+#         planets = [i for i in Systems.get_current().planets if not len(i.satellites)]
+#         if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
+#             self.populate(planets)
+#         else:
+#             for pop in self.listed_objects.get_widgets_from_layer(Systems.get_current_idx()):
+#                 pop.show()
+#         super().show()
+#
+#     def show_current(self, idx):
+#         for listed in self.listed_objects.widgets():
+#             listed.hide()
+#         self.show()
+#         for listed in self.listed_objects.get_widgets_from_layer(idx):
+#             listed.show()
+#
+#     def update(self):
+#         super().update()
+#         idx = Systems.get_current_idx()
+#         if idx != self.last_idx:
+#             self.show_current(idx)
+#             self.last_idx = idx
+#
+#
+# class ListedPlanet(PlanetButton):
+#     def on_mousebuttondown(self, event):
+#         self.select()
+#         self.parent.parent.set_current_planet(self.object_data)
 
 
 class AddMoonButton(TextButton):
@@ -156,7 +166,7 @@ class AddMoonButton(TextButton):
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
-            self.parent.set_planet_satellite()
+            self.parent.add_button()
 
 
 class SatelliteButton(Meta, BaseWidget):
