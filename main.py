@@ -8,4 +8,5 @@ while True:
         WidgetHandler.update()
         Renderer.update()
     except AssertionError as error:
-        PopUpMessage(str(error))
+        assertion = PopUpMessage(str(error))
+        WidgetHandler.lock_and_set(assertion)
