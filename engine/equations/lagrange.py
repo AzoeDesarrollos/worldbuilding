@@ -1,11 +1,12 @@
 from math import pi, pow, cos, sin
+from engine import q
 
 
 # sma = semi major axis in AU
 # m_primary = mass of the star in solar masses
 # m_secondary = mass of the planet in earth masses
 
-def acc(option, d_lp, m_primary, m_secondary, sma, period_secondary):
+def _acc(option, d_lp, m_primary, m_secondary, sma, period_secondary):
     g = 6.6725985e-11
     bc = sma * m_secondary / (m_secondary + m_primary)
 
@@ -28,8 +29,7 @@ def acc(option, d_lp, m_primary, m_secondary, sma, period_secondary):
     return ac - ag
 
 
-def lagrange(sma, m_primary, m_secondary):
-
+def _lagrange(sma, m_primary, m_secondary):
     sma *= 149597870691
     m_primary *= 1.98894729428839E+30
     m_secondary *= 5.97378250603408E+24
@@ -45,150 +45,151 @@ def lagrange(sma, m_primary, m_secondary):
     return delta_a_limit, m_primary, m_secondary, sma, period_secondary
 
 
-def compute_lagrage_one(sma, m_primary, m_secondary):
-    delta_a_limit, m_primary, m_secondary, sma, period_secondary = lagrange(sma, m_primary, m_secondary)
+def lagrange_one(sma, m_primary, m_secondary, req='primary'):
+    delta_a_limit, m_primary, m_secondary, sma, period_secondary = _lagrange(sma, m_primary, m_secondary)
     a = 1
     delta_a = 1000000000000
 
     while delta_a > delta_a_limit:
-        b = acc(1, a, m_primary, m_secondary, sma, period_secondary)
-        c = acc(1, a + delta_a, m_primary, m_secondary, sma, period_secondary)
+        b = _acc(1, a, m_primary, m_secondary, sma, period_secondary)
+        c = _acc(1, a + delta_a, m_primary, m_secondary, sma, period_secondary)
         a = a + delta_a
 
         while abs(b) > abs(c):
             a = a - 2 * delta_a
             delta_a /= 10
 
-    l1_secondary_distance = sma - a  # in meters
-    print(l1_secondary_distance)
+    secondary_distance = sma - a  # in meters
+    primary_distance = a  # in meters
+    assert req == 'primary' or req == 'secondary', 'Requested options are invalid'
+    if req == 'primary':
+        return q(primary_distance, 'm')
+    elif req == 'secondary':
+        return q(secondary_distance, 'm')
 
-    l1_primary_distance = a  # in meters
-    return l1_primary_distance
 
-
-def compute_lagrage_two(sma, m_primary, m_secondary):
-    delta_a_limit, m_primary, m_secondary, sma, period_secondary = lagrange(sma, m_primary, m_secondary)
+def lagrange_two(sma, m_primary, m_secondary, req='primary'):
+    delta_a_limit, m_primary, m_secondary, sma, period_secondary = _lagrange(sma, m_primary, m_secondary)
 
     a = sma + 1
     delta_a = 1000000000000
 
     while delta_a > delta_a_limit:
-        b = acc(2, a, m_primary, m_secondary, sma, period_secondary)
-        c = acc(2, a + delta_a, m_primary, m_secondary, sma, period_secondary)
+        b = _acc(2, a, m_primary, m_secondary, sma, period_secondary)
+        c = _acc(2, a + delta_a, m_primary, m_secondary, sma, period_secondary)
         a += delta_a
 
         while abs(b) > abs(c):
             a = a - 2 * delta_a
             delta_a /= 10
 
-    l2_secondary_distance = a - sma  # in meters
-    print(l2_secondary_distance)
+    secondary_distance = a - sma  # in meters
+    primary_distance = a  # in meters
+    assert req == 'primary' or req == 'secondary', 'Requested options are invalid'
+    if req == 'primary':
+        return q(primary_distance, 'm')
+    elif req == 'secondary':
+        return q(secondary_distance, 'm')
 
-    l2_primary_distance = a  # in meters
-    return l2_primary_distance
 
-
-def compute_lagrage_three(sma, m_primary, m_secondary):
-    delta_a_limit, m_primary, m_secondary, sma, period_secondary = lagrange(sma, m_primary, m_secondary)
+def lagrange_three(sma, m_primary, m_secondary, req='primary'):
+    delta_a_limit, m_primary, m_secondary, sma, period_secondary = _lagrange(sma, m_primary, m_secondary)
 
     a = 1
     delta_a = 1000000000000
 
     while delta_a > delta_a_limit:
-        b = acc(3, a, m_primary, m_secondary, sma, period_secondary)
-        c = acc(3, a + delta_a, m_primary, m_secondary, sma, period_secondary)
+        b = _acc(3, a, m_primary, m_secondary, sma, period_secondary)
+        c = _acc(3, a + delta_a, m_primary, m_secondary, sma, period_secondary)
         a += delta_a
 
         while abs(b) > abs(c):
             a = a - 2 * delta_a
             delta_a /= 10
 
-    l3_secondary_distance = a + sma  # in meters
-    print(l3_secondary_distance)
-
-    l3_primary_distance = a  # in meters
-    return l3_primary_distance
-
-
-def compute_lagrage_four(sma):
-    l4secondary_distance = sma  # in meters
-    print(l4secondary_distance)
-
-    l4primary_distance = sma  # in meters
-    print(l4primary_distance)
-
-    l4secondary_distance_x = sma * cos(pi / 3)  # in meters
-    print(l4secondary_distance_x)
-
-    l4primary_distance_x = sma * cos(pi / 3)  # in meters
-    print(l4primary_distance_x)
-
-    l4secondary_distance_y = sma * sin(pi / 3)  # in meters
-    print(l4secondary_distance_y)
-
-    l4primary_distance_y = sma * sin(pi / 3)  # in meters
-    print(l4primary_distance_y)
+    secondary_distance = a + sma  # in meters
+    primary_distance = a  # in meters
+    assert req == 'primary' or req == 'secondary', 'Requested options are invalid'
+    if req == 'primary':
+        return q(primary_distance, 'm')
+    elif req == 'secondary':
+        return q(secondary_distance, 'm')
 
 
-def compute_lagrage_five(sma):
-    l5secondary_distance = sma  # in meters
-    print(l5secondary_distance)
+def lagrange_four(sma, req='distance', ref='primary'):
+    secondary_distance = sma  # in meters
+    primary_distance = sma  # in meters
+    secondary_distance_x = sma * cos(pi / 3)  # in meters
+    primary_distance_x = sma * cos(pi / 3)  # in meters
+    secondary_distance_y = sma * sin(pi / 3)  # in meters
+    primary_distance_y = sma * sin(pi / 3)  # in meters
 
-    l5primary_distance = sma  # in meters
-    print(l5primary_distance)
-
-    l5secondary_distance_x = sma * cos(pi / 3)  # in meters
-    print(l5secondary_distance_x)
-
-    l5primary_distance_x = sma * cos(pi / 3)  # in meters
-    print(l5primary_distance_x)
-
-    l5secondary_distance_y = sma * sin(pi / 3)  # in meters
-    print(l5secondary_distance_y)
-
-    l5primary_distance_y = sma * sin(pi / 3)  # in meters
-    print(l5primary_distance_y)
-
-
-def compute_l1_velocity(sma, m_primary, m_secondary):
-    l1_primary_distance = compute_lagrage_one(sma, m_primary, m_secondary)
-    period_secondary = lagrange(sma, m_primary, m_secondary)[4]
-    return 2 * pi * l1_primary_distance / period_secondary  # in m/s
+    error = 'Requested options are invalid'
+    assert req == 'distance' or (req == 'position' and (ref == 'primary' or ref == 'secondary')), error
+    if req == 'distance':
+        return q(primary_distance, 'm'), q(secondary_distance, 'm')
+    elif req == 'position':
+        if ref == 'primary':
+            return q(primary_distance_x, 'm'), q(primary_distance_y, 'm')
+        elif ref == 'secondary':
+            return q(secondary_distance_x, 'm'), q(secondary_distance_y, 'm')
 
 
-def compute_l2_velocity(sma, m_primary, m_secondary):
-    l2_primary_distance = compute_lagrage_two(sma, m_primary, m_secondary)
-    period_secondary = lagrange(sma, m_primary, m_secondary)[4]
-    return 2 * pi * l2_primary_distance / period_secondary  # in m/s
+def lagrange_five(sma, req='distance', ref='primary'):
+    secondary_distance = sma  # in meters
+    primary_distance = sma  # in meters
+    secondary_distance_x = sma * cos(pi / 3)  # in meters
+    primary_distance_x = sma * cos(pi / 3)  # in meters
+    secondary_distance_y = sma * sin(pi / 3)  # in meters
+    primary_distance_y = sma * sin(pi / 3)  # in meters
+    error = 'Requested options are invalid'
+    assert req == 'distance' or (req == 'position' and (ref == 'primary' or ref == 'secondary')), error
+    if req == 'distance':
+        return q(primary_distance, 'm'), q(secondary_distance, 'm')
+    elif req == 'position':
+        if ref == 'primary':
+            return q(primary_distance_x, 'm'), q(primary_distance_y, 'm')
+        elif ref == 'secondary':
+            return q(secondary_distance_x, 'm'), q(secondary_distance_y, 'm')
 
 
-def compute_l3_velocity(sma, m_primary, m_secondary):
-    l3_primary_distance = compute_lagrage_three(sma, m_primary, m_secondary)
-    period_secondary = lagrange(sma, m_primary, m_secondary)[4]
-    return 2 * pi * l3_primary_distance / period_secondary  # in m/s
+def compute_l1v(sma, m_primary, m_secondary):
+    primary_distance = lagrange_one(sma, m_primary, m_secondary)[0].m
+    period_secondary = _lagrange(sma, m_primary, m_secondary)[4]
+    return q(2 * pi * primary_distance / period_secondary, 'm/s')
 
 
-def compute_l4_velocities(sma, m_primary, m_secondary):
-    period_secondary = lagrange(sma, m_primary, m_secondary)[4]
-    return 2 * pi * sma / period_secondary  # in m/s
+def compute_l2v(sma, m_primary, m_secondary):
+    primary_distance = lagrange_two(sma, m_primary, m_secondary)[0].m
+    period_secondary = _lagrange(sma, m_primary, m_secondary)[4]
+    return q(2 * pi * primary_distance / period_secondary, 'm/s')
 
 
-def compute_l4_ycomponent(v_l4):
-    return v_l4 * cos(pi / 3)
+def compute_l3v(sma, m_primary, m_secondary):
+    primary_distance = lagrange_three(sma, m_primary, m_secondary)[0].m
+    period_secondary = _lagrange(sma, m_primary, m_secondary)[4]
+    return q(2 * pi * primary_distance / period_secondary, 'm/s')
 
 
-def compute_l4_xcomponent(v_l4):
-    return v_l4 * sin(pi / 3)
+def compute_l4v(sma, m_primary, m_secondary):
+    period_secondary = _lagrange(sma, m_primary, m_secondary)[4]
+    return q(2 * pi * sma / period_secondary, 'm/s')
 
 
-def compute_l5_velocities(sma, m_primary, m_secondary):
-    period_secondary = lagrange(sma, m_primary, m_secondary)[4]
-    return 2 * pi * sma / period_secondary
+def compute_vl5(sma, m_primary, m_secondary):
+    period_secondary = _lagrange(sma, m_primary, m_secondary)[4]
+    return q(2 * pi * sma / period_secondary, 'm/s')
 
 
-def compute_l5_ycomponent(v_l5):
-    return v_l5 * sin(pi / 3)
+def compute_vl5_xy_components(sma, m_primary, m_secondary):
+    v_l5 = compute_vl5(sma, m_primary, m_secondary)
+    x_component = v_l5 * cos(pi / 3)
+    y_component = v_l5 * sin(pi / 3)
+    return x_component, y_component
 
 
-def compute_l5_xcomponent(v_l5):
-    return v_l5 * cos(pi / 3)
+def compute_vl4_xy_components(sma, m_primary, m_secondary):
+    v_l4 = compute_l4v(sma, m_primary, m_secondary)
+    x_component = v_l4 * sin(pi / 3)
+    y_component = v_l4 * cos(pi / 3)
+    return x_component, y_component
