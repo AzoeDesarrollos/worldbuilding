@@ -1,4 +1,5 @@
 from .general import BodyInHydrostaticEquilibrium
+from .lagrange import get_lagrange_points
 from .orbit import Orbit
 from math import sqrt, pi, pow
 from engine import q
@@ -24,6 +25,7 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     atmosphere = None
     satellites = None
+    lagrange_points = None
 
     def __init__(self, data):
         name = data.get('name', None)
@@ -97,6 +99,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.temperature = self.set_temperature(star.mass.m, self.orbit.semi_minor_axis.m)
         self.orbit.temperature = self.temperature
         self.orbit.set_planet(star, self)
+        self.lagrange_points = get_lagrange_points(self.orbit.semi_major_axis.m, star.mass.m, self.mass.m)
         return self.orbit
 
     @staticmethod
@@ -122,7 +125,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         return a == b
 
     def __repr__(self):
-        return self.clase+' '+str(self.mass.m)
+        return self.clase + ' ' + str(self.mass.m)
 
 
 def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):

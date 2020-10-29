@@ -45,78 +45,82 @@ def _lagrange(sma, m_primary, m_secondary):
     return delta_a_limit, m_primary, m_secondary, sma, period_secondary
 
 
-def lagrange_one(sma, m_primary, m_secondary, req='primary'):
+def lagrange_one(sma, m_primary, m_secondary, ref='primary'):
     delta_a_limit, m_primary, m_secondary, sma, period_secondary = _lagrange(sma, m_primary, m_secondary)
     a = 1
     delta_a = 1000000000000
 
     while delta_a > delta_a_limit:
-        b = _acc(1, a, m_primary, m_secondary, sma, period_secondary)
-        c = _acc(1, a + delta_a, m_primary, m_secondary, sma, period_secondary)
-        a = a + delta_a
+        condition = True
+        while condition:
+            b = _acc(1, a, m_primary, m_secondary, sma, period_secondary)
+            c = _acc(1, a + delta_a, m_primary, m_secondary, sma, period_secondary)
+            a = a + delta_a
+            condition = abs(b) > abs(c)
+        a = a - 2 * delta_a
+        delta_a /= 10
 
-        while abs(b) > abs(c):
-            a = a - 2 * delta_a
-            delta_a /= 10
-
-    secondary_distance = sma - a  # in meters
+    secondary_distance = -(sma - a)  # in meters
     primary_distance = a  # in meters
-    assert req == 'primary' or req == 'secondary', 'Requested options are invalid'
-    if req == 'primary':
+    assert ref == 'primary' or ref == 'secondary', 'Requested options are invalid'
+    if ref == 'primary':
         return q(primary_distance, 'm')
-    elif req == 'secondary':
+    elif ref == 'secondary':
         return q(secondary_distance, 'm')
 
 
-def lagrange_two(sma, m_primary, m_secondary, req='primary'):
+def lagrange_two(sma, m_primary, m_secondary, ref='primary'):
     delta_a_limit, m_primary, m_secondary, sma, period_secondary = _lagrange(sma, m_primary, m_secondary)
 
     a = sma + 1
     delta_a = 1000000000000
 
     while delta_a > delta_a_limit:
-        b = _acc(2, a, m_primary, m_secondary, sma, period_secondary)
-        c = _acc(2, a + delta_a, m_primary, m_secondary, sma, period_secondary)
-        a += delta_a
-
-        while abs(b) > abs(c):
-            a = a - 2 * delta_a
-            delta_a /= 10
+        condition = True
+        while condition:
+            b = _acc(2, a, m_primary, m_secondary, sma, period_secondary)
+            c = _acc(2, a + delta_a, m_primary, m_secondary, sma, period_secondary)
+            a = a + delta_a
+            condition = abs(b) > abs(c)
+        a = a - 2 * delta_a
+        delta_a /= 10
 
     secondary_distance = a - sma  # in meters
     primary_distance = a  # in meters
-    assert req == 'primary' or req == 'secondary', 'Requested options are invalid'
-    if req == 'primary':
+    assert ref == 'primary' or ref == 'secondary', 'Requested options are invalid'
+    if ref == 'primary':
         return q(primary_distance, 'm')
-    elif req == 'secondary':
+    elif ref == 'secondary':
         return q(secondary_distance, 'm')
 
 
-def lagrange_three(sma, m_primary, m_secondary, req='primary'):
+def lagrange_three(sma, m_primary, m_secondary, ref='primary'):
     delta_a_limit, m_primary, m_secondary, sma, period_secondary = _lagrange(sma, m_primary, m_secondary)
 
     a = 1
     delta_a = 1000000000000
-
     while delta_a > delta_a_limit:
-        b = _acc(3, a, m_primary, m_secondary, sma, period_secondary)
-        c = _acc(3, a + delta_a, m_primary, m_secondary, sma, period_secondary)
-        a += delta_a
+        condition = True
+        while condition:
+            b = _acc(3, a, m_primary, m_secondary, sma, period_secondary)
+            c = _acc(3, a + delta_a, m_primary, m_secondary, sma, period_secondary)
+            a = a + delta_a
+            condition = abs(b) > abs(c)
+        a = a - 2 * delta_a
+        delta_a /= 10
 
-        while abs(b) > abs(c):
-            a = a - 2 * delta_a
-            delta_a /= 10
-
-    secondary_distance = a + sma  # in meters
+    secondary_distance = -(a + sma)  # in meters
     primary_distance = a  # in meters
-    assert req == 'primary' or req == 'secondary', 'Requested options are invalid'
-    if req == 'primary':
+    assert ref == 'primary' or ref == 'secondary', 'Requested options are invalid'
+    if ref == 'primary':
         return q(primary_distance, 'm')
-    elif req == 'secondary':
+    elif ref == 'secondary':
         return q(secondary_distance, 'm')
 
 
-def lagrange_four(sma, req='distance', ref='primary'):
+def lagrange_four(sma, m_primary, m_secondary, req='distance', ref='primary'):
+
+    sma = _lagrange(sma, m_primary, m_secondary)[3]
     secondary_distance = sma  # in meters
     primary_distance = sma  # in meters
     secondary_distance_x = sma * cos(pi / 3)  # in meters
@@ -127,7 +131,10 @@ def lagrange_four(sma, req='distance', ref='primary'):
     error = 'Requested options are invalid'
     assert req == 'distance' or (req == 'position' and (ref == 'primary' or ref == 'secondary')), error
     if req == 'distance':
-        return q(primary_distance, 'm'), q(secondary_distance, 'm')
+        if ref == 'primary':
+            return q(primary_distance, 'm')
+        elif ref == 'secondary':
+            return q(secondary_distance, 'm')
     elif req == 'position':
         if ref == 'primary':
             return q(primary_distance_x, 'm'), q(primary_distance_y, 'm')
@@ -135,7 +142,9 @@ def lagrange_four(sma, req='distance', ref='primary'):
             return q(secondary_distance_x, 'm'), q(secondary_distance_y, 'm')
 
 
-def lagrange_five(sma, req='distance', ref='primary'):
+def lagrange_five(sma, m_primary, m_secondary, req='distance', ref='primary'):
+
+    sma = _lagrange(sma, m_primary, m_secondary)[3]
     secondary_distance = sma  # in meters
     primary_distance = sma  # in meters
     secondary_distance_x = sma * cos(pi / 3)  # in meters
@@ -145,7 +154,10 @@ def lagrange_five(sma, req='distance', ref='primary'):
     error = 'Requested options are invalid'
     assert req == 'distance' or (req == 'position' and (ref == 'primary' or ref == 'secondary')), error
     if req == 'distance':
-        return q(primary_distance, 'm'), q(secondary_distance, 'm')
+        if ref == 'primary':
+            return q(primary_distance, 'm')
+        elif ref == 'secondary':
+            return q(secondary_distance, 'm')
     elif req == 'position':
         if ref == 'primary':
             return q(primary_distance_x, 'm'), q(primary_distance_y, 'm')
@@ -193,3 +205,12 @@ def compute_vl4_xy_components(sma, m_primary, m_secondary):
     x_component = v_l4 * sin(pi / 3)
     y_component = v_l4 * cos(pi / 3)
     return x_component, y_component
+
+
+def get_lagrange_points(semi_major_axis, star_mass, body_mass):
+    d = {'l1': lagrange_one(semi_major_axis, star_mass, body_mass, ref='secondary'),
+         'l2': lagrange_two(semi_major_axis, star_mass, body_mass, ref='secondary'),
+         'l3': lagrange_three(semi_major_axis, star_mass, body_mass, ref='secondary'),
+         'l4': lagrange_four(semi_major_axis, star_mass, body_mass, req='distance', ref='secondary').to('au'),
+         'l5': lagrange_five(semi_major_axis, star_mass, body_mass, req='distance', ref='secondary').to('au')}
+    return d
