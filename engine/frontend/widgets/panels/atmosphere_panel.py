@@ -16,6 +16,8 @@ class AtmospherePanel(BaseWidget):
     pressure = None
     curr_planet = None
 
+    skippable = False
+
     def __init__(self, parent):
         super().__init__(parent)
         self.name = 'Atmosphere'

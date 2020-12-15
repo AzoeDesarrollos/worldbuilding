@@ -37,7 +37,7 @@ class AsteroidPanel(BasePanel):
         self.current.erase()
 
     def select_one(self, btn):
-        for button in self.asteroids:
+        for button in self.asteroids.widgets():
             button.deselect()
         btn.select()
 
@@ -169,11 +169,11 @@ class AsteroidType(BaseWidget):
         self.has_values = True
 
     def show(self):
-        for p in self.properties:
+        for p in self.properties.widgets():
             p.show()
 
     def hide(self):
-        for p in self.properties:
+        for p in self.properties.widgets():
             p.hide()
 
 

@@ -70,6 +70,8 @@ class Systems:
     def set_system(cls, star):
         if star in cls.loose_stars:
             cls.loose_stars.remove(star)
+        else:
+            return
         if star.letter == 'S':
             for sub in star:
                 cls.set_system(sub)

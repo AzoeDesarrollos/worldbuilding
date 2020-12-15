@@ -13,6 +13,8 @@ class StarPanel(BasePanel):
     curr_x = 3
     curr_y = 440
 
+    add_on_exit = False
+
     def __init__(self, parent):
         super().__init__('Star', parent)
         self.current = StarType(self)
@@ -33,6 +35,9 @@ class StarPanel(BasePanel):
     def hide(self):
         super().hide()
         self.button.hide()
+        if self.add_on_exit:
+            s = self.current.current
+            Systems.set_system(s)
         for star in self.stars.widgets():
             star.hide()
 
@@ -44,6 +49,9 @@ class StarPanel(BasePanel):
         self.current.properties.add(button, layer=2)
         self.current.erase()
         self.button.disable()
+
+        self.add_on_exit = len(self.stars) == 1
+        self.parent.set_skippable(self.add_on_exit)
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y

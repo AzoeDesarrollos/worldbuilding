@@ -30,6 +30,8 @@ class OrbitPanel(BaseWidget):
     markers = None
     buttons = None
 
+    skippable = False
+
     def __init__(self, parent):
         super().__init__(parent)
         self.name = 'Orbit'

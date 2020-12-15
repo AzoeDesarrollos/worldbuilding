@@ -13,6 +13,7 @@ from os import getcwd
 
 class LayoutPanel(BaseWidget):
     curr_idx = 0
+    skipping = False
 
     def __init__(self):
         super().__init__()
@@ -60,7 +61,14 @@ class LayoutPanel(BaseWidget):
         if 0 <= self.curr_idx + delta < len(self.panels):
             self.curr_idx += delta
             self.current = self.panels[self.curr_idx]
+            if self.current.skippable is True and self.current.skip is True:
+                self.cycle(delta)
         self.current.show()
+
+    def set_skippable(self, value=True):
+        panel = [i for i in self.panels if i.skippable is True][0]
+        panel.skip = value
+        self.skipping = value
 
     def __repr__(self):
         return 'Layout Panel'

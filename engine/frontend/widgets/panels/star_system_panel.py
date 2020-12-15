@@ -12,6 +12,8 @@ class StarSystemPanel(BaseWidget):
     selected = None
     curr_x = 0
     curr_y = 440
+    skip = False
+    skippable = True
 
     def __init__(self, parent):
         super().__init__(parent)

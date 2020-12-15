@@ -48,6 +48,7 @@ class SatellitePanel(BasePanel):
     def add_button(self):
         button = SatelliteButton(self.current, self.current.current, self.curr_x, self.curr_y)
         self.satellites.add(button, layer=Systems.get_current_idx())
+        self.properties.add(button)
         self.sort_buttons()
         self.current.erase()
 
