@@ -26,6 +26,7 @@ class Planet(BodyInHydrostaticEquilibrium):
     atmosphere = None
     satellites = None
     lagrange_points = None
+    hill_sphere = 0
 
     def __init__(self, data):
         name = data.get('name', None)
@@ -95,12 +96,19 @@ class Planet(BodyInHydrostaticEquilibrium):
         return t
 
     def set_orbit(self, star, orbital_parameters):
-        self.orbit = Orbit(*orbital_parameters)
-        self.temperature = self.set_temperature(star.mass.m, self.orbit.semi_minor_axis.m)
-        self.orbit.temperature = self.temperature
-        self.orbit.set_planet(star, self)
+        orbit = Orbit(*orbital_parameters)
+        self.temperature = self.set_temperature(star.mass.m, orbit.semi_minor_axis.m)
+        orbit.temperature = self.temperature
+        orbit.set_planet(star, self)
         self.lagrange_points = get_lagrange_points(self.orbit.semi_major_axis.m, star.mass.m, self.mass.m)
+        self.hill_sphere = self.set_hill_sphere()
         return self.orbit
+
+    def set_hill_sphere(self):
+        a = self.orbit.semi_major_axis.magnitude
+        mp = self.mass.to('earth_mass').magnitude
+        ms = self.orbit.star.mass.to('sol_mass').magnitude
+        return q(round((a * pow(mp / ms, 1 / 3) * 235), 3), 'earth_radius')
 
     @staticmethod
     def set_class(mass, radius):

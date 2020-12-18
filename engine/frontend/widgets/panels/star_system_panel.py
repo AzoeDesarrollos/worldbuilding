@@ -157,6 +157,8 @@ class SystemType(BaseWidget):
 
 
 class AvailableStars(ListedArea):
+    name = 'Stars'
+
     def populate(self, stars):
         for i, star in enumerate(stars):
             listed = ListedStar(self, star, i, self.rect.x + 3, i * 16 + self.rect.y + 21)

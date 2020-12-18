@@ -4,6 +4,7 @@ from pygame import Surface
 
 
 class ListedArea(BaseWidget):
+    name = 'Astronomical Objects'
 
     def __init__(self, parent, x, y, w, h):
         super().__init__(parent)
@@ -13,7 +14,7 @@ class ListedArea(BaseWidget):
         self.listed_objects = WidgetGroup()
 
         self.f = self.crear_fuente(14, underline=True)
-        self.write('Astronomical Objects', self.f, midtop=(self.rect.w / 2, 0), bg=COLOR_AREA)
+        self.write(self.name, self.f, midtop=(self.rect.w / 2, 0), bg=COLOR_AREA)
 
     def populate(self, objects):
         return NotImplemented

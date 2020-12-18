@@ -131,9 +131,9 @@ class Orbit:
         return 'Orbit @' + str(round(self.semi_major_axis.m, 3))
 
     def set_planet(self, star, planet):
-        self._star = star
         planet.orbit = PlanetOrbit(star.mass, self.semi_major_axis, self.eccentricity, self.inclination)
         planet.orbit.reset_planet(planet)
+        planet.orbit._star = star
 
     @property
     def semi_major_axis(self):
@@ -183,6 +183,10 @@ class Orbit:
     @inclination.setter
     def inclination(self, value):
         self._i = float(value)
+
+    @property
+    def star(self):
+        return self._star
 
     def reset_period_and_speed(self, main_body_mass):
         raise NotImplementedError

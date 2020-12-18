@@ -1,14 +1,13 @@
+from .common import TextButton, Meta, AvailableObjects, ToggleableButton, AvailablePlanet
 from engine.frontend.globales import COLOR_SELECTED, COLOR_PLANETORBIT, COLOR_STARORBIT
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_DISABLED
 from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO
 from engine.frontend.widgets.incremental_value import IncrementalValue
-from engine.frontend.widgets.panels.common import ListedArea
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.orbit import RawOrbit, PseudoOrbit
 from engine.frontend.globales.group import WidgetGroup
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
-from .common import TextButton, Meta, PlanetButton
 from pygame import Surface, Rect
 from engine.backend import roll
 from ..values import ValueText
@@ -47,9 +46,8 @@ class OrbitPanel(BaseWidget):
 
         self.f = self.crear_fuente(16, underline=True)
         self.write(self.name + ' Panel', self.f, centerx=(ANCHO//4)*1.5, y=0)
-        self.image.blit(self.crear_fuente(14).render(' | ', True, COLOR_TEXTO, COLOR_AREA), (104, 421))
 
-        self.planet_area = AvailableObjects(self, ANCHO - 200, 32, 200, 350)
+        self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 350)
         self.properties.add(self.planet_area, layer=2)
 
         self._orbits = {}
@@ -59,10 +57,8 @@ class OrbitPanel(BaseWidget):
         self._markers = {}
         self.orbit_descriptions = WidgetGroup()
         self.star_orbits_button = ToggleableButton(self, 'Stellar Orbits', self.toggle_stellar_orbits, 3, 421)
-        self.planet_orbit_button = ToggleableButton(self, 'Planetary Orbits', self.toggle_planetary_orbits, 123, 421)
-        self.properties.add(self.star_orbits_button, self.planet_orbit_button, layer=2)
+        self.properties.add(self.star_orbits_button, layer=2)
         self.star_orbits_button.disable()
-        self.planet_orbit_button.disable()
 
         self.add_orbits_button = AddOrbitButton(self, ANCHO - 100, 416)
         self.properties.add(self.add_orbits_button, layer=2)
@@ -201,6 +197,7 @@ class OrbitPanel(BaseWidget):
                 self.area_modify.unlink()
             idx = self.markers.index(marker)
             del self.markers[idx]
+            self.buttons.remove(marker.linked_button)
             self.sort_markers()
             self.sort_buttons()
 
@@ -341,7 +338,8 @@ class OrbitPanel(BaseWidget):
     def link_planet_to_orbit(self, planet):
         locked = [i for i in self.buttons if i.locked]
         if len(locked):
-            locked[0].linked_marker.orbit = PseudoOrbit(locked[0].linked_marker.orbit)
+            orbit = PseudoOrbit(locked[0].linked_marker.orbit)
+            locked[0].linked_marker.orbit = orbit
             locked[0].linked_type.show()
             locked[0].linked_type.link_planet(planet)
             self.add_orbits_button.disable()
@@ -600,74 +598,17 @@ class OrbitButton(Meta, BaseWidget, Intertwined):
         return 'B.Orbit @' + str(self.get_value())
 
 
-class ToggleableButton(Meta, BaseWidget):
-    enabled = True
-
-    def __init__(self, parent, text, method, x, y):
-        super().__init__(parent)
-        f1 = self.crear_fuente(14)
-        f2 = self.crear_fuente(14, bold=True)
-        self.img_uns = f1.render(text, True, COLOR_TEXTO, COLOR_AREA)
-        self.img_sel = f2.render(text, True, COLOR_TEXTO, COLOR_AREA)
-        self.img_dis = f1.render(text, True, COLOR_DISABLED, COLOR_AREA)
-        self.image = self.img_uns
-        self.rect = self.image.get_rect(topleft=(x, y))
-        self.method = method
-
-    def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
-            self.method()
-
-
-class AvailableObjects(ListedArea):
-    last_idx = None
-
-    def populate(self, population):
-        listed = []
-        for i, obj in enumerate(population):
-            x = self.rect.x + 3
-            y = i * 16 + self.rect.y + 21
-            if obj.celestial_type == 'planet':
-                listed.append(ListedPlanet(self, obj, x, y))
-
-            elif obj.celestial_type == 'satellite':
-                pass
-
-        self.listed_objects.add(*listed, layer=Systems.get_current_idx())
-
-    def show(self):
-        planets = [i for i in Systems.get_current().planets if i.orbit is None]
-        if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
-            self.populate(planets)
-        else:
-            for pop in self.listed_objects.get_widgets_from_layer(Systems.get_current_idx()):
-                pop.show()
-        super().show()
-
-    def show_current(self, idx):
-        for listed in self.listed_objects.widgets():
-            listed.hide()
-        self.show()
-        for listed in self.listed_objects.get_widgets_from_layer(idx):
-            listed.show()
-
-    def update(self):
-        super().update()
-        idx = Systems.get_current_idx()
-        if idx != self.last_idx:
-            self.show_current(idx)
-            self.last_idx = idx
-
-
-class ListedPlanet(PlanetButton):
-    def __init__(self, parent, planet, x, y):
-        super().__init__(parent, planet, x, y)
-        self.object_data = planet
-
+class RoguePlanet(AvailablePlanet):
+    # "rogue" because it doens't have an orbit yet
     def on_mousebuttondown(self, event):
         if not self.parent.parent.visible_markers:
             self.enabled = False
             self.parent.parent.link_planet_to_orbit(self.object_data)
+
+
+class AvailablePlanets(AvailableObjects):
+    listed_type = RoguePlanet
+    name = 'Planets'
 
 
 class AddOrbitButton(TextButton):

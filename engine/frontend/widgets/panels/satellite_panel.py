@@ -92,6 +92,7 @@ class SatelliteType(ObjectType):
 
         if self.current is None:
             self.current = major_moon_by_composition(data)
+            Systems.get_current().add_astro_obj(self.current)
             self.parent.button.enable()
         else:
             for item in self.properties.get_widgets_from_layer(7):

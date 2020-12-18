@@ -8,40 +8,48 @@ from math import exp
 
 class PlanetarySystem:
     planets = None
+    satellites = None
+    asteroids = None
     stars = None
 
     def __init__(self, star_system):
         self.planets = []
+        self.satellites = []
+        self.asteroids = []
         self.star_system = star_system
-
-        self.planet = None
         self.body_mass = q(16 * exp(-0.6931 * star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
 
     def get_available_mass(self):
         return self.body_mass
 
-    def add_planet(self, planet):
-        if planet not in self.planets:
-            minus_mass = planet.mass
-            if planet.unit == 'earth':
-                minus_mass = planet.mass.to('jupiter_mass')
+    def add_astro_obj(self, astro_obj):
+        group = None
+        if astro_obj.celestial_type == 'planet':
+            group = self.planets
+        elif astro_obj.celestial_type == 'satellite':
+            group = self.satellites
+        elif astro_obj.celestial_type == 'asteroid':
+            group = self.asteroids
+
+        if astro_obj not in group:
+            minus_mass = astro_obj.mass.to('jupiter_mass')
 
             self.body_mass -= minus_mass
-            self.set_current_planet(planet)
-            self.planets.append(planet)
-            if not planet.has_name:
-                planet.name = planet.clase+' #'+str(self.planets.index(planet))
+            # self.set_current_planet(astro_obj)
+            group.append(astro_obj)
+            if not astro_obj.has_name:
+                astro_obj.name = astro_obj.clase+' #'+str(group.index(astro_obj))
             return True
-        else:
-            return False
+
+        return False
 
     def get_planet_by_name(self, planet_name):
         planet = [planet for planet in self.planets if planet.name == planet_name][0]
         return planet
 
-    def set_current_planet(self, planet):
-        if planet.orbit is None:
-            self.planet = planet
+    # def set_current_planet(self, planet):
+    #     if planet.orbit is None:
+    #         self.planet = planet
 
     def __eq__(self, other):
         return self.star_system == other.star_system

@@ -7,16 +7,24 @@ from math import pi, sqrt
 
 class Satellite:
     density = None
-    celestial_type = 'satellite'
+    celestial_type = ''
+    has_name = False
+    cls = None
 
     @staticmethod
     def calculate_density(ice, silicate, iron):
+        d_e = 'earth_density'
         comp = {'water ice': ice / 100, 'silicates': silicate / 100, 'iron': iron / 100}
-        density = q(sum([comp[material] * material_densities[material] for material in comp]), 'g/cm^3')
+        density = q(sum([comp[material] * material_densities[material] for material in comp]), 'g/cm^3').to(d_e)
         return density
+
+    def __repr__(self):
+        return self.cls
 
 
 class Major(Satellite, BodyInHydrostaticEquilibrium):
+    celestial_type = 'satellite'
+
     def __init__(self, data):
         name = data.get('name', None)
         if name:
@@ -41,6 +49,8 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
 
 
 class Minor(Satellite):
+    celestial_type = 'asteroid'
+
     def __init__(self, data):
         self.composition = data['composition']
         self.density = self.set_density(data['composition'])
@@ -59,15 +69,14 @@ class Minor(Satellite):
         _a, _b, _c = self.a_axis.to('m').m, self.b_axis.to('m').m, self.c_axis.to('m').m
         self.volume = q((4 / 3) * pi * _a * _b * _c, 'km^3')
         self.mass = q(self.density.to('kg/m^3').m * self.volume.m, 'kg')
+        self.radius = q(max([a, b, c]), 'km')
         self.cls = self.shape.split(' ')[0]
+        self.clase = 'Minor Moon'
 
     # noinspection PyUnusedLocal
     @staticmethod
     def set_density(composition):
         return NotImplemented
-
-    def __repr__(self):
-        return self.cls
 
 
 class RockyMoon(Satellite):
@@ -75,11 +84,12 @@ class RockyMoon(Satellite):
 
     color = COLOR_ROCKYMOON
 
-    def set_density(self, composition):
-        silicate = composition['silicates'] if 'silicates' in composition else roll(0.6, 0.9)
-        ice = composition['water ice'] if 'water ice' in composition else roll(1 - silicate, 0.9 - silicate)
-        iron = composition['iron'] if 'iron' in composition else 1.0 - (silicate + ice)
-        return self.calculate_density(ice, silicate, iron)
+    def set_density(self, composition: dict):
+        percent = sum(composition.values())
+        s = composition['silicates'] if 'silicates' in composition else roll(60, 90) if percent < 100 else 0
+        i = composition['water ice'] if 'water ice' in composition else roll(100 - s, 90 - s)if percent < 100 else 0
+        r = composition['iron'] if 'iron' in composition else 100 - (s + i)if percent < 100 else 0
+        return self.calculate_density(i, s, r)
 
 
 class IcyMoon(Satellite):
@@ -87,11 +97,12 @@ class IcyMoon(Satellite):
 
     color = COLOR_ICYMOON
 
-    def set_density(self, composition):
-        ice = composition['water ice'] if 'water ice' in composition else roll(0.6, 0.9)
-        silicate = composition['silicates'] if 'silicates' in composition else roll(1 - ice, 0.9 - ice)
-        iron = composition['iron'] if 'iron' in composition else 1.0 - (silicate + ice)
-        return self.calculate_density(ice, silicate, iron)
+    def set_density(self, composition: dict):
+        percent = sum(composition.values())
+        i = composition['water ice'] if 'water ice' in composition else roll(0.6, 0.9) if percent < 100 else 0
+        s = composition['silicates'] if 'silicates' in composition else roll(1 - i, 0.9 - i) if percent < 100 else 0
+        r = composition['iron'] if 'iron' in composition else 1.0 - (s + i) if percent < 100 else 0
+        return self.calculate_density(i, s, r)
 
 
 class IronMoon(Satellite):
@@ -99,11 +110,12 @@ class IronMoon(Satellite):
 
     color = COLOR_IRONMOON
 
-    def set_density(self, composition):
-        iron = composition['iron'] if 'iron' in composition else roll(0.6, 0.9)
-        silicate = composition['silicates'] if 'silicates' in composition else roll(1 - iron, 0.9 - iron)
-        ice = composition['water ice'] if 'water ice' in composition else 1.0 - (silicate + iron)
-        return self.calculate_density(ice, silicate, iron)
+    def set_density(self, composition: dict):
+        percent = sum(composition.values())
+        r = composition['iron'] if 'iron' in composition else roll(0.6, 0.9) if percent < 100 else 0
+        s = composition['silicates'] if 'silicates' in composition else roll(1 - r, 0.9 - r) if percent < 100 else 0
+        i = composition['water ice'] if 'water ice' in composition else 1.0 - (s + r) if percent < 100 else 0
+        return self.calculate_density(i, s, r)
 
 
 def create_moon(planet, star, data):

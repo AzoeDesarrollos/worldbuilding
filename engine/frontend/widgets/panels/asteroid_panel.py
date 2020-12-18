@@ -33,6 +33,7 @@ class AsteroidPanel(BasePanel):
     def add_button(self):
         button = AsteroidButton(self.current, self.current.current, self.curr_x, self.curr_y)
         self.asteroids.add(button, layer=Systems.get_current_idx())
+        self.properties.add(button)
         self.sort_buttons()
         self.current.erase()
 
@@ -109,6 +110,7 @@ class AsteroidType(BaseWidget):
 
         if self.current is None:
             self.current = minor_moon_by_composition(data)
+            Systems.get_current().add_astro_obj(self.current)
             self.parent.button.enable()
         else:
             for item in self.properties.get_widgets_from_layer(4):

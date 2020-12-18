@@ -133,7 +133,7 @@ class PlanetType(ObjectType):
         self.parent.image.fill(COLOR_BOX, self.hab_rect)
 
     def create_button(self):
-        create = Systems.get_current().add_planet(self.current)
+        create = Systems.get_current().add_astro_obj(self.current)
         if create:
             for button in self.properties.get_sprites_from_layer(1):
                 button.text_area.clear()
