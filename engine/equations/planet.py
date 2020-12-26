@@ -216,3 +216,27 @@ def temp_by_pos(star, albedo=29, greenhouse=1):
     resultados.sort(reverse=True)
 
     return resultados[0]
+
+
+def temp_by_lat(lat) -> int:
+    """Devuelve la temperatura media relativa a la latitud seleccionada"""
+    if type(lat) is q:
+        lat = lat.m
+
+    if lat > 90:
+        lat -= 90
+    elif lat < 0:
+        lat = abs(lat)
+
+    if 0 <= lat <= 10:
+        return -(5 * lat / 9) + 33
+    elif 11 <= lat <= 37:
+        return -(9 * lat / 26) + 31
+    elif 38 <= lat <= 60:
+        return -(17 * lat / 24) + 44
+    elif 61 <= lat <= 75:
+        return round(((lat / 60) - 3), 0) * (lat - 60)
+    elif 76 <= lat <= 90:
+        return -lat + 45
+    else:
+        raise ValueError('La latitud {} no es válida'.format(lat))

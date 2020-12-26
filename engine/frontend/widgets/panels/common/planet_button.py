@@ -1,6 +1,5 @@
 from engine.frontend.globales import COLOR_TEXTO, COLOR_TERRESTIAL, COLOR_GASDWARF
 from engine.frontend.globales import COLOR_GASGIANT, COLOR_PUFFYGIANT, COLOR_DWARFPLANET
-from engine.equations.planetary_system import Systems
 from .listed_body import ListedBody
 
 
@@ -30,7 +29,6 @@ class PlanetButton(ListedBody):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.planet = self.object_data
-            Systems.get_current().set_current_planet(self.object_data)
             self.parent.has_values = True
             self.parent.fill()
             self.parent.toggle_habitable()

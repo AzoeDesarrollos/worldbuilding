@@ -45,7 +45,7 @@ class OrbitPanel(BaseWidget):
         self.properties.add(self.area_modify, layer=2)
 
         self.f = self.crear_fuente(16, underline=True)
-        self.write(self.name + ' Panel', self.f, centerx=(ANCHO//4)*1.5, y=0)
+        self.write(self.name + ' Panel', self.f, centerx=(ANCHO // 4) * 1.5, y=0)
 
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 350)
         self.properties.add(self.planet_area, layer=2)
@@ -56,9 +56,9 @@ class OrbitPanel(BaseWidget):
         self.indexes = []
         self._markers = {}
         self.orbit_descriptions = WidgetGroup()
-        self.star_orbits_button = ToggleableButton(self, 'Stellar Orbits', self.toggle_stellar_orbits, 3, 421)
-        self.properties.add(self.star_orbits_button, layer=2)
-        self.star_orbits_button.disable()
+        self.show_markers_button = ToggleableButton(self, 'Stellar Orbits', self.toggle_stellar_orbits, 3, 421)
+        self.properties.add(self.show_markers_button, layer=2)
+        self.show_markers_button.disable()
 
         self.add_orbits_button = AddOrbitButton(self, ANCHO - 100, 416)
         self.properties.add(self.add_orbits_button, layer=2)
@@ -67,7 +67,7 @@ class OrbitPanel(BaseWidget):
         EventHandler.register(self.load_orbits, 'LoadData')
 
     def set_current(self):
-        self.hide_current_markers_and_buttons()
+        self.toggle_current_markers_and_buttons(False)
         star = Systems.get_current_star()
         if star not in self._markers:
             self._markers[star] = []
@@ -82,8 +82,10 @@ class OrbitPanel(BaseWidget):
         if not len(self.markers):
             self.populate()
         else:
-            self.show_current_markers_and_buttons()
+            self.toggle_current_markers_and_buttons(True)
         self.add_orbits_button.enable()
+        self.visible_markers = False
+        self.toggle_stellar_orbits()
 
     def populate(self):
         star = self.current
@@ -100,21 +102,13 @@ class OrbitPanel(BaseWidget):
             self.properties.add(x, layer=2)
         self.sort_markers()
 
-    def hide_current_markers_and_buttons(self):
+    def toggle_current_markers_and_buttons(self, toggle: bool):
         if self.markers is not None:
             for marker in self.markers:
-                marker.hide()
+                marker.toggle(toggle)
         if self.buttons is not None:
             for button in self.buttons:
-                button.hide()
-
-    def show_current_markers_and_buttons(self):
-        if self.markers is not None:
-            for marker in self.markers:
-                marker.show()
-        if self.buttons is not None:
-            for button in self.buttons:
-                button.show()
+                button.toggle(toggle)
 
     def add_orbit_marker(self, position):
         star = self.current
@@ -294,7 +288,7 @@ class OrbitPanel(BaseWidget):
         self.visible_markers = True
         if len(self._loaded_orbits):
             self.set_loaded_orbits()
-        self.star_orbits_button.show()
+        self.show_markers_button.show()
 
         super().show()
 
@@ -313,15 +307,10 @@ class OrbitPanel(BaseWidget):
             for marker in self.markers:
                 marker.show()
             self.hide_orbit_types()
-            self.star_orbits_button.disable()
+            self.show_markers_button.disable()
             self.add_orbits_button.enable()
             self.area_modify.color_standby()
         self.visible_markers = not self.visible_markers
-
-    def toggle_planetary_orbits(self):
-        if self.visible_markers:
-            for marker in self.markers:
-                marker.hide()
 
     def hide_orbit_types(self):
         for orbit_type in self.orbit_descriptions.widgets():
@@ -392,6 +381,18 @@ class Intertwined:
         elif isinstance(self, OrbitButton):
             self.link_marker(m)
             self.link_type(o)
+
+    def show(self):
+        return NotImplemented
+
+    def hide(self):
+        return NotImplemented
+
+    def toggle(self, value: bool):
+        if value is True:
+            self.show()
+        else:
+            self.hide()
 
 
 class OrbitType(BaseWidget, Intertwined):
@@ -584,7 +585,7 @@ class OrbitButton(Meta, BaseWidget, Intertwined):
             if self.parent.visible_markers:
                 self.parent.toggle_stellar_orbits()
             self.parent.hide_orbit_types()
-            self.parent.star_orbits_button.enable()
+            self.parent.show_markers_button.enable()
             self.linked_type.show()
             self.lock()
 

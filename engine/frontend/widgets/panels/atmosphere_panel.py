@@ -218,7 +218,6 @@ class PercentageCell(BaseWidget):
         self.image.fill(COLOR_BOX, (1, 1, r.w - 1, r.h - 1))
         self.f = self.crear_fuente(14)
         self.name = 'Cell of ' + self.parent.symbol
-        EventHandler.register(self.on_keydown, 'Arrow')
 
         self.grandparent = self.parent.parent
 
@@ -246,10 +245,12 @@ class PercentageCell(BaseWidget):
             return self.__repr__()
 
     def show(self):
+        EventHandler.register(self.on_keydown, 'Arrow')
         Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
 
     def hide(self):
+        EventHandler.deregister(self.on_keydown, 'Arrow')
         Renderer.del_widget(self)
         WidgetHandler.del_widget(self)
 
