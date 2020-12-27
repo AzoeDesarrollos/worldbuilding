@@ -108,6 +108,7 @@ class StarType(ObjectType):
                          ['Volume', 'Density', 'Circumference', 'Surface', 'Classification'])
 
     def set_star(self, star_data):
+        star_data.update({'idx': len(self.parent.stars)})
         star = Star(star_data)
         self.parent.button.enable()
         self.current = star

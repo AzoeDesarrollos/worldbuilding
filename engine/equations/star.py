@@ -27,6 +27,7 @@ class Star(BodyInHydrostaticEquilibrium):
 
     sprite = None
     letter = None
+    idx = None
 
     def __init__(self, data):
         mass = data.get('mass', False)
@@ -39,6 +40,8 @@ class Star(BodyInHydrostaticEquilibrium):
             self.has_name = True
         else:
             self.name = "NoName"
+
+        self.idx = data.get('idx', 0)
 
         if mass:
             self._mass = mass
@@ -159,7 +162,7 @@ class Star(BodyInHydrostaticEquilibrium):
         return color
 
     def __str__(self):
-        return "{}-Star ({})".format(self.cls, self.name)
+        return "{}-Star #{}".format(self.cls, self.idx)
 
     def __repr__(self):
         return "Star " + self.name + ' {}'.format(self.mass.m)
