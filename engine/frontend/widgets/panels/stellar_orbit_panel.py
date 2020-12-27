@@ -1,8 +1,8 @@
 from .common import TextButton, Meta, AvailableObjects, ToggleableButton, AvailablePlanet
-from engine.frontend.globales import COLOR_SELECTED, COLOR_PLANETORBIT, COLOR_STARORBIT
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_DISABLED
 from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO
 from engine.frontend.widgets.incremental_value import IncrementalValue
+from engine.frontend.globales import COLOR_SELECTED, COLOR_STARORBIT
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.orbit import RawOrbit, PseudoOrbit
 from engine.frontend.globales.group import WidgetGroup
@@ -64,7 +64,7 @@ class OrbitPanel(BaseWidget):
         self.properties.add(self.add_orbits_button, layer=2)
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
-        EventHandler.register(self.load_orbits, 'LoadData')
+        # EventHandler.register(self.load_orbits, 'LoadData')
 
     def set_current(self):
         self.toggle_current_markers_and_buttons(False)
@@ -123,10 +123,7 @@ class OrbitPanel(BaseWidget):
             bool_a = False
             bool_b = True
             test = inner < position.semi_major_axis < outer
-            if position.primary == 'Star':
-                color = COLOR_STARORBIT
-            else:
-                color = COLOR_PLANETORBIT
+            color = COLOR_STARORBIT
 
         if test is True:
             new = OrbitMarker(self, 'Orbit', star, position, is_orbit=bool_a, is_complete_orbit=bool_b)
@@ -245,23 +242,26 @@ class OrbitPanel(BaseWidget):
 
     def save_orbits(self, event):
         orbits = []
-        for marker in self.orbits:
-            orb = marker.orbit
-            d = {}
-            if hasattr(orb, 'semi_major_axis'):
-                d['a'] = orb.semi_major_axis.m
-            if hasattr(orb, 'inclination'):
-                d['i'] = orb.inclination.m
-            if hasattr(orb, 'eccentricity'):
-                d['e'] = orb.eccentricity.m
-            if hasattr(orb, 'planet'):
-                d['planet'] = orb.planet.name
-            orbits.append(d)
 
-        EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Star': {'Orbits': orbits}})
+        if self.orbits is not None:
+            for marker in self.orbits:
+                orb = marker.orbit
+                d = {}
+                if hasattr(orb, 'semi_major_axis'):
+                    d['a'] = round(orb.semi_major_axis.m, 2)
+                if hasattr(orb, 'inclination'):
+                    d['i'] = orb.inclination.m
+                if hasattr(orb, 'eccentricity'):
+                    d['e'] = orb.eccentricity.m
+                if hasattr(orb, 'planet'):
+                    d['planet'] = orb.planet.name
+                    d['star'] = orb.planet.orbit.star.name
+                orbits.append(d)
+
+        EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Orbits': orbits})
 
     def load_orbits(self, event):
-        for position in event.data['Star']['Orbits']:
+        for position in event.data['Star'].get('Orbits', []):
             self._loaded_orbits.append(position)
 
     def set_loaded_orbits(self):
@@ -274,7 +274,8 @@ class OrbitPanel(BaseWidget):
                 i = q(orbit_data['i'], 'degree')
                 system = Systems.get_current()
                 planet = system.get_planet_by_name(orbit_data['planet'])
-                planet.set_orbit(system.star, [a, e, i])
+                star = Systems.get_current_star()
+                planet.set_orbit(star, [a, e, i])
                 self.add_orbit_marker(planet.orbit)
                 self.planet_area.delete_objects(planet)
 

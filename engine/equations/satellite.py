@@ -31,6 +31,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
             self.name = name
             self.has_name = True
         self.composition = data['composition']
+        assert data.get('radius'), "Must fill parameter 'Radius'"
         self.radius = q(data['radius'], 'earth_radius')
         self.density = self.set_density(data['composition'])
         self.mass = q((self.radius.m ** 3 * self.density.to('earth_density').m), 'earth_mass')
@@ -40,7 +41,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         self.circumference = q(self.calculate_circumference(self.radius.to('km').m), 'km')
         self.escape_velocity = q(sqrt(self.mass.magnitude / self.radius.magnitude), 'earth_escape')
         self.clase = 'Major Moon'
-        self.cls = 'Major'
+        self.cls += ' Major'
 
     # noinspection PyUnusedLocal
     @staticmethod
@@ -83,6 +84,7 @@ class RockyMoon(Satellite):
     """A natural satellite made mostly of Silicates"""
 
     color = COLOR_ROCKYMOON
+    cls = 'Rocky'
 
     def set_density(self, composition: dict):
         percent = sum(composition.values())
@@ -96,6 +98,7 @@ class IcyMoon(Satellite):
     """A natural satellite made mostly of Ice"""
 
     color = COLOR_ICYMOON
+    cls = 'Icy'
 
     def set_density(self, composition: dict):
         percent = sum(composition.values())
@@ -109,6 +112,7 @@ class IronMoon(Satellite):
     """Fictional moon made mostly of Iron"""
 
     color = COLOR_IRONMOON
+    cls = 'Iron'
 
     def set_density(self, composition: dict):
         percent = sum(composition.values())
@@ -118,39 +122,16 @@ class IronMoon(Satellite):
         return self.calculate_density(i, s, r)
 
 
-def create_moon(planet, star, data):
-    moon_composition = None
-    assert planet.orbit is not None, 'Planet needs an orbit first'
-    if planet.orbit.a > star.frost_line:
-        moon_composition = IcyMoon
-    elif planet.orbit.a < star.frost_line:
-        moon_composition = RockyMoon
-
-    if planet.clase == 'Terrestial Planet':
-        if planet.habitable:
-            moon_type = Major
-        else:
-            moon_type = Minor
-    elif 'a' in data and 'b' in data and 'c' in data:
-        moon_type = Minor
-    else:
-        moon_type = Major
-
-    # dynamic moon creation
-    moon = type('Moon', (moon_composition, moon_type), {})
-    return moon(data)
-
-
 def _moon_composition(data):
     ice = data['composition'].get('water ice', 0)
     rock = data['composition'].get('silicates', 0)
     iron = data['composition'].get('iron', 0)
 
-    if rock > ice + iron:
+    if rock > (ice + iron):
         composition = RockyMoon
-    elif ice > rock + iron:
+    elif ice > (rock + iron):
         composition = IcyMoon
-    elif iron > rock + ice:
+    elif iron > (rock + ice):
         composition = IronMoon
     else:
         raise AssertionError('A satellite must be composed mostly of a single element')

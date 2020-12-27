@@ -28,6 +28,27 @@ class PlanetPanel(BasePanel):
         self.button = AddPlanetButton(self, 490, 416)
         self.properties.add(self.button)
         self.planet_buttons = WidgetGroup()
+        EventHandler.register(self.save_planets, 'Save')
+
+    def save_planets(self, event):
+        data = []
+        idx = -1
+        for system in Systems.get_systems():
+            idx += 1
+            for planet_button in self.planet_buttons.widgets():
+                planet = planet_button.object_data
+                if planet in system.planets:
+                    planet_data = {
+                        'name': planet.name,
+                        'mass': planet.mass.m,
+                        'radius': planet.radius.m,
+                        'unit': planet.unit,
+                        'atmosphere': planet.atmosphere,
+                        'clase': planet.clase,
+                        'system': idx
+                    }
+                    data.append(planet_data)
+        EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": data})
 
     def add_button(self, planet):
         button = PlanetButton(self.current, planet, self.curr_x, self.curr_y)
@@ -90,6 +111,8 @@ class PlanetPanel(BasePanel):
 class PlanetType(ObjectType):
     counter = 0
 
+    loaded_data = None
+
     def __init__(self, parent):
         super().__init__(parent,
                          ['Mass', 'Radius', 'Gravity', 'escape_velocity'],
@@ -104,25 +127,25 @@ class PlanetType(ObjectType):
         f = self.crear_fuente(16, bold=True)
         self.habitable = f.render('Habitable', True, (0, 255, 0), COLOR_BOX)
         self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right - 10, y=self.parent.rect.y + 50)
-        EventHandler.register(self.save_planet, 'Save')
-        EventHandler.register(self.load_planet, 'LoadData')
-        EventHandler.register(self.clear, 'ClearData')
 
-    def save_planet(self, event):
-        p = self.current
-        if p is not None:
-            data = {
-                'name': p.name,
-                'mass': p.mass.m,
-                'radius': p.radius.m,
-                'unit': p.unit,
-                'atmosphere': p.atmosphere,
-                'clase': p.clase}
-            EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": [data]})
+        EventHandler.register(self.load_planet, 'LoadData')
+
+    # def save_planet(self, event):
+    #     p = self.current
+    #     if p is not None:
+    #         data = {
+    #
+    #         }
+    #         EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": [data]})
 
     def load_planet(self, event):
         if 'Planets' in event.data:
-            self.current = Planet(event.data['Planets'][0])
+            self.loaded_data = event.data['Planets'][0]
+
+    def show(self):
+        super().show()
+        if self.loaded_data is not None:
+            self.current = Planet(self.loaded_data)
             self.create_button()
 
     def clear(self, event):

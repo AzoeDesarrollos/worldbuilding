@@ -5,18 +5,19 @@ from .common import AvailableObjects, AvailablePlanet, Meta
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from pygame import Surface, Rect
-from math import pow
-from engine import q
+from engine import q, roll
 
 
 class PlanetaryOrbitPanel(BaseWidget):
     skippable = True
     skip = False
     current = None
-    markers = []
+    markers = None
 
     curr_x = 0
     curr_y = 0
+
+    added = None
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -27,6 +28,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.properties = WidgetGroup()
         self.buttons = WidgetGroup()
         self.markers = []
+        self.added = []
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.area_markers = Rect(3, 58, 380, 20 * 16)
         self.curr_x = self.area_buttons.x + 3
@@ -67,11 +69,12 @@ class PlanetaryOrbitPanel(BaseWidget):
             prop.hide()
 
     def select_planet(self, planet):
-        self.current = planet
-        self.populate()
+        if planet is not self.current:
+            self.current = planet
+            self.populate()
 
     def sort_markers(self):
-        self.markers.sort(key=lambda m: m.value)
+        self.markers.sort(key=lambda m: m.value.m)
         for i, marker in enumerate(self.markers, start=1):
             marker.rect.y = i * 2 * 10 + 38  # + self.offset
             if not self.area_markers.contains(marker.rect):
@@ -94,16 +97,39 @@ class PlanetaryOrbitPanel(BaseWidget):
                 y += 32
 
     def add_new(self, obj):
+        if obj not in self.added:
+            self.added.append(obj)
         obj_name = obj.cls
         obj_density = obj.density.to('earth_density').m
-        pln_density = self.current.density.to('earth_density').m
-        pln_radius = self.current.radius.to('earth_radius').m
-        roche = q(round(2.44 * pln_radius * pow(obj_density / pln_density, 1 / 3), 3), 'earth_radius')
+        pln_habitable = Systems.get_current().is_planet_habitable(self.current)
+        pln_hill = self.current.hill_sphere.m
+        roches = self.current.set_roche(obj_density)
 
-        x = Marker(self, obj_name, roche, color=COLOR_SELECTED, lock=False)
-        self.markers.append(x)
-        self.properties.add(x, layer=2)
+        pos = q(round(roll(self.current.roches_limit.m, self.current.hill_sphere.m/2), 3), 'earth_radius')
+
+        obj_marker = Marker(self, obj_name, pos, color=COLOR_SELECTED, lock=False)
+        roches_marker = Marker(self, "Roche's Limit", roches, lock=True)
+
+        value = pln_hill
+        if pln_habitable:
+            value /= 2
+        obj_marker.set_max_value(value)
+
+        self.markers.append(obj_marker)
+        self.properties.add(obj_marker, layer=2)
+
+        first = self.markers[0]
+        if first.name == "Roche's Limit":
+            self.properties.remove(first)
+            self.markers[0] = roches_marker
+            self.properties.add(roches_marker, layer=2)
+        else:
+            self.markers.append(roches_marker)
+            self.properties.add(roches_marker, layer=2)
         self.sort_markers()
+
+    def is_added(self, obj):
+        return obj in self.added
 
 
 class OrbitablePlanet(AvailablePlanet):
@@ -137,23 +163,29 @@ class ObjectButton(Meta, BaseWidget):
         self.rect = self.image.get_rect(topleft=(x, y))
 
     def on_mousebuttondown(self, event):
-        self.parent.add_new(self.object_data)
+        if not self.parent.is_added(self.object_data):
+            self.parent.add_new(self.object_data)
 
     def move(self, x, y):
         self.rect.topleft = x, y
 
 
-class Marker(BaseWidget, Meta, IncrementalValue):
+class Marker(Meta, BaseWidget, IncrementalValue):
     locked = True
+    enabled = True
     text = ''
     color = COLOR_TEXTO
+    max_value = None
 
     def __init__(self, parent, name, value, color=None, lock=True):
         super().__init__(parent)
         self.f1 = self.crear_fuente(16)
         self.f2 = self.crear_fuente(16, bold=True)
         self.name = name
-        self.value = value
+        self._value = value.m
+        self.unit = value.u
+
+        self.min_value = value.m
 
         if not lock:
             self.locked = False
@@ -164,18 +196,34 @@ class Marker(BaseWidget, Meta, IncrementalValue):
         Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
 
+    def set_max_value(self, value):
+        self.max_value = value
+
+    def is_lower_than(self, other):
+        return self._value < other.abstract_value
+
+    @property
+    def value(self):
+        return q(self._value, self.unit)
+
+    @property
+    def abstract_value(self):
+        return self._value
+
     def on_mousebuttondown(self, event):
         if not self.locked:
             self.increment = self.update_increment()
+            _value = self._value
             if event.button == 5:  # rueda abajo
-                self.value += self.increment
+                _value += self.increment
                 self.increment = 0
-            elif event.button == 4 and self.value > 0:  # rueda arriba
-                self.value -= self.increment
+            elif event.button == 4:  # rueda arriba
+                _value -= self.increment
                 self.increment = 0
 
-            if event.button in (4, 5):
-                self.value = round(self.value, 4)
+            if event.button in (4, 5) and self.min_value < self._value < self.max_value:
+                self._value = round(_value, 4)
+                self.parent.sort_markers()
 
     def update(self):
         self.reset_power()

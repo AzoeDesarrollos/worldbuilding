@@ -35,7 +35,6 @@ class PlanetarySystem:
             minus_mass = astro_obj.mass.to('jupiter_mass')
 
             self.body_mass -= minus_mass
-            # self.set_current_planet(astro_obj)
             group.append(astro_obj)
             if not astro_obj.has_name:
                 astro_obj.name = astro_obj.clase+' #'+str(group.index(astro_obj))
@@ -47,9 +46,10 @@ class PlanetarySystem:
         planet = [planet for planet in self.planets if planet.name == planet_name][0]
         return planet
 
-    # def set_current_planet(self, planet):
-    #     if planet.orbit is None:
-    #         self.planet = planet
+    def is_planet_habitable(self, planet) -> bool:
+        pln_orbit = planet.orbit.semi_major_axis
+        star = self.star_system
+        return star.habitable_inner.m <= pln_orbit.m <= star.habitable_outer.m
 
     def __eq__(self, other):
         return self.star_system == other.star_system
@@ -87,6 +87,11 @@ class Systems:
             system = PlanetarySystem(star)
             if system not in cls._systems:
                 cls._systems.append(system)
+
+    @classmethod
+    def load_system(cls, star):
+        cls.loose_stars.append(star)
+        cls.set_system(star)
 
     @classmethod
     def swap_system(cls, idx):

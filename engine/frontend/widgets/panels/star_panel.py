@@ -25,6 +25,24 @@ class StarPanel(BasePanel):
         self.button = AddStarButton(self.current, 490, 416)
         self.current.properties.add(self.button)
         self.stars = WidgetGroup()
+        EventHandler.register(self.save_stars, 'Save')
+        EventHandler.register(self.load_stars, 'LoadData')
+
+    def save_stars(self, event):
+        data = []
+        for star_button in self.stars.widgets():
+            star = star_button.object_data
+            star_data = {
+                'name': star.name,
+                'mass': star.mass.m,
+            }
+            data.append(star_data)
+        EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data})
+
+    def load_stars(self, event):
+        for star_data in event.data.get('Stars', []):
+            star = Star({'mass': star_data['mass']})
+            self.add_button(star)
 
     def show(self):
         super().show()
@@ -88,9 +106,6 @@ class StarType(ObjectType):
         super().__init__(parent,
                          ['Mass', 'Luminosity', 'Radius', 'Lifetime', 'Temperature'],
                          ['Volume', 'Density', 'Circumference', 'Surface', 'Classification'])
-        EventHandler.register(self.load_star, 'LoadData')
-        EventHandler.register(self.clear, 'ClearData')
-        EventHandler.register(self.save_star, 'Save')
 
     def set_star(self, star_data):
         star = Star(star_data)
@@ -102,15 +117,6 @@ class StarType(ObjectType):
         self.erase()
         self.current = star
         self.fill()
-
-    def load_star(self, event):
-        if not isinstance(self.current, Star):
-            mass = event.data['Star']['mass']
-            self.set_star({'mass': mass})
-
-    def save_star(self, event):
-        EventHandler.trigger(event.tipo + 'Data', 'Star',
-                             {'Star': {'name': self.current.name, 'mass': self.current.mass.m}})
 
     def clear(self, event):
         if event.data['panel'] is self.parent:
@@ -154,7 +160,7 @@ class StarButton(Meta, BaseWidget):
 
     def __init__(self, parent, star, x, y):
         super().__init__(parent)
-        self.star_data = star
+        self.object_data = star
         self.f1 = self.crear_fuente(13)
         self.f2 = self.crear_fuente(13, bold=True)
         name = star.classification + ' #{}'.format(len(self.parent.parent.stars))
@@ -166,7 +172,7 @@ class StarButton(Meta, BaseWidget):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            self.parent.show_current(self.star_data)
+            self.parent.show_current(self.object_data)
 
     def move(self, x, y):
         self.rect.topleft = x, y

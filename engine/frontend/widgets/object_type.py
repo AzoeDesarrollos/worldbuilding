@@ -16,6 +16,7 @@ class ObjectType(BaseWidget):
     def __init__(self, parent, relative_values, absolute_values):
         super().__init__(parent)
         EventHandler.register(self.clear_selection, 'Clear')
+        EventHandler.register(self.clear, 'ClearData')
 
         self.properties = WidgetGroup()
         self.relatives = WidgetGroup()
@@ -50,6 +51,9 @@ class ObjectType(BaseWidget):
     def clear_selection(self, event):
         if event.origin is not self:
             self.active = False
+
+    def clear(self, event):
+        return NotImplemented
 
     def on_mousebuttondown(self, event):
         if event.button == 1:

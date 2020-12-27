@@ -27,6 +27,7 @@ class Planet(BodyInHydrostaticEquilibrium):
     satellites = None
     lagrange_points = None
     hill_sphere = 0
+    roches_limit = 0
 
     def __init__(self, data):
         name = data.get('name', None)
@@ -109,6 +110,15 @@ class Planet(BodyInHydrostaticEquilibrium):
         mp = self.mass.to('earth_mass').magnitude
         ms = self.orbit.star.mass.to('sol_mass').magnitude
         return q(round((a * pow(mp / ms, 1 / 3) * 235), 3), 'earth_radius')
+
+    def set_roche(self, obj_density):
+        density = self.density.to('earth_density').m
+        radius = self.radius.to('earth_radius').m
+
+        roches = q(round(2.44 * radius * pow(density / obj_density, 1 / 3), 3), 'earth_radius')
+        if self.roches_limit == 0 or roches < self.roches_limit:
+            self.roches_limit = roches
+        return self.roches_limit
 
     @staticmethod
     def set_class(mass, radius):
