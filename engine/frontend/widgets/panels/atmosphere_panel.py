@@ -1,5 +1,5 @@
 from engine.frontend import Renderer, WidgetHandler, ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO, WidgetGroup, COLOR_DISABLED
-from engine.frontend.atmograph.atmograph import graph, atmograph
+from engine.frontend.graphs.atmograph.atmograph import graph, atmograph
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler

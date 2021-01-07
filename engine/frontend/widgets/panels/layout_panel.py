@@ -63,6 +63,7 @@ class LayoutPanel(BaseWidget):
             self.current = self.panels[self.curr_idx]
             if self.current.skippable is True and self.current.skip is True:
                 self.cycle(delta)
+                return  # si se saltea un panel, no hay que mostrar el panel siguiente 2 veces.
         self.current.show()
 
     def set_skippable(self, value=True):

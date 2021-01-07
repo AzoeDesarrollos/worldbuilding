@@ -1,16 +1,11 @@
-from engine import open_float_list_txt
-from .star import Star
+from random import randint
 
 
 class Galaxy:
     name = ''
 
     def __init__(self):
-        data = open_float_list_txt('data/main_sequences.txt')
-        self._groups = {name: StarGroup(name) for name in 'OBAFGKM'}
-
-        for mass in data:
-            self.append(Star({'mass': mass}))
+        self._groups = {}
 
     def __getitem__(self, item):
         # item could be a group (only it's letter)
@@ -30,6 +25,10 @@ class Galaxy:
         # galaxy makes no sense. Adding Black Holes on the
         # other hand...
         key = value.cls  # value is a star, so it has a cls
+        if not hasattr(value, "position"):
+            # set the star's random position, if it doesn't have a position yet.
+            x, y, z = randint(0, 1000), randint(0, 1000), randint(0, 1000)
+            setattr(value, 'position', [x, y, z])
         self._groups[key].append(value)
 
     def __delitem__(self, key):

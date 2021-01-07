@@ -1,11 +1,9 @@
+from engine.frontend.graphs import dwarfgraph_loop, gasgraph_loop, graph_loop
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX
 from engine.equations.planet import GasDwarf, Terrestial
-from engine.frontend.dwarfgraph import dwarfgraph_loop
-from engine.backend.eventhandler import EventHandler
 from engine.equations.planetary_system import Systems
+from engine.backend.eventhandler import EventHandler
 from engine.frontend import Renderer, WidgetHandler
-from engine.frontend.gasgraph import gasgraph_loop
-from engine.frontend.graph.graph import graph_loop
 from .incremental_value import IncrementalValue
 from engine.backend.util import add_decimal
 from .basewidget import BaseWidget

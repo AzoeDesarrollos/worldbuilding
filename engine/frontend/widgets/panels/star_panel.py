@@ -44,11 +44,16 @@ class StarPanel(BasePanel):
             star = Star({'mass': star_data['mass']})
             self.add_button(star)
 
+        if len(self.stars.widgets()):
+            self.current.current = self.stars.widgets()[0].object_data
+
     def show(self):
         super().show()
         self.button.show()
         for star in self.stars.widgets():
             star.show()
+        if self.current.has_values:
+            self.current.current.sprite.show()
 
     def hide(self):
         super().hide()
@@ -174,6 +179,13 @@ class StarButton(Meta, BaseWidget):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.show_current(self.object_data)
+            if not self.object_data.sprite.is_visible:
+                self.object_data.sprite.show()
 
     def move(self, x, y):
         self.rect.topleft = x, y
+
+    def hide(self):
+        super().hide()
+        if self.object_data.sprite is not None:
+            self.object_data.sprite.hide()

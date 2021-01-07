@@ -1,4 +1,3 @@
-from engine.frontend.globales import Renderer, WidgetHandler
 from pygame import draw, Surface, SRCALPHA
 from math import sin, cos, radians
 from .basewidget import BaseWidget
@@ -22,8 +21,6 @@ class StarSprite(BaseWidget):
         self.rect = self.image.get_rect(center=(x, y))
         self.centerx, self.centery = [self.radius - 1] * 2
         self.draw_rays()
-        Renderer.add_widget(self)
-        WidgetHandler.add_widget(self)
 
     def create(self):
         image = Surface((2 * self.radius, 2 * self.radius), SRCALPHA)

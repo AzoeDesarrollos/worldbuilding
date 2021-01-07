@@ -1,8 +1,7 @@
 from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, image, K_LSHIFT, K_LCTRL, KEYUP
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, ANCHO, ALTO
 from pygame import init, quit, display, font, event, Rect, Surface
-from engine.frontend.graph.graph import pos_to_keys, keys_to_pos
-from engine.frontend.graph.objects import Linea, Punto
+from ..common import pos_to_keys, keys_to_pos,  Linea, Punto
 from engine.frontend.globales import WidgetGroup
 from pygame.sprite import Sprite
 from sys import exit
@@ -28,7 +27,7 @@ radius_imgs = [fuente.render(str(radius_keys[i]), True, COLOR_TEXTO, COLOR_BOX) 
 
 exes, yes = [], []
 
-ruta = join(getcwd(), 'engine', 'frontend', 'gasgraph', 'gasgraph.png')
+ruta = join(getcwd(), 'engine', 'frontend', 'graphs', 'gasgraph', 'gasgraph.png')
 img_rect = Rect(31, 16, 540, 570)
 img = image.load(ruta)
 

@@ -1,11 +1,11 @@
 from pygame import image, display, PixelArray, event, draw, Surface, SRCALPHA, key
 from pygame import KEYDOWN, K_ESCAPE, K_DOWN, K_UP, K_SPACE
-from engine.frontend.graph.graph import pos_to_keys
+from ..common import pos_to_keys
 from bisect import bisect_left
-from engine import q
 from os import getcwd, path
+from engine import q
 
-ruta = path.join(getcwd(), 'engine', 'frontend', 'atmograph', 'atmograph04rev24.png')
+ruta = path.join(getcwd(), 'engine', 'frontend', 'graphs', 'atmograph', 'atmograph04rev24.png')
 graph = image.load(ruta)
 
 pos_psi = [12, 20, 27, 36, 46, 59, 74, 93, 120, 166, 174, 181, 190, 200, 213, 228, 247, 274]

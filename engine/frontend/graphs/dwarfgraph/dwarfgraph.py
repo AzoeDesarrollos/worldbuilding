@@ -1,8 +1,8 @@
 from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, KEYUP, K_LSHIFT, K_LCTRL
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO
-from engine.frontend.graph.graph import pos_to_keys, Linea, Punto
 from pygame import display, event, font, transform, image
 from engine.frontend.globales import WidgetGroup
+from ..common import Linea, Punto, pos_to_keys
 from pygame.sprite import Sprite
 from pygame import init, quit
 from math import pi, pow
@@ -38,7 +38,7 @@ radius_imgs = [fuente.render(str(radius_keys[i]), True, COLOR_TEXTO, COLOR_BOX) 
 
 exes, yes = [], []
 
-ruta = join(getcwd(), 'engine', 'frontend', 'dwarfgraph', 'dwarfgraph.png')
+ruta = join(getcwd(), 'engine', 'frontend', 'graphs', 'dwarfgraph', 'dwarfgraph.png')
 bg = image.load(ruta)
 bg_rect = bg.get_rect(topleft=(54, 24))
 
