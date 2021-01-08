@@ -77,7 +77,8 @@ class Star(BodyInHydrostaticEquilibrium):
         self.color = self.true_color()
 
         # ID values make each star unique, even if they have the same mass and name.
-        self.id = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
+        now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
+        self.id = data['id'] if 'id' in data else now
 
     def set_qs(self):
         self.mass = q(self._mass, 'sol_mass')

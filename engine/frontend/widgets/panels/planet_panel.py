@@ -32,9 +32,7 @@ class PlanetPanel(BasePanel):
 
     def save_planets(self, event):
         data = []
-        idx = -1
         for system in Systems.get_systems():
-            idx += 1
             for planet_button in self.planet_buttons.widgets():
                 planet = planet_button.object_data
                 if planet in system.planets:
@@ -45,7 +43,7 @@ class PlanetPanel(BasePanel):
                         'unit': planet.unit,
                         'atmosphere': planet.atmosphere,
                         'clase': planet.clase,
-                        'system': idx
+                        'system': system.id
                     }
                     data.append(planet_data)
         EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": data})

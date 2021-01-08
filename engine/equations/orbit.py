@@ -196,7 +196,7 @@ class PlanetOrbit(Orbit):
     primary = 'Star'
 
     def __init__(self, star_mass, a, e, i):
-        super().__init__(a, e, q(i, 'degree'), 'au')
+        super().__init__(a, e, i, 'au')
         self.reset_period_and_speed(star_mass.m)
 
     def reset_planet(self, planet):
@@ -212,7 +212,7 @@ class SatelliteOrbit(Orbit):
     primary = 'Planet'
 
     def __init__(self, planet_mass, a, e, i):
-        super().__init__(a, e, q(i, 'degree'), 'earth_radius')
+        super().__init__(a, e, i, 'earth_radius')
         self.reset_period_and_speed(planet_mass)
 
     def reset_period_and_speed(self, main_body_mass):

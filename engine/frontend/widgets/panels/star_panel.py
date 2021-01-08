@@ -35,13 +35,14 @@ class StarPanel(BasePanel):
             star_data = {
                 'name': star.name,
                 'mass': star.mass.m,
+                'id': star.id
             }
             data.append(star_data)
         EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data})
 
     def load_stars(self, event):
         for star_data in event.data.get('Stars', []):
-            star = Star({'mass': star_data['mass']})
+            star = Star(star_data)
             self.add_button(star)
 
         if len(self.stars.widgets()):
@@ -146,8 +147,7 @@ class StarType(ObjectType):
         if self.current.sprite is None:
             self.current.sprite = StarSprite(self, self.current, 460, 100)
             self.properties.add(self.current.sprite)
-        else:
-            self.current.sprite.show()
+        self.current.sprite.show()
 
 
 class AddStarButton(TextButton):

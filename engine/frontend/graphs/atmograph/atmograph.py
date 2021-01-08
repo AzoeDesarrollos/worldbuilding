@@ -1,5 +1,4 @@
-from pygame import image, display, PixelArray, event, draw, Surface, SRCALPHA, key
-from pygame import KEYDOWN, K_ESCAPE, K_DOWN, K_UP, K_SPACE
+from pygame import image, PixelArray
 from ..common import pos_to_keys
 from bisect import bisect_left
 from os import getcwd, path
@@ -16,7 +15,7 @@ def interpolacion_lineal(vol):
     pos_o2 = [47, 81, 114, 147, 179, 213, 246, 279, 311, 345, 378]
     pos_o2.sort(reverse=True)
     nums_o2 = [i for i in range(0, 101, 10)]
-    antes = 11-bisect_left(nums_o2, vol)
+    antes = 11 - bisect_left(nums_o2, vol)
     despues = antes + 1
 
     x1 = nums_o2[antes]
@@ -51,42 +50,5 @@ def atmo(vol, rect):
     return d, p
 
 
-def atmograph(vol_o2, rect):
-    key.set_repeat(60, 30)
-    max_pressure, min_pressure = atmo(vol_o2, rect)  # valores máximos y minimos de presión atmosférica
-    selected_pressure = (max_pressure + min_pressure) // 2  # valor de presión a nivel del mar seleccionado
-    pressure_at_sea_level = 0
-    canvas = Surface(graph.get_size(), SRCALPHA)
-    done = False
-    while not done:
-        delta_y = 0
-        for e in event.get(KEYDOWN):
-            if e.type == KEYDOWN:
-                canvas.fill((0, 0, 0, 0))
-                if e.key == K_ESCAPE:
-                    quit()
-                    exit()
-                elif e.key == K_UP:
-                    if max_pressure < (selected_pressure - 1) < min_pressure:
-                        delta_y = -1
-                elif e.key == K_DOWN:
-                    if max_pressure < (selected_pressure + 1) < min_pressure:
-                        delta_y = +1
-                elif e.key == K_SPACE:
-                    pressure_at_sea_level = q(pos_to_keys(selected_pressure, nums_psi, pos_psi, 'gt'), 'psi')
-                    done = True
-
-        fondo = display.get_surface()
-        fondo.blit(graph, rect)
-        fondo.blit(canvas, rect)
-        oxigen_marker = interpolacion_lineal(vol_o2)
-        if delta_y:
-            selected_pressure += delta_y
-        draw.line(canvas, (255, 0, 0, 255), (oxigen_marker, rect.top), (oxigen_marker, rect.bottom))
-        draw.line(canvas, (0, 255, 0, 255), (0, selected_pressure), (rect.right, selected_pressure))
-        draw.line(canvas, (0, 0, 0, 255), (0, max_pressure), (rect.right, max_pressure))
-        draw.line(canvas, (0, 0, 0, 255), (0, min_pressure), (rect.right, min_pressure))
-
-        display.flip()
-
-    return pressure_at_sea_level
+def convert(selected_pressure):
+    return q(pos_to_keys(selected_pressure, nums_psi, pos_psi, 'gt'), 'psi')

@@ -92,8 +92,8 @@ class Planet(BodyInHydrostaticEquilibrium):
         return habitable
 
     def set_temperature(self, star_mass, semi_major_axis):
-        t = planet_temperature(star_mass, semi_major_axis, self.albedo, self.greenhouse)
-        self._temperature = round(t.to('earth_temperature'))
+        t = planet_temperature(star_mass, semi_major_axis, self.albedo.m, self.greenhouse.m)
+        self._temperature = round(t.to('earth_temperature').m)
         return t
 
     def set_orbit(self, star, orbital_parameters):

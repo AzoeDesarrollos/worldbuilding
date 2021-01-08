@@ -64,7 +64,7 @@ class OrbitPanel(BaseWidget):
         self.properties.add(self.add_orbits_button, layer=2)
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
-        # EventHandler.register(self.load_orbits, 'LoadData')
+        EventHandler.register(self.load_orbits, 'LoadData')
 
     def set_current(self):
         self.toggle_current_markers_and_buttons(False)
@@ -242,26 +242,26 @@ class OrbitPanel(BaseWidget):
 
     def save_orbits(self, event):
         orbits = []
-
-        if self.orbits is not None:
-            for marker in self.orbits:
-                orb = marker.orbit
-                d = {}
-                if hasattr(orb, 'semi_major_axis'):
-                    d['a'] = round(orb.semi_major_axis.m, 2)
-                if hasattr(orb, 'inclination'):
-                    d['i'] = orb.inclination.m
-                if hasattr(orb, 'eccentricity'):
-                    d['e'] = orb.eccentricity.m
-                if hasattr(orb, 'planet'):
-                    d['planet'] = orb.planet.name
-                    d['star'] = orb.planet.orbit.star.name
-                orbits.append(d)
+        for system in Systems.get_systems():
+            for star in system:
+                for marker in self._orbits[star]:
+                    orb = marker.orbit
+                    d = {}
+                    if hasattr(orb, 'semi_major_axis'):
+                        d['a'] = round(orb.semi_major_axis.m, 2)
+                    if hasattr(orb, 'inclination'):
+                        d['i'] = orb.inclination.m
+                    if hasattr(orb, 'eccentricity'):
+                        d['e'] = orb.eccentricity.m
+                    if hasattr(orb, 'planet'):
+                        d['planet'] = orb.planet.name
+                        d['star_id'] = orb.planet.orbit.star.id
+                    orbits.append(d)
 
         EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Orbits': orbits})
 
     def load_orbits(self, event):
-        for position in event.data['Star'].get('Orbits', []):
+        for position in event.data.get('Orbits', []):
             self._loaded_orbits.append(position)
 
     def set_loaded_orbits(self):
@@ -272,9 +272,9 @@ class OrbitPanel(BaseWidget):
             else:
                 e = q(orbit_data['e'])
                 i = q(orbit_data['i'], 'degree')
-                system = Systems.get_current()
+                system = Systems.get_system_by_id(orbit_data['star_id'])
                 planet = system.get_planet_by_name(orbit_data['planet'])
-                star = Systems.get_current_star()
+                star = system.star_system
                 planet.set_orbit(star, [a, e, i])
                 self.add_orbit_marker(planet.orbit)
                 self.planet_area.delete_objects(planet)

@@ -21,6 +21,14 @@ def decimal_round(number: float):
 
 
 def add_decimal(text):
+    if '-' in text:
+        negative = True
+    else:
+        negative = False
+    if not float(text) > 1000:
+        return str(round(float(text), 3))
+
+    text = str(abs(float(text)))
     if 'e' in text:
         txt = '{:0.3e}'.format(float(text))
     else:
@@ -47,7 +55,7 @@ def add_decimal(text):
                 decimal.append(txt[i:count + i])
 
         decimal.reverse()
-        return ','.join(decimal)
+        return ','.join(decimal) if negative is False else '-'+','.join(decimal)
 
     else:
         return txt

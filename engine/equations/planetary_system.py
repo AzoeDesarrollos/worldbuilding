@@ -11,12 +11,14 @@ class PlanetarySystem:
     satellites = None
     asteroids = None
     stars = None
+    id = None
 
     def __init__(self, star_system):
         self.planets = []
         self.satellites = []
         self.asteroids = []
         self.star_system = star_system
+        self.id = star_system.id
         self.body_mass = q(16 * exp(-0.6931 * star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
 
     def get_available_mass(self):
@@ -57,6 +59,19 @@ class PlanetarySystem:
     def __repr__(self):
         return self.star_system
 
+    def __getitem__(self, item):
+        if self.star_system.celestial_type == 'star':  # single-star system
+            if item == 0:
+                return self.star_system
+            raise StopIteration()
+
+        elif self.star_system.celestial_type == 'system':  # binary systems
+            if item == 0:
+                return self.star_system.primary
+            elif item == 1:
+                return self.star_system.secondary
+            raise StopIteration()
+
 
 class Systems:
     _systems = None
@@ -87,6 +102,12 @@ class Systems:
             system = PlanetarySystem(star)
             if system not in cls._systems:
                 cls._systems.append(system)
+
+    @classmethod
+    def get_system_by_id(cls, number):
+        systems = [s for s in cls._systems if s.id == number]
+        if len(systems) == 1:
+            return systems[0]
 
     @classmethod
     def load_system(cls, star):
