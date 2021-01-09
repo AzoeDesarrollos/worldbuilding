@@ -109,9 +109,11 @@ class StarPanel(BasePanel):
 
 class StarType(ObjectType):
     def __init__(self, parent):
-        super().__init__(parent,
-                         ['Mass', 'Luminosity', 'Radius', 'Lifetime', 'Temperature'],
-                         ['Volume', 'Density', 'Circumference', 'Surface', 'Classification'])
+        rel_props = ['Mass', 'Luminosity', 'Radius', 'Lifetime', 'Surface Temperature']
+        rel_args = ['mass', 'luminosity', 'radius', 'lifetime', 'temperature']
+        abs_args = ['density', 'volume', 'circumference', 'surface', 'classification']
+        abs_props = ['Density', 'Volume', 'Circumference', 'Surface Area', 'Classification']
+        super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
 
     def set_star(self, star_data):
         star_data.update({'idx': len(self.parent.stars)})
@@ -136,11 +138,11 @@ class StarType(ObjectType):
 
     def fill(self, tos=None):
         tos = {
-            'Mass': 'kg',
-            'Radius': 'km',
-            'Luminosity': 'W',
-            'Lifetime': 'year',
-            'Temperature': 'kelvin'
+            'mass': 'kg',
+            'radius': 'km',
+            'luminosity': 'W',
+            'lifetime': 'year',
+            'temperature': 'kelvin'
         }
         super().fill(tos)
 

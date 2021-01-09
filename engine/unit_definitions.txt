@@ -3,7 +3,7 @@ earth_mass = 5.97237e+24 kg = Me
 earth_radius = 6378.1 km = Re
 earth_gravity = 9.807 m/s ** 2 = Ge
 earth_density = 5.514 g/cm ** 3 = De
-earth_escape_velocity = 11.186 km/s = earth_escape
+earth_escape_velocity = 11.186 km/s = Ve
 earth_orbital_period = year = earth_year
 earth_day = day
 earth_orbital_velocity = 29.78 km/s = earth_orbital_speed

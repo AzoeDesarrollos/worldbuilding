@@ -82,9 +82,11 @@ class SatellitePanel(BasePanel):
 class SatelliteType(ObjectType):
 
     def __init__(self, parent):
-        super().__init__(parent,
-                         ['Mass', 'Radius', 'Gravity', 'escape_velocity'],
-                         ['Density', 'Volume', 'Surface', 'Circumference', 'Clase'])
+        rel_props = ['Mass', 'Radius', 'Surface Gravity', 'Escape velocity']
+        rel_args = ['mass', 'radius', 'gravity', 'escape_velocity']
+        abs_args = ['density', 'volume', 'surface', 'circumference', 'clase']
+        abs_props = ['Density', 'Volume', 'Surface Area', 'Circumference', 'Clase']
+        super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
 
         for item in self.relatives:
             item.rect.y += 16

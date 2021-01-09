@@ -112,10 +112,12 @@ class PlanetType(ObjectType):
     loaded_data = None
 
     def __init__(self, parent):
-        super().__init__(parent,
-                         ['Mass', 'Radius', 'Gravity', 'escape_velocity'],
-                         ['Density', 'Volume', 'Surface', 'Circumference', 'Albedo', 'Greenhouse', 'Clase']
-                         )
+        rel_props = ['Mass', 'Radius', 'Surface Gravity', 'Escape velocity']
+        rel_args = ['mass', 'radius', 'gravity', 'escape_velocity']
+        abs_args = ['density', 'volume', 'surface', 'circumference', 'albedo', 'greenhouse', 'clase']
+        abs_props = ['Density', 'Volume', 'Surface Area', 'Circumference', 'Albedo (bond)', 'Greenhouse Effect',
+                     'Clase']
+        super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
         f = self.crear_fuente(14)
         f.set_underline(True)
         render = f.render('Planets', True, COLOR_TEXTO, COLOR_AREA)
@@ -127,14 +129,6 @@ class PlanetType(ObjectType):
         self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right - 10, y=self.parent.rect.y + 50)
 
         EventHandler.register(self.load_planet, 'LoadData')
-
-    # def save_planet(self, event):
-    #     p = self.current
-    #     if p is not None:
-    #         data = {
-    #
-    #         }
-    #         EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": [data]})
 
     def load_planet(self, event):
         if 'Planets' in event.data:
@@ -196,10 +190,10 @@ class PlanetType(ObjectType):
 
     def fill(self, tos=None):
         tos = {
-            'Mass': 'kg',
-            'Radius': 'km',
-            'Gravity': 'm/s**2',
-            'Escape_velocity': 'km/s'
+            'mass': 'kg',
+            'radius': 'km',
+            'gravity': 'm/s**2',
+            'escape_velocity': 'km/s'
         }
         super().fill(tos)
 

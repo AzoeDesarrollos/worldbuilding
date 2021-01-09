@@ -2,6 +2,7 @@ from engine.backend.util import collapse_factor_lists, prime_factors
 from math import sqrt, pow
 from pygame import draw, Rect
 from engine import q
+from random import randint
 
 
 class RawOrbit:
@@ -99,8 +100,13 @@ class Orbit:
     temperature = 0
     _star = None
 
+    argument_of_periapsis = 'undefined'
+    longuitude_of_the_ascending_node = 0
+
     def __init__(self, a, e, i, unit='au'):
         self._unit = unit
+        assert 0 <= e < 1, 'eccentricity has to be greater than 0\nbut less than 1.'
+        assert 0 <= float(i.m) <= 180, 'inclination values range from 0 to 180 degrees.'
         self._e = float(e.m)
         self._i = float(i.m)
         self._a = float(a.m)
@@ -108,18 +114,21 @@ class Orbit:
         self._Q = self._a * (1 + self._e)
         self._q = self._a * (1 - self._e)
 
-        if self.inclination in (0, 180):
+        if self._i in (0, 180):
             self.motion = 'equatorial'
-        elif self.inclination == 90:
+        elif self._i == 90:
             self.motion = 'polar'
-        elif 0 <= self.inclination <= 90:
+        elif 0 <= self._i <= 90:
             self.motion = 'prograde'
-        elif 90 < self.inclination <= 180:
+        elif 90 < self._i <= 180:
             self.motion = 'retrograde'
 
         # abreviaturas
         self.a = self.semi_major_axis
         self.b = self.semi_minor_axis
+
+        self.longuitude_of_the_ascending_node = set_longuitude_of_the_ascending_node(self._i)
+        self.argument_of_periapsis = set_argument_of_periapsis(self._i)
 
     def draw(self, surface):
         rect = Rect(0, 0, 2 * self.semi_major_axis, 2 * self.semi_minor_axis)
@@ -170,6 +179,7 @@ class Orbit:
 
     @eccentricity.setter
     def eccentricity(self, value):
+        assert 0 <= value < 1, 'eccentricity has to be greater than 0\nbut less than 1.'
         self._e = float(value)
 
     @property
@@ -182,6 +192,7 @@ class Orbit:
 
     @inclination.setter
     def inclination(self, value):
+        assert 0 <= float(value.m) <= 180, 'inclination values range from 0 to 180 degrees.'
         self._i = float(value)
 
     @property
@@ -257,3 +268,23 @@ def to_resonance(period_primary, period_secondary):
     if x < period_primary and y < period_secondary:  # the MMR numbers should be small
         return x, y
     return False  # objects are not in mean motion resonance
+
+
+def _set_random_angle(value):
+    if value is None:
+        value = q(randint(0, 360), 'degree')
+    return value
+
+
+def set_argument_of_periapsis(inclination, value=None):
+    if inclination > 0:
+        return _set_random_angle(value)
+    else:
+        return 'undefined'
+
+
+def set_longuitude_of_the_ascending_node(inclination, value=None):
+    if inclination > 0:
+        return _set_random_angle(value)
+    else:
+        return q(0, 'degree')

@@ -414,21 +414,24 @@ class OrbitType(BaseWidget, Intertwined):
     def create(self):
         orbit = self.linked_marker.orbit
         self.clear()
-        props = ['semi_major_axis', 'semi_minor_axis', 'eccentricity', 'inclination',
-                 'periapsis', 'apoapsis', 'motion', 'temperature', 'velocity', 'period',
-                 'planet']
-        for i, prop in enumerate([j for j in props if hasattr(orbit, j)]):
+        props = ['Semi-major Axis', 'Semi-minor Axis', 'Eccentricity', 'Inclination',
+                 'Periapsis', 'Apoapsis', 'Orbital motion', 'Temperature', 'Orbital velocity', 'Orbital period',
+                 'Argument of periapsis', 'Longuitude of the ascending node', 'Planet']
+        attr = ['semi_major_axis', 'semi_minor_axis', 'eccentricity', 'inclination',
+                'periapsis', 'apoapsis', 'motion', 'temperature', 'velocity', 'period',
+                'argument_of_periapsis', 'longuitude_of_the_ascending_node', 'planet']
+        for i, prop in enumerate([j for j in attr if hasattr(orbit, j)]):
             value = getattr(orbit, prop)
-            vt = ValueText(self, prop, 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
+            vt = ValueText(self, props[attr.index(prop)], 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
             vt.value = value
             self.properties.add(vt)
 
     def fill(self):
         parametros = []
         for elemento in self.properties.widgets():
-            if elemento.text == 'inclination':
+            if elemento.text == 'Inclination':
                 value = q(0 if elemento.text_area.value == '' else elemento.text_area.value, 'degree')
-            elif elemento.text not in ['motion', 'temperature']:
+            elif elemento.text not in ['Orbital motion', 'Temperature']:
                 value = q(elemento.text_area.value)
             else:
                 value = 'au'
@@ -438,7 +441,7 @@ class OrbitType(BaseWidget, Intertwined):
         self.linked_marker.orbit = orbit
         self.show()
         self.parent.planet_area.delete_objects(self.linked_planet)
-        self.locked = True
+        # self.locked = True
         self.has_values = True
 
     def clear(self):
