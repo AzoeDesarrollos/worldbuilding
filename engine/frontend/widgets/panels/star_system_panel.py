@@ -39,8 +39,14 @@ class StarSystemPanel(BaseWidget):
     def set_current(self, system_data):
         self.current.reset(system_data)
 
+    def show_current(self, star):
+        self.current.erase()
+        self.current = star
+        self.current.fill()
+
     def create_button(self, system_data):
-        button = SystemButton(self, system_data, self.curr_x, self.curr_y)
+        idx = len(self.systems)
+        button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
         self.systems.append(system_data)
         self.system_buttons.add(button)
         self.properties.add(button)
@@ -161,7 +167,7 @@ class AvailableStars(ListedArea):
 
     def populate(self, stars):
         for i, star in enumerate(stars):
-            listed = ListedStar(self, star, i, self.rect.x + 3, i * 16 + self.rect.y + 21)
+            listed = ListedStar(self, star, self.rect.x + 3, i * 16 + self.rect.y + 21)
             self.listed_objects.add(listed)
 
     def __len__(self):
@@ -180,8 +186,8 @@ class AvailableStars(ListedArea):
 class ListedStar(ListedBody):
     enabled = True
 
-    def __init__(self, parent, star, idx, x, y):
-        name = star.classification + ' #{}'.format(idx)
+    def __init__(self, parent, star, x, y):
+        name = star.classification + ' #{}'.format(star.idx)
         super().__init__(parent, star, name, x, y)
 
     def on_mousebuttondown(self, event):
@@ -213,10 +219,11 @@ class SetupButton(TextButton):
 class SystemButton(Meta, BaseWidget):
     enabled = True
 
-    def __init__(self, parent, system_data, x, y):
+    def __init__(self, parent, system_data, idx, x, y):
         super().__init__(parent)
+        system_data.idx = idx
         self.system_data = system_data
-        name = system_data.letter+'-Type'
+        name = system_data.letter+'-Type #{}'.format(idx)
         self.f1 = self.crear_fuente(13)
         self.f2 = self.crear_fuente(13, bold=True)
         self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)

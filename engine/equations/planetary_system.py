@@ -39,7 +39,7 @@ class PlanetarySystem:
             self.body_mass -= minus_mass
             group.append(astro_obj)
             if not astro_obj.has_name:
-                astro_obj.name = astro_obj.clase+' #'+str(group.index(astro_obj))
+                astro_obj.name = astro_obj.clase + ' #' + str(group.index(astro_obj))
             return True
 
         return False
@@ -57,7 +57,7 @@ class PlanetarySystem:
         return self.star_system == other.star_system
 
     def __repr__(self):
-        return self.star_system
+        return 'System of '+str(self.star_system)
 
     def __getitem__(self, item):
         if self.star_system.celestial_type == 'star':  # single-star system
@@ -102,6 +102,13 @@ class Systems:
             system = PlanetarySystem(star)
             if system not in cls._systems:
                 cls._systems.append(system)
+            if star.letter is not None:
+                for s in star:
+                    if s in cls.loose_stars:
+                        cls.loose_stars.remove(s)
+                    else:
+                        system = cls.get_system_by_star(s)
+                        cls._systems.remove(system)
 
     @classmethod
     def get_system_by_id(cls, number):
@@ -119,6 +126,12 @@ class Systems:
         if 0 <= idx <= len(cls._systems):
             cls._current_idx = idx
             return cls._systems[idx]
+
+    @classmethod
+    def get_system_by_star(cls, star):
+        for system in cls._systems:
+            if system.star_system == star:
+                return system
 
     @classmethod
     def cycle_systems(cls):

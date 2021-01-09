@@ -17,6 +17,8 @@ class BinarySystem:
     letter = ''
     system_name = ''
 
+    idx = None
+
     def __init__(self, name, primary, secondary, avgsep, ep=0, es=0):
         if secondary.mass <= primary.mass:
             self.primary = primary
@@ -50,7 +52,7 @@ class BinarySystem:
         return max_sep, min_sep
 
     def __str__(self):
-        return self.letter+'-Type'
+        return self.letter+'-Type #{}'.format(self.idx)
 
     def __repr__(self):
         return self.letter + '-Type Binary System'
