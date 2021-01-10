@@ -67,6 +67,8 @@ class AsteroidPanel(BasePanel):
         self.is_visible = False
         for pr in self.properties.widgets():
             pr.hide()
+        if not len(Systems.get_current().asteroids + Systems.get_current().satellites):
+            self.parent.set_skippable('Planetary Orbit')
 
 
 class AsteroidType(BaseWidget):

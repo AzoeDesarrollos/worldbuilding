@@ -66,10 +66,10 @@ class LayoutPanel(BaseWidget):
                 return  # si se saltea un panel, no hay que mostrar el panel siguiente 2 veces.
         self.current.show()
 
-    def set_skippable(self, value=True):
-        panel = [i for i in self.panels if i.skippable is True][0]
-        panel.skip = value
-        self.skipping = value
+    def set_skippable(self, name):
+        panel = [i for i in self.panels if i.name == name][0]
+        panel.skip = True
+        self.skipping = True
 
     def __repr__(self):
         return 'Layout Panel'
