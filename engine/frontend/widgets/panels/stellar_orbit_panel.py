@@ -400,7 +400,7 @@ class OrbitType(BaseWidget, Intertwined):
     linked_planet = None
     locked = True
 
-    modifiable = False
+    modifiable = True
     has_values = False
 
     def __init__(self, parent):
@@ -414,16 +414,18 @@ class OrbitType(BaseWidget, Intertwined):
     def create(self):
         orbit = self.linked_marker.orbit
         self.clear()
-        props = ['Semi-major Axis', 'Semi-minor Axis', 'Eccentricity', 'Inclination',
+        props = ['Semi-major axis', 'Semi-minor axis', 'Eccentricity', 'Inclination',
                  'Periapsis', 'Apoapsis', 'Orbital motion', 'Temperature', 'Orbital velocity', 'Orbital period',
                  'Argument of periapsis', 'Longuitude of the ascending node', 'Planet']
         attr = ['semi_major_axis', 'semi_minor_axis', 'eccentricity', 'inclination',
                 'periapsis', 'apoapsis', 'motion', 'temperature', 'velocity', 'period',
                 'argument_of_periapsis', 'longuitude_of_the_ascending_node', 'planet']
         for i, prop in enumerate([j for j in attr if hasattr(orbit, j)]):
+            post_modifiable = True if i in [0, 2, 3, 10, 11] else False
             value = getattr(orbit, prop)
             vt = ValueText(self, props[attr.index(prop)], 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
             vt.value = value
+            vt.editable = post_modifiable
             self.properties.add(vt)
 
     def fill(self):
@@ -441,7 +443,7 @@ class OrbitType(BaseWidget, Intertwined):
         self.linked_marker.orbit = orbit
         self.show()
         self.parent.planet_area.delete_objects(self.linked_planet)
-        # self.locked = True
+        self.locked = True
         self.has_values = True
 
     def clear(self):
@@ -458,9 +460,19 @@ class OrbitType(BaseWidget, Intertwined):
     def hide(self):
         self.clear()
 
-    def elevate_changes(self, key, new_value):
-        # a hook to prevent errors
-        pass
+    @staticmethod
+    def elevate_changes(key, new_value):
+        if key == 'Eccentricity':
+            if new_value.m < 0.001:
+                return q(0.001)
+            elif new_value.m > 0.9999:
+                return q(0.999)
+
+        elif key == 'Inclination':
+            if new_value.m < 0:
+                return q(0, new_value.u)
+            elif new_value.m > 180:
+                return q(180, new_value.u)
 
 
 class OrbitMarker(Meta, BaseWidget, IncrementalValue, Intertwined):

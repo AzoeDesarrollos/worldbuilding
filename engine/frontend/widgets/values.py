@@ -15,6 +15,7 @@ class ValueText(BaseWidget):
     selected = False
     active = False
     do_round = True
+    editable = False
 
     def __init__(self, parent, text, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
         super().__init__(parent)
@@ -42,7 +43,9 @@ class ValueText(BaseWidget):
 
     def elevate_changes(self, new_value, unit):
         value = q(new_value, unit)
-        self.parent.elevate_changes(self.text, value)
+        returned = self.parent.elevate_changes(self.text, value)
+        if returned is not None:
+            self.text_area.set_value(returned)
 
     def select(self):
         self.selected = True
@@ -117,6 +120,10 @@ class ValueText(BaseWidget):
                         attr = attr.to('hour')
                     text.set_value(attr)
                     text.update()
+
+                elif self.editable:
+                    self.active = True
+                    self.text_area.enable()
             else:
                 self.active = True
                 self.text_area.enable()
