@@ -39,7 +39,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         self.volume = q(self.calculate_volume(self.radius.to('km').m), 'km^3')
         self.surface = q(self.calculate_surface_area(self.radius.to('km').m), 'km^2')
         self.circumference = q(self.calculate_circumference(self.radius.to('km').m), 'km')
-        self.escape_velocity = q(sqrt(self.mass.magnitude / self.radius.magnitude), 'earth_escape')
+        self.escape_velocity = q(sqrt(self.mass.magnitude / self.radius.magnitude), 'earth_escape_velocity')
         self.clase = 'Major Moon'
         self.cls += ' Major'
 

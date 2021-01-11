@@ -13,7 +13,6 @@ from os import getcwd
 
 class LayoutPanel(BaseWidget):
     curr_idx = 0
-    skipping = False
 
     def __init__(self):
         super().__init__()
@@ -66,10 +65,9 @@ class LayoutPanel(BaseWidget):
                 return  # si se saltea un panel, no hay que mostrar el panel siguiente 2 veces.
         self.current.show()
 
-    def set_skippable(self, name):
+    def set_skippable(self, name, value):
         panel = [i for i in self.panels if i.name == name][0]
-        panel.skip = True
-        self.skipping = True
+        panel.skip = value
 
     def __repr__(self):
         return 'Layout Panel'

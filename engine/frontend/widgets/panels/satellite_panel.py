@@ -137,10 +137,10 @@ class SatelliteType(ObjectType):
 
     def fill(self, tos=None):
         tos = {
-            'Mass': 'kg',
-            'Radius': 'km',
-            'Gravity': 'm/s**2',
-            'Escape_velocity': 'km/s'
+            'mass': 'kg',
+            'radius': 'km',
+            'gravity': 'm/s**2',
+            'escape_velocity': 'km/s'
         }
         super().fill(tos)
 

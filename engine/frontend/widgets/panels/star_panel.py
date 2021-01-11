@@ -60,7 +60,7 @@ class StarPanel(BasePanel):
         super().hide()
         self.button.hide()
         if self.add_on_exit:
-            self.parent.set_skippable('Star System')
+            self.parent.set_skippable('Star System', True)
             Systems.set_system(self.current.current)
         for star in self.stars.widgets():
             star.hide()
