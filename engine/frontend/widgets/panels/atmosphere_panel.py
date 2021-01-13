@@ -1,4 +1,4 @@
-from engine.frontend import Renderer, WidgetHandler, ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO, WidgetGroup, COLOR_DISABLED
+from engine.frontend import WidgetHandler, ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO, WidgetGroup, COLOR_DISABLED
 from engine.frontend.graphs.atmograph.atmograph import graph, atmo, interpolacion_lineal, convert
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
@@ -19,6 +19,7 @@ class AtmospherePanel(BaseWidget):
 
     skippable = False
     written_info = None
+    total = 0
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -37,21 +38,25 @@ class AtmospherePanel(BaseWidget):
         self.write('Composition', self.f3, centerx=65, y=35)
         EventHandler.register(self.load_atmosphere, 'LoadData')
         EventHandler.register(self.clear, 'ClearData')
-        self.area_info = Rect(190, 460, 195, 132-21)
+        self.area_info = Rect(190, 460, 195, 132 - 21)
         self.warning_rect = Rect(self.area_info.x, self.area_info.bottom, self.area_info.w, 21)
 
         for i, element in enumerate(molecular_weight):
-            name = molecular_weight[element]['name']
-            color = None
+            gas = molecular_weight[element]
+            name = gas['name']
+
+            c = None
             if name == 'Molecular Nitrogen':
-                color = (255, 255, 0)
-            weight = molecular_weight[element]['weight']
-            min_atm = q(molecular_weight[element].get('min_atm', 0), 'atm')
-            max_atm = q(molecular_weight[element].get('max_atm', 0), 'atm')
-            elm = Element(self, i, element, name, weight, min_atm, max_atm, 3, 21 * i + 60, color=color)
+                c = (255, 255, 0)
+            weight = gas['weight']
+            min_atm = q(gas.get('min_atm', 0), 'atm')
+            max_atm = q(gas.get('max_atm', 0), 'atm')
+            boiling = None if gas['boiling'] is None else q(gas.get('boiling'), 'degree_Celsius')
+            melting = None if gas['melting'] is None else q(gas.get('melting'), 'degree_Celsius')
+            elm = Element(self, i, element, name, weight, min_atm, max_atm, boiling, melting, 3, 21 * i + 60, color=c)
             elm.hide()
             self.elements.add(elm)
-            self.write('%', self.f3, x=elm.percent.rect.right+3, centery=elm.rect.centery)
+            self.write('%', self.f3, x=elm.percent.rect.right + 3, centery=elm.rect.centery)
 
         self.atmograph = Atmograph(self, 190, 60)
         self.show_pressure = ShownPressure(self, x=self.atmograph.rect.x, centery=self.atmograph.rect.bottom + 10)
@@ -85,6 +90,8 @@ class AtmospherePanel(BaseWidget):
         max_p = element.max_atm.m
         min_p = element.min_atm.m
         value = element.percent.get_value()
+        assertion = not type(value) is str
+        assert assertion, f"{name} can't form atmospheric gas, because it is {value} at planet's temperature."
         p_pre = str(round(float(value) * self.show_pressure.value.m / 100, 3))
         t = f'{name}\nPressure at sea level: {p_pre} atm\nMinimum pressure: {min_p} atm\nMaximum pressure: {max_p} atm'
 
@@ -103,9 +110,9 @@ class AtmospherePanel(BaseWidget):
         else:
             self.image.fill(COLOR_BOX, self.warning_rect)
 
-    def set_atmosphere(self, pressure):
+    def set_planet_atmosphere(self, pressure):
         planet = self.curr_planet
-        elements = [i for i in self.elements.widgets() if i.percent.value != '']
+        elements = [i for i in self.elements.widgets() if bool(i.value()) is not False]
         data = dict(zip([e.symbol for e in elements], [float(e.percent.get_value()) for e in elements]))
         data.update({'pressure_at_sea_level': {'value': pressure.m, 'unit': str(pressure.u)}})
         planet.set_atmosphere(data)
@@ -173,21 +180,21 @@ class AtmospherePanel(BaseWidget):
         WidgetHandler.origin = self.current.percent.name
 
     def update(self):
-        total = 0
+        self.total = 0
         for element in self.elements.widgets():
-            total += element.percent.get_value()
+            if type(element.percent.get_value()) is not str:
+                self.total += element.percent.get_value()
 
-        self.write('Total: ' + str(total) + '%', self.f3, x=3, y=ALTO - 87)
+        self.image.fill(COLOR_BOX, (0, ALTO - 87, 160, 32))
+        self.write('Total: ' + str(self.total) + '%', self.f3, x=3, y=ALTO - 87)
         a = self.atmograph
         self.image.fill(COLOR_BOX, [a.rect.x, a.rect.bottom, 200, 21])
-        if self.written_info is not None:
-            self.show_info()
 
 
 class Element(BaseWidget):
     color_ovewritten = False
 
-    def __init__(self, parent, idx, symbol, name, weight, min_atm, max_atm, x, y, color=None):
+    def __init__(self, parent, idx, symbol, name, weight, min_atm, max_atm, boiling, melting, x, y, color=None):
         super().__init__(parent)
         self.symbol = symbol
         self.name = name
@@ -195,16 +202,39 @@ class Element(BaseWidget):
         self.min_atm = min_atm
         self.max_atm = max_atm
         self.idx = idx
+        self.boiling = boiling
+        self.melting = melting
 
-        f = self.crear_fuente(14, bold=True)
         if color is None:
             color = COLOR_TEXTO
         else:
             self.color_ovewritten = True
             self.color = color
-        self.image = f.render(symbol, True, color, COLOR_BOX)
+        self.image = self.write_name(color)
         self.rect = self.image.get_rect(topleft=(x, y))
         self.percent = PercentageCell(self, 45, y)
+
+    def value(self):
+        return self.percent.compile()
+
+    def write_name(self, color):
+        base = Surface((45, 21))
+        base.fill(COLOR_BOX)
+        f1 = self.crear_fuente(14, bold=True)
+        f2 = self.crear_fuente(12, )
+        w = 12
+        for i, char in enumerate(self.symbol):
+            if char.isdigit():
+                f = f2
+                y = 5
+            else:
+                f = f1
+                y = 0
+            partial = f.render(char, 1, color, COLOR_BOX)
+            rect = partial.get_rect(x=w * i, y=y)
+            base.blit(partial, rect)
+            w = 12 if not char.isdigit() else 10
+        return base
 
     def on_mouseover(self):
         self.parent.show_info(self)
@@ -230,6 +260,19 @@ class Element(BaseWidget):
 
         return color
 
+    def calculate_temperature(self):
+        planet = self.parent.curr_planet
+        if planet is not None:
+            t = planet.temperature.to('degree_Celsius')
+            state = 'gas'
+            if self.boiling is not None and t <= self.boiling:
+                state = 'liquid'
+            if self.melting is not None and t <= self.melting:
+                state = 'solid'
+            return state
+        else:
+            return ''
+
     def deselect(self):
         self.selected = False
         self.percent.deselect()
@@ -254,13 +297,11 @@ class Element(BaseWidget):
             color = self.calculate_pressure()
         else:
             color = 0, 0, 0
-        f = self.crear_fuente(14, bold=True)
-        self.image = f.render(self.symbol, True, color, COLOR_BOX)
+        self.image = self.write_name(color)
 
 
 class PercentageCell(BaseWidget):
     enabled = False
-    disabled = True
     value = ''
     name = ''
 
@@ -276,21 +317,28 @@ class PercentageCell(BaseWidget):
         self.grandparent = self.parent.parent
 
     def on_keydown(self, tecla):
-        if self.enabled and not self.disabled and self.selected:
+        if self.enabled and self.selected and tecla.origin == self.name:
+            gp = self.grandparent
             if tecla.data is not None and tecla.tipo == 'Key':
+
                 if tecla.data['value'] == '.' and not len(self.value):
                     self.value = "0."
+                elif tecla.data['value'] == '.':
+                    self.value += '.'
                 else:
                     self.value += tecla.data['value']
 
             elif tecla.tipo == 'Fin' and tecla.origin == self.name:
-                self.grandparent.cycle(+1)
+                gp.cycle(+1)
 
             elif tecla.tipo == 'BackSpace':
                 self.value = self.value[0:-1]
 
             elif tecla.tipo == 'Arrow' and tecla.origin == self.name:
-                self.grandparent.cycle(tecla.data['delta'])
+                gp.cycle(tecla.data['delta'])
+
+        elif tecla.origin != self.name:
+            self.deselect()
 
         return self.grandparent
 
@@ -304,24 +352,23 @@ class PercentageCell(BaseWidget):
             return self.__repr__()
 
     def show(self):
+        super().show()
         EventHandler.register(self.on_keydown, 'Arrow')
-        Renderer.add_widget(self)
-        WidgetHandler.add_widget(self)
 
     def hide(self):
+        super().hide()
         EventHandler.deregister(self.on_keydown, 'Arrow')
-        Renderer.del_widget(self)
-        WidgetHandler.del_widget(self)
 
     def deselect(self):
-        self.selected = False
-        self.image.fill((0, 0, 0))
-        w, h = self.rect.size
-        self.image.fill(COLOR_BOX, [1, 1, w - 2, h - 2])
-        EventHandler.deregister(self.on_keydown)
+        if self.enabled:
+            self.selected = False
+            self.image.fill((0, 0, 0))
+            w, h = self.rect.size
+            self.image.fill(COLOR_BOX, [1, 1, w - 2, h - 2])
+            EventHandler.deregister(self.on_keydown)
 
     def select(self):
-        if not self.disabled:
+        if self.enabled:
             self.selected = True
             self.image.fill((255, 255, 255))
             w, h = self.rect.size
@@ -331,16 +378,29 @@ class PercentageCell(BaseWidget):
     def get_value(self):
         if self.value == '':
             return 0
-        else:
+        elif self.value.isnumeric():
             return float(self.value)
+        else:
+            return self.value
+
+    def compile(self):
+        value = self.get_value()
+        if type(value) is not float:
+            return False
+        else:
+            return value
 
     def update(self):
         if self.parent.calculate_pressure() not in [(255, 255, 0), (0, 0, 0)]:
             color = COLOR_DISABLED
-            self.disabled = True
+            self.enabled = False
+        elif self.parent.calculate_temperature() != 'gas':
+            color = COLOR_DISABLED
+            self.enabled = False
+            self.value = self.parent.calculate_temperature()
         else:
             color = COLOR_BOX
-            self.disabled = False
+            self.enabled = True
         w, h = self.rect.size
         self.image.fill(color, [1, 1, w - 2, h - 2])
         render = self.f.render(self.value, True, COLOR_TEXTO, COLOR_BOX)
@@ -357,6 +417,7 @@ class Atmograph(BaseWidget):
 
     enabled = False
     reached = False
+    blocked = False
 
     def __init__(self, parent, x, y):
         super().__init__(parent)
@@ -368,10 +429,28 @@ class Atmograph(BaseWidget):
         self.name = 'atmograph'
         EventHandler.register(self.on_keydown, 'Fin', 'Arrow')
 
+    def unbreatheable(self):
+        planet = self.parent.curr_planet
+        if planet is not None and not planet.habitable:
+            t = f"The selected planet of type '{planet.clase}' can't have a breathable atmosphere."
+            self.enabled = False
+            base = Surface(self.image.get_size(), SRCALPHA)
+            base.fill((0, 0, 0, 150))
+
+            image = Surface((200, 200))
+            rect = image.get_rect(centerx=self.rect.w // 2, centery=self.rect.centery)
+            f = self.crear_fuente(16)
+            render = render_textrect(t, f, rect, COLOR_TEXTO, COLOR_BOX, 1)
+            base.blit(render, rect)
+
+            return True, base
+        return False, None
+
     def on_mousebuttondown(self, event):
         delta_y = 0
         nitrogen = self.parent.elements.widgets()[9]
-        if any([self.parent.curr_planet is None, nitrogen.percent.get_value() == 0]):
+        if any([self.parent.curr_planet is None, nitrogen.percent.get_value() == 0,
+                type(nitrogen.percent.value) is str, not self.enabled]):
             return
         nitrogen = self.parent.elements.widgets()[9]
         vol_n2 = interpolacion_lineal(nitrogen.percent.get_value())
@@ -431,6 +510,7 @@ class Atmograph(BaseWidget):
             elif event.tipo == 'Fin':
                 self.enabled = False
                 self.reached = True
+                self.parent.show_pressure.elevate_pressure()
 
     def update(self):
         if self.enabled:
@@ -446,6 +526,12 @@ class Atmograph(BaseWidget):
 
             pressure = convert(self.pressure)
             self.parent.show_pressure.update_text(pressure)
+        else:
+            b, img = self.unbreatheable()
+            if b and not self.blocked:
+                self.parent.show_pressure.unlock()
+                self.image.blit(img, (0, 0))
+                self.blocked = True
 
 
 class AvailablePlanets(ListedArea):
@@ -474,6 +560,9 @@ class ListedPlanet(PlanetButton):
 
 class ShownPressure(BaseWidget):
     value = q(0, 'atm')
+    locked = True
+    _value = ''
+    finished = False
 
     def __init__(self, parent, x, centery):
         super().__init__(parent)
@@ -481,6 +570,40 @@ class ShownPressure(BaseWidget):
         self.base = 'Pressure at Sea Level: '
         self.image = self.f.render(self.base, 1, COLOR_TEXTO, COLOR_BOX)
         self.rect = self.image.get_rect(x=x, centery=centery)
+        EventHandler.register(self.on_keydown, 'Key', 'BackSpace', 'Fin')
+
+    def unlock(self):
+        self.locked = False
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1 and not self.locked:
+            self.update_text('')
+
+        return self
+
+    def on_keydown(self, key):
+        if not self.locked and key.origin == self:
+            if key.tipo == 'Key':
+                char = key.data['value']
+                if char.isdigit() or char == '.':
+                    self._value += char
+
+            elif key.tipo == 'BackSpace':
+                if type(self._value) is str:
+                    self._value = self._value[0:len(str(self._value)) - 1]
+
+            elif key.tipo == 'Fin':
+                self.finished = True
+                self.update_text(q(float(self._value), 'atm'))
+                self.elevate_pressure()
+
+    def update(self):
+        if self._value != '' and not self.finished:
+            value = self._value
+            self.update_text(value)
+
+    def elevate_pressure(self):
+        self.parent.set_planet_atmosphere(round(self.value))
 
     def update_text(self, text):
         if type(text) is q:
