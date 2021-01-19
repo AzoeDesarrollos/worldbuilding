@@ -1,0 +1,36 @@
+ "tno":{
+    "a":"greater than last gas giant's"
+  },
+
+
+"""
+Hot Giant
+0.04 <= a <= 0.5
+orbital period <= 3 earth days
+10 >= i if i < 90 else 10 >= 180-i
+
+Classical Gas Giant
+a = 1 - 1.2 away from frost line and beyond
+
+Super Jupiters
+0.04 <= a <= 1.2*frost line
+
+Gas Dwarf
+1.2*frostline <= a < outer limit (distant orbit for extra realism)
+
+Eccentric Jupiters
+inner boundry < a < outer boundry (no restrictions)
+0.1 <= e (0.1 - 0.2 if system has habitable planet)
+"""
+
+
+"""
+Habitable worlds
+a = within the habitable zone
+
+Other inner planets
+a = not in the habitable zone
+e = 0.584 * pow(n,-1.2) where n is the number of planets in the system
+0 < i < 3
+
+"""

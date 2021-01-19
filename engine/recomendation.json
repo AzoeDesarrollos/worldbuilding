@@ -1,0 +1,44 @@
+{
+  "text": "seems you are building a {planet_type}.\nIt's orbital eccentricity value should be {e}\nit's inclination should be {i}.",
+
+ "classical":{
+    "e": "lower than 0.2",
+    "i": "lower than 10°",
+    "special": "should not be in resonance with {last_gas_giant}"
+ },
+ "sdo":{
+    "e": "between 0.2 and 0.8",
+    "i": "between 25° and 40°"
+ },
+ "sednoid":{
+    "e": "greater than 0.8",
+    "i":"between 10° and 25°",
+    "special": "should not be in resonance with {last_gas_giant}"
+ },
+ "detached":{
+    "e": "between 0.2 and 0.8",
+    "i": "greater than 25°"
+ },
+ "resonant":{
+    "e": "greater or equal to 0.25",
+    "i": "between 10° and 25°"
+ },
+ "giant":{
+    "e": "between 0.001 and 0.09",
+    "i": "between 0° and 90° (but don't go crazy)"
+ },
+ "hot":{
+    "i":"between 10° of the reference plane"
+ },
+ "eccentric":{
+    "i":"0.1 or greater"
+ },
+ "habitable":{
+    "e":"lower or equal to 0.2",
+    "i":"0°"
+ },
+ "inner":{
+    "e": "0.584 * pow(n,-1.2)",
+    "i": "lower than 3°"
+ }
+}

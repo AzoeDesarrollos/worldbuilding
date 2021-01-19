@@ -1,6 +1,6 @@
 from .common import TextButton, Meta, AvailableObjects, ToggleableButton, AvailablePlanet, ModifyArea
+from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO, render_textrect
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_DISABLED
-from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.globales import COLOR_SELECTED, COLOR_STARORBIT
 from engine.frontend.widgets.basewidget import BaseWidget
@@ -8,10 +8,11 @@ from engine.equations.orbit import RawOrbit, PseudoOrbit
 from engine.frontend.globales.group import WidgetGroup
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
+from engine import q, recomendation
 from pygame import Surface, Rect
 from engine.backend import roll
 from ..values import ValueText
-from engine import q
+from math import sqrt, pow
 
 
 class OrbitPanel(BaseWidget):
@@ -49,6 +50,7 @@ class OrbitPanel(BaseWidget):
 
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 350)
         self.properties.add(self.planet_area, layer=2)
+        self.recomendation = Recomendation(self, 80, ALTO//2-130)
 
         self._orbits = {}
         self._loaded_orbits = []
@@ -334,6 +336,8 @@ class OrbitPanel(BaseWidget):
             locked[0].linked_type.show()
             locked[0].linked_type.link_planet(planet)
             self.add_orbits_button.disable()
+            self.recomendation.suggest(planet, orbit)
+            self.recomendation.show()
 
     def update(self):
         super().update()
@@ -444,6 +448,7 @@ class OrbitType(BaseWidget, Intertwined):
         self.linked_marker.orbit = orbit
         self.show()
         self.parent.planet_area.delete_objects(self.linked_planet)
+        self.parent.recomendation.hide()
         self.locked = True
         self.has_values = True
 
@@ -655,3 +660,39 @@ class AddOrbitButton(TextButton):
     def unlink(self):
         self.lock()
         self.disable()
+
+
+class Recomendation(BaseWidget):
+    def __init__(self, parent, x, y):
+        super().__init__(parent)
+        text = recomendation['text']
+        f = self.crear_fuente(14)
+        self.image = render_textrect(text, f, 200, COLOR_TEXTO, COLOR_AREA, justification=1)
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+    @staticmethod
+    def suggest(planet, orbit):
+        data = None
+        if planet.habitable:
+            data = recomendation['habitable']
+
+        elif planet.clase == 'Terrestial Planet' and orbit.temperature == 'hot':
+            data = recomendation['inner']
+
+        elif planet.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant'):
+            data = recomendation['giant']
+
+        elif orbit.temperature == 'hot':
+            pass
+
+        print(data)
+
+    @staticmethod
+    def analyze_giant(planet, orbit, star):
+        clase = planet.clase == 'Gas Giant'
+        orbita = 0.04 <= orbit.a.m <= 0.5
+        period = q(sqrt(pow(orbit.a.m, 3) / star.mass.m), 'year').to('day') >= 3
+        if all([clase, orbita, period]):
+            print('hot')
+        elif planet.mass.to('jupiter_mass').m > 1:
+            print('super jupiter')
