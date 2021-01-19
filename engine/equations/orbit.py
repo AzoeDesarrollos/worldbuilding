@@ -1,8 +1,9 @@
 from engine.backend.util import collapse_factor_lists, prime_factors
-from math import sqrt, pow
-from pygame import draw, Rect
-from engine import q
+from math import sqrt, pow, cos, sin
+from .general import Ellipse
 from random import randint
+from pygame import draw
+from engine import q
 
 
 class RawOrbit:
@@ -84,15 +85,12 @@ class PseudoOrbit:
         self.temperature = orbit.temperature
 
 
-class Orbit:
+class Orbit(Ellipse):
     period = 0
     velocity = 0
     motion = ''
 
-    _e = 0  # eccentricity
     _i = 0  # inclination
-    _a = 0  # semi-major axis
-    _b = 0  # semi-minor axis
     _q = 0  # periapsis
     _Q = 0  # apoapsis
 
@@ -102,17 +100,15 @@ class Orbit:
 
     argument_of_periapsis = 'undefined'
     longuitude_of_the_ascending_node = 0
+    true_anomaly = q(0, 'degree')
 
     def __init__(self, a, e, i, unit='au'):
+        super().__init__(a, e)
         self._unit = unit
-        assert 0 <= e < 1, 'eccentricity has to be greater than 0\nbut less than 1.'
         assert 0 <= float(i.m) <= 180, 'inclination values range from 0 to 180 degrees.'
-        self._e = float(e.m)
         self._i = float(i.m)
-        self._a = float(a.m)
-        self._b = self._a * sqrt(1 - pow(self._e, 2))
         self._Q = self._a * (1 + self._e)
-        self._q = self._a * (1 - self._e)
+        self._q = -self._a * (1 - self._e)
 
         if self._i in (0, 180):
             self.motion = 'equatorial'
@@ -131,9 +127,8 @@ class Orbit:
         self.argument_of_periapsis = set_argument_of_periapsis(self._i)
 
     def draw(self, surface):
-        rect = Rect(0, 0, 2 * self.semi_major_axis, 2 * self.semi_minor_axis)
-        screen_rect = surface.get_rect()
-        rect.center = screen_rect.center
+        screen_rect_center = surface.get_rect().center
+        rect = self.get_rect(*screen_rect_center)
         draw.ellipse(surface, (255, 255, 255), rect, width=1)
 
     def __repr__(self):
@@ -143,6 +138,11 @@ class Orbit:
         planet.orbit = PlanetOrbit(star.mass, self.semi_major_axis, self.eccentricity, self.inclination)
         planet.orbit.reset_planet(planet)
         planet.orbit._star = star
+
+    def get_planet_position(self):
+        x = self._a * cos(self.true_anomaly.m)
+        y = self._b * sin(self.true_anomaly.m)
+        return x, y
 
     @property
     def semi_major_axis(self):

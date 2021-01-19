@@ -29,30 +29,34 @@ class BodyInHydrostaticEquilibrium:
 
 
 class Ellipse:
-    a = 0  # semi major axis
-    b = 0  # semi minor axis
-    e = 0  # eccentricity
+    _a = 0  # semi major axis
+    _b = 0  # semi minor axis
+    _e = 0  # eccentricity
+
+    focus = None
 
     def __init__(self, a, e):
-        self.b = a * sqrt(1 - (e ** 2))
-        self.a = a
-        self.e = e
+        assert 0 <= e < 1, 'eccentricity has to be greater than 0\nbut less than 1.'
+        self._a = float(a.m)
+        self._e = float(e.m)
+        self._b = self._a * sqrt(1 - (self._e ** 2))
+        self.focus = sqrt(self._a ** 2 - self._b ** 2)
 
-    def draw(self, x, y):
+    def get_rect(self, x, y):
         """returns the rect of the ellipse for the use of pygame.draw.ellipse().
         x and y form the center of the ellipse, not its topleft point."""
 
-        w = self.a * 2
-        h = self.b * 2
+        w = self._a * 2
+        h = self._b * 2
         return Rect(x // 2, y // 2, w, h)
 
 
 class OblateSpheroid(Ellipse, BodyInHydrostaticEquilibrium):
     def calculate_circumference(self, r):
-        return 2 * pi * sqrt((self.a + self.b) / 2)
+        return 2 * pi * sqrt((self._a + self._b) / 2)
 
     def calculate_surface_area(self, r):
-        return 2*pi*self.a*(self.a+(self.b/self.e)*asin(self.e))
+        return 2 * pi * self._a * (self._a + (self._b / self._e) * asin(self._e))
 
     def calculate_volume(self, r):
-        return 4/3*pi*(self.a**2)*self.b
+        return 4 / 3 * pi * (self._a ** 2) * self._b
