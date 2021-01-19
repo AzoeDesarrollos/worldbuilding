@@ -5,7 +5,7 @@ from os import getcwd, path
 from engine import q
 
 ruta = path.join(getcwd(), 'engine', 'frontend', 'graphs', 'atmograph', 'atmograph04rev24.png')
-graph = image.load(ruta)
+graph = image.load(ruta).convert_alpha()
 
 pos_psi = [12, 20, 27, 36, 46, 59, 74, 93, 120, 166, 174, 181, 190, 200, 213, 228, 247, 274]
 nums_psi = sorted([i for i in range(1, 11)] + [i for i in range(20, 101, 10)], reverse=True)
