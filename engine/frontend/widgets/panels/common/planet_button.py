@@ -1,4 +1,4 @@
-from engine.frontend.globales import COLOR_TEXTO, COLOR_TERRESTIAL, COLOR_GASDWARF
+from engine.frontend.globales import COLOR_TEXTO, COLOR_TERRESTIAL, COLOR_GASDWARF, COLOR_HABITABLE
 from engine.frontend.globales import COLOR_GASGIANT, COLOR_PUFFYGIANT, COLOR_DWARFPLANET
 from .listed_body import ListedBody
 
@@ -9,7 +9,10 @@ class PlanetButton(ListedBody):
         color = COLOR_TEXTO
         if planet.clase == 'Terrestial Planet':
             name = 'Terrestial'
-            color = COLOR_TERRESTIAL
+            if planet.habitable:
+                color = COLOR_HABITABLE
+            else:
+                color = COLOR_TERRESTIAL
         elif planet.clase in ('Gas Giant', 'Super Jupiter'):
             name = 'Giant'
             color = COLOR_GASGIANT

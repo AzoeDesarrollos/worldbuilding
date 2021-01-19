@@ -132,7 +132,15 @@ class PlanetType(ObjectType):
 
     def load_planet(self, event):
         if 'Planets' in event.data:
-            self.loaded_data = event.data['Planets'][0]
+            self.loaded_data = event.data['Planets']
+
+    def show_loaded(self):
+        if self.loaded_data is not None:
+            for planet_data in self.loaded_data:
+                planet = Planet(planet_data)
+                self.create_button(planet)
+            self.current = self.parent.planet_buttons.widgets()[0].object_data
+            self.loaded_data.clear()
 
     def set_planet(self, planet):
         self.current = planet
@@ -141,9 +149,7 @@ class PlanetType(ObjectType):
 
     def show(self):
         super().show()
-        if self.loaded_data is not None:
-            self.current = Planet(self.loaded_data)
-            self.create_button()
+        self.show_loaded()
 
     def clear(self, event):
         if event.data['panel'] is self.parent:
@@ -152,13 +158,15 @@ class PlanetType(ObjectType):
         self.has_values = False
         self.parent.image.fill(COLOR_BOX, self.hab_rect)
 
-    def create_button(self):
-        create = Systems.get_current().add_astro_obj(self.current)
+    def create_button(self, planet=None):
+        if planet is None:
+            planet = self.current
+        create = Systems.get_current().add_astro_obj(planet)
         if create:
             for button in self.properties.get_sprites_from_layer(1):
                 button.text_area.clear()
             self.parent.button.disable()
-            self.parent.add_button(self.current)
+            self.parent.add_button(planet)
             self.has_values = False
             self.parent.image.fill(COLOR_BOX, self.hab_rect)
 

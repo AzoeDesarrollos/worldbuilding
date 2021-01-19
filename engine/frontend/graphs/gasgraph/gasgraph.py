@@ -74,9 +74,9 @@ def gasgraph_loop(limit_mass):
     x = exes[radius_keys.index(1.02)]
     y = yes[mass_keys.index(2)]
 
-    rect_super = Rect(31, y + 16, x - 3, (img_rect.h / 2) - 60)
-    rect_puffy = Rect(x + 28, 16, (img_rect.w / 2) + 100, y)
-    rect_giant = Rect(31, 16, x - 3, y)
+    rect_super = Rect(31, y, x - 3, (img_rect.h / 2) - 60)
+    rect_puffy = Rect(x + 28, 16, (img_rect.w / 2) + 100, y-16)
+    rect_giant = Rect(31, 16, x - 3, y-16)
 
     lim_y = keys_to_pos(limit_mass, mass_keys, yes, 'gt')
     lim_rect = Rect(31, lim_y, img_rect.w, img_rect.h-lim_y+img_rect.y)
@@ -116,12 +116,9 @@ def gasgraph_loop(limit_mass):
                     mass = round(pos_to_keys(linea_h.rect.y+1, mass_keys, yes, 'gt'), 5)
                     radius = round(pos_to_keys(linea_v.rect.x, radius_keys, exes, 'gt'), 3)
                     clase = ''
-                    if valid[0]:
-                        clase = 'Puffy Giant'
-                    elif valid[1]:
-                        clase = 'Gas Giant'
-                    elif valid[2]:
-                        clase = 'Super Jupiter'
+                    clase = 'Puffy Giant' if valid[0] else ''
+                    clase = 'Gas Giant' if valid[1] else clase
+                    clase = 'Super Jupiter'  if valid[2] else clase
                     data.update({'mass': mass, 'radius': radius, 'clase': clase})
 
                     d = round(density(mass, radius), 5)

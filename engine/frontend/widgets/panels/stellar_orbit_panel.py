@@ -244,7 +244,7 @@ class OrbitPanel(BaseWidget):
         orbits = []
         for system in Systems.get_systems():
             for star in system:
-                for marker in self._orbits[star]:
+                for marker in self._orbits.get(star, []):
                     orb = marker.orbit
                     d = {}
                     if hasattr(orb, 'semi_major_axis'):
