@@ -49,7 +49,7 @@ class PlanetPanel(BasePanel):
         EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": data})
 
     def add_button(self, planet):
-        button = PlanetButton(self.current, planet, self.curr_x, self.curr_y)
+        button = CreatedPlanet(self.current, planet, self.curr_x, self.curr_y)
         self.planet_buttons.add(button, layer=Systems.get_current_idx())
         self.sort_buttons()
         self.properties.add(button, layer=2)
@@ -133,6 +133,11 @@ class PlanetType(ObjectType):
     def load_planet(self, event):
         if 'Planets' in event.data:
             self.loaded_data = event.data['Planets'][0]
+
+    def set_planet(self, planet):
+        self.current = planet
+        self.fill()
+        self.toggle_habitable()
 
     def show(self):
         super().show()
@@ -293,3 +298,9 @@ class AddPlanetButton(TextButton):
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
             self.parent.current.create_button()
+
+
+class CreatedPlanet(PlanetButton):
+    def on_mousebuttondown(self, event):
+        if event.button == 1:
+            self.parent.set_planet(self.object_data)

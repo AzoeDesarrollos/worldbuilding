@@ -5,7 +5,7 @@ from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.backend.textrect import render_textrect
 from pygame import Surface, draw, SRCALPHA, Rect
-from .common import ListedArea, PlanetButton
+from .common import ListedArea, AvailablePlanet
 from engine import molecular_weight, q
 from math import sqrt
 
@@ -547,11 +547,7 @@ class AvailablePlanets(ListedArea):
             listed.show()
 
 
-class ListedPlanet(PlanetButton):
-    def __init__(self, parent, planet, x, y):
-        super().__init__(parent, planet, x, y)
-        self.object_data = planet
-
+class ListedPlanet(AvailablePlanet):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.select()

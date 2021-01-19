@@ -4,8 +4,6 @@ from .listed_body import ListedBody
 
 
 class PlanetButton(ListedBody):
-    enabled = True
-
     def __init__(self, parent, planet, x, y):
         name = ''
         color = COLOR_TEXTO
@@ -27,11 +25,7 @@ class PlanetButton(ListedBody):
         super().__init__(parent, planet, name, x, y, fg_color=color)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
-            self.parent.planet = self.object_data
-            self.parent.has_values = True
-            self.parent.fill()
-            self.parent.toggle_habitable()
+        raise NotImplementedError()
 
     def move(self, x, y):
         self.rect.topleft = x, y

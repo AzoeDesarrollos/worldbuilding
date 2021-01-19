@@ -19,3 +19,7 @@
 # Detached objects
 # + inclination > 25°
 # + eccentricity 0.2 to 0.8
+
+# Resonant object
+# e <= 0.25
+# 10 <= i <= 25

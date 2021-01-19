@@ -29,7 +29,7 @@ class AvailablePlanet(PlanetButton):
         self.object_data = planet
 
     def on_mousebuttondown(self, event):
-        return NotImplemented
+        raise NotImplementedError()
 
 
 class AvailableObjects(ListedArea):

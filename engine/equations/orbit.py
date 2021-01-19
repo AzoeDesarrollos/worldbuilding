@@ -262,7 +262,7 @@ def to_resonance(period_primary, period_secondary):
     #               '9:5', '11:6', '2:1', '19:9', '9:4', '7:3', '12:5',
     #               '5:2', '8:3', '3:1', '7:2', '11:3', '11:2']
     """It takes a pair of orbital periods and returns their mean motion
-     resonance, if it exist. Otherwise, return False."""
+     resonance, if it exist. Otherwise, returns False."""
     a, b = prime_factors(period_primary), prime_factors(period_secondary)
     x, y = collapse_factor_lists(a, b)
     if x < period_primary and y < period_secondary:  # the MMR numbers should be small
@@ -288,3 +288,42 @@ def set_longuitude_of_the_ascending_node(inclination, value=None):
         return _set_random_angle(value)
     else:
         return q(0, 'degree')
+
+
+"""
+ALL GIANTS
+0.001 <= e <= 0.09
+0 < i < 90 (except hot jupters) (don't go crazy)
+
+Hot Giant
+0.04 <= a <= 0.5
+orbital period > 3 earth days
+10 >= i if i < 90 else 10 >= 180-i
+
+Classical Gas Giant
+a = 1 - 1.2 away from frost line and beyond
+
+Super Jupiters
+0.04 <= a <= 1.2*frost line
+
+Gas Dwarf
+1.2*frostline <= a < outer limit (distant orbit for extra realism)
+ 
+Eccentric Jupiters
+inner boundry < a < outer boundry (no restrictions)
+0.1 <= e (0.1 - 0.2 if system has habitable planet) 
+"""
+
+
+"""
+Habitable worlds
+a = within the habitable zone
+0 < e <= 0.2
+i = 0
+
+Other inner planets
+a = not in the habitable zone
+e = 0.584 * pow(n,-1.2) where n is the number of planets in the system
+0 < i < 3
+
+"""

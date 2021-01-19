@@ -617,7 +617,7 @@ class OrbitButton(Meta, BaseWidget, Intertwined):
 
 
 class RoguePlanet(AvailablePlanet):
-    # "rogue" because it doens't have an orbit yet
+    # "rogue" because it doesn't have an orbit yet
     def on_mousebuttondown(self, event):
         if not self.parent.parent.visible_markers:
             self.enabled = False
