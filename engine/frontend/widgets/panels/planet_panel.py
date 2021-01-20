@@ -6,6 +6,7 @@ from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from .common import PlanetButton, TextButton, Meta
 from engine.equations.planet import Planet
+from pygame import Rect
 from engine import q
 
 
@@ -15,6 +16,7 @@ class PlanetPanel(BasePanel):
     unit = None
     is_visible = False
     last_idx = None
+    mass_number = None
 
     def __init__(self, parent):
         super().__init__('Planet', parent)
@@ -91,6 +93,8 @@ class PlanetPanel(BasePanel):
 
     def show(self):
         super().show()
+        if self.mass_number is None:
+            self.properties.add(ShownMass(self))
         for item in self.properties.widgets():
             item.show()
 
@@ -202,10 +206,10 @@ class PlanetType(ObjectType):
             self.toggle_habitable()
             if self.current.mass <= Systems.get_current().body_mass:
                 self.parent.button.enable()
-                self.parent.unit.mass_number.mass_color = COLOR_TEXTO
+                self.parent.mass_number.mass_color = COLOR_TEXTO
             else:
                 self.parent.button.disable()
-                self.parent.unit.mass_number.mass_color = 200, 0, 0
+                self.parent.mass_number.mass_color = 200, 0, 0
             self.fill()
 
     def fill(self, tos=None):
@@ -250,16 +254,6 @@ class Unit(Meta, BaseWidget):
         self.name = self.names[self.curr_idx]
         self.create()
 
-    def show(self):
-        super().show()
-        if self.mass_number is None:
-            self.mass_number = ShownMass(self)
-        self.mass_number.show()
-
-    def hide(self):
-        super().hide()
-        self.mass_number.hide()
-
     def create(self):
         self.img_uns = self.f1.render(self.name, True, COLOR_TEXTO, COLOR_BOX)
         self.img_sel = self.f2.render(self.name, True, COLOR_TEXTO, COLOR_BOX)
@@ -276,13 +270,10 @@ class ShownMass(BaseWidget):
         self.f1 = self.crear_fuente(12, bold=True)
         self.f2 = self.crear_fuente(12)
         self.image = self.f1.render('Available mass: ', True, COLOR_TEXTO, COLOR_BOX)
-        self.rect = self.image.get_rect(left=self.parent.rect.right + 100, bottom=self.parent.rect.bottom)
+        self.rect = self.image.get_rect(left=200, bottom=416)
         self.mass_img = self.f2.render(self.show_mass(), True, self.mass_color, COLOR_BOX)
-        self.mass_rect = self.mass_img.get_rect(left=self.rect.right + 6, bottom=self.rect.bottom)
-        self.mass_rect.width += 50
-
-        self.grandparent = self.parent.parent
-        self.grandparent.image.blit(self.mass_img, self.mass_rect)
+        self.mass_rect = Rect(self.rect.right+3, self.rect.y, 150, self.mass_img.get_height())
+        self.parent.mass_number = self
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -295,15 +286,13 @@ class ShownMass(BaseWidget):
             mass = q(0, 'jupiter_mass')
         if not self.show_jovian_mass:
             mass = mass.to('earth_mass')
-        attr = '{:,g}'.format((round(mass, 3)))
+        attr = '{:,g~}'.format((round(mass, 4)))
         return attr
 
     def update(self):
-        self.grandparent.image.fill(COLOR_BOX, self.mass_rect)
+        self.parent.image.fill(COLOR_BOX, self.mass_rect)
         self.mass_img = self.f2.render(self.show_mass(), True, self.mass_color, COLOR_BOX)
-        self.mass_rect = self.mass_img.get_rect(left=self.rect.right + 6, bottom=self.rect.bottom)
-        self.mass_rect.width += 50
-        self.parent.parent.image.blit(self.mass_img, self.mass_rect)
+        self.parent.image.blit(self.mass_img, self.mass_rect)
 
 
 class AddPlanetButton(TextButton):

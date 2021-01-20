@@ -101,8 +101,9 @@ class ValueText(BaseWidget):
                     assert available_mass.m >= 0.03, not_enough_mass
                     data = gasgraph_loop(round(available_mass.m, 2))
                 else:
-                    assert available_mass.to('earth_mass').m > 0.1, not_enough_mass
-                    data = dwarfgraph_loop()
+                    available_mass = round(available_mass.to('earth_mass').m, 4)
+                    assert available_mass > 0.0001, not_enough_mass
+                    data = dwarfgraph_loop(available_mass)
                 if data is not None:
                     for elemento in self.parent.properties.get_sprites_from_layer(1):
                         attr = ''

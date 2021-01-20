@@ -5,6 +5,7 @@ from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine import material_densities, q
 from .common import TextButton, Meta
+from .planet_panel import ShownMass
 from .base_panel import BasePanel
 from ..values import ValueText
 
@@ -12,6 +13,7 @@ from ..values import ValueText
 class AsteroidPanel(BasePanel):
     curr_x = 0
     curr_y = 0
+    mass_number = None
 
     def __init__(self, parent):
         super().__init__('Asteroid', parent)
@@ -59,6 +61,8 @@ class AsteroidPanel(BasePanel):
     def show(self):
         super().show()
         self.is_visible = True
+        if self.mass_number is None:
+            self.properties.add(ShownMass(self))
         for pr in self.properties.widgets():
             pr.show()
 
@@ -112,8 +116,11 @@ class AsteroidType(BaseWidget):
                 data['composition'][material.text.lower()] = float(material.text_area.value)
 
         if self.current is None:
-            self.current = minor_moon_by_composition(data)
-            Systems.get_current().add_astro_obj(self.current)
+            moon = minor_moon_by_composition(data)
+            if Systems.get_current().add_astro_obj(moon):
+                self.current = moon
+            else:
+                raise AssertionError('There is not enough mass in the system to create new bodies of this type.')
             self.parent.button.enable()
         else:
             for item in self.properties.get_widgets_from_layer(4):

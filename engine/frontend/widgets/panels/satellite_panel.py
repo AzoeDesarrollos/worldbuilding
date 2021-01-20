@@ -8,12 +8,15 @@ from engine.frontend.globales import COLOR_AREA
 from engine import material_densities
 from .common import TextButton, Meta
 from ..object_type import ObjectType
+from .planet_panel import ShownMass
 from .base_panel import BasePanel
 
 
 class SatellitePanel(BasePanel):
     curr_x = 0
     curr_y = 0
+
+    mass_number = None
 
     def __init__(self, parent):
         super().__init__('Satellite', parent)
@@ -70,6 +73,8 @@ class SatellitePanel(BasePanel):
     def show(self):
         super().show()
         self.is_visible = True
+        if self.mass_number is None:
+            self.properties.add(ShownMass(self))
         for pr in self.properties.widgets():
             pr.show()
 
@@ -108,8 +113,11 @@ class SatelliteType(ObjectType):
         self.has_values = True
 
         if self.current is None:
-            self.current = major_moon_by_composition(data)
-            Systems.get_current().add_astro_obj(self.current)
+            moon = major_moon_by_composition(data)
+            if Systems.get_current().add_astro_obj(moon):
+                self.current = moon
+            else:
+                raise AssertionError('There is not enough mass in the system to create new bodies of this type.')
             self.parent.button.enable()
         else:
             for item in self.properties.get_widgets_from_layer(7):

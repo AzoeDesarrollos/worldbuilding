@@ -1,10 +1,10 @@
 from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, KEYUP, K_LSHIFT, K_LCTRL
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO
+from ..common import Linea, Punto, pos_to_keys, keys_to_pos
 from pygame import display, event, font, transform, image
 from engine.frontend.globales import WidgetGroup
-from ..common import Linea, Punto, pos_to_keys
+from pygame import init, quit, Rect, Surface
 from pygame.sprite import Sprite
-from pygame import init, quit
 from math import pi, pow
 from os.path import join
 from os import getcwd
@@ -43,7 +43,7 @@ bg = image.load(ruta)
 bg_rect = bg.get_rect(topleft=(54, 24))
 
 
-def dwarfgraph_loop():
+def dwarfgraph_loop(limit_mass):
     fondo = display.set_mode((ANCHO, ALTO))
     fondo.fill(COLOR_BOX)
 
@@ -80,6 +80,11 @@ def dwarfgraph_loop():
     linea_h = Linea(bg_rect, bg_rect.x, bg_rect.centery, bg_rect.w, 1, lineas)
     linea_v = Linea(bg_rect, bg_rect.centerx, bg_rect.y, 1, bg_rect.h, lineas)
     punto = Punto(bg_rect, bg_rect.centerx, bg_rect.centery, lineas)
+
+    lim_y = keys_to_pos(limit_mass, mass_keys, yes, 'gt')
+    lim_rect = Rect(54, lim_y + 26, bg_rect.w, bg_rect.h - lim_y - 26 + bg_rect.y)
+    lim_img = Surface(lim_rect.size)
+    lim_img.set_alpha(150)
 
     move_x, move_y = True, True
     while not done:
@@ -143,8 +148,8 @@ def dwarfgraph_loop():
         fondo.blit(render_mass, (3, ALTO - 20))
         fondo.blit(render_radius, (150, ALTO - 20))
         fondo.blit(render_density, (300, ALTO - 20))
-
         fondo.blit(bg, bg_rect)
+        fondo.blit(lim_img, lim_rect)
         numbers.draw(fondo)
         lineas.update()
         lineas.draw(fondo)

@@ -36,6 +36,10 @@ class PlanetarySystem:
         if astro_obj not in group:
             minus_mass = astro_obj.mass.to('jupiter_mass')
 
+            if minus_mass > self.body_mass:
+                # prevents negative mass
+                return False
+
             self.body_mass -= minus_mass
             group.append(astro_obj)
             if not astro_obj.has_name:
