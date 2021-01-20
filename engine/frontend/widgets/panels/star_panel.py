@@ -108,10 +108,10 @@ class StarPanel(BasePanel):
 
 class StarType(ObjectType):
     def __init__(self, parent):
-        rel_props = ['Mass', 'Luminosity', 'Radius', 'Lifetime', 'Surface Temperature']
+        rel_props = ['Mass', 'Luminosity', 'Radius', 'Lifetime', 'Surface temperature']
         rel_args = ['mass', 'luminosity', 'radius', 'lifetime', 'temperature']
         abs_args = ['density', 'volume', 'circumference', 'surface', 'classification']
-        abs_props = ['Density', 'Volume', 'Circumference', 'Surface Area', 'Classification']
+        abs_props = ['Density', 'Volume', 'Circumference', 'Surface area', 'Classification']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
 
     def set_star(self, star_data):

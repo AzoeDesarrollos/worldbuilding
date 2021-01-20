@@ -50,7 +50,7 @@ class OrbitPanel(BaseWidget):
 
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 350)
         self.properties.add(self.planet_area, layer=2)
-        self.recomendation = Recomendation(self, 80, ALTO//2-130)
+        self.recomendation = Recomendation(self, 80, ALTO // 2 - 130)
 
         self._orbits = {}
         self._loaded_orbits = []
@@ -336,8 +336,8 @@ class OrbitPanel(BaseWidget):
             locked[0].linked_type.show()
             locked[0].linked_type.link_planet(planet)
             self.add_orbits_button.disable()
-            self.recomendation.suggest(planet, orbit)
-            self.recomendation.show()
+            self.recomendation.suggest(planet, orbit, Systems.get_current_star())
+            self.recomendation.show_suggestion(planet, orbit.temperature)
 
     def update(self):
         super().update()
@@ -663,36 +663,85 @@ class AddOrbitButton(TextButton):
 
 
 class Recomendation(BaseWidget):
+    text = ''
+    format = None
+
     def __init__(self, parent, x, y):
         super().__init__(parent)
-        text = recomendation['text']
-        f = self.crear_fuente(14)
-        self.image = render_textrect(text, f, 200, COLOR_TEXTO, COLOR_AREA, justification=1)
+        self.image = Surface((200, 200))
+        self.image.fill(COLOR_AREA)
         self.rect = self.image.get_rect(topleft=(x, y))
 
-    @staticmethod
-    def suggest(planet, orbit):
+    def suggest(self, planet, orbit, star):
         data = None
-        if planet.habitable:
+        if planet.habitable and orbit.temperature == 'habitable':
             data = recomendation['habitable']
 
         elif planet.clase == 'Terrestial Planet' and orbit.temperature == 'hot':
+            planets_in_system = len(Systems.get_current().planets)
+            e = round(0.584 * pow(planets_in_system, -1.2), 3)
             data = recomendation['inner']
+            data.update({'e': e})
 
-        elif planet.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant'):
+        elif planet.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant', 'Gas Dwarf'):
             data = recomendation['giant']
+            data.update(self.analyze_giants(planet, orbit, star))
 
-        elif orbit.temperature == 'hot':
-            pass
+        elif planet.clase == 'Dwarf Planet':
+            raise AssertionError(NotImplemented)
 
-        print(data)
+        self.format = data
 
     @staticmethod
-    def analyze_giant(planet, orbit, star):
-        clase = planet.clase == 'Gas Giant'
+    def analyze_giants(planet, orbit, star):
+        clase = planet.clase in ('Puffy Giant', 'Gas Giant')
         orbita = 0.04 <= orbit.a.m <= 0.5
-        period = q(sqrt(pow(orbit.a.m, 3) / star.mass.m), 'year').to('day') >= 3
-        if all([clase, orbita, period]):
-            print('hot')
-        elif planet.mass.to('jupiter_mass').m > 1:
-            print('super jupiter')
+        period = q(sqrt(pow(orbit.a.m, 3) / star.mass.m), 'year').to('day').m >= 3
+        if all([clase, orbita, period]) is True:
+            return recomendation['hot']
+
+        clase = planet.clase == 'Super Jupiter'
+        orbita = 0.04 <= orbit.a.m <= 1.2 * star.frost_line.m
+        if all([clase, orbita]) is True:
+            # this is more of a warning than a suggestion, since a super jupiter
+            # can't be placed too far away from the star, and there is no special
+            # consideration about it's eccentricity or inclination.
+            return recomendation['giant']
+        elif clase:  # Is the planet still a Super Jupiter?
+            raise AssertionError("A super jupiter can't orbit so far away from it's star.")
+            # needs an "undo" after this.
+
+        clase = planet.clase in ('Gas Dwarf', 'Gas Giant')
+        orbita = 1.2 * star.frost_line.m <= orbit.a.m < star.outer_boundry.m
+        if all([clase, orbita]) is True:
+            return recomendation['giant']
+
+        clase = planet.clase == 'Gas Giant'
+        habitable = any([i.habitable for i in Systems.get_current().planets])
+        data = recomendation['giant']
+        if all([clase, habitable]) is True:
+            data.update(recomendation['eccenctric_1'])
+        elif not habitable:
+            data.update(recomendation['eccenctric_2'])
+        return data
+
+    def create_suggestion(self, planet, temperature):
+        base_text = recomendation['text']
+        if planet.habitable is True and temperature == 'habitable':
+            p = 'Habitable Planet'
+        else:
+            p = planet.clase
+        self.format.update({'planet_type': p})
+        return base_text.format(**self.format)
+
+    def show_suggestion(self, planet, temp):
+        text = self.create_suggestion(planet, temp)
+        f = self.crear_fuente(14)
+        f2 = self.crear_fuente(12, bold=True)
+        title = f2.render('Suggestion', 1, COLOR_TEXTO, COLOR_AREA)
+        render = render_textrect(text, f, self.rect.w, COLOR_TEXTO, COLOR_AREA, justification=1)
+        render_rect = render.get_rect(center=[self.rect.w // 2, self.rect.h // 2])
+        self.image.fill(COLOR_AREA)
+        self.image.blit(render, render_rect)
+        self.image.blit(title, (0, 0))
+        self.show()

@@ -105,8 +105,16 @@ class ValueText(BaseWidget):
                     data = dwarfgraph_loop()
                 if data is not None:
                     for elemento in self.parent.properties.get_sprites_from_layer(1):
-                        if elemento.text.lower() in data:
-                            elemento.value = str(data[elemento.text.lower()])
+                        attr = ''
+                        if elemento in self.parent.relatives:
+                            idx = self.parent.relatives.widgets().index(elemento)
+                            attr = self.parent.relative_args[idx]
+                        elif elemento in self.parent.absolutes:
+                            idx = self.parent.absolutes.widgets().index(elemento)
+                            attr = self.parent.absolute_args[idx]
+
+                        if attr in data:
+                            elemento.value = str(data[attr])
                             elemento.text_area.show()
                     self.parent.check_values()
                     Renderer.reset()

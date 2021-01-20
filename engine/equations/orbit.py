@@ -84,6 +84,10 @@ class PseudoOrbit:
         self.semi_major_axis = orbit.semi_major_axis
         self.temperature = orbit.temperature
 
+    @property
+    def a(self):
+        return self.semi_major_axis
+
 
 class Orbit(Ellipse):
     period = 0

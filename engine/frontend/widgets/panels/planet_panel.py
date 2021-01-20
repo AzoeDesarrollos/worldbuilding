@@ -112,11 +112,11 @@ class PlanetType(ObjectType):
     loaded_data = None
 
     def __init__(self, parent):
-        rel_props = ['Mass', 'Radius', 'Surface Gravity', 'Escape velocity']
+        rel_props = ['Mass', 'Radius', 'Surface gravity', 'Escape velocity']
         rel_args = ['mass', 'radius', 'gravity', 'escape_velocity']
         abs_args = ['density', 'volume', 'surface', 'circumference', 'albedo', 'greenhouse', 'clase']
-        abs_props = ['Density', 'Volume', 'Surface Area', 'Circumference', 'Albedo (bond)', 'Greenhouse Effect',
-                     'Clase']
+        abs_props = ['Density', 'Volume', 'Surface area', 'Circumference', 'Albedo (bond)', 'Greenhouse effect',
+                     'Class']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
         f = self.crear_fuente(14)
         f.set_underline(True)
@@ -179,14 +179,21 @@ class PlanetType(ObjectType):
     def check_values(self):
         attrs = {}
         for button in self.properties.get_sprites_from_layer(1):
+            attr = ''
+            if button in self.relatives:
+                idx = self.relatives.widgets().index(button)
+                attr = self.relative_args[idx]
+            elif button in self.absolutes:
+                idx = self.absolutes.widgets().index(button)
+                attr = self.absolute_args[idx]
             if button.text_area.value:  # not empty
                 string = str(button.text_area.value).split(' ')[0]
                 try:
-                    setattr(self, button.text.lower(), float(string))
-                    attrs[button.text.lower()] = float(string)
+                    setattr(self, attr, float(string))
+                    attrs[attr] = float(string)
                 except ValueError:
-                    setattr(self, button.text.lower(), button.text_area.value)
-                    attrs[button.text.lower()] = button.text_area.value
+                    setattr(self, attr, button.text_area.value)
+                    attrs[attr] = button.text_area.value
 
         if len(attrs) > 1:
             unit = self.parent.unit.name.lower()
