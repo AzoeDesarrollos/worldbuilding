@@ -687,9 +687,6 @@ class Recomendation(BaseWidget):
             data = recomendation['giant']
             data.update(self.analyze_giants(planet, orbit, star))
 
-        elif planet.clase == 'Dwarf Planet':
-            raise AssertionError(NotImplemented)
-
         self.format = data
 
     @staticmethod

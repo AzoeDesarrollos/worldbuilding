@@ -11,7 +11,6 @@ class Planet(BodyInHydrostaticEquilibrium):
     mass = 0
     radius = 0
     gravity = 0
-    density = 0
     escape_velocity = 0
     composition = None
     name = None
