@@ -82,6 +82,7 @@ class AsteroidType(BaseWidget):
         self.properties = WidgetGroup()
         self.create()
         EventHandler.register(self.clear, 'ClearData')
+        self.relative_args = ['density', 'mass', 'volume']
 
     def create(self):
         for i, prop in enumerate(["Density", "Mass", "Volume"]):
@@ -146,10 +147,13 @@ class AsteroidType(BaseWidget):
         }
 
         for elemento in self.properties.get_widgets_from_layer(2):
-            if self.parent.relative_mode:
-                got_attr = getattr(self.current, elemento.text.lower())
+            idx = self.properties.widgets().index(elemento)
+            attr = self.relative_args[idx]
+
+            if not self.parent.relative_mode:
+                got_attr = getattr(self.current, attr)
             else:
-                got_attr = getattr(self.current, elemento.text.lower()).to(tos[elemento.text.capitalize()])
+                got_attr = getattr(self.current, attr).to(tos[elemento.text.capitalize()])
             attr = q(str(got_attr.m), got_attr.u) if type(got_attr) is not str else got_attr
             elemento.value = attr
             if elemento.text_area.unit == 'earth_mass':

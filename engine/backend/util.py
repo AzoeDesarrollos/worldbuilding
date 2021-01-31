@@ -20,13 +20,16 @@ def decimal_round(number: float):
         return int(floor(number))
 
 
-def add_decimal(text):
-    if '-' in text:
+def add_decimal(text: str):
+    if text.startswith('-'):
         negative = True
     else:
         negative = False
     if not float(text) > 1000:
-        return str(round(float(text), 3))
+        if 'e' in text:
+            return float(text)
+        else:
+            return str(round(float(text), 3))
 
     text = str(abs(float(text)))
     if 'e' in text:

@@ -13,9 +13,8 @@ class Satellite:
 
     @staticmethod
     def calculate_density(ice, silicate, iron):
-        d_e = 'earth_density'
         comp = {'water ice': ice / 100, 'silicates': silicate / 100, 'iron': iron / 100}
-        density = q(sum([comp[material] * material_densities[material] for material in comp]), 'g/cm^3').to(d_e)
+        density = q(sum([comp[material] * material_densities[material] for material in comp]), 'g/cm^3')
         return density
 
     def __repr__(self):
