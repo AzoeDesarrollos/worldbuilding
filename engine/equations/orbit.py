@@ -142,6 +142,7 @@ class Orbit(Ellipse):
         planet.orbit = PlanetOrbit(star.mass, self.semi_major_axis, self.eccentricity, self.inclination)
         planet.orbit.reset_planet(planet)
         planet.orbit._star = star
+        self.temperature = planet.set_temperature(star.mass.m, self._a)
 
     def get_planet_position(self):
         x = self._a * cos(self.true_anomaly.m)

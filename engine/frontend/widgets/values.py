@@ -43,7 +43,7 @@ class ValueText(BaseWidget):
 
     def elevate_changes(self, new_value, unit):
         value = q(new_value, unit)
-        returned = self.parent.elevate_changes(self.text, value)
+        returned = self.parent.elevate_changes(self, value)
         if returned is not None:
             self.text_area.set_value(returned)
 

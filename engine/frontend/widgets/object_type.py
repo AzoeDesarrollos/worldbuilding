@@ -67,7 +67,14 @@ class ObjectType(BaseWidget):
             EventHandler.trigger('Clear', self)
 
     def elevate_changes(self, key, new_value):
-        setattr(self.current, key.lower(), new_value)
+        arg = ''
+        if key in self.relatives:
+            idx = self.relatives.widgets().index(key)
+            arg = self.relative_args[idx]
+        elif key in self.absolutes:
+            idx = self.absolutes.widgets().index(key)
+            arg = self.absolute_args[idx]
+        self.current.set_value(arg, new_value)
 
     def fill(self, tos):
         for i, elemento in enumerate(self.relatives.widgets()):

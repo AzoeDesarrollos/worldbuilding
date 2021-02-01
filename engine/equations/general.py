@@ -27,6 +27,14 @@ class BodyInHydrostaticEquilibrium:
         v = cls.calculate_volume(r)
         return m / v
 
+    def update_everything(self):
+        return NotImplemented
+
+    def set_value(self, key, value):
+        if hasattr(self, key):
+            setattr(self, key, value)
+            self.update_everything()
+
 
 class Ellipse:
     _a = 0  # semi major axis

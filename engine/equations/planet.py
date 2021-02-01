@@ -136,6 +136,15 @@ class Planet(BodyInHydrostaticEquilibrium):
     def set_atmosphere(self, data):
         self.atmosphere.update(data)
 
+    def update_everything(self):
+        star = self.orbit.star
+        orbit = self.orbit
+        a, e, i, u = orbit.a, orbit.e, orbit.i, 'au'
+
+        self.set_qs(self.unit)
+        self.set_habitability()
+        self.set_orbit(star, [a, e, i, u])
+
     def __eq__(self, other):
         a = (self.mass.m, self.radius.m, self.clase, self.orbit, self.unit, self.name)
         b = (other.mass.m, other.radius.m, other.clase, self.orbit, other.unit, other.name)
