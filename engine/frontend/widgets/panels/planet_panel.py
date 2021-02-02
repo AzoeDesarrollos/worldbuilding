@@ -1,4 +1,4 @@
-from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, WidgetGroup
+from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, WidgetGroup, ANCHO
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
@@ -27,8 +27,9 @@ class PlanetPanel(BasePanel):
         self.unit = Unit(self, 0, 416)
         self.properties.add(self.unit)
 
-        self.button = AddPlanetButton(self, 490, 416)
-        self.properties.add(self.button)
+        self.button_add = AddPlanetButton(self, ANCHO - 13, 398)
+        self.button_del = DelPlanetButton(self, ANCHO - 13, 416)
+        self.properties.add(self.button_add, self.button_del)
         self.planet_buttons = WidgetGroup()
         EventHandler.register(self.save_planets, 'Save')
 
@@ -56,6 +57,13 @@ class PlanetPanel(BasePanel):
         self.sort_buttons()
         self.properties.add(button, layer=2)
 
+    def del_button(self, planet):
+        button = [i for i in self.planet_buttons.widgets() if i.object_data == planet][0]
+        self.planet_buttons.remove(button)
+        self.sort_buttons()
+        self.properties.remove(button)
+        self.button_del.disable()
+
     def show_current(self, idx):
         for button in self.planet_buttons.widgets():
             button.hide()
@@ -75,6 +83,11 @@ class PlanetPanel(BasePanel):
             else:
                 x = 3
                 y += 32
+
+    def select_one(self, btn):
+        for button in self.planet_buttons.widgets():
+            button.deselect()
+        btn.select()
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -135,7 +148,7 @@ class PlanetType(ObjectType):
         EventHandler.register(self.load_planet, 'LoadData')
 
     def load_planet(self, event):
-        if 'Planets' in event.data:
+        if 'Planets' in event.data and len(event.data['Planets']):
             self.loaded_data = event.data['Planets']
 
     def show_loaded(self):
@@ -150,6 +163,7 @@ class PlanetType(ObjectType):
         self.current = planet
         self.fill()
         self.toggle_habitable()
+        self.parent.button_del.enable()
 
     def show(self):
         super().show()
@@ -169,10 +183,17 @@ class PlanetType(ObjectType):
         if create:
             for button in self.properties.get_sprites_from_layer(1):
                 button.text_area.clear()
-            self.parent.button.disable()
+            self.parent.button_add.disable()
             self.parent.add_button(planet)
             self.has_values = False
             self.parent.image.fill(COLOR_BOX, self.hab_rect)
+
+    def destroy_button(self):
+        destroyed = Systems.get_current().remove_astro_obj(self.current)
+        if destroyed:
+            self.parent.image.fill(COLOR_BOX, self.hab_rect)
+            self.parent.del_button(self.current)
+            self.erase()
 
     def toggle_habitable(self):
         if self.current.habitable:
@@ -205,10 +226,10 @@ class PlanetType(ObjectType):
             self.current = Planet(attrs)
             self.toggle_habitable()
             if self.current.mass <= Systems.get_current().body_mass:
-                self.parent.button.enable()
+                self.parent.button_add.enable()
                 self.parent.mass_number.mass_color = COLOR_TEXTO
             else:
-                self.parent.button.disable()
+                self.parent.button_add.disable()
                 self.parent.mass_number.mass_color = 200, 0, 0
             self.fill()
 
@@ -298,13 +319,25 @@ class ShownMass(BaseWidget):
 class AddPlanetButton(TextButton):
     def __init__(self, parent, x, y):
         super().__init__(parent, 'Add Planet', x, y)
+        self.rect.right = x
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
             self.parent.current.create_button()
 
 
+class DelPlanetButton(TextButton):
+    def __init__(self, parent, x, y):
+        super().__init__(parent, 'Del Planet', x, y)
+        self.rect.right = x
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1 and self.enabled:
+            self.parent.current.destroy_button()
+
+
 class CreatedPlanet(PlanetButton):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.set_planet(self.object_data)
+            self.parent.select_one()

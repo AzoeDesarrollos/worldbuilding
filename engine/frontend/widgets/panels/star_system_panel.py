@@ -32,8 +32,9 @@ class StarSystemPanel(BaseWidget):
         self.current = SystemType(self)
         self.properties.add(self.current)
         self.systems = []
-        self.setup_button = SetupButton(self, 490, 416)
-        self.properties.add(self.setup_button)
+        self.setup_button = SetupButton(self, 484, 416)
+        self.undo_button = DissolveButton(self, 334, 416)
+        self.properties.add(self.setup_button, self.undo_button)
         self.system_buttons = WidgetGroup()
 
     def set_current(self, system_data):
@@ -41,8 +42,8 @@ class StarSystemPanel(BaseWidget):
 
     def show_current(self, star):
         self.current.erase()
-        self.current = star
-        self.current.fill()
+        self.current.current = star
+        self.current.reset(star)
 
     def create_button(self, system_data):
         idx = len(self.systems)
@@ -65,6 +66,18 @@ class StarSystemPanel(BaseWidget):
             else:
                 x = 3
                 y += 32
+
+    def select_one(self, btn):
+        for button in self.system_buttons.widgets():
+            button.deselect()
+        btn.select()
+
+    def del_button(self, system):
+        button = [i for i in self.system_buttons.widgets() if i.object_data == system][0]
+        self.system_buttons.remove(button)
+        self.sort_buttons()
+        self.properties.remove(button)
+        self.undo_button.disable()
 
     def show(self):
         super().show()
@@ -124,7 +137,8 @@ class SystemType(BaseWidget):
 
     def fill(self):
         if all([str(vt.value) != '' for vt in self.properties.widgets()[0:4]]):
-            self.current = system_type(self.separation.value)(*self.get_determinants())
+            if self.current is None:
+                self.current = system_type(self.separation.value)(*self.get_determinants())
             props = ['average_separation', 'ecc_p', 'ecc_s', 'barycenter', 'max_sep',
                      'min_sep', 'inner_forbbiden_zone', 'outer_forbbiden_zone', 'system_name']
             for i, attr in enumerate(props, start=2):
@@ -134,10 +148,8 @@ class SystemType(BaseWidget):
             self.parent.setup_button.enable()
 
     def reset(self, system_data):
-        primary = system_data.primary
-        secondary = system_data.secondary
-        self.set_star(primary)
-        self.set_star(secondary)
+        self.set_star(system_data.primary)
+        self.set_star(system_data.secondary)
         self.separation.value = system_data.average_separation
         self.ecc_p.value = system_data.ecc_p
         self.ecc_s.value = system_data.ecc_s
@@ -152,6 +164,10 @@ class SystemType(BaseWidget):
             button.text_area.clear()
         self.has_values = False
         self.current = None
+
+    def destroy(self):
+        self.parent.del_button(self.current)
+        self.erase()
 
     def show(self):
         for prop in self.properties.widgets():
@@ -193,7 +209,7 @@ class ListedStar(ListedBody):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.parent.current.set_star(self.object_data)
-            Systems.del_star(self.object_data)
+            Systems.loose_stars.remove(self.object_data)
             self.kill()
             self.parent.sort()
 
@@ -209,11 +225,26 @@ class SetupButton(TextButton):
         super().__init__(parent, name, x, y)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.button == 1 and self.enabled:
             sistema = self.parent.current.current
             self.parent.create_button(sistema)
             self.parent.current.erase()
             self.disable()
+
+
+class DissolveButton(TextButton):
+    enabled = False
+
+    def __init__(self, parent, x, y):
+        name = 'Dissolve System'
+        super().__init__(parent, name, x, y)
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1 and self.enabled:
+            system = self.parent.current.current
+            Systems.dissolve_system(system)
+            self.parent.stars_area.show()
+            self.parent.current.destroy()
 
 
 class SystemButton(Meta, BaseWidget):
@@ -222,7 +253,7 @@ class SystemButton(Meta, BaseWidget):
     def __init__(self, parent, system_data, idx, x, y):
         super().__init__(parent)
         system_data.idx = idx
-        self.system_data = system_data
+        self.object_data = system_data
         name = system_data.letter+'-Type #{}'.format(idx)
         self.f1 = self.crear_fuente(13)
         self.f2 = self.crear_fuente(13, bold=True)
@@ -234,7 +265,10 @@ class SystemButton(Meta, BaseWidget):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            self.parent.show_current(self.system_data)
+            self.parent.show_current(self.object_data)
+            self.parent.setup_button.disable()
+            self.parent.select_one(self)
+            self.parent.undo_button.enable()
 
     def move(self, x, y):
         self.rect.topleft = x, y

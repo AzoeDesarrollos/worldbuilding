@@ -75,6 +75,9 @@ class BinarySystem:
                 return self.secondary
             raise StopIteration()
 
+    def composition(self):
+        return [self.primary, self.secondary]
+
 
 class PTypeSystem(BinarySystem):
     letter = 'P'

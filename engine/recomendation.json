@@ -41,6 +41,7 @@
    "i":"0°"
  },
  "inner":{
-   "i": "lower than 3°"
+   "i": "lower than 3°",
+   "e":"lower or equal to 0.2"
  }
 }

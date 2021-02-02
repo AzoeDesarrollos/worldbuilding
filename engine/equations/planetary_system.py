@@ -25,13 +25,7 @@ class PlanetarySystem:
         return self.body_mass
 
     def add_astro_obj(self, astro_obj):
-        group = None
-        if astro_obj.celestial_type == 'planet':
-            group = self.planets
-        elif astro_obj.celestial_type == 'satellite':
-            group = self.satellites
-        elif astro_obj.celestial_type == 'asteroid':
-            group = self.asteroids
+        group = self._get_astro_group(astro_obj)
 
         if astro_obj not in group:
             minus_mass = astro_obj.mass.to('jupiter_mass')
@@ -48,6 +42,24 @@ class PlanetarySystem:
 
         return False
 
+    def remove_astro_obj(self, astro_obj):
+        group = self._get_astro_group(astro_obj)
+        plus_mass = group[group.index(astro_obj)].mass.to('jupiter_mass')
+        self.body_mass += plus_mass
+        group.remove(astro_obj)
+        return True
+
+    def _get_astro_group(self, astro_obj):
+        group = None
+        if astro_obj.celestial_type == 'planet':
+            group = self.planets
+        elif astro_obj.celestial_type == 'satellite':
+            group = self.satellites
+        elif astro_obj.celestial_type == 'asteroid':
+            group = self.asteroids
+
+        return group
+
     def get_planet_by_name(self, planet_name):
         planet = [planet for planet in self.planets if planet.name == planet_name][0]
         return planet
@@ -61,7 +73,7 @@ class PlanetarySystem:
         return self.star_system == other.star_system
 
     def __repr__(self):
-        return 'System of '+str(self.star_system)
+        return 'System of ' + str(self.star_system)
 
     def __getitem__(self, item):
         if self.star_system.celestial_type == 'star':  # single-star system
@@ -115,6 +127,22 @@ class Systems:
                         cls._systems.remove(system)
 
     @classmethod
+    def unset_system(cls, star):
+        system = cls.get_system_by_star(star)
+        if star == system.star_system.primary:
+            cls.loose_stars.append(system.star_system.secondary)
+        elif star == system.star_system.secondary:
+            cls.loose_stars.append(system.star_system.primary)
+        cls._systems.remove(system)
+
+    @classmethod
+    def dissolve_system(cls, system):
+        for star in system.composition():
+            cls.loose_stars.append(star)
+        if system in cls._systems:
+            cls._systems.remove(system)
+
+    @classmethod
     def get_system_by_id(cls, number):
         systems = [s for s in cls._systems if s.id == number]
         if len(systems) == 1:
@@ -134,7 +162,10 @@ class Systems:
     @classmethod
     def get_system_by_star(cls, star):
         for system in cls._systems:
-            if system.star_system == star:
+            if hasattr(system, 'letter'):
+                if any([body == star for body in system.star_system.composition()]):
+                    return system
+            elif system.star_system == star:
                 return system
 
     @classmethod
@@ -178,6 +209,17 @@ class Systems:
     @classmethod
     def add_star(cls, star):
         cls.loose_stars.append(star)
+
+    @classmethod
+    def remove_star(cls, star):
+        if star in cls.loose_stars:
+            idx = cls.loose_stars.index(star)
+            cls.loose_stars.remove(star)
+            if idx in cls._flagged:
+                cls._flagged.remove(idx)
+
+        else:  # star is part of a system
+            cls.unset_system(star)
 
     @classmethod
     def del_star(cls, star):

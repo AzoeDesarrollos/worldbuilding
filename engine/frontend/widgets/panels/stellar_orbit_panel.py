@@ -418,6 +418,7 @@ class OrbitType(BaseWidget, Intertwined):
 
     def create(self):
         orbit = self.linked_marker.orbit
+        orbit = orbit if not hasattr(orbit, 'planet') else orbit.planet.orbit
         self.clear()
         props = ['Semi-major axis', 'Semi-minor axis', 'Eccentricity', 'Inclination',
                  'Periapsis', 'Apoapsis', 'Orbital motion', 'Temperature', 'Orbital velocity', 'Orbital period',
@@ -674,23 +675,34 @@ class Recomendation(BaseWidget):
 
     def suggest(self, planet, orbit, star):
         data = None
+        planets_in_system = len(Systems.get_current().planets)
+        e = round(0.584 * pow(planets_in_system, -1.2), 3) if planets_in_system > 1 else None
         if planet.habitable and orbit.temperature == 'habitable':
             data = recomendation['habitable']
+            if e is not None and e <= 0.2:
+                data.update({'e': e})
 
-        elif planet.clase == 'Terrestial Planet' and orbit.temperature == 'hot':
-            planets_in_system = len(Systems.get_current().planets)
-            e = round(0.584 * pow(planets_in_system, -1.2), 3)
+        elif planet.clase == 'Terrestial Planet':
             data = recomendation['inner']
-            data.update({'e': e})
+            if e is not None and e <= 0.2:
+                data.update({'e': e})
 
         elif planet.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant', 'Gas Dwarf'):
             data = recomendation['giant']
             data.update(self.analyze_giants(planet, orbit, star))
+            if data.get('eccentric', False):
+                pass
+            elif e is not None and 0.001 <= e <= 0.09:
+                data.update({'e': e})
 
         self.format = data
 
     @staticmethod
     def analyze_giants(planet, orbit, star):
+        planets_in_system = len(Systems.get_current().planets)
+        e = round(0.584 * pow(planets_in_system, -1.2), 3) if planets_in_system > 1 else None
+        # average eccentricity
+
         clase = planet.clase in ('Puffy Giant', 'Gas Giant')
         orbita = 0.04 <= orbit.a.m <= 0.5
         period = q(sqrt(pow(orbit.a.m, 3) / star.mass.m), 'year').to('day').m >= 3
@@ -716,10 +728,15 @@ class Recomendation(BaseWidget):
         clase = planet.clase == 'Gas Giant'
         habitable = any([i.habitable for i in Systems.get_current().planets])
         data = recomendation['giant']
+        data.update({'eccentric': True})
+        error = f'An eccentric Jupiter must have an orbital eccentricity of 0.1 or greater, up to 0.2 if there is a '
+        error += f'habitable world in the system. However, there are {planets_in_system} planets in this system, so '
+        error += f'the eccentricity should be {e} which falls ouside of those parameters.'
+        assert all([habitable, planets_in_system not in (3, 4), e > 0.1]), error
         if all([clase, habitable]) is True:
-            data.update(recomendation['eccenctric_1'])
-        elif not habitable:
             data.update(recomendation['eccenctric_2'])
+        elif not habitable:
+            data.update(recomendation['eccenctric_1'])
         return data
 
     def create_suggestion(self, planet, temperature):

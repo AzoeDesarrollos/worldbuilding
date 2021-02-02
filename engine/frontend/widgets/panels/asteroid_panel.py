@@ -1,4 +1,4 @@
-from engine.frontend.globales import COLOR_AREA, WidgetGroup, COLOR_TEXTO, COLOR_BOX
+from engine.frontend.globales import COLOR_AREA, WidgetGroup, COLOR_TEXTO, COLOR_BOX, ANCHO
 from engine.equations.satellite import minor_moon_by_composition
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
@@ -28,8 +28,9 @@ class AsteroidPanel(BasePanel):
         self.curr_x = self.area_asteroids.x + 3
         self.curr_y = self.area_asteroids.y + 21
         self.properties.add(self.current)
-        self.button = AddAsteroidButton(self, 476, 416)
-        self.properties.add(self.button)
+        self.button_add = AddAsteroidButton(self, ANCHO - 13, 398)
+        self.button_del = DelAsteroidButton(self, ANCHO - 13, 416)
+        self.properties.add(self.button_add, self.button_del)
         self.asteroids = WidgetGroup()
 
     def add_button(self):
@@ -38,6 +39,13 @@ class AsteroidPanel(BasePanel):
         self.properties.add(button)
         self.sort_buttons()
         self.current.erase()
+
+    def del_button(self, satellite):
+        button = [i for i in self.asteroids.widgets() if i.object_data == satellite][0]
+        self.asteroids.remove(button)
+        self.sort_buttons()
+        self.properties.remove(button)
+        self.button_del.disable()
 
     def select_one(self, btn):
         for button in self.asteroids.widgets():
@@ -122,7 +130,7 @@ class AsteroidType(BaseWidget):
                 self.current = moon
             else:
                 raise AssertionError('There is not enough mass in the system to create new bodies of this type.')
-            self.parent.button.enable()
+            self.parent.button_add.enable()
         else:
             for item in self.properties.get_widgets_from_layer(4):
                 if item.text.lower() in self.current.composition:
@@ -140,6 +148,12 @@ class AsteroidType(BaseWidget):
         self.has_values = False
         for vt in self.properties:
             vt.value = ''
+
+    def destroy_button(self):
+        destroyed = Systems.get_current().remove_astro_obj(self.current)
+        if destroyed:
+            self.parent.del_button(self.current)
+            self.erase()
 
     def show_current(self, asteroid):
         self.erase()
@@ -196,10 +210,21 @@ class AsteroidType(BaseWidget):
 class AddAsteroidButton(TextButton):
     def __init__(self, parent, x, y):
         super().__init__(parent, 'Add Asteroid', x, y)
+        self.rect.right = x
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
             self.parent.add_button()
+
+
+class DelAsteroidButton(TextButton):
+    def __init__(self, parent, x, y):
+        super().__init__(parent, 'Del Asteroid', x, y)
+        self.rect.right = x
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1 and self.enabled:
+            self.parent.current.destroy_button()
 
 
 class AsteroidButton(Meta, BaseWidget):
@@ -220,6 +245,7 @@ class AsteroidButton(Meta, BaseWidget):
         if event.button == 1:
             self.parent.show_current(self.object_data)
             self.parent.parent.select_one(self)
+            self.parent.parent.button_del.enable()
 
     def move(self, x, y):
         self.rect.topleft = x, y

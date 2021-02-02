@@ -1,5 +1,5 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_TEXTO, COLOR_AREA, WidgetHandler
-from engine.backend.textrect import render_textrect
+from engine.backend.textrect import render_textrect, TextRectException
 from .basewidget import BaseWidget
 from pygame import Surface, Rect
 

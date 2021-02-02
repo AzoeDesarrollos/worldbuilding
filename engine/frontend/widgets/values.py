@@ -47,6 +47,10 @@ class ValueText(BaseWidget):
         if returned is not None:
             self.text_area.set_value(returned)
 
+    def set_min_and_max(self, min_v, max_v):
+        self.text_area.min = min_v
+        self.text_area.max = max_v
+
     def select(self):
         self.selected = True
 
@@ -103,7 +107,7 @@ class ValueText(BaseWidget):
                 else:
                     available_mass = round(available_mass.to('earth_mass').m, 4)
                     assert available_mass > 0.0001, not_enough_mass
-                    data = dwarfgraph_loop(available_mass)
+                    data = dwarfgraph_loop(available_mass if available_mass < 0.1 else None)
                 if data is not None:
                     for elemento in self.parent.properties.get_sprites_from_layer(1):
                         attr = ''
@@ -166,6 +170,8 @@ class ValueText(BaseWidget):
 class NumberArea(BaseWidget, IncrementalValue):
     value = None
     unit = None
+    min = 0
+    max = None
 
     def __init__(self, parent, name, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
         super().__init__(parent)
@@ -225,16 +231,18 @@ class NumberArea(BaseWidget, IncrementalValue):
 
     def on_mousebuttondown(self, event):
         self.increment = self.update_increment()
-        if not type(self.value) is str and self.grandparent.modifiable:
-            if event.button == 5:  # rueda abajo
+        v = self.value
+        b = event.button
+        if not type(v) is str and self.grandparent.modifiable:
+            i = 0
+            if b == 5 and (self.max is None or v + self.increment <= self.max):  # rueda abajo
                 self.value += self.increment
-                self.increment = 0
-            elif event.button == 4 and self.value > 0:  # rueda arriba
-                self.value -= self.increment
-                self.increment = 0
+            elif b == 4 and v - self.increment >= self.min:  # rueda arriba
+                self.value += -self.increment
 
             if event.button in (4, 5):
-                self.value = round(self.value, 4)
+                self.increment = 0
+                self.value = round(self.value+i, 4)
                 self.parent.elevate_changes(self.value, self.unit)
 
     def clear(self):

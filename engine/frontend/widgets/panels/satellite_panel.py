@@ -1,10 +1,9 @@
+from engine.frontend.globales import WidgetGroup, COLOR_AREA, ANCHO
 from engine.equations.satellite import major_moon_by_composition
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.values import ValueText
-from engine.frontend.globales import WidgetGroup
-from engine.frontend.globales import COLOR_AREA
 from engine import material_densities
 from .common import TextButton, Meta
 from ..object_type import ObjectType
@@ -31,8 +30,9 @@ class SatellitePanel(BasePanel):
         self.write('Satellites', f2, COLOR_AREA, x=self.area_satellites.x + 3, y=self.area_satellites.y)
         self.properties = WidgetGroup()
 
-        self.button = AddMoonButton(self, 476, 416)
-        self.properties.add(self.button)
+        self.button_add = AddMoonButton(self, ANCHO - 13, 398)
+        self.button_del = DelMoonButton(self, ANCHO - 13, 416)
+        self.properties.add(self.button_add, self.button_del)
         self.satellites = WidgetGroup()
         # EventHandler.register(self.load_satellites, 'LoadData')
         EventHandler.register(self.save_satellites, 'Save')
@@ -69,6 +69,19 @@ class SatellitePanel(BasePanel):
         self.properties.add(button)
         self.sort_buttons()
         self.current.erase()
+        self.button_add.disable()
+
+    def del_button(self, satellite):
+        button = [i for i in self.satellites.widgets() if i.object_data == satellite][0]
+        self.satellites.remove(button)
+        self.sort_buttons()
+        self.properties.remove(button)
+        self.button_del.disable()
+
+    def select_one(self, btn):
+        for button in self.satellites.widgets():
+            button.deselect()
+        btn.select()
 
     def show(self):
         super().show()
@@ -118,7 +131,7 @@ class SatelliteType(ObjectType):
                 self.current = moon
             else:
                 raise AssertionError('There is not enough mass in the system to create new bodies of this type.')
-            self.parent.button.enable()
+            self.parent.button_add.enable()
         else:
             for item in self.properties.get_widgets_from_layer(7):
                 if item.text.lower() in self.current.composition:
@@ -143,6 +156,12 @@ class SatelliteType(ObjectType):
         if event.data['panel'] is self.parent:
             self.erase()
 
+    def destroy_button(self):
+        destroyed = Systems.get_current().remove_astro_obj(self.current)
+        if destroyed:
+            self.parent.del_button(self.current)
+            self.erase()
+
     def fill(self, tos=None):
         tos = {
             'mass': 'kg',
@@ -162,10 +181,21 @@ class SatelliteType(ObjectType):
 class AddMoonButton(TextButton):
     def __init__(self, parent, x, y):
         super().__init__(parent, 'Add Satellite', x, y)
+        self.rect.right = x
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
             self.parent.add_button()
+
+
+class DelMoonButton(TextButton):
+    def __init__(self, parent, x, y):
+        super().__init__(parent, 'Del Satellite', x, y)
+        self.rect.right = x
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1 and self.enabled:
+            self.parent.current.destroy_button()
 
 
 class SatelliteButton(Meta, BaseWidget):
@@ -185,6 +215,8 @@ class SatelliteButton(Meta, BaseWidget):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.show_current(self.object_data)
+            self.parent.parent.select_one(self)
+            self.parent.parent.button_del.enable()
 
     def move(self, x, y):
         self.rect.topleft = x, y

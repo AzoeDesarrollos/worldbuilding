@@ -43,7 +43,7 @@ bg = image.load(ruta)
 bg_rect = bg.get_rect(topleft=(54, 24))
 
 
-def dwarfgraph_loop(limit_mass):
+def dwarfgraph_loop(limit_mass=None):
     fondo = display.set_mode((ANCHO, ALTO))
     fondo.fill(COLOR_BOX)
 
@@ -81,10 +81,12 @@ def dwarfgraph_loop(limit_mass):
     linea_v = Linea(bg_rect, bg_rect.centerx, bg_rect.y, 1, bg_rect.h, lineas)
     punto = Punto(bg_rect, bg_rect.centerx, bg_rect.centery, lineas)
 
-    lim_y = keys_to_pos(limit_mass, mass_keys, yes, 'gt')
-    lim_rect = Rect(54, lim_y + 26, bg_rect.w, bg_rect.h - lim_y - 26 + bg_rect.y)
-    lim_img = Surface(lim_rect.size)
-    lim_img.set_alpha(150)
+    lim_img, lim_rect = None, None
+    if limit_mass is not None:
+        lim_y = keys_to_pos(limit_mass, mass_keys, yes, 'gt')
+        lim_rect = Rect(54, lim_y + 26, bg_rect.w, bg_rect.h - lim_y - 26 + bg_rect.y)
+        lim_img = Surface(lim_rect.size)
+        lim_img.set_alpha(150)
 
     move_x, move_y = True, True
     while not done:
@@ -149,7 +151,8 @@ def dwarfgraph_loop(limit_mass):
         fondo.blit(render_radius, (150, ALTO - 20))
         fondo.blit(render_density, (300, ALTO - 20))
         fondo.blit(bg, bg_rect)
-        fondo.blit(lim_img, lim_rect)
+        if limit_mass is not None:
+            fondo.blit(lim_img, lim_rect)
         numbers.draw(fondo)
         lineas.update()
         lineas.draw(fondo)

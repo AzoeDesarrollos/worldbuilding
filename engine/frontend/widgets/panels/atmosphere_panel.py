@@ -118,7 +118,7 @@ class AtmospherePanel(BaseWidget):
         planet.set_atmosphere(data)
 
     def load_atmosphere(self, event):
-        if 'Planets' in event.data:
+        if 'Planets' in event.data and len(event.data['Planets']):
             atmosphere = event.data['Planets'][0]['atmosphere']
             elements = [e.symbol for e in self.elements.widgets()]
             for elem in atmosphere:
