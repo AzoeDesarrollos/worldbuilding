@@ -18,11 +18,11 @@ jupiter_density = 1326 kg/m ** 3
 jupiter_escape_velocity = 59.5 km/s
 
 # Sun Units
-sol_mass = 1.988e+30 kg
-sol_luminosity = 3.828e+26 W
-sol_radius = 695700 km
-sol_temperature = 5778 kelvin
-sol_lifetime = 4.6e+12 earth_years
-sol_aparent_brightness = 1.379 w/m2
+sol_mass = 1.988e+30 kg = Ms
+sol_luminosity = 3.828e+26 W = Ls
+sol_radius = 695700 km = Rs
+sol_temperature = 5778 kelvin = Ts
+sol_lifetime = 4.6e+12 earth_years = LTs
+sol_aparent_brightness = 1.379 w/m2 = Vs
 
 solar_lifetime = 1e+10 = ten_billion_years

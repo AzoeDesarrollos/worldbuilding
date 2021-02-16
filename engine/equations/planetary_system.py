@@ -104,6 +104,7 @@ class Systems:
 
         EventHandler.register(cls.save, "SaveDataFile")
         EventHandler.register(cls.compound_save_data, "SaveData")
+        EventHandler.register(cls.load_data, 'LoadData')
 
     @classmethod
     def set_system(cls, star):
@@ -137,10 +138,16 @@ class Systems:
 
     @classmethod
     def dissolve_system(cls, system):
-        for star in system.composition():
-            cls.loose_stars.append(star)
+        if system.letter is None:
+            cls.loose_stars.append(system)
+            system = cls.get_system_by_star(system)
+        else:
+            for star in system.composition():
+                cls.loose_stars.append(star)
+
         if system in cls._systems:
             cls._systems.remove(system)
+            cls.cycle_systems()
 
     @classmethod
     def get_system_by_id(cls, number):
@@ -241,10 +248,10 @@ class Systems:
 
     @classmethod
     def compound_save_data(cls, event):
-        for key in event.data:
-            if key in cls.save_data:
-                cls.save_data[key].update(event.data[key])
-            else:
-                cls.save_data.update(event.data)
+        cls.save_data.update(event.data)
         if not EventHandler.is_quequed('SaveDataFile'):
             EventHandler.trigger('SaveDataFile', 'EngineData', cls.save_data)
+
+    @classmethod
+    def load_data(cls, event):
+        cls.save_data.update(event.data)

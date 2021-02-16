@@ -32,6 +32,7 @@ class ListedArea(BaseWidget):
         for listed in self.listed_objects.widgets():
             if listed.object_data is astronomical_object:
                 listed.kill()
+                break
         self.sort()
 
     def sort(self):

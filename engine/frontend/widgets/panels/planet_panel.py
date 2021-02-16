@@ -34,7 +34,7 @@ class PlanetPanel(BasePanel):
         EventHandler.register(self.save_planets, 'Save')
 
     def save_planets(self, event):
-        data = []
+        data = self.current.loaded_data
         for system in Systems.get_systems():
             for planet_button in self.planet_buttons.widgets():
                 planet = planet_button.object_data

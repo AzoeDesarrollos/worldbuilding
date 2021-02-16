@@ -74,12 +74,15 @@ class StarSystemPanel(BaseWidget):
 
     def del_button(self, system):
         button = [i for i in self.system_buttons.widgets() if i.object_data == system][0]
+        self.systems.remove(system)
         self.system_buttons.remove(button)
         self.sort_buttons()
         self.properties.remove(button)
         self.undo_button.disable()
 
     def show(self):
+        for system in Systems.get_systems():
+            self.create_button(system.star_system)
         super().show()
         for prop in self.properties.widgets():
             prop.show()
@@ -183,8 +186,9 @@ class AvailableStars(ListedArea):
 
     def populate(self, stars):
         for i, star in enumerate(stars):
-            listed = ListedStar(self, star, self.rect.x + 3, i * 16 + self.rect.y + 21)
-            self.listed_objects.add(listed)
+            if star not in [listado.object_data for listado in self.listed_objects]:
+                listed = ListedStar(self, star, self.rect.x + 3, i * 16 + self.rect.y + 21)
+                self.listed_objects.add(listed)
 
     def __len__(self):
         return len(self.listed_objects)
@@ -209,7 +213,6 @@ class ListedStar(ListedBody):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.parent.current.set_star(self.object_data)
-            Systems.loose_stars.remove(self.object_data)
             self.kill()
             self.parent.sort()
 
@@ -254,7 +257,10 @@ class SystemButton(Meta, BaseWidget):
         super().__init__(parent)
         system_data.idx = idx
         self.object_data = system_data
-        name = system_data.letter+'-Type #{}'.format(idx)
+        if system_data.letter is not None:
+            name = system_data.letter+'-Type #{}'.format(idx)
+        else:
+            name = str(system_data)
         self.f1 = self.crear_fuente(13)
         self.f2 = self.crear_fuente(13, bold=True)
         self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)
@@ -265,7 +271,10 @@ class SystemButton(Meta, BaseWidget):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            self.parent.show_current(self.object_data)
+            if self.object_data.letter is not None:
+                self.parent.show_current(self.object_data)
+            else:
+                self.parent.current.current = self.object_data
             self.parent.setup_button.disable()
             self.parent.select_one(self)
             self.parent.undo_button.enable()

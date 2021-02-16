@@ -246,7 +246,7 @@ class OrbitPanel(BaseWidget):
             self.markers.clear()
 
     def save_orbits(self, event):
-        orbits = []
+        orbits = self._loaded_orbits
         for system in Systems.get_systems():
             for star in system:
                 for marker in self._orbits.get(star, []):

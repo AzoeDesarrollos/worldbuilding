@@ -47,6 +47,7 @@ class StarPanel(BasePanel):
             star_data.update({'idx': idx})
             star = Star(star_data)
             self.add_button(star)
+            Systems.set_system(star)
 
         if len(self.stars.widgets()):
             self.current.current = self.stars.widgets()[0].object_data
@@ -103,6 +104,11 @@ class StarPanel(BasePanel):
             else:
                 x = 3
                 y += 32
+
+    def select_one(self, btn):
+        for button in self.stars.widgets():
+            button.deselect()
+        btn.select()
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -215,7 +221,7 @@ class StarButton(Meta, BaseWidget):
             self.parent.show_current(self.object_data)
             if not self.object_data.sprite.is_visible:
                 self.object_data.sprite.show()
-            self.select()
+            self.parent.parent.select_one(self)
             self.parent.parent.button_del.enable()
 
     def move(self, x, y):
