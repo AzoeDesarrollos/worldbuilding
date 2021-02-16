@@ -1,8 +1,8 @@
 from .common import TextButton, Meta, AvailableObjects, ToggleableButton, AvailablePlanet, ModifyArea
-from engine.frontend.globales import Renderer, WidgetHandler, ANCHO, ALTO, render_textrect
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_DISABLED
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.globales import COLOR_SELECTED, COLOR_STARORBIT
+from engine.frontend.globales import ANCHO, ALTO, render_textrect
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.orbit import RawOrbit, PseudoOrbit
 from engine.frontend.globales.group import WidgetGroup
@@ -528,8 +528,6 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue, Intertwined):
         self.image = self.img_uns
         self.rect = self.image.get_rect(x=3)
         EventHandler.register(self.key_to_mouse, 'Arrow')
-        Renderer.add_widget(self)
-        WidgetHandler.add_widget(self)
 
     @property
     def value(self):
@@ -562,7 +560,7 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue, Intertwined):
             self.increment = self.update_increment()
             self.increment *= delta
 
-            if self.value.m + self.increment >= 0:
+            if Systems.get_current_star().validate_orbit(self.value.m + self.increment):
                 self.value += q(self.increment, self.value.u)
                 self.increment = 0
                 self.parent.sort_markers()

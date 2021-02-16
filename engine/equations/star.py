@@ -162,6 +162,9 @@ class Star(BodyInHydrostaticEquilibrium):
         color = Color(r, g, b)
         return color
 
+    def validate_orbit(self, orbit):
+        return self._inner_boundry < orbit < self._outer_boundry
+
     def __str__(self):
         return "{}-Star #{}".format(self.cls, self.idx)
 
