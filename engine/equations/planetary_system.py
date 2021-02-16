@@ -180,13 +180,11 @@ class Systems:
     def get_current(cls):
         if len(cls._systems):
             return cls._systems[cls._current_idx]
-        return 'None'
 
     @classmethod
     def get_current_star(cls):
         if len(cls._systems):
             return cls._systems[cls._current_idx].star_system
-        return 'None'
 
     @classmethod
     def get_systems(cls):

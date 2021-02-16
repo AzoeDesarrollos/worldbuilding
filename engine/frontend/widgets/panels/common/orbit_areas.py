@@ -49,9 +49,11 @@ class AvailableObjects(ListedArea):
         self.listed_objects.add(*listed, layer=Systems.get_current_idx())
 
     def show(self):
-        planets = [i for i in Systems.get_current().planets if i.orbit is None]
-        if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
-            self.populate(planets)
+        system = Systems.get_current()
+        if system is not None:
+            planets = [i for i in system.planets if i.orbit is None]
+            if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
+                self.populate(planets)
         super().show()
 
     def show_current(self, idx):

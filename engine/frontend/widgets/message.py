@@ -14,9 +14,19 @@ class PopUpMessage(BaseWidget):
         self.image = Surface([200, 200])
         self.rect = self.image.get_rect(center=(ANCHO // 2, (ALTO // 2) - 100))
         self.image.fill(COLOR_AREA, [1, 1, self.rect.w - 2, self.rect.h - 2])
-        f = self.crear_fuente(14)
+        size = 14
+        f = self.crear_fuente(size)
         f2 = self.crear_fuente(20)
-        message = render_textrect(text, f, self.rect.inflate(-5, -3), COLOR_TEXTO, COLOR_AREA, 1)
+        success = False
+        message = None
+        while success is False:
+            try:
+                message = render_textrect(text, f, self.rect.inflate(-5, -3), COLOR_TEXTO, COLOR_AREA, 1)
+                success = True
+            except TextRectException:
+                size -= 1
+                f = self.crear_fuente(size)
+
         msg_rect = message.get_rect(x=3, centery=self.rect.centery - self.rect.y)
         self.image.blit(message, msg_rect)
 

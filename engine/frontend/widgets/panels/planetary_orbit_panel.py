@@ -56,13 +56,15 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.sort_markers()
 
     def add_objects(self):
-        for obj in Systems.get_current().satellites + Systems.get_current().asteroids:
-            if obj not in self.objects:
-                self.objects.append(obj)
-                btn = ObjectButton(self, obj, self.curr_x, self.curr_y)
-                self.buttons.add(btn, layer=Systems.get_current_idx())
-                self.properties.add(btn)
-        self.sort_buttons()
+        system = Systems.get_current()
+        if system is not None:
+            for obj in system.satellites + system.asteroids:
+                if obj not in self.objects:
+                    self.objects.append(obj)
+                    btn = ObjectButton(self, obj, self.curr_x, self.curr_y)
+                    self.buttons.add(btn, layer=Systems.get_current_idx())
+                    self.properties.add(btn)
+            self.sort_buttons()
 
     def show(self):
         super().show()
@@ -163,9 +165,11 @@ class AvailablePlanets(AvailableObjects):
     name = 'Planets'
 
     def show(self):
-        planets = [planet for planet in Systems.get_current().planets if planet.hill_sphere != 0]
-        if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
-            self.populate(planets)
+        system = Systems.get_current()
+        if system is not None:
+            planets = [planet for planet in system.planets if planet.hill_sphere != 0]
+            if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
+                self.populate(planets)
         super().show()
 
 

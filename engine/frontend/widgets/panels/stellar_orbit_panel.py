@@ -32,6 +32,8 @@ class OrbitPanel(BaseWidget):
 
     skippable = False
 
+    no_star_error = False
+
     def __init__(self, parent):
         super().__init__(parent)
         self.name = 'Orbit'
@@ -71,6 +73,7 @@ class OrbitPanel(BaseWidget):
     def set_current(self):
         self.toggle_current_markers_and_buttons(False)
         star = Systems.get_current_star()
+        assert star is not None
         if star not in self._markers:
             self._markers[star] = []
             self._orbits[star] = []
@@ -285,7 +288,13 @@ class OrbitPanel(BaseWidget):
         self._loaded_orbits.clear()
 
     def show(self):
-        self.set_current()
+        try:
+            self.set_current()
+            self.no_star_error = False
+
+        except AssertionError:
+            self.no_star_error = True
+
         for prop in self.properties.get_widgets_from_layer(2):
             prop.show()
         self.visible_markers = True
@@ -346,7 +355,14 @@ class OrbitPanel(BaseWidget):
             self.set_current()
             self.last_idx = idx
 
-        self.image.fill(COLOR_BOX, self.area_markers)
+        if not self.no_star_error:
+            self.image.fill(COLOR_BOX, self.area_markers)
+        else:
+            f = self.crear_fuente(16)
+            text = 'There is no star system set. Go back to the Star Panel and set star first.'
+            rect = Rect(50, 100, 200, 100)
+            render = render_textrect(text, f, rect.w, (0, 0, 0), COLOR_BOX)
+            self.image.blit(render, rect)
 
     def __repr__(self):
         return 'Orbit Panel'

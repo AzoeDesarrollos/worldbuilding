@@ -135,6 +135,7 @@ class PlanetType(ObjectType):
         abs_props = ['Density', 'Volume', 'Surface area', 'Circumference', 'Albedo (bond)', 'Greenhouse effect',
                      'Class']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
+        self.absolutes.widgets()[4].set_min_and_max(0, 100)
         f = self.crear_fuente(14)
         f.set_underline(True)
         render = f.render('Planets', True, COLOR_TEXTO, COLOR_AREA)

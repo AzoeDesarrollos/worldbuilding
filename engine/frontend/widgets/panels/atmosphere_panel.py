@@ -542,9 +542,11 @@ class AvailablePlanets(ListedArea):
 
     def show(self):
         super().show()
-        self.populate([planet for planet in Systems.get_current().planets if not len(planet.atmosphere)])
-        for listed in self.listed_objects.widgets():
-            listed.show()
+        system = Systems.get_current()
+        if system is not None:
+            self.populate([planet for planet in system.planets if not len(planet.atmosphere)])
+            for listed in self.listed_objects.widgets():
+                listed.show()
 
 
 class ListedPlanet(AvailablePlanet):

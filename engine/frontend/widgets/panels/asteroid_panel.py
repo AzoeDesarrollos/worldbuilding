@@ -80,7 +80,8 @@ class AsteroidPanel(BasePanel):
         for pr in self.properties.widgets():
             pr.hide()
 
-        flag = not len(Systems.get_current().asteroids + Systems.get_current().satellites)
+        flag = Systems.get_current() is not None
+        flag = not len(Systems.get_current().asteroids + Systems.get_current().satellites) if flag else False
         self.parent.set_skippable('Planetary Orbit', flag)
 
 
