@@ -90,7 +90,7 @@ class AtmospherePanel(BaseWidget):
         max_p = element.max_atm.m
         min_p = element.min_atm.m
         value = element.percent.get_value()
-        assertion = not type(value) is str
+        assertion = not str(value) in ('liquid', 'solid')
         assert assertion, f"{name} can't form atmospheric gas, because it is {value} at planet's temperature."
         p_pre = str(round(float(value) * self.show_pressure.value.m / 100, 3))
         t = f'{name}\nPressure at sea level: {p_pre} atm\nMinimum pressure: {min_p} atm\nMaximum pressure: {max_p} atm'
@@ -116,6 +116,8 @@ class AtmospherePanel(BaseWidget):
         data = dict(zip([e.symbol for e in elements], [float(e.percent.get_value()) for e in elements]))
         data.update({'pressure_at_sea_level': {'value': pressure.m, 'unit': str(pressure.u)}})
         planet.set_atmosphere(data)
+        self.planets.delete_objects(planet)
+        self.planets.show()
 
     def load_atmosphere(self, event):
         if 'Planets' in event.data and len(event.data['Planets']):
@@ -164,6 +166,9 @@ class AtmospherePanel(BaseWidget):
         self.curr_idx = self.current.idx
 
     def set_planet(self, planet):
+        for elm in self.elements.widgets():
+            elm.percent.clear()
+
         self.curr_planet = planet
         self.show_name()
 
@@ -390,12 +395,14 @@ class PercentageCell(BaseWidget):
         else:
             return value
 
+    def clear(self):
+        self.value = ''
+
     def update(self):
+        color = COLOR_DISABLED
         if self.parent.calculate_pressure() not in [(255, 255, 0), (0, 0, 0)]:
-            color = COLOR_DISABLED
             self.enabled = False
         elif self.parent.calculate_temperature() != 'gas':
-            color = COLOR_DISABLED
             self.enabled = False
             self.value = self.parent.calculate_temperature()
         else:
@@ -403,7 +410,7 @@ class PercentageCell(BaseWidget):
             self.enabled = True
         w, h = self.rect.size
         self.image.fill(color, [1, 1, w - 2, h - 2])
-        render = self.f.render(self.value, True, COLOR_TEXTO, COLOR_BOX)
+        render = self.f.render(self.value, True, COLOR_TEXTO, color)
         self.image.blit(render, (1, 1))
 
     def __repr__(self):
@@ -448,35 +455,33 @@ class Atmograph(BaseWidget):
 
     def on_mousebuttondown(self, event):
         delta_y = 0
-        nitrogen = self.parent.elements.widgets()[9]
-        if any([self.parent.curr_planet is None, nitrogen.percent.get_value() == 0,
-                type(nitrogen.percent.value) is str, not self.enabled]):
+        n2 = self.parent.elements.widgets()[9]
+        if any([self.parent.curr_planet is None, n2.percent.get_value() == 0, not n2.percent.value.isnumeric()]):
             return
-        nitrogen = self.parent.elements.widgets()[9]
-        vol_n2 = interpolacion_lineal(nitrogen.percent.get_value())
+        n2 = self.parent.elements.widgets()[9]
+        vol_n2 = interpolacion_lineal(n2.percent.get_value())
         if vol_n2 != self.vol_n2:
             self.reached = False
-        self.vol_n2 = interpolacion_lineal(nitrogen.percent.get_value())
+        self.vol_n2 = interpolacion_lineal(n2.percent.get_value())
         if event.button == 1 and not self.reached:
-            nitrogen = self.parent.elements.widgets()[9]
+            n2 = self.parent.elements.widgets()[9]
             warning_text = 'Pressure at sea level depends on Nitrogen concentration.' \
                            ' Please, fill a value before proceeding.'
-            assert nitrogen.percent.get_value(), warning_text
+            assert n2.percent.get_value(), warning_text
 
-            max_pressure, min_pressure = atmo(nitrogen.percent.get_value(), self.rect)
+            max_pressure, min_pressure = atmo(n2.percent.get_value(), self.rect)
             self.max_p, self.min_p = max_pressure, min_pressure
             selected_pressure = (max_pressure + min_pressure) // 2
             self.pressure = selected_pressure
             draw.line(self.canvas, (0, 0, 0, 255), (0, max_pressure), (self.rect.right, max_pressure))
             draw.line(self.canvas, (0, 0, 0, 255), (0, min_pressure), (self.rect.right, min_pressure))
 
-            self.vol_n2 = interpolacion_lineal(nitrogen.percent.get_value())
+            self.vol_n2 = interpolacion_lineal(n2.percent.get_value())
 
             self.enabled = True
 
             pressure = convert(selected_pressure)
             self.parent.show_pressure.update_text(pressure)
-            return self.name
 
         elif event.button == 4:
             if self.max_p < (self.pressure - 1) < self.min_p:
@@ -489,6 +494,8 @@ class Atmograph(BaseWidget):
         if event.button in (4, 5) and delta_y:
             self.reached = True
             self.pressure += delta_y
+
+        return self.name
 
     def on_keydown(self, event):
         if event.origin == self.name:
@@ -530,6 +537,7 @@ class Atmograph(BaseWidget):
             b, img = self.unbreatheable()
             if b and not self.blocked:
                 self.parent.show_pressure.unlock()
+                self.image.blit(graph, (0, 0))
                 self.image.blit(img, (0, 0))
                 self.blocked = True
 
@@ -561,6 +569,7 @@ class ShownPressure(BaseWidget):
     locked = True
     _value = ''
     finished = False
+    finished_text = ''
 
     def __init__(self, parent, x, centery):
         super().__init__(parent)
@@ -572,6 +581,7 @@ class ShownPressure(BaseWidget):
 
     def unlock(self):
         self.locked = False
+        self.finished_text = ''
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and not self.locked:
@@ -601,7 +611,9 @@ class ShownPressure(BaseWidget):
             self.update_text(value)
 
     def elevate_pressure(self):
-        self.parent.set_planet_atmosphere(round(self.value))
+        self.parent.set_planet_atmosphere(round(self.value, 3))
+        self.finished_text = ' (set)'
+        self.update_text(self.value)
 
     def update_text(self, text):
         if type(text) is q:
@@ -609,5 +621,5 @@ class ShownPressure(BaseWidget):
             p = '{:~}'.format(round(text.to('atm'), 3))
         else:
             p = text
-        self.image = self.f.render('Pressure at Sea Level: ' + p, 1, COLOR_TEXTO, COLOR_BOX)
+        self.image = self.f.render('Pressure at Sea Level: ' + p + self.finished_text, 1, COLOR_TEXTO, COLOR_BOX)
         self.rect = self.image.get_rect(topleft=self.rect.copy().topleft)

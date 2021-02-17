@@ -22,7 +22,8 @@ class WidgetHandler:
 
     @classmethod
     def add_widget(cls, widget, layer=1):
-        cls.contents.add(widget, layer=layer)
+        if widget not in cls.contents:
+            cls.contents.add(widget, layer=layer)
 
     @classmethod
     def del_widget(cls, widget):

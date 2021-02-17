@@ -22,7 +22,8 @@ class Renderer:
     def add_widget(cls, widget, layer=1):
         if hasattr(widget, 'layer'):
             layer = widget.layer
-        cls.contents.add(widget, layer=layer)
+        if widget not in cls.contents:
+            cls.contents.add(widget, layer=layer)
 
     @classmethod
     def del_widget(cls, widget):
