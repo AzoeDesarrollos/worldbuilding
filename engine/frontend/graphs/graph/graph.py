@@ -1,6 +1,6 @@
 from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_SPACE, K_LCTRL, K_LSHIFT, QUIT
 from pygame import font, Surface, Rect, image, mouse, event, Color as Clr, mask
-from pygame import display, init as py_init, quit as py_quit
+from pygame import display, init as py_init, quit as py_quit, SCALED
 from ..common import Linea, Punto, pos_to_keys, keys_to_pos
 from engine.backend.util import abrir_json
 from pygame.sprite import LayeredUpdates
@@ -49,7 +49,7 @@ def average(a, b):
 
 
 def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.0, radius_upper_limit=0.0):
-    fondo = display.set_mode((witdh, height))
+    fondo = display.set_mode((witdh, height), SCALED)
     rect = Rect(60, 2, 529, 476)
     lineas = LayeredUpdates()
 

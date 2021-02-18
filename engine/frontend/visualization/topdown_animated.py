@@ -1,8 +1,9 @@
+from pygame import image, display, event as events, K_ESCAPE, K_DOWN, K_LEFT, K_RIGHT, K_UP, SCALED
 from pygame import KEYDOWN, QUIT, KEYUP, Surface, SRCALPHA, gfxdraw, font, time, PixelArray, Color
-from pygame import image, display, event as events, K_ESCAPE, K_DOWN, K_LEFT, K_RIGHT, K_UP
 from engine.frontend.globales import WidgetGroup
 from math import sin, cos, radians, pow, sqrt
 from engine.backend import abrir_json, roll
+from engine.frontend import ANCHO, ALTO
 from decimal import Decimal, getcontext
 from pygame.sprite import Sprite
 from os import getcwd, path
@@ -41,13 +42,13 @@ def paint_stars(surface, i, f):
 def draw_orbits(fondo, radix, orbits):
     getcontext().prec = 2
     surf_rect = fondo.get_rect()
-
+    gfxdraw.aacircle(fondo, *surf_rect.midleft, 20, (255, 255, 0))
     gfxdraw.filled_circle(fondo, *surf_rect.midleft, 20, (255, 255, 0))
     for r in radix:
         e = 0.0
         b = r * sqrt(1 - pow(e, 2))
         semi_major = int(Decimal(r) * Decimal(100.0))
-        semi_minor = int(Decimal(b)*Decimal(100.0))
+        semi_minor = int(Decimal(b) * Decimal(100.0))
         if r in orbits['frost line']:  # frost line
             color = 0, 0, 255
             semi_minor = semi_major
@@ -66,35 +67,35 @@ class RotatingPlanet(Sprite):
 
     def __init__(self, a, e=0):
         super().__init__()
-        is_a_planet = False
+
         self._r = a
         b = a * sqrt(1 - pow(e, 2))
+        period = sqrt(pow(a, 3)/1)*365.26
+        self.speed = 360/period
+
         self.major = int(Decimal(a) * Decimal(100.0))
         self.minor = int(Decimal(b) * Decimal(100.0))
         self.angle = randint(0, 360)
 
         if self._r in orbitas['inner']:  # terrestial planets
-            self.image = Surface((6, 6), SRCALPHA)
-            gfxdraw.filled_circle(self.image, 3, 3, 3, (255, 0, 0))
-            is_a_planet = True
+            self.create(3, (255, 0, 0))
 
         elif self._r in orbitas['outer']:  # gas giants
-            self.image = Surface((22, 22), SRCALPHA)
-            gfxdraw.filled_circle(self.image, 11, 11, 11, (0, 0, 255))
-            is_a_planet = True
+            self.create(11, (0, 0, 255))
 
-        if is_a_planet:
-            width_2 = self.image.get_width() // 2
-            self.w2 = width_2
-            self.rect = self.image.get_rect(topleft=(self.major - width_2, self.centery))
-            self.set_xy()
+        self.rect = self.image.get_rect(center=(self.major, self.centery))
+        self.set_xy()
 
-        self.is_a_planet = is_a_planet
+    def create(self, size, color):
+        size_2 = size * 2
+        self.image = Surface((size_2, size_2), SRCALPHA)
+        gfxdraw.aacircle(self.image, size, size, size, color)
+        gfxdraw.filled_circle(self.image, size, size, size, color)
 
     def set_xy(self, off_x=0, off_y=0):
-        x = round(off_x + (self.centerx - self.w2) + self.major * cos(radians(self.angle)))
+        x = round(off_x + self.centerx + self.major * cos(radians(self.angle)))
         y = round(off_y + self.centery + self.minor * sin(radians(self.angle)))
-        self.rect.topleft = (x, y)
+        self.rect.center = (x, y)
 
     def displace(self, delta_x, delta_y):
         self.centerx += delta_x
@@ -103,11 +104,10 @@ class RotatingPlanet(Sprite):
         self.displaced = True
 
     def update(self):
-        delta = (1 / (self._r / 360)) / 200
-        if 0 <= self.angle + delta < 360:
-            self.angle += delta  # velocidad angular, pero en realidad es un mamarracho.
+        if 0 <= self.angle + self.speed < 360:
+            self.angle += self.speed
         else:
-            self.angle = -delta
+            self.angle = -self.speed
 
         self.set_xy()
 
@@ -115,8 +115,7 @@ class RotatingPlanet(Sprite):
 def topdown_loop():
     blanco = 255, 255, 255
     negro = 0, 0, 0
-
-    fondo = display.set_mode((590, 630))
+    fondo = display.set_mode((ANCHO, ALTO), SCALED)
     bg_rect = fondo.get_rect()
     draw_orbits(bg_stars, radiuses, orbitas)
 
@@ -128,8 +127,8 @@ def topdown_loop():
 
     planets = WidgetGroup()
     for ridx in radiuses:
-        p = RotatingPlanet(ridx)
-        if p.is_a_planet:
+        if ridx in orbitas['inner']+orbitas['outer']:
+            p = RotatingPlanet(ridx)
             planets.add(p)
 
     dx, dy = 0, 0
@@ -142,13 +141,13 @@ def topdown_loop():
 
             elif e.type == KEYDOWN:
                 if e.key == K_UP:
-                    dy += 3
+                    dy += 10
                 elif e.key == K_DOWN:
-                    dy -= 3
+                    dy -= 10
                 elif e.key == K_LEFT:
-                    dx += 3
+                    dx += 10
                 elif e.key == K_RIGHT:
-                    dx -= 3
+                    dx -= 10
 
             elif e.type == KEYUP:
                 if e.key == K_UP or e.key == K_DOWN:
@@ -156,8 +155,17 @@ def topdown_loop():
                 elif e.key == K_LEFT or e.key == K_RIGHT:
                     dx = 0
 
-        if rect.right + dx > 590 and rect.left + dx <= 0 and rect.top + dy <= 0 and rect.bottom + dy > 630:
-            rect.move_ip(dx, dy)
+        if rect.right + dx > ANCHO and rect.left + dx <= 0:
+            rect.move_ip(dx, 0)
+        else:
+            dx = 0
+
+        if rect.top + dy <= 0 and rect.bottom + dy > ALTO:
+            rect.move_ip(0, dy)
+        else:
+            dy = 0
+
+        if dx or dy:
             for planet in planets.widgets():
                 planet.displace(dx, dy)
 
@@ -166,12 +174,12 @@ def topdown_loop():
         planets.draw(fondo)
 
         for i, planet in enumerate(planets):
-            render = f1.render(str(round(planet.angle))+'°', 1, (255, 255, 255), (0, 0, 0))
+            render = f1.render(str(round(planet.angle)) + '°', 1, blanco, negro)
             if i % 2 == 0:
                 j = 11
             else:
                 j = -11
-            renderrect = render.get_rect(left=planet.radius + rect.x + 3, centery=rect.centery + j)
+            renderrect = render.get_rect(left=planet.major + rect.x + 3, centery=rect.centery + j)
             fondo.fill((0, 0, 0), renderrect)
             fondo.blit(render, (*renderrect.topleft, 8 * 3, 21))
         fps_render = f1.render(str(round(fps.get_fps())), 1, blanco, negro)
@@ -183,13 +191,11 @@ def topdown_loop():
     display.quit()
 
 
-if __name__ == '__main__':
-    fps = time.Clock()
+fps = time.Clock()
 
-    orbitas = abrir_json(path.join(getcwd(), 'data', 'data.json'))
-    radiuses = [item for sublist in orbitas.values() for item in sublist]
-    radiuses.sort()
+orbitas = abrir_json(path.join(getcwd(), 'data', 'data.json'))
+radiuses = [item for sublist in orbitas.values() for item in sublist]
+radiuses.sort()
 
-    bg_stars = image.load(path.join(getcwd(), 'data', 'estrellas.png'))
-    rect = bg_stars.get_rect(topleft=(0, 0))
-    topdown_loop()
+bg_stars = image.load(path.join(getcwd(), 'data', 'estrellas.png'))
+rect = bg_stars.get_rect(topleft=(0, 0))

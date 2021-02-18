@@ -1,4 +1,4 @@
-from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, KEYUP, K_LSHIFT, K_LCTRL
+from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, KEYUP, K_LSHIFT, K_LCTRL, SCALED
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO
 from ..common import Linea, Punto, pos_to_keys, keys_to_pos
 from pygame import display, event, font, transform, image
@@ -44,7 +44,7 @@ bg_rect = bg.get_rect(topleft=(54, 24))
 
 
 def dwarfgraph_loop(limit_mass=None):
-    fondo = display.set_mode((ANCHO, ALTO))
+    fondo = display.set_mode((ANCHO, ALTO), SCALED)
     fondo.fill(COLOR_BOX)
 
     fuente2 = font.SysFont('Verdana', 13, bold=True)

@@ -1,4 +1,4 @@
-from pygame import display, init
+from pygame import display, init, SCALED
 from pygame.sprite import LayeredUpdates
 from .constantes import ALTO, ANCHO, COLOR_FONDO
 import os
@@ -11,7 +11,7 @@ class Renderer:
     def init(cls):
         init()
         os.environ['SDL_VIDEO_CENTERED'] = "{!s},{!s}".format(0, 0)
-        display.set_mode((ANCHO, ALTO))
+        display.set_mode((ANCHO, ALTO), SCALED)
         cls.contents = LayeredUpdates()
 
     @classmethod

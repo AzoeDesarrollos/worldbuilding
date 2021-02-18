@@ -1,6 +1,6 @@
 from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, image, K_LSHIFT, K_LCTRL, KEYUP
+from pygame import init, quit, display, font, event, Rect, Surface, SCALED
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, ANCHO, ALTO
-from pygame import init, quit, display, font, event, Rect, Surface
 from ..common import pos_to_keys, keys_to_pos, Linea, Punto
 from engine.frontend.globales import WidgetGroup
 from pygame.sprite import Sprite
@@ -47,7 +47,7 @@ def gasgraph_loop(limit_mass):
     text_density = 'Density: N/A'
     invalid = True
 
-    fondo = display.set_mode((ANCHO, ALTO))
+    fondo = display.set_mode((ANCHO, ALTO), SCALED)
     fondo.fill(COLOR_BOX)
 
     numbers = WidgetGroup()
