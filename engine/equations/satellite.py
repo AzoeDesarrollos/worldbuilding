@@ -17,6 +17,9 @@ class Satellite:
         density = q(sum([comp[material] * material_densities[material] for material in comp]), 'g/cm^3')
         return density
 
+    def set_orbit(self):
+        pass
+
     def __repr__(self):
         return self.cls
 

@@ -216,6 +216,9 @@ class NumberArea(BaseWidget, IncrementalValue):
                 elif self.great_grandparent.name == 'Asteroid':
                     self.grandparent.calculate()
 
+                elif self.great_grandparent.name == 'Planetary Orbit':
+                    self.grandparent.fill()
+
     def set_value(self, quantity):
         if type(quantity) is q:
             self.value = float(quantity.m)

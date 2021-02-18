@@ -17,12 +17,15 @@ class RawOrbit:
         self.set_temperature()
 
     def set_temperature(self):
-        if self.a.m > self.star.frost_line.m:
-            self.temperature = 'cold'
-        elif self.star.habitable_inner.m <= self.a.m <= self.star.habitable_outer.m:
-            self.temperature = 'habitable'
+        if not self.a.u == 'earth_radius':
+            if self.a.m > self.star.frost_line.m:
+                self.temperature = 'cold'
+            elif self.star.habitable_inner.m <= self.a.m <= self.star.habitable_outer.m:
+                self.temperature = 'habitable'
+            else:
+                self.temperature = 'hot'
         else:
-            self.temperature = 'hot'
+            self.temperature = 'N/A'
 
     @property
     def semi_major_axis(self):
@@ -98,7 +101,7 @@ class Orbit(Ellipse):
     _q = 0  # periapsis
     _Q = 0  # apoapsis
 
-    planet = None
+    astrobody = None
     temperature = 0
     _star = None
 
@@ -138,11 +141,16 @@ class Orbit(Ellipse):
     def __repr__(self):
         return 'Orbit @' + str(round(self.semi_major_axis.m, 3))
 
-    def set_planet(self, star, planet):
-        planet.orbit = PlanetOrbit(star.mass, self.semi_major_axis, self.eccentricity, self.inclination)
-        planet.orbit.reset_planet(planet)
-        planet.orbit._star = star
-        self.temperature = planet.set_temperature(star.mass.m, self._a)
+    def set_astrobody(self, star, astro_body):
+        if astro_body.celestial_type == 'planet':
+            astro_body.orbit = PlanetOrbit(star.mass, self.semi_major_axis, self.eccentricity, self.inclination)
+
+        elif astro_body.celestial_type == 'satellite':
+            astro_body.orbit = SatelliteOrbit(star.mass, self.semi_major_axis, self.eccentricity, self.inclination)
+
+        astro_body.orbit.reset_astrobody(astro_body)
+        astro_body.orbit._star = star
+        self.temperature = astro_body.set_temperature(star.mass.m, self._a)
 
     def get_planet_position(self):
         x = self._a * cos(self.true_anomaly.m)
@@ -159,7 +167,7 @@ class Orbit(Ellipse):
         self._b = self._a * sqrt(1 - pow(self._e, 2))
         self._Q = self._a * (1 + self._e)
         self._q = self._a * (1 - self._e)
-        self.temperature = self.planet.set_temperature(self._star.mass.m, self._a)
+        self.temperature = self.astrobody.set_temperature(self._star.mass.m, self._a)
         self.reset_period_and_speed(self._star.mass.m)
 
     @property
@@ -207,6 +215,10 @@ class Orbit(Ellipse):
     def reset_period_and_speed(self, main_body_mass):
         raise NotImplementedError
 
+    def reset_astrobody(self, astro_body):
+        self.astrobody = astro_body
+        self.temperature = astro_body.temperature
+
 
 class PlanetOrbit(Orbit):
     primary = 'Star'
@@ -214,10 +226,6 @@ class PlanetOrbit(Orbit):
     def __init__(self, star_mass, a, e, i):
         super().__init__(a, e, i, 'au')
         self.reset_period_and_speed(star_mass.m)
-
-    def reset_planet(self, planet):
-        self.planet = planet
-        self.temperature = planet.temperature
 
     def reset_period_and_speed(self, main_body_mass):
         self.period = q(sqrt(pow(self._a, 3) / main_body_mass), 'year')
@@ -232,7 +240,7 @@ class SatelliteOrbit(Orbit):
         self.reset_period_and_speed(planet_mass)
 
     def reset_period_and_speed(self, main_body_mass):
-        satellite = self.planet.satellite
+        satellite = self.astrobody.satellite
         self.velocity = q(sqrt(main_body_mass.m / self._a), 'earth_orbital_velocity').to('kilometer per second')
         self.period = q(0.0588 * (pow(self._a, 3) / sqrt(main_body_mass.m + satellite.mass.m)), 'day')
 

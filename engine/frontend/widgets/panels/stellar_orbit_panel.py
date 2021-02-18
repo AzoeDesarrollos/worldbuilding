@@ -259,8 +259,8 @@ class OrbitPanel(BaseWidget):
                     if hasattr(orb, 'eccentricity'):
                         d['e'] = orb.eccentricity.m
                     if hasattr(orb, 'planet'):
-                        d['planet'] = orb.planet.name
-                        d['star_id'] = orb.planet.orbit.star.id
+                        d['planet'] = orb.astrobody.name
+                        d['star_id'] = orb.astrobody.orbit.star.id
                     orbits.append(d)
 
         EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Orbits': orbits})
@@ -432,9 +432,17 @@ class OrbitType(BaseWidget, Intertwined):
         self.linked_planet = planet
         self.locked = False
 
-    def create(self):
+    def link_satellite(self, satellite):
+        self.linked_planet = satellite
+        self.locked = False
+
+    def get_orbit(self):
         orbit = self.linked_marker.orbit
-        orbit = orbit if not hasattr(orbit, 'planet') else orbit.planet.orbit
+        orbit = orbit if not hasattr(orbit, 'astrobody') else orbit.astrobody.orbit
+        return orbit
+
+    def create(self):
+        orbit = self.get_orbit()
         self.clear()
         props = ['Semi-major axis', 'Semi-minor axis', 'Eccentricity', 'Inclination',
                  'Periapsis', 'Apoapsis', 'Orbital motion', 'Temperature', 'Orbital velocity', 'Orbital period',
