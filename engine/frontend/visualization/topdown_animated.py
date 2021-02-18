@@ -62,17 +62,17 @@ def draw_orbits(fondo, radix, orbits):
 
 class RotatingPlanet(Sprite):
     centerx = 0
-    centery = 384
+    centery = 0
     displaced = False
 
-    def __init__(self, a, e=0):
+    def __init__(self, a, centery, e=0):
         super().__init__()
 
         self._r = a
         b = a * sqrt(1 - pow(e, 2))
         period = sqrt(pow(a, 3)/1)*365.26
         self.speed = 360/period
-
+        self.centery = centery
         self.major = int(Decimal(a) * Decimal(100.0))
         self.minor = int(Decimal(b) * Decimal(100.0))
         self.angle = randint(0, 360)
@@ -117,6 +117,7 @@ def topdown_loop():
     negro = 0, 0, 0
     fondo = display.set_mode((ANCHO, ALTO), SCALED)
     bg_rect = fondo.get_rect()
+    rect.centery = bg_rect.centery
     draw_orbits(bg_stars, radiuses, orbitas)
 
     f1 = font.SysFont('Verdana', 12)
@@ -128,7 +129,7 @@ def topdown_loop():
     planets = WidgetGroup()
     for ridx in radiuses:
         if ridx in orbitas['inner']+orbitas['outer']:
-            p = RotatingPlanet(ridx)
+            p = RotatingPlanet(ridx, rect.centery)
             planets.add(p)
 
     dx, dy = 0, 0
