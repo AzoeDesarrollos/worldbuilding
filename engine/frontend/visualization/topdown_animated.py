@@ -1,28 +1,61 @@
-from pygame import image, display, init, quit, event as events, K_ESCAPE, K_DOWN, K_LEFT, K_RIGHT, K_UP
-from pygame import KEYDOWN, QUIT, KEYUP, Surface, SRCALPHA, gfxdraw, font, time
-from generate_orbits_diagram import draw_orbits, abrir_json
-from pygame.sprite import Sprite, LayeredUpdates
+from pygame import KEYDOWN, QUIT, KEYUP, Surface, SRCALPHA, gfxdraw, font, time, PixelArray, Color
+from pygame import image, display, event as events, K_ESCAPE, K_DOWN, K_LEFT, K_RIGHT, K_UP
+from engine.frontend.globales import WidgetGroup
+from engine.backend import abrir_json, roll
+from decimal import Decimal, getcontext
 from math import sin, cos, radians
+from pygame.sprite import Sprite
 from os import getcwd, path
-from decimal import Decimal
-from sys import exit
-from random import randint
 
-init()
-fps = time.Clock()
 
-orbitas = abrir_json(path.join(getcwd(), 'data.json'))
-radiuses = [item for sublist in orbitas.values() for item in sublist]
-radiuses.sort()
+def paint_stars(surface, i, f):
+    width, height = surface.get_size()
+    px_array = PixelArray(surface)
+    for i in range(i, f):
+        x = roll(1, width - 1)
+        y = roll(1, height - 1)
+        rand_color = Color([255, roll(0, 255), roll(100, 255), 255])
+        rand_color_bg = rand_color
+        rand_color_bg.a = 125
+        if roll(0, 100) >= 50:
+            px_array[x, y] = rand_color
+        else:
+            try:
+                px_array[x - 1, y] = rand_color
+                px_array[x, y] = rand_color
+                px_array[x + 1, y] = rand_color
 
-bg_stars = image.load(path.join(getcwd(), 'data', 'estrellas.png'))
-w, h = bg_stars.get_size()
-rect = bg_stars.get_rect(topleft=(0, 0))
+                px_array[x, y - 1] = rand_color
+                px_array[x, y] = rand_color
+                px_array[x, y + 1] = rand_color
+
+            except IndexError:
+                px_array[(x, y)] = rand_color
+
+    surface = px_array.make_surface()
+    px_array.close()
+    return surface
+
+
+def draw_orbits(fondo, radix, orbits):
+    getcontext().prec = 2
+    surf_rect = fondo.get_rect()
+
+    gfxdraw.filled_circle(fondo, *surf_rect.midleft, 20, (255, 255, 0))
+    for r in radix:
+        radio = int(Decimal(r) * Decimal(100.0))
+        if r in orbits['frost line']:  # frost line
+            color = 0, 0, 255
+        elif r in orbits['habitable zone']:  # habitable zone
+            color = 0, 255, 0
+        else:
+            color = 125, 125, 125
+        gfxdraw.ellipse(fondo, *surf_rect.midleft, radio, radio, color)
 
 
 class RotatingPlanet(Sprite):
     centerx = 0
-    centery = h // 2
+    centery = 384
     displaced = False
 
     def __init__(self, r):
@@ -30,7 +63,7 @@ class RotatingPlanet(Sprite):
         is_a_planet = False
         self._r = r
         self.radius = int(Decimal(self._r) * Decimal(100.0))
-        self.angle = randint(0, 360)
+        self.angle = 0
         if orbitas['habitable zone'][0] < self._r < orbitas['habitable zone'][1]:  # main planet
             self.image = Surface((6, 6), SRCALPHA)
             gfxdraw.filled_circle(self.image, 3, 3, 3, (255, 0, 255))
@@ -49,7 +82,7 @@ class RotatingPlanet(Sprite):
         if is_a_planet:
             width_2 = self.image.get_width() // 2
             self.w2 = width_2
-            self.rect = self.image.get_rect(topleft=(self.radius - width_2, h // 2))
+            self.rect = self.image.get_rect(topleft=(self.radius - width_2, self.centery))
 
         self.is_a_planet = is_a_planet
 
@@ -78,7 +111,7 @@ def topdown_loop():
     blanco = 255, 255, 255
     negro = 0, 0, 0
 
-    fondo = display.set_mode((1200, 600))
+    fondo = display.set_mode((590, 630))
     bg_rect = fondo.get_rect()
     draw_orbits(bg_stars, radiuses, orbitas)
 
@@ -88,19 +121,19 @@ def topdown_loop():
     text = f2.render('Top-Down View', 1, blanco, negro)
     text_rect = text.get_rect()
 
-    planets = LayeredUpdates()
+    planets = WidgetGroup()
     for ridx in radiuses:
         p = RotatingPlanet(ridx)
         if p.is_a_planet:
             planets.add(p)
 
     dx, dy = 0, 0
-    while True:
+    running = True
+    while running:
         fps.tick(30)
         for e in events.get((KEYDOWN, KEYUP, QUIT)):
             if e.type == QUIT or (e.type == KEYDOWN and e.key == K_ESCAPE):
-                quit()
-                exit()
+                running = False
 
             elif e.type == KEYDOWN:
                 if e.key == K_UP:
@@ -118,10 +151,9 @@ def topdown_loop():
                 elif e.key == K_LEFT or e.key == K_RIGHT:
                     dx = 0
 
-        if rect.right + dx > 1200 and rect.left + dx <= 0 and rect.top + dy <= 0 and rect.bottom + dy > 600:
+        if rect.right + dx > 590 and rect.left + dx <= 0 and rect.top + dy <= 0 and rect.bottom + dy > 630:
             rect.move_ip(dx, dy)
-            for planet in planets:
-                # noinspection PyUnresolvedReferences
+            for planet in planets.widgets():
                 planet.displace(dx, dy)
 
         fondo.blit(bg_stars, rect.topleft)
@@ -143,6 +175,16 @@ def topdown_loop():
         fondo.blit(fps_render, fps_rect)
         display.update()
 
+    display.quit()
+
 
 if __name__ == '__main__':
+    fps = time.Clock()
+
+    orbitas = abrir_json(path.join(getcwd(), 'data', 'data.json'))
+    radiuses = [item for sublist in orbitas.values() for item in sublist]
+    radiuses.sort()
+
+    bg_stars = image.load(path.join(getcwd(), 'data', 'estrellas.png'))
+    rect = bg_stars.get_rect(topleft=(0, 0))
     topdown_loop()
