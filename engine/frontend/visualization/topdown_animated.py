@@ -1,11 +1,12 @@
 from pygame import KEYDOWN, QUIT, KEYUP, Surface, SRCALPHA, gfxdraw, font, time, PixelArray, Color
 from pygame import image, display, event as events, K_ESCAPE, K_DOWN, K_LEFT, K_RIGHT, K_UP
 from engine.frontend.globales import WidgetGroup
+from math import sin, cos, radians, pow, sqrt
 from engine.backend import abrir_json, roll
 from decimal import Decimal, getcontext
-from math import sin, cos, radians
 from pygame.sprite import Sprite
 from os import getcwd, path
+from random import randint
 
 
 def paint_stars(surface, i, f):
@@ -43,14 +44,19 @@ def draw_orbits(fondo, radix, orbits):
 
     gfxdraw.filled_circle(fondo, *surf_rect.midleft, 20, (255, 255, 0))
     for r in radix:
-        radio = int(Decimal(r) * Decimal(100.0))
+        e = 0.0
+        b = r * sqrt(1 - pow(e, 2))
+        semi_major = int(Decimal(r) * Decimal(100.0))
+        semi_minor = int(Decimal(b)*Decimal(100.0))
         if r in orbits['frost line']:  # frost line
             color = 0, 0, 255
+            semi_minor = semi_major
         elif r in orbits['habitable zone']:  # habitable zone
             color = 0, 255, 0
+            semi_minor = semi_major
         else:
             color = 125, 125, 125
-        gfxdraw.ellipse(fondo, *surf_rect.midleft, radio, radio, color)
+        gfxdraw.ellipse(fondo, *surf_rect.midleft, semi_major, semi_minor, color)
 
 
 class RotatingPlanet(Sprite):
@@ -58,18 +64,16 @@ class RotatingPlanet(Sprite):
     centery = 384
     displaced = False
 
-    def __init__(self, r):
+    def __init__(self, a, e=0):
         super().__init__()
         is_a_planet = False
-        self._r = r
-        self.radius = int(Decimal(self._r) * Decimal(100.0))
-        self.angle = 0
-        if orbitas['habitable zone'][0] < self._r < orbitas['habitable zone'][1]:  # main planet
-            self.image = Surface((6, 6), SRCALPHA)
-            gfxdraw.filled_circle(self.image, 3, 3, 3, (255, 0, 255))
-            is_a_planet = True
+        self._r = a
+        b = a * sqrt(1 - pow(e, 2))
+        self.major = int(Decimal(a) * Decimal(100.0))
+        self.minor = int(Decimal(b) * Decimal(100.0))
+        self.angle = randint(0, 360)
 
-        elif self._r in orbitas['inner']:  # terrestial planets
+        if self._r in orbitas['inner']:  # terrestial planets
             self.image = Surface((6, 6), SRCALPHA)
             gfxdraw.filled_circle(self.image, 3, 3, 3, (255, 0, 0))
             is_a_planet = True
@@ -82,13 +86,14 @@ class RotatingPlanet(Sprite):
         if is_a_planet:
             width_2 = self.image.get_width() // 2
             self.w2 = width_2
-            self.rect = self.image.get_rect(topleft=(self.radius - width_2, self.centery))
+            self.rect = self.image.get_rect(topleft=(self.major - width_2, self.centery))
+            self.set_xy()
 
         self.is_a_planet = is_a_planet
 
     def set_xy(self, off_x=0, off_y=0):
-        x = round(off_x + (self.centerx - self.w2) + self.radius * cos(radians(self.angle)))
-        y = round(off_y + self.centery + self.radius * sin(radians(self.angle)))
+        x = round(off_x + (self.centerx - self.w2) + self.major * cos(radians(self.angle)))
+        y = round(off_y + self.centery + self.minor * sin(radians(self.angle)))
         self.rect.topleft = (x, y)
 
     def displace(self, delta_x, delta_y):
