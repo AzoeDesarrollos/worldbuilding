@@ -16,6 +16,7 @@ class SatellitePanel(BasePanel):
     curr_y = 0
 
     mass_number = None
+    loaded_data = None
 
     def __init__(self, parent):
         super().__init__('Satellite', parent)
@@ -34,8 +35,21 @@ class SatellitePanel(BasePanel):
         self.button_del = DelMoonButton(self, ANCHO - 13, 416)
         self.properties.add(self.button_add, self.button_del)
         self.satellites = WidgetGroup()
-        # EventHandler.register(self.load_satellites, 'LoadData')
+        EventHandler.register(self.load_satellites, 'LoadData')
         EventHandler.register(self.save_satellites, 'Save')
+
+    def load_satellites(self, event):
+        if 'Satellites' in event.data and len(event.data['Satellites']):
+            self.loaded_data = event.data['Satellites']
+
+    def show_loaded(self):
+        if self.loaded_data is not None:
+            for satellite_data in self.loaded_data:
+                moon = major_moon_by_composition(satellite_data)
+                if Systems.get_current().add_astro_obj(moon):
+                    self.current.current = moon
+                    self.add_button()
+            self.loaded_data.clear()
 
     def save_satellites(self, event):
         data = []
@@ -44,7 +58,7 @@ class SatellitePanel(BasePanel):
             moon_data = {
                 'name': moon.name,
                 'radius': moon.radius.m,
-                'compostition': moon.composition
+                'composition': moon.composition
             }
             data.append(moon_data)
             EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Satellites": data})
@@ -85,6 +99,7 @@ class SatellitePanel(BasePanel):
 
     def show(self):
         super().show()
+        self.show_loaded()
         self.is_visible = True
         if self.mass_number is None:
             self.properties.add(ShownMass(self))
