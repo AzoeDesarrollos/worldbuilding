@@ -123,10 +123,6 @@ class Orbit(Ellipse):
         elif 90 < self._i <= 180:
             self.motion = 'retrograde'
 
-        # abreviaturas
-        self.a = self.semi_major_axis
-        self.b = self.semi_minor_axis
-
         self.longuitude_of_the_ascending_node = set_longuitude_of_the_ascending_node(self._i)
         self.argument_of_periapsis = set_argument_of_periapsis(self._i)
 
@@ -148,6 +144,17 @@ class Orbit(Ellipse):
         x = self._a * cos(self.true_anomaly.m)
         y = self._b * sin(self.true_anomaly.m)
         return x, y
+
+    def set_true_anomaly(self, value: float):
+        self.true_anomaly = q(round(value, 3), 'degree')
+
+    @property
+    def a(self):
+        return self.semi_major_axis
+
+    @property
+    def b(self):
+        return self.semi_minor_axis
 
     @property
     def semi_major_axis(self):

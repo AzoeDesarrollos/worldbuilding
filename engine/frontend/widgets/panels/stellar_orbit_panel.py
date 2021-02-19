@@ -1,14 +1,12 @@
 from .common import TextButton, Meta, AvailableObjects, ToggleableButton, AvailablePlanet, ModifyArea
-from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_DISABLED
+from engine.frontend.globales import WidgetGroup, Renderer, render_textrect
 from engine.frontend.widgets.incremental_value import IncrementalValue
-from engine.frontend.globales import COLOR_SELECTED, COLOR_STARORBIT
-from engine.frontend.globales import ANCHO, ALTO, render_textrect
-from engine.frontend.globales.group import WidgetGroup, Renderer
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.orbit import RawOrbit, PseudoOrbit
 from engine.frontend.visualization import topdown_view
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
+from engine.frontend.globales.constantes import *
 from engine import q, recomendation
 from pygame import Surface, Rect
 from engine.backend import roll
@@ -323,6 +321,7 @@ class OrbitPanel(BaseWidget):
             self.area_modify.color_standby()
         self.visible_markers = not self.visible_markers
         self.area_modify.visible_markers = self.visible_markers
+        self.view_button.enable()
 
     def hide_orbit_types(self):
         for orbit_type in self.orbit_descriptions.widgets():
@@ -344,6 +343,7 @@ class OrbitPanel(BaseWidget):
             locked[0].linked_type.show()
             locked[0].linked_type.link_planet(planet)
             self.add_orbits_button.disable()
+            self.view_button.disable()
             self.recomendation.suggest(planet, orbit, Systems.get_current_star())
             self.recomendation.show_suggestion(planet, orbit.temperature)
 
@@ -437,10 +437,10 @@ class OrbitType(BaseWidget, Intertwined):
         self.clear()
         props = ['Semi-major axis', 'Semi-minor axis', 'Eccentricity', 'Inclination',
                  'Periapsis', 'Apoapsis', 'Orbital motion', 'Temperature', 'Orbital velocity', 'Orbital period',
-                 'Argument of periapsis', 'Longuitude of the ascending node', 'Planet']
+                 'Argument of periapsis', 'Longuitude of the ascending node', 'True anomaly', 'Planet']
         attr = ['semi_major_axis', 'semi_minor_axis', 'eccentricity', 'inclination',
                 'periapsis', 'apoapsis', 'motion', 'temperature', 'velocity', 'period',
-                'argument_of_periapsis', 'longuitude_of_the_ascending_node', 'planet']
+                'argument_of_periapsis', 'longuitude_of_the_ascending_node', 'true_anomaly', 'planet']
         for i, prop in enumerate([j for j in attr if hasattr(orbit, j)]):
             post_modifiable = True if i in [0, 2, 3, 10, 11] else False
             value = getattr(orbit, prop)
@@ -465,6 +465,7 @@ class OrbitType(BaseWidget, Intertwined):
         self.show()
         self.parent.planet_area.delete_objects(self.linked_planet)
         self.parent.recomendation.hide()
+        self.parent.view_button.enable()
         self.locked = True
         self.has_values = True
 
@@ -622,6 +623,7 @@ class OrbitButton(Meta, BaseWidget, Intertwined):
                 self.parent.toggle_stellar_orbits()
             self.parent.hide_orbit_types()
             self.parent.show_markers_button.enable()
+            self.parent.view_button.disable()
             self.linked_type.show()
             self.lock()
 
@@ -682,9 +684,11 @@ class VisualizationButton(TextButton):
         super().__init__(parent, 'View', x, y)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.button == 1 and self.enabled:
             topdown_view(Systems.get_current())
             Renderer.reset()
+            if not self.parent.visible_markers:
+                self.parent.toggle_stellar_orbits()
 
 
 class Recomendation(BaseWidget):
@@ -758,9 +762,9 @@ class Recomendation(BaseWidget):
         error += f'the eccentricity should be {e} which falls ouside of those parameters.'
         assert all([habitable, planets_in_system not in (3, 4), e > 0.1]), error
         if all([clase, habitable]) is True:
-            data.update(recomendation['eccenctric_2'])
+            data.update(recomendation['eccentric_2'])
         elif not habitable:
-            data.update(recomendation['eccenctric_1'])
+            data.update(recomendation['eccentric_1'])
         return data
 
     def create_suggestion(self, planet, temperature):

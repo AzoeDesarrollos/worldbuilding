@@ -341,4 +341,4 @@ class CreatedPlanet(PlanetButton):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.set_planet(self.object_data)
-            self.parent.select_one()
+            self.parent.parent.select_one(self)

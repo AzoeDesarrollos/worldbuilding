@@ -8,7 +8,6 @@ from math import sin, cos, radians
 from pygame.sprite import Sprite
 from engine.backend import roll
 from os import getcwd, path
-from random import randint
 
 
 def paint_stars(surface, i, f):
@@ -70,10 +69,11 @@ class RotatingPlanet(Sprite):
         self.centery = centery
         self.centerx = 0  # for simmetry
 
+        self.tracked_orbit = orbit
         self.speed = 360/orbit.period.to('day').m
         self.major = int(Decimal(orbit.a.m) * Decimal(100.0))
         self.minor = int(Decimal(orbit.b.m) * Decimal(100.0))
-        self.angle = randint(0, 360)
+        self.angle = self.tracked_orbit.true_anomaly.m
 
         self.rect = self.image.get_rect(center=(self.major, self.centery))
         self.set_xy()
@@ -95,6 +95,7 @@ class RotatingPlanet(Sprite):
         else:
             self.angle = -self.speed
 
+        self.tracked_orbit.set_true_anomaly(self.angle)
         self.set_xy()
 
 
