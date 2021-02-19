@@ -3,9 +3,10 @@ from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_D
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.globales import COLOR_SELECTED, COLOR_STARORBIT
 from engine.frontend.globales import ANCHO, ALTO, render_textrect
+from engine.frontend.globales.group import WidgetGroup, Renderer
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.orbit import RawOrbit, PseudoOrbit
-from engine.frontend.globales.group import WidgetGroup
+from engine.frontend.visualization import topdown_view
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine import q, recomendation
@@ -45,13 +46,10 @@ class OrbitPanel(BaseWidget):
         self.area_markers = Rect(3, 58, 380, 20 * 16)
         self.area_scroll = Rect(3, 32, 387, 388)
         self.area_modify = ModifyArea(self, ANCHO - 200, 399)
-        self.properties.add(self.area_modify, layer=2)
 
         self.f = self.crear_fuente(16, underline=True)
         self.write(self.name + ' Panel', self.f, centerx=(ANCHO // 4) * 1.5, y=0)
-
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 350)
-        self.properties.add(self.planet_area, layer=2)
         self.recomendation = Recomendation(self, 80, ALTO // 2 - 130)
 
         self._orbits = {}
@@ -61,11 +59,12 @@ class OrbitPanel(BaseWidget):
         self._markers = {}
         self.orbit_descriptions = WidgetGroup()
         self.show_markers_button = ToggleableButton(self, 'Stellar Orbits', self.toggle_stellar_orbits, 3, 421)
-        self.properties.add(self.show_markers_button, layer=2)
         self.show_markers_button.disable()
-
         self.add_orbits_button = AddOrbitButton(self, ANCHO - 100, 416)
-        self.properties.add(self.add_orbits_button, layer=2)
+        self.view_button = VisualizationButton(self, 3, 58)
+
+        self.properties.add([self.area_modify, self.planet_area, self.show_markers_button, self.add_orbits_button,
+                             self.view_button], layer=2)
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
@@ -650,7 +649,6 @@ class AvailablePlanets(AvailableObjects):
 
 
 class AddOrbitButton(TextButton):
-    value = 'Inward'
     anchor = None
     locked = False
 
@@ -675,6 +673,18 @@ class AddOrbitButton(TextButton):
     def unlink(self):
         self.lock()
         self.disable()
+
+
+class VisualizationButton(TextButton):
+    enabled = True
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent, 'View', x, y)
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1:
+            topdown_view(Systems.get_current())
+            Renderer.reset()
 
 
 class Recomendation(BaseWidget):

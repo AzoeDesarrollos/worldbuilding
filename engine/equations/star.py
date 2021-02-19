@@ -1,10 +1,10 @@
 from .general import BodyInHydrostaticEquilibrium
-from engine import q
+from engine.backend.util import decimal_round
 from bisect import bisect_right
+from datetime import datetime
 from math import sqrt, pow
 from pygame import Color
-from engine.backend.util import decimal_round
-from datetime import datetime
+from engine import q
 
 
 class Star(BodyInHydrostaticEquilibrium):
@@ -32,14 +32,12 @@ class Star(BodyInHydrostaticEquilibrium):
     def __init__(self, data):
         mass = data.get('mass', False)
         luminosity = data.get('luminosity', False)
-        assert mass or luminosity, 'Must specify at least mass or luminosity'
+        assert mass or luminosity, 'Must specify at least mass or luminosity.'
 
         name = data.get('name', None)
         if name is not None:
             self.name = name
             self.has_name = True
-        else:
-            self.name = "NoName"
 
         self.idx = data.get('idx', 0)
 
@@ -74,7 +72,7 @@ class Star(BodyInHydrostaticEquilibrium):
 
         self.classification = self.stellar_classification()
         self.cls = self.classification
-        self.color = self.true_color()
+        self.color = self.true_color(self.temperature)
 
         # ID values make each star unique, even if they have the same mass and name.
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
@@ -102,8 +100,9 @@ class Star(BodyInHydrostaticEquilibrium):
         idx = bisect_right(masses, self._mass)
         return classes[idx - 1:idx][0]
 
-    def true_color(self):
-        t = decimal_round(self.temperature.to('kelvin').m)
+    @staticmethod
+    def true_color(temperature):
+        t = decimal_round(temperature.to('kelvin').m)
 
         kelvin = [2660, 3120, 3230, 3360, 3500, 3680, 3920, 4410, 4780, 5240, 5490, 5610, 5780, 5920, 6200, 6540, 6930,
                   7240, 8190, 8620, 9730, 10800, 12400, 13400, 14500, 15400, 16400, 18800, 22100, 24200, 27000, 30000,
@@ -136,9 +135,10 @@ class Star(BodyInHydrostaticEquilibrium):
         y1 = Color((hexs[antes]))
         y2 = Color((hexs[despues]))
 
-        ar = (y2.r - y1.r) / (x2 - x1)
-        ag = (y2.g - y1.g) / (x2 - x1)
-        ab = (y2.b - y1.b) / (x2 - x1)
+        diff_x = x2 - x1
+        ar = (y2.r - y1.r) / diff_x
+        ag = (y2.g - y1.g) / diff_x
+        ab = (y2.b - y1.b) / diff_x
 
         br = y1.r - ar * x1
         bg = y1.g - ag * x1
