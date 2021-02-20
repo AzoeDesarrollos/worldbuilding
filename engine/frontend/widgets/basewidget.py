@@ -6,6 +6,7 @@ from pygame import font
 class BaseWidget(Sprite):
     active = False
     enabled = False
+    selected = False
     is_visible = False
     layer = 0
 
@@ -38,6 +39,18 @@ class BaseWidget(Sprite):
 
     def on_mouseover(self):
         pass
+
+    def enable(self):
+        self.enabled = True
+
+    def disable(self):
+        self.enabled = False
+
+    def select(self):
+        self.selected = True
+
+    def deselect(self):
+        self.selected = False
 
     def update(self):
         pass
