@@ -52,7 +52,7 @@ class BinarySystem:
         return max_sep, min_sep
 
     def __str__(self):
-        return self.letter+'-Type #{}'.format(self.idx)
+        return self.letter + '-Type #{}'.format(self.idx)
 
     def __repr__(self):
         return self.letter + '-Type Binary System'
@@ -109,14 +109,15 @@ class PTypeSystem(BinarySystem):
 
         self._habitable_inner = round(sqrt(self._luminosity.m / 1.1), 3)
         self._habitable_outer = round(sqrt(self._luminosity.m / 0.53), 3)
-        self._inner_boundry = self._mass.m * 0.01
-        self._outer_boundry = self._mass.m * 40
+        self._inner_boundry = round(self._mass.m * 0.01, 3)
+        self._outer_boundry = round(self._mass.m * 40, 3)
         self._frost_line = round(4.85 * sqrt(self._luminosity.m), 3)
         self.set_qs()
 
-        self.inner_forbbiden_zone = q(self.min_sep.m / 3, 'au')
-        self.outer_forbbiden_zone = q(self.max_sep.m * 3, 'au')
-        print('habitable world must orbit at {:~}'.format(self.max_sep * 4))
+        self.inner_forbbiden_zone = q(round(self.min_sep.m / 3, 3), 'au')
+        self.outer_forbbiden_zone = q(round(self.max_sep.m * 3, 3), 'au')
+
+        self.habitable_orbit = round(self.max_sep * 4, 3)
 
     def set_qs(self):
         self.mass = q(self._mass.m, 'sol_mass')

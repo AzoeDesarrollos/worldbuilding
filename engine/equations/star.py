@@ -38,7 +38,7 @@ class Star(BodyInHydrostaticEquilibrium):
     _outer_boundry = 0
     _frost_line = 0
 
-    spin = ''
+    _spin = ''
 
     def __init__(self, data):
         mass = data.get('mass', False)
@@ -63,7 +63,7 @@ class Star(BodyInHydrostaticEquilibrium):
         elif not luminosity and mass:
             self._luminosity = pow(mass, 3.5)
 
-        self.spin = choice(['CW', 'CCW'])
+        self._spin = choice(['CW', 'CCW'])
         self._radius = self.set_radius()
         self.set_derivated_characteristics()
         self.set_qs()
@@ -76,6 +76,13 @@ class Star(BodyInHydrostaticEquilibrium):
         # ID values make each star unique, even if they have the same mass and name.
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
         self.id = data['id'] if 'id' in data else now
+
+    @property
+    def spin(self):
+        if self._spin == 'CW':
+            return 'clockwise'
+        elif self._spin == 'CCW':
+            return 'counter-clockwise'
 
     def set_radius(self):
         radius = 1

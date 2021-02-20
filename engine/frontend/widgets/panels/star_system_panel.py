@@ -130,6 +130,9 @@ class SystemType(BaseWidget):
     def set_star(self, star):
         if str(self.primary.value) == '':
             self.primary.value = star
+        elif star.spin != self.primary.value.spin:
+            raise AssertionError('The stars must spin\nin the same direction\nas they would collide\notherwise.\n'
+                                 '\nSelect a star\nthat spins {}.'.format(self.primary.value.spin))
         else:
             self.secondary.value = star
 

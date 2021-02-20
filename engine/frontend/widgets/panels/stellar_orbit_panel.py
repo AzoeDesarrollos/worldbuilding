@@ -98,11 +98,24 @@ class OrbitPanel(BaseWidget):
                    'Frost Line': star.frost_line,
                    'Outer Boundary': star.outer_boundry}
 
-        for i, marker in enumerate(markers, start=1):
+        for marker in markers:
             x = OrbitMarker(self, marker, star, markers[marker])
             x.locked = True
             self.markers.append(x)
             self.properties.add(x, layer=2)
+
+        if hasattr(star, 'habitable_orbit'):
+            markers = {
+                'Inner Forbbiden Zone': star.inner_forbbiden_zone,
+                'Outer Forbbiden Zone': star.outer_forbbiden_zone
+            }
+            for marker in markers:
+                x = OrbitMarker(self, marker, star, markers[marker])
+                x.locked = True
+                self.markers.append(x)
+                self.properties.add(x, layer=2)
+            self.add_orbit_marker(star.habitable_orbit)
+
         self.sort_markers()
 
     def toggle_current_markers_and_buttons(self, toggle: bool):
