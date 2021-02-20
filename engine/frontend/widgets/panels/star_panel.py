@@ -68,6 +68,8 @@ class StarPanel(BasePanel):
         if self.add_on_exit:
             self.parent.set_skippable('Star System', True)
             Systems.set_system(self.current.current)
+        else:
+            self.parent.set_skippable('Star System', False)
         for star in self.stars.widgets():
             star.hide()
 
@@ -130,8 +132,8 @@ class StarType(ObjectType):
     def __init__(self, parent):
         rel_props = ['Mass', 'Luminosity', 'Radius', 'Lifetime', 'Surface temperature']
         rel_args = ['mass', 'luminosity', 'radius', 'lifetime', 'temperature']
-        abs_args = ['density', 'volume', 'circumference', 'surface', 'classification']
-        abs_props = ['Density', 'Volume', 'Circumference', 'Surface area', 'Classification']
+        abs_args = ['density', 'volume', 'circumference', 'surface', 'spin', 'classification']
+        abs_props = ['Density', 'Volume', 'Circumference', 'Surface area', 'Spin', 'Classification']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
 
     def set_star(self, star_data):
@@ -155,6 +157,7 @@ class StarType(ObjectType):
         if event.data['panel'] is self.parent:
             self.erase()
             self.parent.button_del.disable()
+            self.parent.button_add.disable()
 
     def erase(self):
         if self.has_values:
@@ -170,6 +173,9 @@ class StarType(ObjectType):
             'temperature': 'kelvin'
         }
         super().fill(tos)
+        system = Systems.get_current()
+        if system is not None:
+            system.update()
 
         if self.current.sprite is None:
             self.current.sprite = StarSprite(self, self.current, 460, 100)

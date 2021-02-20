@@ -3,6 +3,7 @@ from engine.backend.util import decimal_round
 from bisect import bisect_right
 from datetime import datetime
 from math import sqrt, pow
+from random import choice
 from pygame import Color
 from engine import q
 
@@ -29,6 +30,16 @@ class Star(BodyInHydrostaticEquilibrium):
     letter = None
     idx = None
 
+    _lifetime = 0
+    _temperature = 0
+    _habitable_inner = 0
+    _habitable_outer = 0
+    _inner_boundry = 0
+    _outer_boundry = 0
+    _frost_line = 0
+
+    spin = ''
+
     def __init__(self, data):
         mass = data.get('mass', False)
         luminosity = data.get('luminosity', False)
@@ -52,21 +63,9 @@ class Star(BodyInHydrostaticEquilibrium):
         elif not luminosity and mass:
             self._luminosity = pow(mass, 3.5)
 
-        if self._mass < 1:
-            self._radius = pow(self._mass, 0.8)
-        elif self._mass > 1:
-            self._radius = pow(self._mass, 0.5)
-        else:
-            self._radius = 1
-
-        self._lifetime = self._mass / self._luminosity
-        self._temperature = pow((self._luminosity / pow(self._radius, 2)), (1 / 4))
-        self._habitable_inner = round(sqrt(self._luminosity / 1.1), 3)
-        self._habitable_outer = round(sqrt(self._luminosity / 0.53), 3)
-        self._inner_boundry = self._mass * 0.01
-        self._outer_boundry = self._mass * 40
-        self._frost_line = round(4.85 * sqrt(self._luminosity), 3)
-
+        self.spin = choice(['CW', 'CCW'])
+        self._radius = self.set_radius()
+        self.set_derivated_characteristics()
         self.set_qs()
         assert 0.08 <= self.mass.m < 120, 'Invalid Mass: Stellar mass must be between 0.08 and 120 solar masses.'
 
@@ -77,6 +76,23 @@ class Star(BodyInHydrostaticEquilibrium):
         # ID values make each star unique, even if they have the same mass and name.
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
         self.id = data['id'] if 'id' in data else now
+
+    def set_radius(self):
+        radius = 1
+        if self._mass < 1:
+            radius = pow(self._mass, 0.8)
+        elif self._mass > 1:
+            radius = pow(self._mass, 0.5)
+        return radius
+
+    def set_derivated_characteristics(self):
+        self._lifetime = self._mass / self._luminosity
+        self._temperature = pow((self._luminosity / pow(self._radius, 2)), (1 / 4))
+        self._habitable_inner = round(sqrt(self._luminosity / 1.1), 3)
+        self._habitable_outer = round(sqrt(self._luminosity / 0.53), 3)
+        self._inner_boundry = self._mass * 0.01
+        self._outer_boundry = self._mass * 40
+        self._frost_line = round(4.85 * sqrt(self._luminosity), 3)
 
     def set_qs(self):
         self.mass = q(self._mass, 'sol_mass')
@@ -164,6 +180,24 @@ class Star(BodyInHydrostaticEquilibrium):
 
     def validate_orbit(self, orbit):
         return self._inner_boundry < orbit < self._outer_boundry
+
+    def update_everything(self):
+        if self.mass != self._mass:
+            self._mass = self.mass.m
+            self._luminosity = pow(self._mass, 3.5)
+
+        elif self.luminosity != self._luminosity:
+            self._luminosity = self.luminosity.m
+            self._mass = pow(self._luminosity, (1 / 3.5))
+
+        self._radius = self.set_radius()
+        self.set_derivated_characteristics()
+        self.set_qs()
+        assert 0.08 <= self.mass.m < 120, 'Invalid Mass: Stellar mass must be between 0.08 and 120 solar masses.'
+
+        self.classification = self.stellar_classification()
+        self.cls = self.classification
+        self.color = self.true_color(self.temperature)
 
     def __str__(self):
         return "{}-Star #{}".format(self.cls, self.idx)

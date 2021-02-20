@@ -116,12 +116,17 @@ class Orbit(Ellipse):
 
         if self._i in (0, 180):
             self.motion = 'equatorial'
+            self.direction = 'prograde' if self._i == 0 else 'retrograde'  # if self._i == 180
         elif self._i == 90:
             self.motion = 'polar'
-        elif 0 <= self._i <= 90:
-            self.motion = 'prograde'
-        elif 90 < self._i <= 180:
-            self.motion = 'retrograde'
+            self.direction = 'perpendicular'
+
+        if 0 <= self._i < 90:
+            self.direction = 'prograde'
+            self.motion = self.direction
+        elif 90 < self._i < 180:
+            self.direction = 'retrograde'
+            self.motion = self.direction
 
         self.longuitude_of_the_ascending_node = set_longuitude_of_the_ascending_node(self._i)
         self.argument_of_periapsis = set_argument_of_periapsis(self._i)
@@ -289,14 +294,14 @@ def _set_random_angle(value):
 
 
 def set_argument_of_periapsis(inclination, value=None):
-    if inclination > 0:
+    if inclination not in (0, 180):
         return _set_random_angle(value)
     else:
         return 'undefined'
 
 
 def set_longuitude_of_the_ascending_node(inclination, value=None):
-    if inclination > 0:
+    if inclination not in (0, 180):
         return _set_random_angle(value)
     else:
         return q(0, 'degree')

@@ -21,8 +21,15 @@ class PlanetarySystem:
         self.id = star_system.id
         self.body_mass = q(16 * exp(-0.6931 * star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
 
+    def update(self):
+        self.body_mass = q(16 * exp(-0.6931 * self.star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
+
     def get_available_mass(self):
         return self.body_mass
+
+    @property
+    def star(self):
+        return self.star_system
 
     def add_astro_obj(self, astro_obj):
         group = self._get_astro_group(astro_obj)
@@ -130,10 +137,13 @@ class Systems:
     @classmethod
     def unset_system(cls, star):
         system = cls.get_system_by_star(star)
-        if star == system.star_system.primary:
-            cls.loose_stars.append(system.star_system.secondary)
-        elif star == system.star_system.secondary:
-            cls.loose_stars.append(system.star_system.primary)
+        if star.letter is not None:
+            if star.letter == system.star_system.primary:
+                cls.loose_stars.append(system.star_system.secondary)
+            elif star == system.star_system.secondary:
+                cls.loose_stars.append(system.star_system.primary)
+        else:
+            cls.loose_stars.append(star)
         cls._systems.remove(system)
 
     @classmethod

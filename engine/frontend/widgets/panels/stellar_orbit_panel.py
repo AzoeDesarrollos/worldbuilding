@@ -361,6 +361,7 @@ class OrbitPanel(BaseWidget):
             text = 'There is no star system set. Go back to the Star Panel and set star first.'
             rect = Rect(50, 100, 200, 100)
             render = render_textrect(text, f, rect.w, (0, 0, 0), COLOR_BOX)
+            self.view_button.disable()
             self.image.blit(render, rect)
 
     def __repr__(self):
@@ -465,7 +466,6 @@ class OrbitType(BaseWidget, Intertwined):
         self.show()
         self.parent.planet_area.delete_objects(self.linked_planet)
         self.parent.recomendation.hide()
-        self.parent.view_button.enable()
         self.locked = True
         self.has_values = True
 

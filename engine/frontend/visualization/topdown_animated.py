@@ -44,25 +44,33 @@ def draw_orbits(fondo, system):
     surf_rect = fondo.get_rect()
     star = system.star_system if system.star_system.letter is None else system.star_system.primary
 
-    gfxdraw.aacircle(fondo, *surf_rect.midleft, 20, star.color)
-    gfxdraw.filled_circle(fondo, *surf_rect.midleft, 20, star.color)
+    size = round(star.radius.m*20)
+    gfxdraw.aacircle(fondo, *surf_rect.midleft, size, star.color)
+    gfxdraw.filled_circle(fondo, *surf_rect.midleft, size, star.color)
 
     for planet in system.planets:
-        semi_major = int(Decimal(planet.orbit.a.m) * Decimal(100.0))
-        semi_minor = int(Decimal(planet.orbit.b.m) * Decimal(100.0))
-        gfxdraw.ellipse(fondo, *surf_rect.midleft, semi_major, semi_minor, COLOR_STARORBIT)
+        if planet.orbit is not None:
+            semi_major = int(Decimal(planet.orbit.a.m) * Decimal(100.0))
+            semi_minor = int(Decimal(planet.orbit.b.m) * Decimal(100.0))
+            gfxdraw.ellipse(fondo, *surf_rect.midleft, semi_major, semi_minor, COLOR_STARORBIT)
 
     for radius in [star.habitable_inner.m, star.habitable_outer.m]:
         scaled = int(Decimal(radius) * Decimal(100.0))
-
-        gfxdraw.ellipse(fondo, *surf_rect.midleft, scaled, scaled, COLOR_HABITABLE)
+        try:
+            gfxdraw.ellipse(fondo, *surf_rect.midleft, scaled, scaled, COLOR_HABITABLE)
+        except OverflowError:
+            print(f' habitable radius of {scaled} exceeds the maximum?')
 
     scaled = int(Decimal(star.frost_line.m) * Decimal(100.0))
-    gfxdraw.ellipse(fondo, *surf_rect.midleft, *[scaled]*2, (0, 0, 255))
+    try:
+        gfxdraw.ellipse(fondo, *surf_rect.midleft, *[scaled]*2, (0, 0, 255))
+    except OverflowError:
+        print(f'frost line radius of {scaled} exceeds the maximum?')
 
 
 class RotatingPlanet(Sprite):
     displaced = False
+    direction = 'CW'
 
     def __init__(self, orbit, centery):
         super().__init__()
@@ -76,6 +84,7 @@ class RotatingPlanet(Sprite):
         self.angle = self.tracked_orbit.true_anomaly.m
 
         self.rect = self.image.get_rect(center=(self.major, self.centery))
+        self.set_direction()
         self.set_xy()
 
     def set_xy(self, off_x=0, off_y=0):
@@ -89,12 +98,31 @@ class RotatingPlanet(Sprite):
         self.set_xy(delta_x, delta_y)
         self.displaced = True
 
-    def update(self):
-        if 0 <= self.angle + self.speed < 360:
-            self.angle += self.speed
-        else:
-            self.angle = -self.speed
+    def set_direction(self):
+        orbit = self.tracked_orbit
+        direction = orbit.direction
+        star_spin = orbit.star.spin
 
+        if direction == 'prograde':
+            self.direction = star_spin
+        elif direction == 'retrograde':
+            self.direction = 'CW' if star_spin == 'CCW' else 'CCW'
+
+    def spin(self, direction):
+        if direction == 'CW':
+            if 0 <= self.angle + self.speed < 360:
+                self.angle += self.speed
+            else:
+                self.angle = -self.speed
+
+        elif direction == 'CCW':
+            if 0 <= self.angle - self.speed < 360:
+                self.angle -= self.speed
+            else:
+                self.angle = 360
+
+    def update(self):
+        self.spin(self.direction)
         self.tracked_orbit.set_true_anomaly(self.angle)
         self.set_xy()
 
@@ -150,7 +178,8 @@ def topdown_loop(system):
     text = f2.render('Top-Down View', 1, blanco, negro)
     text_rect = text.get_rect()
 
-    planets = WidgetGroup([TranslatingPlanet(planet, rect.centery) for planet in system.planets])
+    t_p = TranslatingPlanet
+    planets = WidgetGroup([t_p(planet, rect.centery) for planet in system.planets if planet.orbit is not None])
 
     fps = time.Clock()
     dx, dy = 0, 0
