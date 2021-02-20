@@ -1,9 +1,10 @@
 from engine.frontend.globales import WidgetGroup, ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_TEXTO
-from engine.frontend.widgets.panels.common import ListedArea, ListedBody, TextButton, Meta
+from engine.frontend.widgets.panels.common import ListedArea, ListedBody, TextButton
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.equations.binary import system_type
+from engine.frontend.widgets.meta import Meta
 from ..values import ValueText
 from pygame import Surface
 
@@ -46,12 +47,13 @@ class StarSystemPanel(BaseWidget):
         self.current.reset(star)
 
     def create_button(self, system_data):
-        idx = len(self.systems)
-        button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
-        self.systems.append(system_data)
-        self.system_buttons.add(button)
-        self.properties.add(button)
-        self.sort_buttons()
+        if system_data not in self.systems:
+            idx = len(self.systems)
+            button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
+            self.systems.append(system_data)
+            self.system_buttons.add(button)
+            self.properties.add(button)
+            self.sort_buttons()
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
@@ -94,8 +96,6 @@ class StarSystemPanel(BaseWidget):
         if len(self.systems) or len(self.stars_area):
             for s in self.systems+self.stars_area.objects():
                 Systems.set_system(s)
-
-        self.systems.clear()
 
 
 class SystemType(BaseWidget):
@@ -250,7 +250,7 @@ class DissolveButton(TextButton):
             self.parent.current.destroy()
 
 
-class SystemButton(Meta, BaseWidget):
+class SystemButton(Meta):
     enabled = True
 
     def __init__(self, parent, system_data, idx, x, y):

@@ -1,14 +1,14 @@
 from engine.frontend.globales import WidgetGroup, COLOR_AREA, ANCHO
 from engine.equations.satellite import major_moon_by_composition
-from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.values import ValueText
+from engine.frontend.widgets.meta import Meta
 from engine import material_densities
-from .common import TextButton, Meta
 from ..object_type import ObjectType
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
+from .common import TextButton
 
 
 class SatellitePanel(BasePanel):
@@ -213,7 +213,7 @@ class DelMoonButton(TextButton):
             self.parent.current.destroy_button()
 
 
-class SatelliteButton(Meta, BaseWidget):
+class SatelliteButton(Meta):
     enabled = True
 
     def __init__(self, parent, satellite, x, y):

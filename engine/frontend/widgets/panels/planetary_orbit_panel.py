@@ -1,9 +1,10 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_SELECTED, COLOR_TEXTO
 from engine.frontend.globales import Renderer, WidgetHandler, WidgetGroup
-from .common import AvailableObjects, AvailablePlanet, Meta, ModifyArea
 from engine.frontend.widgets.incremental_value import IncrementalValue
+from .common import AvailableObjects, AvailablePlanet, ModifyArea
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
+from engine.frontend.widgets.meta import Meta
 from pygame import Surface, Rect
 from engine import q, roll
 
@@ -173,7 +174,7 @@ class AvailablePlanets(AvailableObjects):
         super().show()
 
 
-class ObjectButton(Meta, BaseWidget):
+class ObjectButton(Meta):
     enabled = False
 
     def __init__(self, parent, obj, x, y):
@@ -201,7 +202,7 @@ class ObjectButton(Meta, BaseWidget):
         self.rect.topleft = x, y
 
 
-class Marker(Meta, BaseWidget, IncrementalValue):
+class Marker(Meta, IncrementalValue):
     locked = True
     enabled = True
     text = ''

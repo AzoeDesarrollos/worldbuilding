@@ -1,4 +1,4 @@
-from .common import TextButton, Meta, AvailableObjects, ToggleableButton, AvailablePlanet, ModifyArea
+from .common import TextButton, AvailableObjects, ToggleableButton, AvailablePlanet, ModifyArea
 from engine.frontend.globales import WidgetGroup, Renderer, render_textrect
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.basewidget import BaseWidget
@@ -7,6 +7,7 @@ from engine.frontend.visualization import topdown_view
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.globales.constantes import *
+from engine.frontend.widgets.meta import Meta
 from engine import q, recomendation
 from pygame import Surface, Rect
 from engine.backend import roll
@@ -499,7 +500,7 @@ class OrbitType(BaseWidget, Intertwined):
                 return q(180, new_value.u)
 
 
-class OrbitMarker(Meta, BaseWidget, IncrementalValue, Intertwined):
+class OrbitMarker(Meta, IncrementalValue, Intertwined):
     enabled = True
     name = ''
     color = None
@@ -583,7 +584,7 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue, Intertwined):
         return self.name + ' @' + self.text
 
 
-class OrbitButton(Meta, BaseWidget, Intertwined):
+class OrbitButton(Meta, Intertwined):
     locked = False
 
     def __init__(self, parent, color):

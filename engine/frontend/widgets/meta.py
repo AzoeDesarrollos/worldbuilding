@@ -1,13 +1,13 @@
+from .basewidget import BaseWidget
 
-class Meta:
+
+class Meta(BaseWidget):
     enabled = False
     img_sel = None
     img_uns = None
     img_dis = None
     selected = False
-    image = None
 
-    is_visible = False
     has_mouseover = False
 
     def enable(self):

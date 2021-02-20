@@ -1,10 +1,10 @@
-from engine.frontend.widgets.basewidget import BaseWidget
 from engine.frontend.globales import COLOR_AREA, COLOR_DISABLED, COLOR_TEXTO
 from engine.equations.planetary_system import Systems
-from . import ListedArea, Meta, PlanetButton
+from engine.frontend.widgets.meta import Meta
+from . import ListedArea, PlanetButton
 
 
-class ToggleableButton(Meta, BaseWidget):
+class ToggleableButton(Meta):
     enabled = True
 
     def __init__(self, parent, text, method, x, y):

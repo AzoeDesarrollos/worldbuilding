@@ -3,11 +3,12 @@ from engine.equations.satellite import minor_moon_by_composition
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
+from engine.frontend.widgets.meta import Meta
 from engine import material_densities, q
-from .common import TextButton, Meta
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
 from ..values import ValueText
+from .common import TextButton
 
 
 class AsteroidPanel(BasePanel):
@@ -228,7 +229,7 @@ class DelAsteroidButton(TextButton):
             self.parent.current.destroy_button()
 
 
-class AsteroidButton(Meta, BaseWidget):
+class AsteroidButton(Meta):
     enabled = True
 
     def __init__(self, parent, satellite, x, y):

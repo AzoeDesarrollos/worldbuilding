@@ -4,7 +4,8 @@ from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
-from .common import PlanetButton, TextButton, Meta
+from engine.frontend.widgets.meta import Meta
+from .common import PlanetButton, TextButton
 from engine.equations.planet import Planet
 from pygame import Rect
 from engine import q
@@ -244,7 +245,7 @@ class PlanetType(ObjectType):
         super().fill(tos)
 
 
-class Unit(Meta, BaseWidget):
+class Unit(Meta):
     name = ''
     enabled = True
     mass_number = None

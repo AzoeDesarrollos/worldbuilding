@@ -1,11 +1,11 @@
 from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, WidgetGroup, ANCHO
-from engine.frontend.widgets.panels.common import TextButton, Meta
+from engine.frontend.widgets.panels.common import TextButton
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.sprite_star import StarSprite
-from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
+from engine.frontend.widgets.meta import Meta
 from engine.equations.star import Star
 
 
@@ -52,9 +52,9 @@ class StarPanel(BasePanel):
             star_data.update({'idx': idx})
             star = Star(star_data)
             if star not in self.stars:
+                self.stars.append(star)
                 self.add_button(star)
                 Systems.set_system(star)
-                self.stars.append(star)
 
         if len(self.star_buttons):
             self.current.current = self.star_buttons[0].object_data
@@ -80,19 +80,17 @@ class StarPanel(BasePanel):
         button = StarButton(self.current, star, self.curr_x, self.curr_y)
         self.properties.add(button, layer=2)
         Systems.add_star(star)
+        self.stars.append(star)
         self.sort_buttons()
         self.current.erase()
         self.button_add.disable()
-
-        self.add_on_exit = len(self.stars) == 1
 
     def del_button(self, planet):
         button = [i for i in self.star_buttons if i.object_data == planet][0]
         self.properties.remove(button)
         self.sort_buttons()
         self.button_del.disable()
-
-        self.add_on_exit = len(self.stars) == 1
+        self.stars.remove(button.object_data)
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
@@ -127,6 +125,9 @@ class StarPanel(BasePanel):
                 elif event.button == 5 and last_is_hidden:
                     self.curr_y -= 32
                 self.sort_buttons()
+
+    def update(self):
+        self.add_on_exit = len(self.stars) == 1
 
 
 class StarType(ObjectType):
@@ -208,7 +209,7 @@ class DelStarButton(TextButton):
             self.parent.current.destroy_button()
 
 
-class StarButton(Meta, BaseWidget):
+class StarButton(Meta):
     enabled = True
 
     def __init__(self, parent, star, x, y):
