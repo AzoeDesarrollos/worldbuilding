@@ -264,7 +264,8 @@ class OrbitPanel(BaseWidget):
 
     def load_orbits(self, event):
         for position in event.data.get('Orbits', []):
-            self._loaded_orbits.append(position)
+            if position not in self._loaded_orbits:
+                self._loaded_orbits.append(position)
 
     def set_loaded_orbits(self):
         for orbit_data in self._loaded_orbits:
