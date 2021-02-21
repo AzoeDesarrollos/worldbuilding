@@ -3,8 +3,8 @@ from pygame import KEYDOWN, QUIT, KEYUP, Surface, SRCALPHA, gfxdraw, font, time,
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.globales.constantes import *
 from engine.frontend.globales import WidgetGroup
+from math import sin, cos, radians, ceil
 from decimal import Decimal, getcontext
-from math import sin, cos, radians
 from pygame.sprite import Sprite
 from engine.backend import roll
 from os import getcwd, path
@@ -42,11 +42,12 @@ def paint_stars(surface, i, f):
 def draw_orbits(fondo, system):
     getcontext().prec = 2
     surf_rect = fondo.get_rect()
-    star = system.star_system if system.star_system.letter is None else system.star_system.primary
 
-    size = round(star.radius.m*20)
-    gfxdraw.aacircle(fondo, *surf_rect.midleft, size, star.color)
-    gfxdraw.filled_circle(fondo, *surf_rect.midleft, size, star.color)
+    if system.star_system.letter == 'P':
+        for star in system.star_system:
+            semi_major = int(Decimal(star.orbit.a.m) * Decimal(100.0))
+            semi_minor = int(Decimal(star.orbit.b.m) * Decimal(100.0))
+            gfxdraw.ellipse(fondo, *surf_rect.midleft, semi_major, semi_minor, COLOR_STARORBIT)
 
     for planet in system.planets:
         if planet.orbit is not None:
@@ -54,21 +55,21 @@ def draw_orbits(fondo, system):
             semi_minor = int(Decimal(planet.orbit.b.m) * Decimal(100.0))
             gfxdraw.ellipse(fondo, *surf_rect.midleft, semi_major, semi_minor, COLOR_STARORBIT)
 
-    for radius in [star.habitable_inner.m, star.habitable_outer.m]:
+    for radius in [system.star_system.habitable_inner.m, system.star_system.habitable_outer.m]:
         scaled = int(Decimal(radius) * Decimal(100.0))
         try:
             gfxdraw.ellipse(fondo, *surf_rect.midleft, scaled, scaled, COLOR_HABITABLE)
         except OverflowError:
             print(f' habitable radius of {scaled} exceeds the maximum?')
 
-    scaled = int(Decimal(star.frost_line.m) * Decimal(100.0))
+    scaled = int(Decimal(system.star_system.frost_line.m) * Decimal(100.0))
     try:
         gfxdraw.ellipse(fondo, *surf_rect.midleft, *[scaled]*2, (0, 0, 255))
     except OverflowError:
         print(f'frost line radius of {scaled} exceeds the maximum?')
 
 
-class RotatingPlanet(Sprite):
+class RotatingAstro(Sprite):
     displaced = False
     direction = 'CW'
 
@@ -78,7 +79,7 @@ class RotatingPlanet(Sprite):
         self.centerx = 0  # for simmetry
 
         self.tracked_orbit = orbit
-        self.speed = 360/orbit.period.to('day').m
+        self.speed = (360/orbit.period.to('day').m)/10
         self.major = int(Decimal(orbit.a.m) * Decimal(100.0))
         self.minor = int(Decimal(orbit.b.m) * Decimal(100.0))
         self.angle = self.tracked_orbit.true_anomaly.m
@@ -106,16 +107,16 @@ class RotatingPlanet(Sprite):
         if direction == 'prograde':
             self.direction = star_spin
         elif direction == 'retrograde':
-            self.direction = 'CW' if star_spin == 'CCW' else 'CCW'
+            self.direction = 'clockwise' if star_spin == 'counter-clockwise' else 'counter-clockwise'
 
     def spin(self, direction):
-        if direction == 'CW':
+        if direction == 'clockwise':
             if 0 <= self.angle + self.speed < 360:
                 self.angle += self.speed
             else:
                 self.angle = -self.speed
 
-        elif direction == 'CCW':
+        elif direction == 'counter-clockwise':
             if 0 <= self.angle - self.speed < 360:
                 self.angle -= self.speed
             else:
@@ -127,7 +128,7 @@ class RotatingPlanet(Sprite):
         self.set_xy()
 
 
-class TranslatingPlanet(RotatingPlanet):
+class TranslatingAstro(RotatingAstro):
     def __init__(self, planet_obj, centery):
         size = 0
         color = None
@@ -161,6 +162,21 @@ class TranslatingPlanet(RotatingPlanet):
         gfxdraw.filled_circle(self.image, *size_3, color)
 
 
+class RotatingStar(RotatingAstro):
+    def __init__(self, star, dy):
+        radius = ceil(Decimal(star.radius.m) * Decimal(3.5))
+        self.image = Surface([radius*2, radius*2], SRCALPHA)
+        self.rect = self.image.get_rect()
+        gfxdraw.aacircle(self.image, *self.rect.center, radius, star.color)
+        gfxdraw.filled_circle(self.image, *self.rect.center, radius, star.color)
+        self.tracked_orbit = star
+        super().__init__(star.orbit, dy+ceil(star.orbit.a.m*100))
+        self.direction = star.spin
+
+    def set_direction(self):
+        pass
+
+
 def topdown_loop(system):
     blanco = 255, 255, 255
     negro = 0, 0, 0
@@ -178,8 +194,16 @@ def topdown_loop(system):
     text = f2.render('Top-Down View', 1, blanco, negro)
     text_rect = text.get_rect()
 
-    t_p = TranslatingPlanet
-    planets = WidgetGroup([t_p(planet, rect.centery) for planet in system.planets if planet.orbit is not None])
+    astros = WidgetGroup()
+    t_p = TranslatingAstro
+    astros.add([t_p(planet, rect.centery) for planet in system.planets if planet.orbit is not None], layer=2)
+
+    if system.star_system.letter is None:
+        astros.add(RotatingStar(system.star_system, bg_rect.centery), layer=1)
+
+    elif system.star_system.letter == 'P':
+        for star in system.star_system:
+            astros.add(RotatingStar(star, bg_rect.centery), layer=1)
 
     fps = time.Clock()
     dx, dy = 0, 0
@@ -221,14 +245,14 @@ def topdown_loop(system):
             dy = 0
 
         if dx or dy:
-            for planet in planets.widgets():
+            for planet in astros.widgets():
                 planet.displace(dx, dy)
 
         fondo.blit(bg_stars, rect.topleft)
-        planets.update()
-        planets.draw(fondo)
+        astros.update()
+        astros.draw(fondo)
 
-        for i, planet in enumerate(planets):
+        for i, planet in enumerate(astros.get_widgets_from_layer(2)):
             render = f1.render(str(round(planet.angle)) + '°', 1, blanco, negro)
             if i % 2 == 0:
                 j = 11

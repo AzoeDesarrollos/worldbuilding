@@ -249,6 +249,16 @@ class SatelliteOrbit(Orbit):
         self.period = q(0.0588 * (pow(self._a, 3) / sqrt(main_body_mass.m + satellite.mass.m)), 'day')
 
 
+class BinaryStarOrbit(Orbit):
+    def __init__(self, star, other, a, e):
+        super().__init__(a, e, q(0, 'degrees'))
+        self.reset_period_and_speed(star.mass.m+other.mass.m)
+
+    def reset_period_and_speed(self, main_body_mass):
+        self.period = q(sqrt(pow(self._a, 3) / main_body_mass), 'year')
+        self.velocity = q(sqrt(main_body_mass / self._a), 'earth_orbital_velocity').to('kilometer per second')
+
+
 def from_resonance(reference, primary, resonance: str):
     """Return the semi-major axis in AU of the resonant orbit.
 

@@ -188,7 +188,7 @@ class AvailableStars(ListedArea):
     name = 'Stars'
 
     def populate(self, stars):
-        for i, star in enumerate(stars):
+        for i, star in enumerate(sorted(stars, key=lambda s: s.mass, reverse=True)):
             if star not in [listado.object_data for listado in self.listed_objects]:
                 listed = ListedStar(self, star, self.rect.x + 3, i * 16 + self.rect.y + 21)
                 self.listed_objects.add(listed)

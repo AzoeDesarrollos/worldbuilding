@@ -1,6 +1,7 @@
 from engine import q
 from math import sqrt
 from datetime import datetime
+from .orbit import BinaryStarOrbit
 
 
 class BinarySystem:
@@ -39,6 +40,9 @@ class BinarySystem:
         self.barycenter = q(avgsep * (self.secondary.mass.m / (self.primary.mass.m + self.secondary.mass.m)), 'au')
         self.primary_distance = round(self.barycenter, 2)
         self.secondary_distance = round(self.average_separation - self.primary_distance, 2)
+
+        self.primary.orbit = BinaryStarOrbit(self.primary, self.secondary, self.primary_distance, self.ecc_p)
+        self.secondary.orbit = BinaryStarOrbit(self.secondary, self.primary, self.secondary_distance, self.ecc_s)
 
         self.system_name = self.__repr__()
 
@@ -113,6 +117,7 @@ class PTypeSystem(BinarySystem):
         self._outer_boundry = round(self._mass.m * 40, 3)
         self._frost_line = round(4.85 * sqrt(self._luminosity.m), 3)
         self.set_qs()
+        self.spin = self.primary.spin
 
         self.inner_forbbiden_zone = q(round(self.min_sep.m / 3, 3), 'au')
         self.outer_forbbiden_zone = q(round(self.max_sep.m * 3, 3), 'au')
@@ -127,6 +132,9 @@ class PTypeSystem(BinarySystem):
         self.inner_boundry = q(self._inner_boundry, 'au')
         self.outer_boundry = q(self._outer_boundry, 'au')
         self.frost_line = q(self._frost_line, 'au')
+
+    def validate_orbit(self, orbit):
+        return self._inner_boundry < orbit < self._outer_boundry
 
 
 class STypeSystem(BinarySystem):
