@@ -1,7 +1,7 @@
 {
   "100% hydrogen":{
     "planet":"gaseous",
-    "hydrogen":1,
+    "hydrogen":100,
     "helium":0,
     "iron":0,
     "silicates":0,
@@ -12,7 +12,7 @@
     "planet":"terrestial",
     "hydrogen":0,
     "helium":0,
-    "iron":1,
+    "iron":100,
     "silicates":0,
     "water ice":0,
     "type":"homogeneous"
@@ -22,7 +22,7 @@
     "hydrogen":0,
     "helium":0,
     "iron":0,
-    "silicates":1,
+    "silicates":100,
     "water ice":0,
     "type":"homogeneous"
     },
@@ -32,49 +32,49 @@
     "helium":0,
     "iron":0,
     "silicates":0,
-    "water ice":1,
+    "water ice":100,
     "type":"homogeneous"
     },
   "25% water ice, 52,5% silicates, 22% iron":{
     "planet":"terrestial",
     "hydrogen":0,
     "helium":0,
-    "iron":0.22,
-    "silicates":0.53,
-    "water ice":0.25,
+    "iron":22,
+    "silicates":53,
+    "water ice":25,
     "type":"diffentiated"
     },
   "30% silicates, 70% iron":{
     "planet":"terrestial",
     "hydrogen":0,
     "helium":0,
-    "iron":0.7,
-    "silicates":0.3,
+    "iron":70,
+    "silicates":30,
     "water ice":0,
     "type":"diffentiated"
     },
-  "48% water ice, 48,5% silicates, 6,5% iron":{
+  "47% water ice, 47,5% silicates, 5,5% iron":{
     "planet":"terrestial",
     "hydrogen":0,
     "helium":0,
-    "iron":0.055,
-    "silicates":0.475,
-    "water ice":0.47,
+    "iron":5.5,
+    "silicates":47.5,
+    "water ice":47,
     "type":"diffentiated"
     },
   "67,5% silicates, 32,5% iron":{
     "planet":"terrestial",
     "hydrogen":0	,
     "helium":0	,
-    "iron":0.325,
-    "silicates":0.675,
+    "iron":32.5,
+    "silicates":67.5,
     "water ice":0	,
     "type":"diffentiated"
     },
   "75% hydrogen, 25% helium":{
     "planet":"gaseous",
-    "hydrogen":0.75,
-    "helium":0.25,
+    "hydrogen":75,
+    "helium":25,
     "iron":0,
     "silicates":0,
     "water ice":0,
@@ -84,9 +84,9 @@
     "planet": "terrestial",
     "hydrogen": 0,
     "helium": 0,
-    "iron": 0.03,
-    "silicates": 0.22,
-    "water ice": 0.75,
+    "iron": 3,
+    "silicates": 22,
+    "water ice": 75,
     "type": "diffentiated"
   }
 }

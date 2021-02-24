@@ -44,8 +44,10 @@ composiciones = abrir_json(path.join(ruta, 'compositions.json'))
 mascara = mask.from_threshold(image.load(path.join(ruta, 'mask.png')), (255, 0, 255), (250, 1, 250))
 
 
-def average(a, b):
-    return (a + b) / 2
+def interpolate(x, x1, x2, y1, y2):
+    a = (y2 - y1) / (x2 - x1)
+    b = y1 - a * x1
+    return a * x + b
 
 
 def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.0, radius_upper_limit=0.0):
@@ -81,6 +83,7 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
 
     done = False
     px, py = 0, 0
+    composition_text_comp = None
     while not done:
         for e in event.get():
             if e.type == QUIT:
@@ -137,6 +140,7 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                         for name in _lineas:
                             if [point_x, point_y] in _lineas[name]:
                                 data['composition'] = name
+                                composition_text_comp = name
                                 break
                     else:
                         punto.deselect()
@@ -198,26 +202,35 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                         b = name
                         break
                 if a and b:
-                    # si el cursor está entre dos lineas, se computa el promedio de los valores de composición.
-                    silicates = average(composiciones[a]['silicates'], composiciones[b]['silicates'])
-                    hydrogen = average(composiciones[a]['hydrogen'], composiciones[b]['hydrogen'])
-                    helium = average(composiciones[a]['helium'], composiciones[b]['helium'])
-                    iron = average(composiciones[a]['iron'], composiciones[b]['iron'])
-                    water_ice = average(composiciones[a]['water ice'], composiciones[b]['water ice'])
+                    c = composiciones
+                    silicates = interpolate(py, alto, bajo, c[a]['silicates'], c[b]['silicates'])
+                    hydrogen = interpolate(py, alto, bajo, c[a]['hydrogen'], c[b]['hydrogen'])
+                    helium = interpolate(py, alto, bajo, c[a]['helium'], c[b]['helium'])
+                    iron = interpolate(py, alto, bajo, c[a]['iron'], c[b]['iron'])
+                    water_ice = interpolate(py, alto, bajo, c[a]['water ice'], c[b]['water ice'])
+                    values = [i for i in [silicates, hydrogen, helium, iron, water_ice] if i != 0]
 
                     # sólo mostramos los valores mayores a 0%
+                    keys = []
                     compo = []
                     if silicates:
                         compo.append(str(round(silicates, 2)) + '% silicates')
+                        keys.append('silicates')
                     if hydrogen:
                         compo.append(str(round(hydrogen, 2)) + '% hydrogen')
+                        keys.append('hydrogen')
                     if helium:
                         compo.append(str(round(helium, 2)) + '% helium')
+                        keys.append('helium')
                     if iron:
                         compo.append(str(round(iron, 2)) + '% iron')
+                        keys.append('iron')
                     if water_ice:
                         compo.append(str(round(water_ice, 2)) + '% water ice')
-                    data['composition'] = ', '.join(compo)
+                        keys.append('water ice')
+
+                    composition_text_comp = ', '.join(compo)
+                    data['composition'] = zip(keys, values)
 
                     if hydrogen or helium:
                         data['clase'] = 'Gas Dwarf'
@@ -271,8 +284,8 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                 fondo.blit(fuente1.render(radius_text, True, radius_color), (140, rect.bottom + 43))
                 fondo.blit(fuente1.render(density_text, True, negro), (130 * 2 - 5, rect.bottom + 43))
                 fondo.blit(fuente1.render(gravity_text, True, negro), (140 * 3, rect.bottom + 43))
-                if data.get('composition', False):
-                    composition_text = 'Composition:' + data['composition']
+                if composition_text_comp is not None:
+                    composition_text = 'Composition:' + composition_text_comp
                     fondo.blit(fuente1.render(composition_text, True, negro, blanco), (5, rect.bottom + 64))
 
             fondo.blit(texto1, rectT1)

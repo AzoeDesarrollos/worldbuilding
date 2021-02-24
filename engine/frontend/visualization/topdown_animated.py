@@ -177,6 +177,20 @@ class RotatingStar(RotatingAstro):
         pass
 
 
+class StationaryStar(Sprite):
+    def __init__(self, star, center):
+        radius = ceil(Decimal(star.radius.m) * Decimal(20))
+        self.image = Surface([radius*2, radius*2], SRCALPHA)
+        self.rect = self.image.get_rect()
+        gfxdraw.aacircle(self.image, *self.rect.center, radius, star.color)
+        gfxdraw.filled_circle(self.image, *self.rect.center, radius, star.color)
+        self.rect.center = center
+        super().__init__()
+
+    def displace(self, delta_x, delta_y):
+        self.rect.move_ip(delta_x, delta_y)
+
+
 def topdown_loop(system):
     blanco = 255, 255, 255
     negro = 0, 0, 0
@@ -199,7 +213,7 @@ def topdown_loop(system):
     astros.add([t_p(planet, rect.centery) for planet in system.planets if planet.orbit is not None], layer=2)
 
     if system.star_system.letter is None:
-        astros.add(RotatingStar(system.star_system, bg_rect.centery), layer=1)
+        astros.add(StationaryStar(system.star_system, bg_rect.midleft), layer=1)
 
     elif system.star_system.letter == 'P':
         for star in system.star_system:
