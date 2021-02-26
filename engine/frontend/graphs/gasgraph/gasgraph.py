@@ -1,7 +1,7 @@
 from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, image, K_LSHIFT, K_LCTRL, KEYUP
 from pygame import init, quit, display, font, event, Rect, Surface, SCALED
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, ANCHO, ALTO
-from ..common import pos_to_keys, keys_to_pos, Linea, Punto
+from ..common import find_and_interpolate, Linea, Punto
 from engine.frontend.globales import WidgetGroup
 from pygame.sprite import Sprite
 from sys import exit
@@ -78,7 +78,7 @@ def gasgraph_loop(limit_mass):
     rect_puffy = Rect(x + 28, 16, (img_rect.w / 2) + 100, y - 16)
     rect_giant = Rect(31, 16, x - 3, y - 16)
 
-    lim_y = keys_to_pos(limit_mass, mass_keys, yes, 'gt')
+    lim_y = find_and_interpolate(limit_mass, mass_keys, yes)
     lim_rect = Rect(31, lim_y, img_rect.w, img_rect.h - lim_y + img_rect.y)
     lim_img = Surface(lim_rect.size)
     lim_img.set_alpha(150)
@@ -113,8 +113,8 @@ def gasgraph_loop(limit_mass):
 
                 if img_rect.collidepoint(px, py) and any(valid) and not off_limit:
                     invalid = False
-                    mass = round(pos_to_keys(linea_h.rect.y + 1, mass_keys, yes, 'gt'), 5)
-                    radius = round(pos_to_keys(linea_v.rect.x, radius_keys, exes, 'gt'), 3)
+                    mass = round(find_and_interpolate(linea_h.rect.y + 1, yes, mass_keys), 5)
+                    radius = round(find_and_interpolate(linea_v.rect.x, exes, radius_keys), 3)
                     clase = 'Puffy Giant' if valid[0] else ''
                     clase = 'Gas Giant' if valid[1] else clase
                     clase = 'Super Jupiter' if valid[2] else clase

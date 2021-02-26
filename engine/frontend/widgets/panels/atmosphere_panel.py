@@ -1,5 +1,5 @@
 from engine.frontend import WidgetHandler, ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO, WidgetGroup, COLOR_DISABLED
-from engine.frontend.graphs.atmograph.atmograph import graph, atmo, interpolacion_lineal, convert
+from engine.frontend.graphs.atmograph.atmograph import graph, atmo, interpolacion_lineal, convert, convert2
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
@@ -456,28 +456,24 @@ class Atmograph(BaseWidget):
     def on_mousebuttondown(self, event):
         delta_y = 0
         n2 = self.parent.elements.widgets()[9]
-        if any([self.parent.curr_planet is None, n2.percent.get_value() == 0, not n2.percent.value.isnumeric()]):
+        n2_value = n2.percent.get_value()
+        if any([self.parent.curr_planet is None, n2_value == 0, not n2.percent.value.isnumeric()]):
             return
-        n2 = self.parent.elements.widgets()[9]
-        vol_n2 = interpolacion_lineal(n2.percent.get_value())
+        vol_n2 = interpolacion_lineal(n2_value)
         if vol_n2 != self.vol_n2:
             self.reached = False
-        self.vol_n2 = interpolacion_lineal(n2.percent.get_value())
+        self.vol_n2 = interpolacion_lineal(n2_value)
         if event.button == 1 and not self.reached:
-            n2 = self.parent.elements.widgets()[9]
             warning_text = 'Pressure at sea level depends on Nitrogen concentration.' \
                            ' Please, fill a value before proceeding.'
-            assert n2.percent.get_value(), warning_text
+            assert n2_value, warning_text
 
-            max_pressure, min_pressure = atmo(n2.percent.get_value(), self.rect)
+            max_pressure, min_pressure = atmo(n2_value, self.rect)
             self.max_p, self.min_p = max_pressure, min_pressure
             selected_pressure = (max_pressure + min_pressure) // 2
             self.pressure = selected_pressure
             draw.line(self.canvas, (0, 0, 0, 255), (0, max_pressure), (self.rect.right, max_pressure))
             draw.line(self.canvas, (0, 0, 0, 255), (0, min_pressure), (self.rect.right, min_pressure))
-
-            self.vol_n2 = interpolacion_lineal(n2.percent.get_value())
-
             self.enabled = True
 
             pressure = convert(selected_pressure)

@@ -20,7 +20,7 @@ class BinarySystem:
 
     idx = None
 
-    def __init__(self, name, primary, secondary, avgsep, ep=0, es=0):
+    def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, id=None):
         if secondary.mass <= primary.mass:
             self.primary = primary
             self.secondary = secondary
@@ -47,7 +47,8 @@ class BinarySystem:
         self.system_name = self.__repr__()
 
         # ID values make each system unique, even if they have the same stars and separation.
-        self.id = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
+        now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
+        self.id = id if id is not None else now
 
     @staticmethod
     def calculate_distances(e, ref):
@@ -95,8 +96,8 @@ class PTypeSystem(BinarySystem):
     mass = 0
     luminosity = 0
 
-    def __init__(self, primary, secondary, avgsep, ep=0, es=0, name=None):
-        super().__init__(name, primary, secondary, avgsep, ep, es)
+    def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
+        super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
 
         assert 0.4 <= ep <= 0.7, 'Primary eccentricity must be between 0.4 and 0.7'
         max_sep_p, min_sep_p = self.calculate_distances(ep, self.primary_distance.m)
@@ -140,8 +141,8 @@ class PTypeSystem(BinarySystem):
 class STypeSystem(BinarySystem):
     letter = 'S'
 
-    def __init__(self, primary, secondary, avgsep, ep=0, es=0, name=None):
-        super().__init__(name, primary, secondary, avgsep, ep, es)
+    def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
+        super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
 
         assert 0.4 <= ep <= 0.7, 'Primary eccentricity must be between 0.4 and 0.7'
         max_sep_p, min_sep_p = self.calculate_distances(ep, self.average_separation.m)

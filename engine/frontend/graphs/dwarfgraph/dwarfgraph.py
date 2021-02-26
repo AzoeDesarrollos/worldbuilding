@@ -1,9 +1,10 @@
 from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, KEYUP, K_LSHIFT, K_LCTRL, SCALED
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO
-from ..common import Linea, Punto, pos_to_keys, keys_to_pos
 from pygame import display, event, font, transform, image
+from ..common import Linea, Punto, find_and_interpolate
 from engine.frontend.globales import WidgetGroup
 from pygame import init, quit, Rect, Surface
+from engine.backend.randomness import roll
 from pygame.sprite import Sprite
 from math import pi, pow
 from os.path import join
@@ -83,7 +84,7 @@ def dwarfgraph_loop(limit_mass=None):
 
     lim_img, lim_rect = None, None
     if limit_mass is not None:
-        lim_y = keys_to_pos(limit_mass, mass_keys, yes, 'gt')
+        lim_y = find_and_interpolate(limit_mass, mass_keys, yes)
         lim_rect = Rect(54, lim_y + 26, bg_rect.w, bg_rect.h - lim_y - 26 + bg_rect.y)
         lim_img = Surface(lim_rect.size)
         lim_img.set_alpha(150)
@@ -108,13 +109,48 @@ def dwarfgraph_loop(limit_mass=None):
 
                 dx, dy = punto.rect.center
                 if bg_rect.collidepoint(dx, dy):
-                    mass = round(pos_to_keys(linea_h.rect.y - 26, mass_keys, yes, 'gt'), 5)
-                    radius = round(pos_to_keys(linea_v.rect.x, radius_keys, exes, 'gt'), 3)
+                    mass = round(find_and_interpolate(linea_h.rect.y - 26, yes, mass_keys), 5)
+                    radius = round(find_and_interpolate(linea_v.rect.x, exes, radius_keys), 3)
+
                     data.update({'mass': mass, 'radius': radius, 'clase': 'Dwarf Planet'})
                     d = density(mass, radius)
                     text_mass = 'Mass: {}'.format(mass)
                     text_radius = 'Radius: {}'.format(radius)
                     text_density = 'Density: {}'.format(d)
+                    color = bg.get_at((dx - 54, dy - 24))
+                    composition = {}
+                    s, i, r = 0, 0, 0
+                    if tuple(color) == (63, 223, 0, 255):
+                        i = 100
+                    elif tuple(color) == (31, 255, 0, 255):  # 10% silicates, 90% water ice
+                        i = round(roll(60, 90), 2)
+                        s = round(100 - i, 2)
+                    elif tuple(color) == (95, 191, 0, 255):  # 60% silicates, 40% water ice
+                        s = round(roll(50, 60), 2)
+                        i = round(100 - s, 2)
+                    elif tuple(color) == (127, 159, 0, 255):  # 90% silicates, 10% water ice
+                        s = round(roll(60, 90), 2)
+                        i = round(100 - s, 2)
+                    elif tuple(color) == (159, 127, 0, 255):  # 90% silicates, 10% iron
+                        s = round(roll(60, 90), 2)
+                        r = round(100 - s, 2)
+                    elif tuple(color) == (191, 95, 0, 255):  # 60% silicates, 40% iron
+                        s = round(roll(50, 60), 2)
+                        r = round(100 - s, 2)
+                    elif tuple(color) == (223, 63, 0, 255):  # 10% silicates, 90% iron
+                        r = round(roll(60, 90), 2)
+                        s = round(100 - r, 2)
+                    elif tuple(color) == (255, 31, 0, 255):
+                        r = 100
+
+                    if s:
+                        composition['silicates'] = s
+                    if i:
+                        composition['water ice'] = i
+                    if r:
+                        composition['iron'] = r
+
+                    data['composition'] = composition
                 else:
                     text_mass = 'Mass: N/A'
                     text_radius = 'Radius: N/A'
@@ -123,7 +159,6 @@ def dwarfgraph_loop(limit_mass=None):
             elif e.type == MOUSEBUTTONDOWN:
                 if e.button == 1:
                     done = True
-                    # break
 
             elif e.type == KEYDOWN:
                 if e.key == K_SPACE:

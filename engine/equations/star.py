@@ -63,7 +63,7 @@ class Star(BodyInHydrostaticEquilibrium):
         elif not luminosity and mass:
             self._luminosity = pow(mass, 3.5)
 
-        self._spin = choice(['CW', 'CCW'])
+        self._spin = choice(['clockwise', 'counter-clockwise']) if 'spin' not in data else data['spin']
         self._radius = self.set_radius()
         self.set_derivated_characteristics()
         self.set_qs()
@@ -79,9 +79,9 @@ class Star(BodyInHydrostaticEquilibrium):
 
     @property
     def spin(self):
-        if self._spin == 'CW':
+        if self._spin == 'clockwise':
             return 'clockwise'
-        elif self._spin == 'CCW':
+        elif self._spin == 'counter-clockwise':
             return 'counter-clockwise'
 
     def set_radius(self):

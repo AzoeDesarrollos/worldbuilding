@@ -259,22 +259,32 @@ class OrbitPanel(BaseWidget):
     def save_orbits(self, event):
         orbits = self._loaded_orbits
         for system in Systems.get_systems():
-            for star in system:
+            if system.star_system.letter == 'S':
+                for star in system:
+                    for marker in self._orbits.get(star, []):
+                        d = self.create_save_data(marker.orbit)
+                        orbits.append(d)
+            else:
+                star = system.star_system
                 for marker in self._orbits.get(star, []):
-                    orb = marker.orbit
-                    d = {}
-                    if hasattr(orb, 'semi_major_axis'):
-                        d['a'] = round(orb.semi_major_axis.m, 2)
-                    if hasattr(orb, 'inclination'):
-                        d['i'] = orb.inclination.m
-                    if hasattr(orb, 'eccentricity'):
-                        d['e'] = orb.eccentricity.m
-                    if hasattr(orb, 'planet'):
-                        d['planet'] = orb.planet.name
-                        d['star_id'] = orb.planet.orbit.star.id
+                    d = self.create_save_data(marker.orbit)
                     orbits.append(d)
 
         EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Orbits': orbits})
+
+    @staticmethod
+    def create_save_data(orb):
+        d = {}
+        if hasattr(orb, 'semi_major_axis'):
+            d['a'] = round(orb.semi_major_axis.m, 2)
+        if hasattr(orb, 'inclination'):
+            d['i'] = orb.inclination.m
+        if hasattr(orb, 'eccentricity'):
+            d['e'] = orb.eccentricity.m
+        if hasattr(orb, 'planet'):
+            d['planet'] = orb.planet.name
+            d['star_id'] = orb.planet.orbit.star.id
+        return d
 
     def load_orbits(self, event):
         for position in event.data.get('Orbits', []):
@@ -336,7 +346,7 @@ class OrbitPanel(BaseWidget):
             self.area_modify.color_standby()
         self.visible_markers = not self.visible_markers
         self.area_modify.visible_markers = self.visible_markers
-        self.view_button.enable()
+        # self.view_button.enable()
 
     def hide_orbit_types(self):
         for orbit_type in self.orbit_descriptions.widgets():
@@ -358,7 +368,7 @@ class OrbitPanel(BaseWidget):
             locked[0].linked_type.show()
             locked[0].linked_type.link_planet(planet)
             self.add_orbits_button.disable()
-            self.view_button.disable()
+            # self.view_button.disable()
             self.recomendation.suggest(planet, orbit, Systems.get_current_star())
             self.recomendation.show_suggestion(planet, orbit.temperature)
 
@@ -376,7 +386,7 @@ class OrbitPanel(BaseWidget):
             text = 'There is no star system set. Go back to the Star Panel and set star first.'
             rect = Rect(50, 100, 200, 100)
             render = render_textrect(text, f, rect.w, (0, 0, 0), COLOR_BOX)
-            self.view_button.disable()
+            # self.view_button.disable()
             self.image.blit(render, rect)
 
     def __repr__(self):
@@ -638,7 +648,7 @@ class OrbitButton(Meta, Intertwined):
                 self.parent.toggle_stellar_orbits()
             self.parent.hide_orbit_types()
             self.parent.show_markers_button.enable()
-            self.parent.view_button.disable()
+            # self.parent.view_button.disable()
             self.linked_type.show()
             self.lock()
 
@@ -693,7 +703,7 @@ class AddOrbitButton(TextButton):
 
 
 class VisualizationButton(TextButton):
-    enabled = True
+    enabled = False
 
     def __init__(self, parent, x, y):
         super().__init__(parent, 'View', x, y)

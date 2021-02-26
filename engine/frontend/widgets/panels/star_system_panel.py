@@ -27,7 +27,7 @@ class StarSystemPanel(BaseWidget):
         self.write('Star Systems', self.f2, COLOR_AREA, x=3, y=420)
         self.properties = WidgetGroup()
         self.f1 = self.crear_fuente(16, underline=True)
-        self.write(self.name + ' Panel', self.f1, centerx=(ANCHO//4)*1.5, y=0)
+        self.write(self.name + ' Panel', self.f1, centerx=(ANCHO // 4) * 1.5, y=0)
         self.stars_area = AvailableStars(self, ANCHO - 200, 32, 200, 350)
         self.properties.add(self.stars_area)
         self.current = SystemType(self)
@@ -37,6 +37,8 @@ class StarSystemPanel(BaseWidget):
         self.undo_button = DissolveButton(self, 334, 416)
         self.properties.add(self.setup_button, self.undo_button)
         self.system_buttons = WidgetGroup()
+        EventHandler.register(self.save_systems, 'Save')
+        EventHandler.register(self.load_systems, 'LoadData')
 
     def set_current(self, system_data):
         self.current.reset(system_data)
@@ -54,6 +56,7 @@ class StarSystemPanel(BaseWidget):
             self.system_buttons.add(button)
             self.properties.add(button)
             self.sort_buttons()
+            return button
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
@@ -68,6 +71,36 @@ class StarSystemPanel(BaseWidget):
             else:
                 x = 3
                 y += 32
+
+    def save_systems(self, event):
+        data = []
+        for button in self.system_buttons.widgets():
+            current = button.object_data
+            d = {
+                'primary': current.primary.id,
+                'secondary': current.secondary.id,
+                'avg_s': current.average_separation.m,
+                'ecc_p': current.ecc_p.m,
+                "ecc_s": current.ecc_s.m,
+                "id": current.id
+            }
+            data.append(d)
+
+        EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Systems': data})
+
+    def load_systems(self, event):
+        for system_data in event.data.get('Systems', []):
+            avg_s = system_data['avg_s']
+            ecc_p = system_data['ecc_p']
+            ecc_s = system_data['ecc_s']
+            prim = Systems.get_star_by_id(system_data['primary'])
+            scnd = Systems.get_star_by_id(system_data['secondary'])
+            idx = system_data['id']
+
+            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=idx)
+            button = self.create_button(system)
+            button.hide()
+            Systems.set_system(system)
 
     def select_one(self, btn):
         for button in self.system_buttons.widgets():
@@ -93,9 +126,9 @@ class StarSystemPanel(BaseWidget):
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
-        if len(self.systems) or len(self.stars_area):
-            for s in self.systems+self.stars_area.objects():
-                Systems.set_system(s)
+        # if len(self.systems) or len(self.stars_area):
+        #     for s in self.systems + self.stars_area.objects():
+        #         Systems.set_system(s)
 
 
 class SystemType(BaseWidget):
@@ -130,9 +163,10 @@ class SystemType(BaseWidget):
     def set_star(self, star):
         if str(self.primary.value) == '':
             self.primary.value = star
-        elif star.spin != self.primary.value.spin:
-            raise AssertionError('The stars must spin\nin the same direction\nas they would collide\notherwise.\n'
-                                 '\nSelect a star\nthat spins {}.'.format(self.primary.value.spin))
+        elif star.spin == self.primary.value.spin:
+            spin = 'clockwise' if star.spin == 'counter-clockwise' else 'counter-clockwise'
+            raise AssertionError('The stars must spin\nin oposite directions\nas they would collide\notherwise.\n'
+                                 '\nSelect a star\nthat spins {}.'.format(spin))
         else:
             self.secondary.value = star
 
@@ -142,7 +176,7 @@ class SystemType(BaseWidget):
         return dets + [float(getattr(self, name).value) for name in names if name not in ('primary', 'secondary')]
 
     def fill(self):
-        if all([str(vt.value) != '' for vt in self.properties.widgets()[0:4]]):
+        if all([str(vt.value) != '' for vt in self.properties.widgets()[0:5]]):
             if self.current is None:
                 self.current = system_type(self.separation.value)(*self.get_determinants())
             props = ['average_separation', 'ecc_p', 'ecc_s', 'barycenter', 'max_sep',
@@ -261,7 +295,7 @@ class SystemButton(Meta):
         system_data.idx = idx
         self.object_data = system_data
         if system_data.letter is not None:
-            name = system_data.letter+'-Type #{}'.format(idx)
+            name = system_data.letter + '-Type #{}'.format(idx)
         else:
             name = str(system_data)
         self.f1 = self.crear_fuente(13)

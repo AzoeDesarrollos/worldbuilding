@@ -32,6 +32,8 @@ class Planet(BodyInHydrostaticEquilibrium):
     axial_tilt = 0
     spin = ''
 
+    sprite = None
+
     def __init__(self, data):
         name = data.get('name', None)
         mass = data.get('mass', False)
@@ -62,7 +64,14 @@ class Planet(BodyInHydrostaticEquilibrium):
             self._mass = gravity * pow(radius, 2)
 
         self.set_qs(unit)
-        self.composition = {}
+        self.composition = {
+            'water ice': data['composition'].get('water ice', 0),
+            'silicates': data['composition'].get('silicates', 0),
+            'iron': data['composition'].get('iron', 0),
+            'helium': data['composition'].get('helium', 0),
+            'hydrogen': data['composition'].get('hydrogen', 0),
+        } if 'composition' in data else None
+
         self.atmosphere = {}
         self.habitable = self.set_habitability()
         self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)

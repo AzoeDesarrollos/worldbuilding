@@ -1,5 +1,5 @@
+from ..common import find_and_interpolate
 from pygame import image, PixelArray
-from ..common import pos_to_keys
 from bisect import bisect_left
 from os import getcwd, path
 from engine import q
@@ -8,7 +8,7 @@ ruta = path.join(getcwd(), 'engine', 'frontend', 'graphs', 'atmograph', 'atmogra
 graph = image.load(ruta).convert_alpha()
 
 pos_psi = [12, 20, 27, 36, 46, 59, 74, 93, 120, 166, 174, 181, 190, 200, 213, 228, 247, 274]
-nums_psi = sorted([i for i in range(1, 11)] + [i for i in range(20, 101, 10)], reverse=True)
+nums_psi = sorted([i for i in range(1, 11)] + [i for i in range(20, 100, 10)], reverse=True)
 
 
 def interpolacion_lineal(vol):
@@ -51,4 +51,4 @@ def atmo(vol, rect):
 
 
 def convert(selected_pressure):
-    return q(pos_to_keys(selected_pressure, nums_psi, pos_psi, 'gt'), 'psi')
+    return q(find_and_interpolate(selected_pressure, pos_psi, nums_psi), 'psi')

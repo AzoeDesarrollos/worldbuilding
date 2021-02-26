@@ -164,6 +164,18 @@ class Systems:
         systems = [s for s in cls._systems if s.id == number]
         if len(systems) == 1:
             return systems[0]
+        else:
+            raise AssertionError('System ID is invalid')
+
+    @classmethod
+    def get_star_by_id(cls, idx):
+        for star in cls.loose_stars:
+            if star.id == idx:
+                return star
+        for system in cls._systems:
+            for star in system:
+                if star.id == idx:
+                    return star
 
     @classmethod
     def load_system(cls, star):

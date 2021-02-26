@@ -121,7 +121,7 @@ class ValueText(BaseWidget):
                         if attr in data:
                             elemento.value = str(data[attr])
                             elemento.text_area.show()
-                    self.parent.check_values()
+                    self.parent.check_values(data.get('composition', None))
                     Renderer.reset()
                 else:
                     self.parent.button.disable()

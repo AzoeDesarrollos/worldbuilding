@@ -1,2 +1,2 @@
+from .interpolaters import find_points, interpolate, find_and_interpolate, find_and_interpolate_flipped
 from .objects import Linea, Punto
-from .converters import pos_to_keys, keys_to_pos

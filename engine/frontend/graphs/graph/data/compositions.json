@@ -35,12 +35,12 @@
     "water ice":100,
     "type":"homogeneous"
     },
-  "25% water ice, 52,5% silicates, 22% iron":{
+  "25% water ice, 52,5% silicates, 22,5% iron":{
     "planet":"terrestial",
     "hydrogen":0,
     "helium":0,
-    "iron":22,
-    "silicates":53,
+    "iron":22.5,
+    "silicates":52.5,
     "water ice":25,
     "type":"diffentiated"
     },

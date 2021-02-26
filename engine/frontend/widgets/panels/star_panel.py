@@ -42,7 +42,8 @@ class StarPanel(BasePanel):
             star_data = {
                 'name': star.name,
                 'mass': star.mass.m,
-                'id': star.id
+                'id': star.id,
+                'spin': star.spin
             }
             data.append(star_data)
         EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data})
@@ -54,7 +55,7 @@ class StarPanel(BasePanel):
             if star not in self.stars:
                 self.stars.append(star)
                 self.add_button(star)
-                Systems.set_system(star)
+                # Systems.set_system(star)
 
         if len(self.star_buttons):
             self.current.current = self.star_buttons[0].object_data
@@ -80,7 +81,8 @@ class StarPanel(BasePanel):
         button = StarButton(self.current, star, self.curr_x, self.curr_y)
         self.properties.add(button, layer=2)
         Systems.add_star(star)
-        self.stars.append(star)
+        if star not in self.stars:
+            self.stars.append(star)
         self.sort_buttons()
         self.current.erase()
         self.button_add.disable()

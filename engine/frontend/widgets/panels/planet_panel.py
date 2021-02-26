@@ -1,5 +1,6 @@
 from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, WidgetGroup, ANCHO
 from engine.frontend.widgets.panels.base_panel import BasePanel
+from engine.frontend.widgets.sprite_star import PlanetSprite
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
@@ -162,6 +163,8 @@ class PlanetType(ObjectType):
             self.loaded_data.clear()
 
     def set_planet(self, planet):
+        if self.current is not None:
+            self.current.sprite.hide()
         self.current = planet
         self.fill()
         self.toggle_habitable()
@@ -177,6 +180,8 @@ class PlanetType(ObjectType):
                 button.text_area.clear()
         self.has_values = False
         self.parent.image.fill(COLOR_BOX, self.hab_rect)
+        if self.current is not None:
+            self.current.sprite.hide()
 
     def create_button(self, planet=None):
         if planet is None:
@@ -189,6 +194,8 @@ class PlanetType(ObjectType):
             self.parent.add_button(planet)
             self.has_values = False
             self.parent.image.fill(COLOR_BOX, self.hab_rect)
+            if self.current is not None and self.current.sprite is not None:
+                self.current.sprite.hide()
 
     def destroy_button(self):
         destroyed = Systems.get_current().remove_astro_obj(self.current)
@@ -203,7 +210,7 @@ class PlanetType(ObjectType):
         else:
             self.parent.image.fill(COLOR_BOX, self.hab_rect)
 
-    def check_values(self):
+    def check_values(self, composition):
         attrs = {}
         for button in self.properties.get_sprites_from_layer(1):
             attr = ''
@@ -225,6 +232,8 @@ class PlanetType(ObjectType):
         if len(attrs) > 1:
             unit = self.parent.unit.name.lower()
             attrs['unit'] = 'jupiter' if unit == 'gas giant' else 'earth'
+            if composition is not None:
+                attrs['composition'] = composition
             self.current = Planet(attrs)
             self.toggle_habitable()
             if self.current.mass <= Systems.get_current().body_mass:
@@ -243,6 +252,14 @@ class PlanetType(ObjectType):
             'escape_velocity': 'km/s'
         }
         super().fill(tos)
+
+        if self.current.sprite is None and self.current.composition is not None:
+            self.current.sprite = PlanetSprite(self, self.current, 460, 100)
+            self.properties.add(self.current.sprite)
+            self.parent.properties.add(self.current.sprite)
+
+        if self.current.sprite is not None:
+            self.current.sprite.show()
 
 
 class Unit(Meta):
