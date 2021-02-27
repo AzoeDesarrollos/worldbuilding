@@ -1,10 +1,11 @@
-from .common import AvailableObjects, AvailablePlanet, Meta, ModifyArea, TextButton, ToggleableButton
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_SELECTED, COLOR_TEXTO
+from .common import AvailableObjects, AvailablePlanet, ModifyArea, TextButton, ToggleableButton
 from engine.frontend.globales import Renderer, WidgetHandler, WidgetGroup
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.equations.planetary_system import Systems
 from engine.equations.orbit import PseudoOrbit, RawOrbit
+from engine.equations.planetary_system import Systems
+from engine.frontend.widgets.meta import Meta
 from .stellar_orbit_panel import OrbitType
 from pygame import Surface, Rect
 from engine import q, roll

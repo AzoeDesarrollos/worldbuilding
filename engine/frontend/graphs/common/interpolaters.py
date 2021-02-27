@@ -32,7 +32,7 @@ def find_and_interpolate(x, group_x, group_y):
     return interpolate(x, x1, x2, y1, y2)
 
 
-def find_and_interpolate_flipped(x:int, group_x: list, group_y: list):
+def find_and_interpolate_flipped(x: int, group_x: list, group_y: list):
     a = group_x.copy()
     b = group_y.copy()
 
