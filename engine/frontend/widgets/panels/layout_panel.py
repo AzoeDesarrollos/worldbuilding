@@ -4,10 +4,10 @@ from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface, draw, transform, SRCALPHA
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
+from engine.frontend.widgets.meta import Meta
 from engine.backend.util import abrir_json
 from engine.frontend.widgets import panels
 from os.path import exists, join
-from .planet_panel import Meta
 from os import getcwd
 
 
@@ -73,7 +73,7 @@ class LayoutPanel(BaseWidget):
         return 'Layout Panel'
 
 
-class Arrow(Meta, BaseWidget):
+class Arrow(Meta):
     enabled = True
 
     def __init__(self, parent, direccion, angulo, centerx, y):
@@ -108,7 +108,7 @@ class Arrow(Meta, BaseWidget):
         return 'Arrow ({})'.format(self.direccion)
 
 
-class BaseButton(Meta, BaseWidget):
+class BaseButton(Meta):
     enabled = True
 
     def __init__(self, parent, x, y, text):
@@ -152,7 +152,7 @@ class NewButton(BaseButton):
             EventHandler.trigger('ClearData', 'NewButton', {'panel': self.parent.current})
 
 
-class SwapSystem(Meta, BaseWidget):
+class SwapSystem(Meta):
     enabled = True
 
     def __init__(self, parent, x, y):

@@ -1,9 +1,8 @@
 from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO
-from engine.frontend.widgets.basewidget import BaseWidget
-from .meta import Meta
+from engine.frontend.widgets.meta import Meta
 
 
-class TextButton(Meta, BaseWidget):
+class TextButton(Meta):
     def __init__(self, parent, text, x, y):
         super().__init__(parent)
         self.f1 = self.crear_fuente(16)

@@ -1,11 +1,11 @@
 from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, WidgetGroup, ANCHO
-from engine.frontend.widgets.panels.common import TextButton, Meta
+from engine.frontend.widgets.panels.common import TextButton
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.sprite_star import StarSprite
-from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
+from engine.frontend.widgets.meta import Meta
 from engine.equations.star import Star
 
 
@@ -25,19 +25,25 @@ class StarPanel(BasePanel):
         self.image.blit(render, self.area_buttons.topleft)
         self.button_add = AddStarButton(self, ANCHO - 13, 398)
         self.button_del = DelStarButton(self, ANCHO - 13, 416)
-        self.properties.add(self.button_add, self.button_del)
-        self.stars = WidgetGroup()
+        self.properties.add(self.button_add, self.button_del, layer=1)
+        self.stars = []
         EventHandler.register(self.save_stars, 'Save')
         EventHandler.register(self.load_stars, 'LoadData')
 
+    @property
+    def star_buttons(self):
+        # adds readability
+        return self.properties.get_widgets_from_layer(2)
+
     def save_stars(self, event):
         data = []
-        for star_button in self.stars.widgets():
+        for star_button in self.star_buttons:
             star = star_button.object_data
             star_data = {
                 'name': star.name,
                 'mass': star.mass.m,
-                'id': star.id
+                'id': star.id,
+                'spin': star.spin
             }
             data.append(star_data)
         EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data})
@@ -46,18 +52,18 @@ class StarPanel(BasePanel):
         for idx, star_data in enumerate(event.data.get('Stars', [])):
             star_data.update({'idx': idx})
             star = Star(star_data)
-            self.add_button(star)
-            Systems.set_system(star)
+            if star not in self.stars:
+                self.stars.append(star)
+                self.add_button(star)
+                # Systems.set_system(star)
 
-        if len(self.stars.widgets()):
-            self.current.current = self.stars.widgets()[0].object_data
+        if len(self.star_buttons):
+            self.current.current = self.star_buttons[0].object_data
 
     def show(self):
         super().show()
         for obj in self.properties.widgets():
             obj.show()
-        for star in self.stars.widgets():
-            star.show()
         if self.current.has_values:
             self.current.current.sprite.show()
 
@@ -68,32 +74,29 @@ class StarPanel(BasePanel):
         if self.add_on_exit:
             self.parent.set_skippable('Star System', True)
             Systems.set_system(self.current.current)
-        for star in self.stars.widgets():
-            star.hide()
+        else:
+            self.parent.set_skippable('Star System', False)
 
     def add_button(self, star):
         button = StarButton(self.current, star, self.curr_x, self.curr_y)
-        self.stars.add(button)
+        self.properties.add(button, layer=2)
         Systems.add_star(star)
+        if star not in self.stars:
+            self.stars.append(star)
         self.sort_buttons()
-        self.current.properties.add(button, layer=2)
         self.current.erase()
         self.button_add.disable()
 
-        self.add_on_exit = len(self.stars) == 1
-
     def del_button(self, planet):
-        button = [i for i in self.stars.widgets() if i.object_data == planet][0]
-        self.stars.remove(button)
+        button = [i for i in self.star_buttons if i.object_data == planet][0]
+        self.properties.remove(button)
         self.sort_buttons()
-        self.current.properties.remove(button)
         self.button_del.disable()
-
-        self.add_on_exit = len(self.stars) == 1
+        self.stars.remove(button.object_data)
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
-        for bt in self.stars.widgets():
+        for bt in self.star_buttons:
             bt.move(x, y)
             if not self.area_buttons.contains(bt.rect):
                 bt.hide()
@@ -106,7 +109,7 @@ class StarPanel(BasePanel):
                 y += 32
 
     def select_one(self, btn):
-        for button in self.stars.widgets():
+        for button in self.star_buttons:
             button.deselect()
         btn.select()
 
@@ -115,7 +118,7 @@ class StarPanel(BasePanel):
             super().on_mousebuttondown(event)
 
         elif event.button in (4, 5):
-            buttons = self.stars.widgets()
+            buttons = self.star_buttons
             if self.area_buttons.collidepoint(event.pos) and len(buttons):
                 last_is_hidden = not buttons[-1].is_visible
                 first_is_hidden = not buttons[0].is_visible
@@ -125,17 +128,21 @@ class StarPanel(BasePanel):
                     self.curr_y -= 32
                 self.sort_buttons()
 
+    def update(self):
+        self.add_on_exit = len(self.stars) == 1
+
 
 class StarType(ObjectType):
     def __init__(self, parent):
         rel_props = ['Mass', 'Luminosity', 'Radius', 'Lifetime', 'Surface temperature']
         rel_args = ['mass', 'luminosity', 'radius', 'lifetime', 'temperature']
-        abs_args = ['density', 'volume', 'circumference', 'surface', 'classification']
-        abs_props = ['Density', 'Volume', 'Circumference', 'Surface area', 'Classification']
+        abs_args = ['density', 'volume', 'circumference', 'surface', 'spin', 'classification']
+        abs_props = ['Density', 'Volume', 'Circumference', 'Surface area', 'Spin', 'Classification']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
+        self.set_modifiables('relatives', 0, 1)
 
     def set_star(self, star_data):
-        star_data.update({'idx': len(self.parent.stars)})
+        star_data.update({'idx': len(self.parent.star_buttons)})
         star = Star(star_data)
         self.parent.button_add.enable()
         self.current = star
@@ -155,6 +162,7 @@ class StarType(ObjectType):
         if event.data['panel'] is self.parent:
             self.erase()
             self.parent.button_del.disable()
+            self.parent.button_add.disable()
 
     def erase(self):
         if self.has_values:
@@ -170,6 +178,9 @@ class StarType(ObjectType):
             'temperature': 'kelvin'
         }
         super().fill(tos)
+        system = Systems.get_current()
+        if system is not None:
+            system.update()
 
         if self.current.sprite is None:
             self.current.sprite = StarSprite(self, self.current, 460, 100)
@@ -201,7 +212,7 @@ class DelStarButton(TextButton):
             self.parent.current.destroy_button()
 
 
-class StarButton(Meta, BaseWidget):
+class StarButton(Meta):
     enabled = True
 
     def __init__(self, parent, star, x, y):
@@ -209,7 +220,7 @@ class StarButton(Meta, BaseWidget):
         self.object_data = star
         self.f1 = self.crear_fuente(13)
         self.f2 = self.crear_fuente(13, bold=True)
-        name = star.classification + ' #{}'.format(len(self.parent.parent.stars))
+        name = star.classification + ' #{}'.format(len(self.parent.parent.star_buttons))
         self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)
         self.img_sel = self.f2.render(name, True, COLOR_TEXTO, COLOR_AREA)
         self.w = self.img_sel.get_width()

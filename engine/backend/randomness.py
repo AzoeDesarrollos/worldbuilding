@@ -1,16 +1,5 @@
-from random import seed, random, uniform, choice
-from datetime import datetime
-from .util import abrir_json, guardar_json
-from os import getcwd, path
+from random import random, uniform, choice
 
-file = path.join(getcwd(), 'data', 'seed.json')
-if path.exists(file):
-    key = abrir_json(file)
-else:
-    key = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
-    guardar_json(file, key)
-
-seed(key)
 
 __all__ = [
     'roll',

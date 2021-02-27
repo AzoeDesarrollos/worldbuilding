@@ -152,14 +152,17 @@ class PlanetaryOrbitPanel(BaseWidget):
             self.added.append(obj)
         obj_name = obj.cls
         obj_density = obj.density.to('earth_density').m
-        pln_habitable = Systems.get_current().is_planet_habitable(self.current)
+        pln_habitable = Systems.get_current().is_habitable(self.current)
         pln_hill = self.current.hill_sphere.m
         obj_type = obj.celestial_type
         roches = self.current.set_roche(obj_density)
 
-        pos = q(round(roll(self.current.roches_limit.m, self.current.hill_sphere.m / 2), 3), 'earth_radius')
-        orbit = RawOrbit(Systems.get_current_star(), pos)
+        text = "A satellite's mass must be less than or equal to the\nmass of the planet."
+        text += '\n\nConsider using a less massive satellite for this planet.'
+        assert self.current.mass.m >= obj.mass.m, text
 
+        pos = q(round(roll(self.current.roches_limit.m, self.current.hill_sphere.m/2), 3), 'earth_radius')
+        orbit = RawOrbit(Systems.get_current_star(), pos)
         obj_marker = Marker(self, obj_name, pos, color=COLOR_SELECTED, lock=False)
         roches_marker = Marker(self, "Roche's Limit", roches, lock=True)
 
@@ -232,7 +235,7 @@ class AvailablePlanets(AvailableObjects):
         super().show()
 
 
-class ObjectButton(Meta, BaseWidget):
+class ObjectButton(Meta):
     enabled = False
     info = None
     linked_marker = None
@@ -248,12 +251,6 @@ class ObjectButton(Meta, BaseWidget):
         self.w = self.img_sel.get_width()
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))
-
-    def enable(self):
-        self.enabled = True
-
-    def disable(self):
-        self.enabled = False
 
     def on_mousebuttondown(self, event):
         if not self.parent.is_added(self.object_data) and self.parent.current is not None:
@@ -280,7 +277,7 @@ class ObjectButton(Meta, BaseWidget):
         marker.linked_button = self
 
 
-class Marker(Meta, BaseWidget, IncrementalValue):
+class Marker(Meta, IncrementalValue):
     locked = True
     enabled = True
     text = ''
@@ -333,11 +330,13 @@ class Marker(Meta, BaseWidget, IncrementalValue):
         if not self.locked:
             self.increment = self.update_increment()
             self.increment *= delta
-
-            if self._value + self.increment >= 0 and self.min_value < self._value + self.increment < self.max_value:
-                self._value += self.increment
-                self.increment = 0
-                self.parent.sort_markers()
+            t = 'Regular satellites must orbit close to their planet, that is within half of the maximun value.'
+            t += '\n\nTry moving the satellite to a lower orbit.'
+            test = self._value + self.increment >= 0 and self.min_value < self._value + self.increment < self.max_value
+            assert test(t)
+            self._value += self.increment
+            self.increment = 0
+            self.parent.sort_markers()
 
     def update(self):
         self.reset_power()

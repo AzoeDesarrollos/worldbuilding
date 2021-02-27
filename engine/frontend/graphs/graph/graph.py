@@ -1,7 +1,7 @@
 from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_SPACE, K_LCTRL, K_LSHIFT, QUIT
+from ..common import Linea, Punto, interpolate, find_and_interpolate, find_and_interpolate_flipped
 from pygame import font, Surface, Rect, image, mouse, event, Color as Clr, mask
 from pygame import display, init as py_init, quit as py_quit, SCALED
-from ..common import Linea, Punto, pos_to_keys, keys_to_pos
 from engine.backend.util import abrir_json
 from pygame.sprite import LayeredUpdates
 from os import environ, getcwd, path
@@ -44,17 +44,18 @@ composiciones = abrir_json(path.join(ruta, 'compositions.json'))
 mascara = mask.from_threshold(image.load(path.join(ruta, 'mask.png')), (255, 0, 255), (250, 1, 250))
 
 
-def average(a, b):
-    return (a + b) / 2
-
-
 def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.0, radius_upper_limit=0.0):
+    m_lo_l = mass_lower_limit
+    m_hi_l = mass_upper_limit
+    r_lo_l = radius_lower_limit
+    r_hi_l = radius_upper_limit
+
     fondo = display.set_mode((witdh, height), SCALED)
     rect = Rect(60, 2, 529, 476)
     lineas = LayeredUpdates()
 
     linea_h = Linea(rect, rect.x, rect.centery, rect.w, 1, lineas)
-    linea_v = Linea(rect,  rect.centerx, rect.y, 1, rect.h, lineas)
+    linea_v = Linea(rect, rect.centerx, rect.y, 1, rect.h, lineas)
     punto = Punto(rect, rect.centerx, rect.centery, lineas)
 
     data = {}
@@ -62,10 +63,10 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
     if any([mass_lower_limit < 0, mass_upper_limit < 0, radius_lower_limit < 0, radius_upper_limit < 0]):
         raise ValueError()
 
-    lim_mass_a = int(keys_to_pos(mass_lower_limit, mass_keys, exes, 'lt')) if mass_lower_limit else 0
-    lim_mass_b = int(keys_to_pos(mass_upper_limit, mass_keys, exes, 'gt')) if mass_upper_limit else 0
-    lim_radius_a = int(keys_to_pos(radius_lower_limit, radius_keys, yes, 'lt')) if radius_lower_limit else 0
-    lim_radius_b = int(keys_to_pos(radius_upper_limit, radius_keys, yes, 'gt')) if radius_upper_limit else 0
+    lim_mass_a = int(find_and_interpolate(m_lo_l, mass_keys, exes)) if m_lo_l else 0
+    lim_mass_b = int(find_and_interpolate(m_hi_l, mass_keys, exes)) if m_hi_l else 0
+    lim_radius_a = int(find_and_interpolate(r_lo_l, radius_keys, yes)) if r_lo_l else 0
+    lim_radius_b = int(find_and_interpolate(r_hi_l, radius_keys, yes)) if r_hi_l else 0
 
     move_x, move_y = True, True
     lockx, locky = False, False
@@ -80,7 +81,7 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
     event.clear()
 
     done = False
-    px, py = 0, 0
+    composition_text_comp = None
     while not done:
         for e in event.get():
             if e.type == QUIT:
@@ -101,11 +102,6 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                             data['radius'] = round(radius_value, 3)
                             data['gravity'] = round(mass_value / (radius_value ** 2), 3)
                             data['density'] = round(mass_value / (radius_value ** 3), 3)
-                            if rect.collidepoint(px, py) and mascara.get_at((px, py)):
-                                for name in _lineas:
-                                    if [px, py] in _lineas[name]:
-                                        data['composition'] = composiciones[name]
-                                        break
                             done = True
                         else:
                             data = {}
@@ -136,11 +132,10 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                         punto.select()
                         for name in _lineas:
                             if [point_x, point_y] in _lineas[name]:
-                                data['composition'] = name
+                                composition_text_comp = name
                                 break
                     else:
                         punto.deselect()
-                        data['composition'] = ''
 
             elif e.type == KEYDOWN:
                 if e.key == K_ESCAPE:
@@ -158,11 +153,6 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                     data['radius'] = round(radius_value, 3)
                     data['gravity'] = round(mass_value / (radius_value ** 2), 3)
                     data['density'] = round(mass_value / (radius_value ** 3), 3)
-                    if rect.collidepoint(px, py) and mascara.get_at((px, py)):
-                        for name in _lineas:
-                            if [px, py] in _lineas[name]:
-                                data['composition'] = composiciones[name]
-                                break
                     done = True
 
             elif e.type == KEYUP:
@@ -176,56 +166,65 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
 
         px, py = punto.rect.center
         alto, bajo = 0, 0
-        if not data.get('composition', False):
-            if rect.collidepoint((px, py)):
-                for _y in reversed(range(0, py)):
-                    if mascara.get_at((px, _y)):
-                        alto = _y
-                        break
-                for _y in range(py, 476):
-                    if mascara.get_at((px, _y)):
-                        bajo = _y
-                        break
+        if rect.collidepoint((px, py)):
+            for _y in reversed(range(0, py)):
+                if mascara.get_at((px, _y)):
+                    alto = _y
+                    break
+            for _y in range(py, 476):
+                if mascara.get_at((px, _y)):
+                    bajo = _y
+                    break
 
-                a, b = 0, 0
-                # creo que esto se puede escribir con oneliners.
-                for name in _lineas:
-                    if [px, alto] in _lineas[name]:
-                        a = name
-                        break
-                for name in _lineas:
-                    if [px, bajo] in _lineas[name]:
-                        b = name
-                        break
-                if a and b:
-                    # si el cursor está entre dos lineas, se computa el promedio de los valores de composición.
-                    silicates = average(composiciones[a]['silicates'], composiciones[b]['silicates'])
-                    hydrogen = average(composiciones[a]['hydrogen'], composiciones[b]['hydrogen'])
-                    helium = average(composiciones[a]['helium'], composiciones[b]['helium'])
-                    iron = average(composiciones[a]['iron'], composiciones[b]['iron'])
-                    water_ice = average(composiciones[a]['water ice'], composiciones[b]['water ice'])
+            a, b = 0, 0
+            # creo que esto se puede escribir con oneliners.
+            for name in _lineas:
+                if [px, alto] in _lineas[name]:
+                    a = name
+                    break
+            for name in _lineas:
+                if [px, bajo] in _lineas[name]:
+                    b = name
+                    break
+            if a and b:
+                c = composiciones
+                silicates = interpolate(py, alto, bajo, c[a]['silicates'], c[b]['silicates'])
+                hydrogen = interpolate(py, alto, bajo, c[a]['hydrogen'], c[b]['hydrogen'])
+                helium = interpolate(py, alto, bajo, c[a]['helium'], c[b]['helium'])
+                iron = interpolate(py, alto, bajo, c[a]['iron'], c[b]['iron'])
+                water_ice = interpolate(py, alto, bajo, c[a]['water ice'], c[b]['water ice'])
+                values = [i for i in [silicates, hydrogen, helium, iron, water_ice] if i != 0]
 
-                    # sólo mostramos los valores mayores a 0%
-                    compo = []
-                    if silicates:
-                        compo.append(str(round(silicates, 2)) + '% silicates')
-                    if hydrogen:
-                        compo.append(str(round(hydrogen, 2)) + '% hydrogen')
-                    if helium:
-                        compo.append(str(round(helium, 2)) + '% helium')
-                    if iron:
-                        compo.append(str(round(iron, 2)) + '% iron')
-                    if water_ice:
-                        compo.append(str(round(water_ice, 2)) + '% water ice')
-                    data['composition'] = ', '.join(compo)
+                # sólo mostramos los valores mayores a 0%
+                keys, compo = [], []
+                if silicates:
+                    compo.append(str(round(silicates, 2)) + '% silicates')
+                    keys.append('silicates')
+                if hydrogen:
+                    compo.append(str(round(hydrogen, 2)) + '% hydrogen')
+                    keys.append('hydrogen')
+                if helium:
+                    compo.append(str(round(helium, 2)) + '% helium')
+                    keys.append('helium')
+                if iron:
+                    compo.append(str(round(iron, 2)) + '% iron')
+                    keys.append('iron')
+                if water_ice:
+                    compo.append(str(round(water_ice, 2)) + '% water ice')
+                    keys.append('water ice')
 
-                    if hydrogen or helium:
-                        data['clase'] = 'Gas Dwarf'
-                    else:
-                        data['clase'] = 'Terrestial Planet'
+                composition_text_comp = ', '.join(compo)
+                data['composition'] = dict(zip(keys, values))
 
-        mass_value = pos_to_keys(linea_v.rect.x, mass_keys, exes, 'gt')
-        radius_value = pos_to_keys(linea_h.rect.y, radius_keys, yes, 'lt')
+                if hydrogen or helium:
+                    data['clase'] = 'Gas Dwarf'
+                else:
+                    data['clase'] = 'Terrestial Planet'
+            else:
+                data = {}
+
+        mass_value = find_and_interpolate(linea_v.rect.x, exes, mass_keys)
+        radius_value = find_and_interpolate_flipped(linea_h.rect.y, yes, radius_keys)
 
         block = Surface(rect.size, SRCALPHA)
         block_mask = mask.from_surface(block)
@@ -271,8 +270,8 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                 fondo.blit(fuente1.render(radius_text, True, radius_color), (140, rect.bottom + 43))
                 fondo.blit(fuente1.render(density_text, True, negro), (130 * 2 - 5, rect.bottom + 43))
                 fondo.blit(fuente1.render(gravity_text, True, negro), (140 * 3, rect.bottom + 43))
-                if data.get('composition', False):
-                    composition_text = 'Composition:' + data['composition']
+                if composition_text_comp is not None:
+                    composition_text = 'Composition:' + composition_text_comp
                     fondo.blit(fuente1.render(composition_text, True, negro, blanco), (5, rect.bottom + 64))
 
             fondo.blit(texto1, rectT1)

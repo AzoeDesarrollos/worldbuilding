@@ -1,9 +1,8 @@
 from engine.frontend.globales import COLOR_TEXTO, COLOR_AREA
-from engine.frontend.widgets.basewidget import BaseWidget
-from .meta import Meta
+from engine.frontend.widgets.meta import Meta
 
 
-class ListedBody(Meta, BaseWidget):
+class ListedBody(Meta):
     enabled = True
 
     def __init__(self, parent, body, name, x, y, fg_color=None):

@@ -41,16 +41,16 @@ class BaseWidget(Sprite):
         pass
 
     def enable(self):
-        pass
+        self.enabled = True
 
     def disable(self):
-        pass
+        self.enabled = False
 
     def select(self):
-        pass
+        self.selected = True
 
     def deselect(self):
-        pass
+        self.selected = False
 
     def update(self):
         pass

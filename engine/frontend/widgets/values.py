@@ -34,6 +34,14 @@ class ValueText(BaseWidget):
         self.text_area = NumberArea(self, text, self.rect.right + 3, self.rect.y, fg, bg)
 
     @property
+    def modifiable(self):
+        return self.text_area.modifiable
+
+    @modifiable.setter
+    def modifiable(self, new_value: bool):
+        self.text_area.modifiable = new_value
+
+    @property
     def value(self):
         return self.text_area.value
 
@@ -121,7 +129,7 @@ class ValueText(BaseWidget):
                         if attr in data:
                             elemento.value = str(data[attr])
                             elemento.text_area.show()
-                    self.parent.check_values()
+                    self.parent.check_values(data.get('composition', None))
                     Renderer.reset()
                 else:
                     self.parent.button.disable()
@@ -172,6 +180,7 @@ class NumberArea(BaseWidget, IncrementalValue):
     unit = None
     min = 0
     max = None
+    modifiable = False
 
     def __init__(self, parent, name, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
         super().__init__(parent)
@@ -187,6 +196,7 @@ class NumberArea(BaseWidget, IncrementalValue):
 
     def input(self, event):
         if self.enabled and not self.grandparent.locked:
+            assert self.modifiable, 'This value is a derivated value. It is not directly modifiable.'
             if event.data is not None:
                 char = event.data['value']
                 if char.isdigit() or char == '.':
@@ -236,7 +246,8 @@ class NumberArea(BaseWidget, IncrementalValue):
         self.increment = self.update_increment()
         v = self.value
         b = event.button
-        if not type(v) is str and self.grandparent.modifiable:
+        assert self.modifiable, 'This value is a derivated value. It is not directly modifiable.'
+        if not type(v) is str:
             i = 0
             if b == 5 and (self.max is None or v + self.increment <= self.max):  # rueda abajo
                 self.value += self.increment
@@ -245,7 +256,7 @@ class NumberArea(BaseWidget, IncrementalValue):
 
             if event.button in (4, 5):
                 self.increment = 0
-                self.value = round(self.value+i, 4)
+                self.value = round(self.value + i, 4)
                 self.parent.elevate_changes(self.value, self.unit)
 
     def clear(self):

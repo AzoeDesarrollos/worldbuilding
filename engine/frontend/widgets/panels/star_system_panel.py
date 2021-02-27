@@ -1,9 +1,10 @@
 from engine.frontend.globales import WidgetGroup, ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_TEXTO
-from engine.frontend.widgets.panels.common import ListedArea, ListedBody, TextButton, Meta
+from engine.frontend.widgets.panels.common import ListedArea, ListedBody, TextButton
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.equations.binary import system_type
+from engine.frontend.widgets.meta import Meta
 from ..values import ValueText
 from pygame import Surface
 
@@ -26,7 +27,7 @@ class StarSystemPanel(BaseWidget):
         self.write('Star Systems', self.f2, COLOR_AREA, x=3, y=420)
         self.properties = WidgetGroup()
         self.f1 = self.crear_fuente(16, underline=True)
-        self.write(self.name + ' Panel', self.f1, centerx=(ANCHO//4)*1.5, y=0)
+        self.write(self.name + ' Panel', self.f1, centerx=(ANCHO // 4) * 1.5, y=0)
         self.stars_area = AvailableStars(self, ANCHO - 200, 32, 200, 350)
         self.properties.add(self.stars_area)
         self.current = SystemType(self)
@@ -36,6 +37,8 @@ class StarSystemPanel(BaseWidget):
         self.undo_button = DissolveButton(self, 334, 416)
         self.properties.add(self.setup_button, self.undo_button)
         self.system_buttons = WidgetGroup()
+        EventHandler.register(self.save_systems, 'Save')
+        EventHandler.register(self.load_systems, 'LoadData')
 
     def set_current(self, system_data):
         self.current.reset(system_data)
@@ -46,12 +49,14 @@ class StarSystemPanel(BaseWidget):
         self.current.reset(star)
 
     def create_button(self, system_data):
-        idx = len(self.systems)
-        button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
-        self.systems.append(system_data)
-        self.system_buttons.add(button)
-        self.properties.add(button)
-        self.sort_buttons()
+        if system_data not in self.systems:
+            idx = len(self.systems)
+            button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
+            self.systems.append(system_data)
+            self.system_buttons.add(button)
+            self.properties.add(button)
+            self.sort_buttons()
+            return button
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
@@ -66,6 +71,36 @@ class StarSystemPanel(BaseWidget):
             else:
                 x = 3
                 y += 32
+
+    def save_systems(self, event):
+        data = []
+        for button in self.system_buttons.widgets():
+            current = button.object_data
+            d = {
+                'primary': current.primary.id,
+                'secondary': current.secondary.id,
+                'avg_s': current.average_separation.m,
+                'ecc_p': current.ecc_p.m,
+                "ecc_s": current.ecc_s.m,
+                "id": current.id
+            }
+            data.append(d)
+
+        EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Systems': data})
+
+    def load_systems(self, event):
+        for system_data in event.data.get('Systems', []):
+            avg_s = system_data['avg_s']
+            ecc_p = system_data['ecc_p']
+            ecc_s = system_data['ecc_s']
+            prim = Systems.get_star_by_id(system_data['primary'])
+            scnd = Systems.get_star_by_id(system_data['secondary'])
+            idx = system_data['id']
+
+            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=idx)
+            button = self.create_button(system)
+            button.hide()
+            Systems.set_system(system)
 
     def select_one(self, btn):
         for button in self.system_buttons.widgets():
@@ -91,11 +126,9 @@ class StarSystemPanel(BaseWidget):
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
-        if len(self.systems) or len(self.stars_area):
-            for s in self.systems+self.stars_area.objects():
-                Systems.set_system(s)
-
-        self.systems.clear()
+        # if len(self.systems) or len(self.stars_area):
+        #     for s in self.systems + self.stars_area.objects():
+        #         Systems.set_system(s)
 
 
 class SystemType(BaseWidget):
@@ -121,7 +154,10 @@ class SystemType(BaseWidget):
             'Forbbiden Zone Outer edge', 'System Type']
 
         for i, prop in enumerate([j for j in props]):
-            self.properties.add(ValueText(self, prop, 3, 64 + i * 25, COLOR_TEXTO, COLOR_BOX))
+            vt = ValueText(self, prop, 3, 64 + i * 25, COLOR_TEXTO, COLOR_BOX)
+            self.properties.add(vt)
+            if i in [2, 3, 4]:
+                vt.modifiable = True
 
         attrs = ['primary', 'secondary', 'separation', 'ecc_p', 'ecc_s']
         for idx, attr in enumerate(attrs):
@@ -130,6 +166,10 @@ class SystemType(BaseWidget):
     def set_star(self, star):
         if str(self.primary.value) == '':
             self.primary.value = star
+        elif star.spin == self.primary.value.spin:
+            spin = 'clockwise' if star.spin == 'counter-clockwise' else 'counter-clockwise'
+            raise AssertionError('The stars must spin\nin oposite directions\nas they would collide\notherwise.\n'
+                                 f'\nSelect a star\nthat spins {spin}.')
         else:
             self.secondary.value = star
 
@@ -139,7 +179,7 @@ class SystemType(BaseWidget):
         return dets + [float(getattr(self, name).value) for name in names if name not in ('primary', 'secondary')]
 
     def fill(self):
-        if all([str(vt.value) != '' for vt in self.properties.widgets()[0:4]]):
+        if all([str(vt.value) != '' for vt in self.properties.widgets()[0:5]]):
             if self.current is None:
                 self.current = system_type(self.separation.value)(*self.get_determinants())
             props = ['average_separation', 'ecc_p', 'ecc_s', 'barycenter', 'max_sep',
@@ -185,7 +225,7 @@ class AvailableStars(ListedArea):
     name = 'Stars'
 
     def populate(self, stars):
-        for i, star in enumerate(stars):
+        for i, star in enumerate(sorted(stars, key=lambda s: s.mass, reverse=True)):
             if star not in [listado.object_data for listado in self.listed_objects]:
                 listed = ListedStar(self, star, self.rect.x + 3, i * 16 + self.rect.y + 21)
                 self.listed_objects.add(listed)
@@ -250,7 +290,7 @@ class DissolveButton(TextButton):
             self.parent.current.destroy()
 
 
-class SystemButton(Meta, BaseWidget):
+class SystemButton(Meta):
     enabled = True
 
     def __init__(self, parent, system_data, idx, x, y):
@@ -258,7 +298,7 @@ class SystemButton(Meta, BaseWidget):
         system_data.idx = idx
         self.object_data = system_data
         if system_data.letter is not None:
-            name = system_data.letter+'-Type #{}'.format(idx)
+            name = system_data.letter + '-Type #{}'.format(idx)
         else:
             name = str(system_data)
         self.f1 = self.crear_fuente(13)

@@ -1,13 +1,13 @@
-from .common import TextButton, Meta, AvailableObjects, ToggleableButton, AvailablePlanet, ModifyArea
-from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_AREA, COLOR_DISABLED
+from .common import TextButton, AvailableObjects, ToggleableButton, AvailablePlanet, ModifyArea
+from engine.frontend.globales import WidgetGroup, Renderer, render_textrect
 from engine.frontend.widgets.incremental_value import IncrementalValue
-from engine.frontend.globales import COLOR_SELECTED, COLOR_STARORBIT
-from engine.frontend.globales import ANCHO, ALTO, render_textrect
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.orbit import RawOrbit, PseudoOrbit
-from engine.frontend.globales.group import WidgetGroup
+from engine.frontend.visualization import topdown_view
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
+from engine.frontend.globales.constantes import *
+from engine.frontend.widgets.meta import Meta
 from engine import q, recomendation
 from pygame import Surface, Rect
 from engine.backend import roll
@@ -45,13 +45,10 @@ class OrbitPanel(BaseWidget):
         self.area_markers = Rect(3, 58, 380, 20 * 16)
         self.area_scroll = Rect(3, 32, 387, 388)
         self.area_modify = ModifyArea(self, ANCHO - 200, 399)
-        self.properties.add(self.area_modify, layer=2)
 
         self.f = self.crear_fuente(16, underline=True)
         self.write(self.name + ' Panel', self.f, centerx=(ANCHO // 4) * 1.5, y=0)
-
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 350)
-        self.properties.add(self.planet_area, layer=2)
         self.recomendation = Recomendation(self, 80, ALTO // 2 - 130)
 
         self._orbits = {}
@@ -61,11 +58,12 @@ class OrbitPanel(BaseWidget):
         self._markers = {}
         self.orbit_descriptions = WidgetGroup()
         self.show_markers_button = ToggleableButton(self, 'Stellar Orbits', self.toggle_stellar_orbits, 3, 421)
-        self.properties.add(self.show_markers_button, layer=2)
         self.show_markers_button.disable()
-
         self.add_orbits_button = AddOrbitButton(self, ANCHO - 100, 416)
-        self.properties.add(self.add_orbits_button, layer=2)
+        self.view_button = VisualizationButton(self, 3, 58)
+
+        self.properties.add([self.area_modify, self.planet_area, self.show_markers_button, self.add_orbits_button,
+                             self.view_button], layer=2)
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
@@ -100,11 +98,24 @@ class OrbitPanel(BaseWidget):
                    'Frost Line': star.frost_line,
                    'Outer Boundary': star.outer_boundry}
 
-        for i, marker in enumerate(markers, start=1):
+        for marker in markers:
             x = OrbitMarker(self, marker, star, markers[marker])
             x.locked = True
             self.markers.append(x)
             self.properties.add(x, layer=2)
+
+        if hasattr(star, 'habitable_orbit'):
+            markers = {
+                'Inner Forbbiden Zone': star.inner_forbbiden_zone,
+                'Outer Forbbiden Zone': star.outer_forbbiden_zone
+            }
+            for marker in markers:
+                x = OrbitMarker(self, marker, star, markers[marker])
+                x.locked = True
+                self.markers.append(x)
+                self.properties.add(x, layer=2)
+            self.add_orbit_marker(star.habitable_orbit)
+
         self.sort_markers()
 
     def toggle_current_markers_and_buttons(self, toggle: bool):
@@ -248,26 +259,37 @@ class OrbitPanel(BaseWidget):
     def save_orbits(self, event):
         orbits = self._loaded_orbits
         for system in Systems.get_systems():
-            for star in system:
+            if system.star_system.letter == 'S':
+                for star in system:
+                    for marker in self._orbits.get(star, []):
+                        d = self.create_save_data(marker.orbit)
+                        orbits.append(d)
+            else:
+                star = system.star_system
                 for marker in self._orbits.get(star, []):
-                    orb = marker.orbit
-                    d = {}
-                    if hasattr(orb, 'semi_major_axis'):
-                        d['a'] = round(orb.semi_major_axis.m, 2)
-                    if hasattr(orb, 'inclination'):
-                        d['i'] = orb.inclination.m
-                    if hasattr(orb, 'eccentricity'):
-                        d['e'] = orb.eccentricity.m
-                    if hasattr(orb, 'planet'):
-                        d['planet'] = orb.astrobody.name
-                        d['star_id'] = orb.astrobody.orbit.star.id
+                    d = self.create_save_data(marker.orbit)
                     orbits.append(d)
 
         EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Orbits': orbits})
 
+    @staticmethod
+    def create_save_data(orb):
+        d = {}
+        if hasattr(orb, 'semi_major_axis'):
+            d['a'] = round(orb.semi_major_axis.m, 2)
+        if hasattr(orb, 'inclination'):
+            d['i'] = orb.inclination.m
+        if hasattr(orb, 'eccentricity'):
+            d['e'] = orb.eccentricity.m
+        if hasattr(orb, 'planet'):
+            d['planet'] = orb.planet.name
+            d['star_id'] = orb.planet.orbit.star.id
+        return d
+
     def load_orbits(self, event):
         for position in event.data.get('Orbits', []):
-            self._loaded_orbits.append(position)
+            if position not in self._loaded_orbits:
+                self._loaded_orbits.append(position)
 
     def set_loaded_orbits(self):
         for orbit_data in self._loaded_orbits:
@@ -446,10 +468,10 @@ class OrbitType(BaseWidget, Intertwined):
         self.clear()
         props = ['Semi-major axis', 'Semi-minor axis', 'Eccentricity', 'Inclination',
                  'Periapsis', 'Apoapsis', 'Orbital motion', 'Temperature', 'Orbital velocity', 'Orbital period',
-                 'Argument of periapsis', 'Longuitude of the ascending node', 'Planet']
+                 'Argument of periapsis', 'Longuitude of the ascending node', 'True anomaly', 'Planet']
         attr = ['semi_major_axis', 'semi_minor_axis', 'eccentricity', 'inclination',
                 'periapsis', 'apoapsis', 'motion', 'temperature', 'velocity', 'period',
-                'argument_of_periapsis', 'longuitude_of_the_ascending_node', 'planet']
+                'argument_of_periapsis', 'longuitude_of_the_ascending_node', 'true_anomaly', 'planet']
         for i, prop in enumerate([j for j in attr if hasattr(orbit, j)]):
             post_modifiable = True if i in [0, 2, 3, 10, 11] else False
             value = getattr(orbit, prop)
@@ -506,7 +528,7 @@ class OrbitType(BaseWidget, Intertwined):
                 return q(180, new_value.u)
 
 
-class OrbitMarker(Meta, BaseWidget, IncrementalValue, Intertwined):
+class OrbitMarker(Meta, IncrementalValue, Intertwined):
     enabled = True
     name = ''
     color = None
@@ -590,7 +612,7 @@ class OrbitMarker(Meta, BaseWidget, IncrementalValue, Intertwined):
         return self.name + ' @' + self.text
 
 
-class OrbitButton(Meta, BaseWidget, Intertwined):
+class OrbitButton(Meta, Intertwined):
     locked = False
 
     def __init__(self, parent, color):
@@ -631,6 +653,7 @@ class OrbitButton(Meta, BaseWidget, Intertwined):
                 self.parent.toggle_stellar_orbits()
             self.parent.hide_orbit_types()
             self.parent.show_markers_button.enable()
+            # self.parent.view_button.disable()
             self.linked_type.show()
             self.lock()
 
@@ -658,7 +681,6 @@ class AvailablePlanets(AvailableObjects):
 
 
 class AddOrbitButton(TextButton):
-    value = 'Inward'
     anchor = None
     locked = False
 
@@ -683,6 +705,20 @@ class AddOrbitButton(TextButton):
     def unlink(self):
         self.lock()
         self.disable()
+
+
+class VisualizationButton(TextButton):
+    enabled = False
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent, 'View', x, y)
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1 and self.enabled:
+            topdown_view(Systems.get_current())
+            Renderer.reset()
+            if not self.parent.visible_markers:
+                self.parent.toggle_stellar_orbits()
 
 
 class Recomendation(BaseWidget):
@@ -756,9 +792,9 @@ class Recomendation(BaseWidget):
         error += f'the eccentricity should be {e} which falls ouside of those parameters.'
         assert all([habitable, planets_in_system not in (3, 4), e > 0.1]), error
         if all([clase, habitable]) is True:
-            data.update(recomendation['eccenctric_2'])
+            data.update(recomendation['eccentric_2'])
         elif not habitable:
-            data.update(recomendation['eccenctric_1'])
+            data.update(recomendation['eccentric_1'])
         return data
 
     def create_suggestion(self, planet, temperature):

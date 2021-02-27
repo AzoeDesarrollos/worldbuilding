@@ -1,13 +1,13 @@
-from pygame import image, display, event as events, K_ESCAPE, K_DOWN, K_LEFT, K_RIGHT, K_UP, SCALED
-from pygame import KEYDOWN, QUIT, KEYUP, Surface, SRCALPHA, gfxdraw, font, time, PixelArray, Color
+from pygame import image, display, event as events, K_ESCAPE, K_DOWN, K_LEFT, K_RIGHT, K_UP, SCALED, K_SPACE
+from pygame import KEYDOWN, QUIT, KEYUP, Surface, SRCALPHA, gfxdraw, font, time, PixelArray
+from engine.backend.eventhandler import EventHandler
+from engine.frontend.globales.constantes import *
 from engine.frontend.globales import WidgetGroup
-from math import sin, cos, radians, pow, sqrt
-from engine.backend import abrir_json, roll
-from engine.frontend import ANCHO, ALTO
+from math import sin, cos, radians, ceil
 from decimal import Decimal, getcontext
 from pygame.sprite import Sprite
+from engine.backend import roll
 from os import getcwd, path
-from random import randint
 
 
 def paint_stars(surface, i, f):
@@ -39,58 +39,54 @@ def paint_stars(surface, i, f):
     return surface
 
 
-def draw_orbits(fondo, radix, orbits):
+def draw_orbits(fondo, system):
     getcontext().prec = 2
     surf_rect = fondo.get_rect()
-    gfxdraw.aacircle(fondo, *surf_rect.midleft, 20, (255, 255, 0))
-    gfxdraw.filled_circle(fondo, *surf_rect.midleft, 20, (255, 255, 0))
-    for r in radix:
-        e = 0.0
-        b = r * sqrt(1 - pow(e, 2))
-        semi_major = int(Decimal(r) * Decimal(100.0))
-        semi_minor = int(Decimal(b) * Decimal(100.0))
-        if r in orbits['frost line']:  # frost line
-            color = 0, 0, 255
-            semi_minor = semi_major
-        elif r in orbits['habitable zone']:  # habitable zone
-            color = 0, 255, 0
-            semi_minor = semi_major
-        else:
-            color = 125, 125, 125
-        gfxdraw.ellipse(fondo, *surf_rect.midleft, semi_major, semi_minor, color)
+
+    if system.star_system.letter == 'P':
+        for star in system.star_system:
+            semi_major = int(Decimal(star.orbit.a.m) * Decimal(100.0))
+            semi_minor = int(Decimal(star.orbit.b.m) * Decimal(100.0))
+            gfxdraw.ellipse(fondo, *surf_rect.midleft, semi_major, semi_minor, COLOR_STARORBIT)
+
+    for planet in system.planets:
+        if planet.orbit is not None:
+            semi_major = int(Decimal(planet.orbit.a.m) * Decimal(100.0))
+            semi_minor = int(Decimal(planet.orbit.b.m) * Decimal(100.0))
+            gfxdraw.ellipse(fondo, *surf_rect.midleft, semi_major, semi_minor, COLOR_STARORBIT)
+
+    for radius in [system.star_system.habitable_inner.m, system.star_system.habitable_outer.m]:
+        scaled = int(Decimal(radius) * Decimal(100.0))
+        try:
+            gfxdraw.ellipse(fondo, *surf_rect.midleft, scaled, scaled, COLOR_HABITABLE)
+        except OverflowError:
+            print(f' habitable radius of {scaled} exceeds the maximum?')
+
+    scaled = int(Decimal(system.star_system.frost_line.m) * Decimal(100.0))
+    try:
+        gfxdraw.ellipse(fondo, *surf_rect.midleft, *[scaled]*2, (0, 0, 255))
+    except OverflowError:
+        print(f'frost line radius of {scaled} exceeds the maximum?')
 
 
-class RotatingPlanet(Sprite):
-    centerx = 0
-    centery = 0
+class RotatingAstro(Sprite):
     displaced = False
+    direction = 'CW'
 
-    def __init__(self, a, centery, e=0):
+    def __init__(self, orbit, centery):
         super().__init__()
-
-        self._r = a
-        b = a * sqrt(1 - pow(e, 2))
-        period = sqrt(pow(a, 3)/1)*365.26
-        self.speed = 360/period
         self.centery = centery
-        self.major = int(Decimal(a) * Decimal(100.0))
-        self.minor = int(Decimal(b) * Decimal(100.0))
-        self.angle = randint(0, 360)
+        self.centerx = 0  # for simmetry
 
-        if self._r in orbitas['inner']:  # terrestial planets
-            self.create(3, (255, 0, 0))
-
-        elif self._r in orbitas['outer']:  # gas giants
-            self.create(11, (0, 0, 255))
+        self.tracked_orbit = orbit
+        self.speed = (360/orbit.period.to('day').m)/10
+        self.major = int(Decimal(orbit.a.m) * Decimal(100.0))
+        self.minor = int(Decimal(orbit.b.m) * Decimal(100.0))
+        self.angle = self.tracked_orbit.true_anomaly.m
 
         self.rect = self.image.get_rect(center=(self.major, self.centery))
+        self.set_direction()
         self.set_xy()
-
-    def create(self, size, color):
-        size_2 = size * 2
-        self.image = Surface((size_2, size_2), SRCALPHA)
-        gfxdraw.aacircle(self.image, size, size, size, color)
-        gfxdraw.filled_circle(self.image, size, size, size, color)
 
     def set_xy(self, off_x=0, off_y=0):
         x = round(off_x + self.centerx + self.major * cos(radians(self.angle)))
@@ -103,22 +99,108 @@ class RotatingPlanet(Sprite):
         self.set_xy(delta_x, delta_y)
         self.displaced = True
 
-    def update(self):
-        if 0 <= self.angle + self.speed < 360:
-            self.angle += self.speed
-        else:
-            self.angle = -self.speed
+    def set_direction(self):
+        orbit = self.tracked_orbit
+        direction = orbit.direction
+        star_spin = orbit.star.spin
 
+        if direction == 'prograde':
+            self.direction = star_spin
+        elif direction == 'retrograde':
+            self.direction = 'clockwise' if star_spin == 'counter-clockwise' else 'counter-clockwise'
+
+    def spin(self, direction):
+        if direction == 'clockwise':
+            if 0 <= self.angle + self.speed < 360:
+                self.angle += self.speed
+            else:
+                self.angle = -self.speed
+
+        elif direction == 'counter-clockwise':
+            if 0 <= self.angle - self.speed < 360:
+                self.angle -= self.speed
+            else:
+                self.angle = 360
+
+    def update(self):
+        self.spin(self.direction)
+        self.tracked_orbit.set_true_anomaly(self.angle)
         self.set_xy()
 
 
-def topdown_loop():
+class TranslatingAstro(RotatingAstro):
+    def __init__(self, planet_obj, centery):
+        size = 0
+        color = None
+        if planet_obj.clase == 'Terrestial Planet':
+            if planet_obj.habitable:
+                color = COLOR_HABITABLE
+            else:
+                color = COLOR_TERRESTIAL
+            size = 4
+        elif planet_obj.clase in ('Gas Giant', 'Super Jupiter'):
+            color = COLOR_GASGIANT
+            size = 11
+        elif planet_obj.clase == 'Puffy Giant':
+            color = COLOR_PUFFYGIANT
+            size = 11
+        elif planet_obj.clase == 'Gas Dwarf':
+            color = COLOR_GASDWARF
+            size = 5
+        elif planet_obj.clase == 'Dwarf Planet':
+            color = COLOR_DWARFPLANET
+            size = 3
+
+        self.create(size, color)
+        super().__init__(planet_obj.orbit, centery)
+
+    def create(self, size, color):
+        size_2 = size * 2
+        size_3 = [size] * 3
+        self.image = Surface((size_2, size_2), SRCALPHA)
+        gfxdraw.aacircle(self.image, *size_3, color)
+        gfxdraw.filled_circle(self.image, *size_3, color)
+
+
+class RotatingStar(RotatingAstro):
+    def __init__(self, star, dy):
+        radius = ceil(Decimal(star.radius.m) * Decimal(3.5))
+        self.image = Surface([radius*2, radius*2], SRCALPHA)
+        self.rect = self.image.get_rect()
+        gfxdraw.aacircle(self.image, *self.rect.center, radius, star.color)
+        gfxdraw.filled_circle(self.image, *self.rect.center, radius, star.color)
+        self.tracked_orbit = star
+        super().__init__(star.orbit, dy+ceil(star.orbit.a.m*100))
+        self.direction = star.spin
+
+    def set_direction(self):
+        pass
+
+
+class StationaryStar(Sprite):
+    def __init__(self, star, center):
+        radius = ceil(Decimal(star.radius.m) * Decimal(20))
+        self.image = Surface([radius*2, radius*2], SRCALPHA)
+        self.rect = self.image.get_rect()
+        gfxdraw.aacircle(self.image, *self.rect.center, radius, star.color)
+        gfxdraw.filled_circle(self.image, *self.rect.center, radius, star.color)
+        self.rect.center = center
+        super().__init__()
+
+    def displace(self, delta_x, delta_y):
+        self.rect.move_ip(delta_x, delta_y)
+
+
+def topdown_loop(system):
     blanco = 255, 255, 255
     negro = 0, 0, 0
     fondo = display.set_mode((ANCHO, ALTO), SCALED)
     bg_rect = fondo.get_rect()
-    rect.centery = bg_rect.centery
-    draw_orbits(bg_stars, radiuses, orbitas)
+
+    bg_stars = image.load(path.join(getcwd(), 'data', 'estrellas.png'))
+    rect = bg_stars.get_rect(centery=bg_rect.centery)
+
+    draw_orbits(bg_stars, system)
 
     f1 = font.SysFont('Verdana', 12)
     f2 = font.SysFont('Verdana', 16, bold=True)
@@ -126,12 +208,18 @@ def topdown_loop():
     text = f2.render('Top-Down View', 1, blanco, negro)
     text_rect = text.get_rect()
 
-    planets = WidgetGroup()
-    for ridx in radiuses:
-        if ridx in orbitas['inner']+orbitas['outer']:
-            p = RotatingPlanet(ridx, rect.centery)
-            planets.add(p)
+    astros = WidgetGroup()
+    t_p = TranslatingAstro
+    astros.add([t_p(planet, rect.centery) for planet in system.planets if planet.orbit is not None], layer=2)
 
+    if system.star_system.letter is None:
+        astros.add(StationaryStar(system.star_system, bg_rect.midleft), layer=1)
+
+    elif system.star_system.letter == 'P':
+        for star in system.star_system:
+            astros.add(RotatingStar(star, bg_rect.centery), layer=1)
+
+    fps = time.Clock()
     dx, dy = 0, 0
     running = True
     while running:
@@ -139,6 +227,7 @@ def topdown_loop():
         for e in events.get((KEYDOWN, KEYUP, QUIT)):
             if e.type == QUIT or (e.type == KEYDOWN and e.key == K_ESCAPE):
                 running = False
+                EventHandler.trigger('salir', 'engine', {'mensaje': 'normal'})
 
             elif e.type == KEYDOWN:
                 if e.key == K_UP:
@@ -149,6 +238,9 @@ def topdown_loop():
                     dx += 10
                 elif e.key == K_RIGHT:
                     dx -= 10
+
+                elif e.key == K_SPACE:
+                    running = False
 
             elif e.type == KEYUP:
                 if e.key == K_UP or e.key == K_DOWN:
@@ -167,14 +259,14 @@ def topdown_loop():
             dy = 0
 
         if dx or dy:
-            for planet in planets.widgets():
+            for planet in astros.widgets():
                 planet.displace(dx, dy)
 
         fondo.blit(bg_stars, rect.topleft)
-        planets.update()
-        planets.draw(fondo)
+        astros.update()
+        astros.draw(fondo)
 
-        for i, planet in enumerate(planets):
+        for i, planet in enumerate(astros.get_widgets_from_layer(2)):
             render = f1.render(str(round(planet.angle)) + '°', 1, blanco, negro)
             if i % 2 == 0:
                 j = 11
@@ -190,13 +282,4 @@ def topdown_loop():
         display.update()
 
     display.quit()
-
-
-fps = time.Clock()
-
-orbitas = abrir_json(path.join(getcwd(), 'data', 'data.json'))
-radiuses = [item for sublist in orbitas.values() for item in sublist]
-radiuses.sort()
-
-bg_stars = image.load(path.join(getcwd(), 'data', 'estrellas.png'))
-rect = bg_stars.get_rect(topleft=(0, 0))
+    return

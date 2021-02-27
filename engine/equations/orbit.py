@@ -119,16 +119,17 @@ class Orbit(Ellipse):
 
         if self._i in (0, 180):
             self.motion = 'equatorial'
+            self.direction = 'prograde' if self._i == 0 else 'retrograde'  # if self._i == 180
         elif self._i == 90:
             self.motion = 'polar'
-        elif 0 <= self._i <= 90:
-            self.motion = 'prograde'
-        elif 90 < self._i <= 180:
-            self.motion = 'retrograde'
+            self.direction = 'perpendicular'
 
-        # abreviaturas
-        self.a = self.semi_major_axis
-        self.b = self.semi_minor_axis
+        if 0 <= self._i < 90:
+            self.direction = 'prograde'
+            self.motion = self.direction
+        elif 90 < self._i < 180:
+            self.direction = 'retrograde'
+            self.motion = self.direction
 
         self.longuitude_of_the_ascending_node = set_longuitude_of_the_ascending_node(self._i)
         self.argument_of_periapsis = set_argument_of_periapsis(self._i)
@@ -156,6 +157,17 @@ class Orbit(Ellipse):
         x = self._a * cos(self.true_anomaly.m)
         y = self._b * sin(self.true_anomaly.m)
         return x, y
+
+    def set_true_anomaly(self, value: float):
+        self.true_anomaly = q(round(value, 3), 'degree')
+
+    @property
+    def a(self):
+        return self.semi_major_axis
+
+    @property
+    def b(self):
+        return self.semi_minor_axis
 
     @property
     def semi_major_axis(self):
@@ -245,6 +257,16 @@ class SatelliteOrbit(Orbit):
         self.period = q(0.0588 * (pow(self._a, 3) / sqrt(main_body_mass.m + satellite.mass.m)), 'day')
 
 
+class BinaryStarOrbit(Orbit):
+    def __init__(self, star, other, a, e):
+        super().__init__(a, e, q(0, 'degrees'))
+        self.reset_period_and_speed(star.mass.m+other.mass.m)
+
+    def reset_period_and_speed(self, main_body_mass):
+        self.period = q(sqrt(pow(self._a, 3) / main_body_mass), 'year')
+        self.velocity = q(sqrt(main_body_mass / self._a), 'earth_orbital_velocity').to('kilometer per second')
+
+
 def from_resonance(reference, primary, resonance: str):
     """Return the semi-major axis in AU of the resonant orbit.
 
@@ -261,12 +283,14 @@ def from_resonance(reference, primary, resonance: str):
 
     if primary.celestial_type == 'planet':
         time_unit = 'year'
+        earths = 326.26
     else:
         time_unit = 'day'
+        earths = 24
 
     x, y = [int(i) for i in resonance.split(':')]
     period = q((y * primary.orbit.period.to(time_unit).m) / x, time_unit)
-    semi_major_axis = q(pow(pow(period.m, 2) * reference.mass.m, (1 / 3)), 'au')
+    semi_major_axis = q(pow(pow(period.m/earths, 2) * reference.mass.m, (1 / 3)), 'au')
     return semi_major_axis
 
 
@@ -290,14 +314,14 @@ def _set_random_angle(value):
 
 
 def set_argument_of_periapsis(inclination, value=None):
-    if inclination > 0:
+    if inclination not in (0, 180):
         return _set_random_angle(value)
     else:
         return 'undefined'
 
 
 def set_longuitude_of_the_ascending_node(inclination, value=None):
-    if inclination > 0:
+    if inclination not in (0, 180):
         return _set_random_angle(value)
     else:
         return q(0, 'degree')

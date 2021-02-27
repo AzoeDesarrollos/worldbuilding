@@ -1,6 +1,7 @@
 from engine import q
 from math import sqrt
 from datetime import datetime
+from .orbit import BinaryStarOrbit
 
 
 class BinarySystem:
@@ -19,7 +20,7 @@ class BinarySystem:
 
     idx = None
 
-    def __init__(self, name, primary, secondary, avgsep, ep=0, es=0):
+    def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, id=None):
         if secondary.mass <= primary.mass:
             self.primary = primary
             self.secondary = secondary
@@ -40,10 +41,14 @@ class BinarySystem:
         self.primary_distance = round(self.barycenter, 2)
         self.secondary_distance = round(self.average_separation - self.primary_distance, 2)
 
+        self.primary.orbit = BinaryStarOrbit(self.primary, self.secondary, self.primary_distance, self.ecc_p)
+        self.secondary.orbit = BinaryStarOrbit(self.secondary, self.primary, self.secondary_distance, self.ecc_s)
+
         self.system_name = self.__repr__()
 
         # ID values make each system unique, even if they have the same stars and separation.
-        self.id = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
+        now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
+        self.id = id if id is not None else now
 
     @staticmethod
     def calculate_distances(e, ref):
@@ -52,7 +57,7 @@ class BinarySystem:
         return max_sep, min_sep
 
     def __str__(self):
-        return self.letter+'-Type #{}'.format(self.idx)
+        return self.letter + '-Type #{}'.format(self.idx)
 
     def __repr__(self):
         return self.letter + '-Type Binary System'
@@ -91,8 +96,8 @@ class PTypeSystem(BinarySystem):
     mass = 0
     luminosity = 0
 
-    def __init__(self, primary, secondary, avgsep, ep=0, es=0, name=None):
-        super().__init__(name, primary, secondary, avgsep, ep, es)
+    def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
+        super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
 
         assert 0.4 <= ep <= 0.7, 'Primary eccentricity must be between 0.4 and 0.7'
         max_sep_p, min_sep_p = self.calculate_distances(ep, self.primary_distance.m)
@@ -109,14 +114,16 @@ class PTypeSystem(BinarySystem):
 
         self._habitable_inner = round(sqrt(self._luminosity.m / 1.1), 3)
         self._habitable_outer = round(sqrt(self._luminosity.m / 0.53), 3)
-        self._inner_boundry = self._mass.m * 0.01
-        self._outer_boundry = self._mass.m * 40
+        self._inner_boundry = round(self._mass.m * 0.01, 3)
+        self._outer_boundry = round(self._mass.m * 40, 3)
         self._frost_line = round(4.85 * sqrt(self._luminosity.m), 3)
         self.set_qs()
+        self.spin = self.primary.spin
 
-        self.inner_forbbiden_zone = q(self.min_sep.m / 3, 'au')
-        self.outer_forbbiden_zone = q(self.max_sep.m * 3, 'au')
-        print('habitable world must orbit at {:~}'.format(self.max_sep * 4))
+        self.inner_forbbiden_zone = q(round(self.min_sep.m / 3, 3), 'au')
+        self.outer_forbbiden_zone = q(round(self.max_sep.m * 3, 3), 'au')
+
+        self.habitable_orbit = round(self.max_sep * 4, 3)
 
     def set_qs(self):
         self.mass = q(self._mass.m, 'sol_mass')
@@ -127,12 +134,15 @@ class PTypeSystem(BinarySystem):
         self.outer_boundry = q(self._outer_boundry, 'au')
         self.frost_line = q(self._frost_line, 'au')
 
+    def validate_orbit(self, orbit):
+        return self._inner_boundry < orbit < self._outer_boundry
+
 
 class STypeSystem(BinarySystem):
     letter = 'S'
 
-    def __init__(self, primary, secondary, avgsep, ep=0, es=0, name=None):
-        super().__init__(name, primary, secondary, avgsep, ep, es)
+    def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
+        super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
 
         assert 0.4 <= ep <= 0.7, 'Primary eccentricity must be between 0.4 and 0.7'
         max_sep_p, min_sep_p = self.calculate_distances(ep, self.average_separation.m)

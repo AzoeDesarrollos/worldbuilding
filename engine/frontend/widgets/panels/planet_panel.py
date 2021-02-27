@@ -1,10 +1,12 @@
 from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, WidgetGroup, ANCHO
 from engine.frontend.widgets.panels.base_panel import BasePanel
+from engine.frontend.widgets.sprite_star import PlanetSprite
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
-from .common import PlanetButton, TextButton, Meta
+from engine.frontend.widgets.meta import Meta
+from .common import PlanetButton, TextButton
 from engine.equations.planet import Planet
 from pygame import Rect
 from engine import q
@@ -34,7 +36,7 @@ class PlanetPanel(BasePanel):
         EventHandler.register(self.save_planets, 'Save')
 
     def save_planets(self, event):
-        data = self.current.loaded_data
+        data = self.current.loaded_data if self.current.loaded_data is not None else []
         for system in Systems.get_systems():
             for planet_button in self.planet_buttons.widgets():
                 planet = planet_button.object_data
@@ -45,6 +47,7 @@ class PlanetPanel(BasePanel):
                         'radius': planet.radius.m,
                         'unit': planet.unit,
                         'atmosphere': planet.atmosphere,
+                        'composition': planet.composition,
                         'clase': planet.clase,
                         'system': system.id
                     }
@@ -135,6 +138,8 @@ class PlanetType(ObjectType):
         abs_props = ['Density', 'Volume', 'Surface area', 'Circumference', 'Albedo (bond)', 'Greenhouse effect',
                      'Class']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
+        self.set_modifiables('relatives', 0, 1)
+        self.set_modifiables('absolutes', 4, 5)
         self.absolutes.widgets()[4].set_min_and_max(0, 100)
         f = self.crear_fuente(14)
         f.set_underline(True)
@@ -157,10 +162,14 @@ class PlanetType(ObjectType):
             for planet_data in self.loaded_data:
                 planet = Planet(planet_data)
                 self.create_button(planet)
+                if planet.composition is not None:
+                    planet.sprite = PlanetSprite(self, planet, 460, 100)
             self.current = self.parent.planet_buttons.widgets()[0].object_data
             self.loaded_data.clear()
 
     def set_planet(self, planet):
+        if self.current is not None and self.current.sprite is not None:
+            self.current.sprite.hide()
         self.current = planet
         self.fill()
         self.toggle_habitable()
@@ -176,6 +185,8 @@ class PlanetType(ObjectType):
                 button.text_area.clear()
         self.has_values = False
         self.parent.image.fill(COLOR_BOX, self.hab_rect)
+        if self.current is not None:
+            self.current.sprite.hide()
 
     def create_button(self, planet=None):
         if planet is None:
@@ -188,6 +199,8 @@ class PlanetType(ObjectType):
             self.parent.add_button(planet)
             self.has_values = False
             self.parent.image.fill(COLOR_BOX, self.hab_rect)
+            if self.current is not None and self.current.sprite is not None:
+                self.current.sprite.hide()
 
     def destroy_button(self):
         destroyed = Systems.get_current().remove_astro_obj(self.current)
@@ -202,7 +215,7 @@ class PlanetType(ObjectType):
         else:
             self.parent.image.fill(COLOR_BOX, self.hab_rect)
 
-    def check_values(self):
+    def check_values(self, composition):
         attrs = {}
         for button in self.properties.get_sprites_from_layer(1):
             attr = ''
@@ -224,6 +237,8 @@ class PlanetType(ObjectType):
         if len(attrs) > 1:
             unit = self.parent.unit.name.lower()
             attrs['unit'] = 'jupiter' if unit == 'gas giant' else 'earth'
+            if composition is not None:
+                attrs['composition'] = composition
             self.current = Planet(attrs)
             self.toggle_habitable()
             if self.current.mass <= Systems.get_current().body_mass:
@@ -243,8 +258,16 @@ class PlanetType(ObjectType):
         }
         super().fill(tos)
 
+        if self.current.sprite is None and self.current.composition is not None:
+            self.current.sprite = PlanetSprite(self, self.current, 460, 100)
+            self.properties.add(self.current.sprite)
+            self.parent.properties.add(self.current.sprite)
 
-class Unit(Meta, BaseWidget):
+        if self.current.sprite is not None:
+            self.current.sprite.show()
+
+
+class Unit(Meta):
     name = ''
     enabled = True
     mass_number = None
@@ -294,7 +317,7 @@ class ShownMass(BaseWidget):
         self.image = self.f1.render('Available mass: ', True, COLOR_TEXTO, COLOR_BOX)
         self.rect = self.image.get_rect(left=200, bottom=416)
         self.mass_img = self.f2.render(self.show_mass(), True, self.mass_color, COLOR_BOX)
-        self.mass_rect = Rect(self.rect.right+3, self.rect.y, 150, self.mass_img.get_height())
+        self.mass_rect = Rect(self.rect.right + 3, self.rect.y, 150, self.mass_img.get_height())
         self.parent.mass_number = self
 
     def on_mousebuttondown(self, event):
@@ -341,4 +364,4 @@ class CreatedPlanet(PlanetButton):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.set_planet(self.object_data)
-            self.parent.select_one()
+            self.parent.parent.select_one(self)

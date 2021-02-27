@@ -1,7 +1,8 @@
 from .general import BodyInHydrostaticEquilibrium
 from .lagrange import get_lagrange_points
-from .orbit import Orbit
+from .planetary_system import Systems
 from math import sqrt, pi, pow
+from .orbit import Orbit
 from engine import q
 
 
@@ -27,6 +28,11 @@ class Planet(BodyInHydrostaticEquilibrium):
     lagrange_points = None
     hill_sphere = 0
     roches_limit = 0
+
+    axial_tilt = 0
+    spin = ''
+
+    sprite = None
 
     def __init__(self, data):
         name = data.get('name', None)
@@ -58,7 +64,14 @@ class Planet(BodyInHydrostaticEquilibrium):
             self._mass = gravity * pow(radius, 2)
 
         self.set_qs(unit)
-        self.composition = {}
+        self.composition = {
+            'water ice': data['composition'].get('water ice', 0),
+            'silicates': data['composition'].get('silicates', 0),
+            'iron': data['composition'].get('iron', 0),
+            'helium': data['composition'].get('helium', 0),
+            'hydrogen': data['composition'].get('hydrogen', 0),
+        } if 'composition' in data else None
+
         self.atmosphere = {}
         self.habitable = self.set_habitability()
         self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)
@@ -66,6 +79,12 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.greenhouse = q(data['greenhouse']) if 'albedo' in data else q(1)
 
         self.satellites = []
+
+        star = Systems.get_current_star()
+        if 0 <= self.axial_tilt < 90:
+            self.spin = star.spin
+        elif 90 <= self.axial_tilt <= 180:
+            self.spin = 'CW' if star.spin == 'CCW' else 'CCW'
 
     def set_qs(self, unit):
         m = unit + '_mass'
@@ -88,6 +107,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         habitable = q(0.1, 'earth_mass') < mass < q(3.5, 'earth_mass')
         habitable = habitable and q(0.5, 'earth_radius') < radius < q(1.5, 'earth_radius')
         habitable = habitable and q(0.4, 'earth_gravity') < gravity < q(1.6, 'earth_gravity')
+        habitable = habitable and (0 <= self.axial_tilt <= 80 or 110 <= self.axial_tilt <= 180)
         return habitable
 
     def set_temperature(self, star_mass, semi_major_axis):

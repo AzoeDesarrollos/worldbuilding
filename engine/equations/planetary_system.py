@@ -21,8 +21,15 @@ class PlanetarySystem:
         self.id = star_system.id
         self.body_mass = q(16 * exp(-0.6931 * star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
 
+    def update(self):
+        self.body_mass = q(16 * exp(-0.6931 * self.star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
+
     def get_available_mass(self):
         return self.body_mass
+
+    @property
+    def star(self):
+        return self.star_system
 
     def add_astro_obj(self, astro_obj):
         group = self._get_astro_group(astro_obj)
@@ -30,10 +37,8 @@ class PlanetarySystem:
         if astro_obj not in group:
             minus_mass = astro_obj.mass.to('jupiter_mass')
 
-            if minus_mass > self.body_mass:
-                # prevents negative mass
-                return False
-
+            text = 'There is not enough mass in the system to create new bodies of this type.'
+            assert minus_mass <= self.body_mass, text
             self.body_mass -= minus_mass
             group.append(astro_obj)
             if not astro_obj.has_name:
@@ -64,7 +69,7 @@ class PlanetarySystem:
         planet = [planet for planet in self.planets if planet.name == planet_name][0]
         return planet
 
-    def is_planet_habitable(self, planet) -> bool:
+    def is_habitable(self, planet) -> bool:
         pln_orbit = planet.orbit.semi_major_axis
         star = self.star_system
         return star.habitable_inner.m <= pln_orbit.m <= star.habitable_outer.m
@@ -130,10 +135,13 @@ class Systems:
     @classmethod
     def unset_system(cls, star):
         system = cls.get_system_by_star(star)
-        if star == system.star_system.primary:
-            cls.loose_stars.append(system.star_system.secondary)
-        elif star == system.star_system.secondary:
-            cls.loose_stars.append(system.star_system.primary)
+        if star.letter is not None:
+            if star.letter == system.star_system.primary:
+                cls.loose_stars.append(system.star_system.secondary)
+            elif star == system.star_system.secondary:
+                cls.loose_stars.append(system.star_system.primary)
+        else:
+            cls.loose_stars.append(star)
         cls._systems.remove(system)
 
     @classmethod
@@ -154,6 +162,18 @@ class Systems:
         systems = [s for s in cls._systems if s.id == number]
         if len(systems) == 1:
             return systems[0]
+        else:
+            raise AssertionError('System ID is invalid')
+
+    @classmethod
+    def get_star_by_id(cls, idx):
+        for star in cls.loose_stars:
+            if star.id == idx:
+                return star
+        for system in cls._systems:
+            for star in system:
+                if star.id == idx:
+                    return star
 
     @classmethod
     def load_system(cls, star):
