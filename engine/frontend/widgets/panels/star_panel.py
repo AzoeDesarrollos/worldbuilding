@@ -139,6 +139,7 @@ class StarType(ObjectType):
         abs_args = ['density', 'volume', 'circumference', 'surface', 'spin', 'classification']
         abs_props = ['Density', 'Volume', 'Circumference', 'Surface area', 'Spin', 'Classification']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
+        self.set_modifiables('relatives', 0, 1)
 
     def set_star(self, star_data):
         star_data.update({'idx': len(self.parent.star_buttons)})

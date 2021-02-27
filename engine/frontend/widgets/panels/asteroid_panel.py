@@ -106,10 +106,12 @@ class AsteroidType(BaseWidget):
         for i, prop in enumerate(["A Axis", "B Axis", "C Axis", "Shape"], start=4):
             vt = ValueText(self, prop, 50, 52 + i * 40, COLOR_TEXTO, COLOR_BOX)
             self.properties.add(vt, layer=3)
+            vt.modifiable = True
 
         for i, name in enumerate(sorted(material_densities)):
             a = ValueText(self, name.capitalize(), 3, 420 + 21 + i * 21, bg=COLOR_AREA)
             self.properties.add(a, layer=4)
+            a.modifiable = True
 
     def calculate(self):
         data = {}

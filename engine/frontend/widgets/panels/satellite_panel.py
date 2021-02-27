@@ -120,6 +120,7 @@ class SatelliteType(ObjectType):
         abs_args = ['density', 'volume', 'surface', 'circumference', 'clase']
         abs_props = ['Density', 'Volume', 'Surface Area', 'Circumference', 'Clase']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
+        self.set_modifiables('relatives', 1)
 
         for item in self.relatives:
             item.rect.y += 16
@@ -128,31 +129,38 @@ class SatelliteType(ObjectType):
         for i, name in enumerate(sorted(material_densities)):
             a = ValueText(self, name.capitalize(), 3, 420 + 21 + i * 21, bg=COLOR_AREA)
             self.properties.add(a, layer=7)
+            a.modifiable = True
 
     def calculate(self):
-        data = {'composition': {}}
+        data = {'composition': None}
+        if self.current is None:
+            data['composition'] = {}
+        else:
+            data['composition'] = self.current.composition
+
         for material in self.properties.get_sprites_from_layer(7):
             if material.text_area.value:  # not empty
-                data['composition'][material.text.lower()] = float(material.text_area.value)
+                text = material.text_area.value.strip(' %')
+                data['composition'][material.text.lower()] = float(text)
         for item in self.properties.get_widgets_from_layer(1):
-            if item.text_area.value:
+            if type(item.text_area.value) is not str:
                 data[item.text.lower()] = float(item.text_area.value)
+            else:
+                data[item.text.lower()] = item.text_area.value
+
+        if self.current is not None:
+            data['radius'] = self.current.radius.m
 
         self.has_values = True
 
+        moon = major_moon_by_composition(data)
         if self.current is None:
-            moon = major_moon_by_composition(data)
             if Systems.get_current().add_astro_obj(moon):
                 self.current = moon
-            else:
-                raise AssertionError('There is not enough mass in the system to create new bodies of this type.')
-            self.parent.button_add.enable()
         else:
-            for item in self.properties.get_widgets_from_layer(7):
-                if item.text.lower() in self.current.composition:
-                    item.value = str(self.current.composition[item.text.lower()])
-                else:
-                    item.value = '0'
+            Systems.get_current().remove_astro_obj(self.current)
+            if Systems.get_current().add_astro_obj(moon):
+                self.current = moon
 
         self.fill()
 

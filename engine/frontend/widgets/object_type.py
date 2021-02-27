@@ -41,6 +41,16 @@ class ObjectType(BaseWidget):
             self.absolutes.add(vt)
             self.properties.add(vt, layer=1)
 
+    def set_modifiables(self, group: str, *indexes):
+        if group == 'relatives':
+            group = self.relatives
+        elif group == 'absolutes':
+            group = self.absolutes
+
+        for index in indexes:
+            obj = group.get_widget(index)
+            obj.modifiable = True
+
     def show(self):
         for p in self.properties.widgets():
             p.show()

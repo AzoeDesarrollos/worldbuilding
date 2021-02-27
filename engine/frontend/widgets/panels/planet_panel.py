@@ -47,6 +47,7 @@ class PlanetPanel(BasePanel):
                         'radius': planet.radius.m,
                         'unit': planet.unit,
                         'atmosphere': planet.atmosphere,
+                        'composition': planet.composition,
                         'clase': planet.clase,
                         'system': system.id
                     }
@@ -137,6 +138,8 @@ class PlanetType(ObjectType):
         abs_props = ['Density', 'Volume', 'Surface area', 'Circumference', 'Albedo (bond)', 'Greenhouse effect',
                      'Class']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
+        self.set_modifiables('relatives', 0, 1)
+        self.set_modifiables('absolutes', 4, 5)
         self.absolutes.widgets()[4].set_min_and_max(0, 100)
         f = self.crear_fuente(14)
         f.set_underline(True)
@@ -159,11 +162,13 @@ class PlanetType(ObjectType):
             for planet_data in self.loaded_data:
                 planet = Planet(planet_data)
                 self.create_button(planet)
+                if planet.composition is not None:
+                    planet.sprite = PlanetSprite(self, planet, 460, 100)
             self.current = self.parent.planet_buttons.widgets()[0].object_data
             self.loaded_data.clear()
 
     def set_planet(self, planet):
-        if self.current is not None:
+        if self.current is not None and self.current.sprite is not None:
             self.current.sprite.hide()
         self.current = planet
         self.fill()
@@ -312,7 +317,7 @@ class ShownMass(BaseWidget):
         self.image = self.f1.render('Available mass: ', True, COLOR_TEXTO, COLOR_BOX)
         self.rect = self.image.get_rect(left=200, bottom=416)
         self.mass_img = self.f2.render(self.show_mass(), True, self.mass_color, COLOR_BOX)
-        self.mass_rect = Rect(self.rect.right+3, self.rect.y, 150, self.mass_img.get_height())
+        self.mass_rect = Rect(self.rect.right + 3, self.rect.y, 150, self.mass_img.get_height())
         self.parent.mass_number = self
 
     def on_mousebuttondown(self, event):

@@ -154,7 +154,10 @@ class SystemType(BaseWidget):
             'Forbbiden Zone Outer edge', 'System Type']
 
         for i, prop in enumerate([j for j in props]):
-            self.properties.add(ValueText(self, prop, 3, 64 + i * 25, COLOR_TEXTO, COLOR_BOX))
+            vt = ValueText(self, prop, 3, 64 + i * 25, COLOR_TEXTO, COLOR_BOX)
+            self.properties.add(vt)
+            if i in [2, 3, 4]:
+                vt.modifiable = True
 
         attrs = ['primary', 'secondary', 'separation', 'ecc_p', 'ecc_s']
         for idx, attr in enumerate(attrs):
@@ -166,7 +169,7 @@ class SystemType(BaseWidget):
         elif star.spin == self.primary.value.spin:
             spin = 'clockwise' if star.spin == 'counter-clockwise' else 'counter-clockwise'
             raise AssertionError('The stars must spin\nin oposite directions\nas they would collide\notherwise.\n'
-                                 '\nSelect a star\nthat spins {}.'.format(spin))
+                                 f'\nSelect a star\nthat spins {spin}.')
         else:
             self.secondary.value = star
 

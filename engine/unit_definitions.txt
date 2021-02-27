@@ -11,11 +11,11 @@ earth_temperature = 288 kelvin
 earth_volume =  1.08321e+12 km**3 = Ve
 
 # Jupiter Units
-jupiter_mass = 317.8 earth_mass = Jm
-jupiter_radius = 71492 km = Jr
-jupiter_gravity = 24,79 m/s ** 2
-jupiter_density = 1326 kg/m ** 3
-jupiter_escape_velocity = 59.5 km/s
+jupiter_mass = 317.8 earth_mass = Mj
+jupiter_radius = 71492 km = Rj
+jupiter_gravity = 24,79 m/s ** 2 = Gj
+jupiter_density = 1326 kg/m ** 3 = Dj
+jupiter_escape_velocity = 59.5 km/s = Vj
 
 # Sun Units
 sol_mass = 1.988e+30 kg = Ms

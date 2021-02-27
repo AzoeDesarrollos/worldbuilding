@@ -123,10 +123,14 @@ class PlanetaryOrbitPanel(BaseWidget):
             self.added.append(obj)
         obj_name = obj.cls
         obj_density = obj.density.to('earth_density').m
-        pln_habitable = Systems.get_current().is_planet_habitable(self.current)
+        pln_habitable = Systems.get_current().is_habitable(self.current)
         pln_hill = self.current.hill_sphere.m
         obj_type = obj.celestial_type
         roches = self.current.set_roche(obj_density)
+
+        text = "A satellite's mass must be less than or equal to the\nmass of the planet."
+        text += '\n\nConsider using a less massive satellite for this planet.'
+        assert self.current.mass.m >= obj.mass.m, text
 
         pos = q(round(roll(self.current.roches_limit.m, self.current.hill_sphere.m/2), 3), 'earth_radius')
 
@@ -188,12 +192,6 @@ class ObjectButton(Meta):
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))
 
-    def enable(self):
-        self.enabled = True
-
-    def disable(self):
-        self.enabled = False
-
     def on_mousebuttondown(self, event):
         if not self.parent.is_added(self.object_data) and self.parent.current is not None:
             self.parent.add_new(self.object_data)
@@ -252,11 +250,13 @@ class Marker(Meta, IncrementalValue):
         if not self.locked:
             self.increment = self.update_increment()
             self.increment *= delta
-
-            if self._value + self.increment >= 0 and self.min_value < self._value + self.increment < self.max_value:
-                self._value += self.increment
-                self.increment = 0
-                self.parent.sort_markers()
+            t = 'Regular satellites must orbit close to their planet, that is within half of the maximun value.'
+            t += '\n\nTry moving the satellite to a lower orbit.'
+            test = self._value + self.increment >= 0 and self.min_value < self._value + self.increment < self.max_value
+            assert test(t)
+            self._value += self.increment
+            self.increment = 0
+            self.parent.sort_markers()
 
     def update(self):
         self.reset_power()

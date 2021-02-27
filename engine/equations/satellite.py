@@ -30,10 +30,10 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
             self.name = name
             self.has_name = True
         self.composition = data['composition']
-        assert data.get('radius'), "Must fill parameter 'Radius'"
+        assert data.get('radius'), "Must fill parameter \n'Radius'"
         self.radius = q(data['radius'], 'earth_radius')
         self.density = self.set_density(data['composition'])
-        self.mass = q((self.radius.m ** 3 * self.density.to('earth_density').m), 'earth_mass')
+        self.mass = q((float(self.radius.m) ** 3 * self.density.to('earth_density').m), 'earth_mass')
         self.gravity = q(self.mass.m / (self.radius.m ** 2), 'earth_gravity')
         self.volume = q(self.calculate_volume(self.radius.to('km').m), 'km^3')
         self.surface = q(self.calculate_surface_area(self.radius.to('km').m), 'km^2')
@@ -46,6 +46,12 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
     @staticmethod
     def set_density(composition):
         return NotImplemented
+
+    def __eq__(self, other):
+        return all([
+            self.radius.m == other.radius.m,
+            *[self.composition[m] == other.composition[m] for m in self.composition]
+        ])
 
 
 class Minor(Satellite):

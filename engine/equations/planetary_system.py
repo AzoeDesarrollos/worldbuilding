@@ -37,10 +37,8 @@ class PlanetarySystem:
         if astro_obj not in group:
             minus_mass = astro_obj.mass.to('jupiter_mass')
 
-            if minus_mass > self.body_mass:
-                # prevents negative mass
-                return False
-
+            text = 'There is not enough mass in the system to create new bodies of this type.'
+            assert minus_mass <= self.body_mass, text
             self.body_mass -= minus_mass
             group.append(astro_obj)
             if not astro_obj.has_name:
@@ -71,7 +69,7 @@ class PlanetarySystem:
         planet = [planet for planet in self.planets if planet.name == planet_name][0]
         return planet
 
-    def is_planet_habitable(self, planet) -> bool:
+    def is_habitable(self, planet) -> bool:
         pln_orbit = planet.orbit.semi_major_axis
         star = self.star_system
         return star.habitable_inner.m <= pln_orbit.m <= star.habitable_outer.m
