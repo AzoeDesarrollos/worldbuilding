@@ -12,9 +12,9 @@ panels = [
     StarPanel,
     StarSystemPanel,
     PlanetPanel,
-    OrbitPanel,
     SatellitePanel,
     AsteroidPanel,
+    OrbitPanel,
     PlanetaryOrbitPanel,
     AtmospherePanel,
 ]

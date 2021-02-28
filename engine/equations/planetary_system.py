@@ -67,9 +67,14 @@ class PlanetarySystem:
 
         return group
 
-    def get_planet_by_name(self, planet_name):
-        planet = [planet for planet in self.planets if planet.name == planet_name][0]
-        return planet
+    def get_astrobody_by(self, tag_identifier, tag_type='name'):
+        astrobody = None
+        if tag_type == 'name':
+            astrobody = [body for body in self.astro_bodies if body.name == tag_identifier][0]
+        elif tag_type == 'id':
+            astrobody = [body for body in self.astro_bodies if body.id == tag_identifier][0]
+
+        return astrobody
 
     def is_habitable(self, planet) -> bool:
         pln_orbit = planet.orbit.semi_major_axis

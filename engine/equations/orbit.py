@@ -143,11 +143,14 @@ class Orbit(Ellipse):
         return 'Orbit @' + str(round(self.semi_major_axis.m, 3))
 
     def set_astrobody(self, main, astro_body):
-        if astro_body.celestial_type == 'planet':
+        body_around_star = main.celestial_type == "star"
+        body_around_planet = main.celestial_type == "planet"
+
+        if body_around_star:
             astro_body.orbit = PlanetOrbit(main.mass, self.semi_major_axis, self.eccentricity, self.inclination)
             astro_body.orbit.reset_astrobody(astro_body)
 
-        elif astro_body.celestial_type == 'satellite':
+        elif body_around_planet:
             astro_body.orbit = SatelliteOrbit(self.semi_major_axis, self.eccentricity, self.inclination)
             astro_body.orbit.reset_astrobody(astro_body)
             astro_body.orbit.reset_period_and_speed(main.mass)

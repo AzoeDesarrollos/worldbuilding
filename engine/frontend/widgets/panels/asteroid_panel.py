@@ -15,6 +15,7 @@ class AsteroidPanel(BasePanel):
     curr_x = 0
     curr_y = 0
     mass_number = None
+    loaded_data = None
 
     def __init__(self, parent):
         super().__init__('Asteroid', parent)
@@ -33,6 +34,36 @@ class AsteroidPanel(BasePanel):
         self.button_del = DelAsteroidButton(self, ANCHO - 13, 416)
         self.properties.add(self.button_add, self.button_del)
         self.asteroids = WidgetGroup()
+        EventHandler.register(self.load_satellites, 'LoadData')
+        EventHandler.register(self.save_satellites, 'Save')
+
+    def load_satellites(self, event):
+        if 'Asteroids' in event.data and len(event.data['Asteroids']):
+            self.loaded_data = event.data['Asteroids']
+
+    def show_loaded(self):
+        if self.loaded_data is not None:
+            for satellite_data in self.loaded_data:
+                moon = minor_moon_by_composition(satellite_data)
+                if Systems.get_current().add_astro_obj(moon):
+                    self.current.current = moon
+                    self.add_button()
+            self.loaded_data.clear()
+
+    def save_satellites(self, event):
+        data = []
+        for moon_button in self.asteroids.widgets():
+            moon = moon_button.object_data
+            moon_data = {
+                'name': moon.name,
+                'a axis': moon.a_axis.m,
+                'b axis': moon.b_axis.m,
+                'c axis': moon.c_axis.m,
+                'composition': moon.composition,
+                'id': moon.id
+            }
+            data.append(moon_data)
+            EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Asteroids": data})
 
     def add_button(self):
         button = AsteroidButton(self.current, self.current.current, self.curr_x, self.curr_y)
@@ -69,6 +100,7 @@ class AsteroidPanel(BasePanel):
 
     def show(self):
         super().show()
+        self.show_loaded()
         self.is_visible = True
         if self.mass_number is None:
             self.properties.add(ShownMass(self))
@@ -114,7 +146,12 @@ class AsteroidType(BaseWidget):
             a.modifiable = True
 
     def calculate(self):
-        data = {}
+        data = {'composition': None}
+        if self.current is None:
+            data['composition'] = {}
+        else:
+            data['composition'] = self.current.composition
+
         for item in self.properties.get_widgets_from_layer(2):
             if item.text_area.value:
                 data[item.text.lower()] = float(item.text_area.value)
@@ -123,24 +160,25 @@ class AsteroidType(BaseWidget):
             if item.text_area.value:
                 data[item.text.lower()] = float(item.text_area.value)
 
-        data['composition'] = {}
         for material in self.properties.get_widgets_from_layer(4):
             if material.text_area.value:  # not empty
                 data['composition'][material.text.lower()] = float(material.text_area.value)
 
+        if self.current is not None:
+            data['a axis'] = self.current.a_axis.m
+            data['b axis'] = self.current.b_axis.m
+            data['c axis'] = self.current.c_axis.m
+
+        moon = minor_moon_by_composition(data)
         if self.current is None:
-            moon = minor_moon_by_composition(data)
             if Systems.get_current().add_astro_obj(moon):
                 self.current = moon
-            else:
-                raise AssertionError('There is not enough mass in the system to create new bodies of this type.')
-            self.parent.button_add.enable()
+                self.parent.button_add.enable()
         else:
-            for item in self.properties.get_widgets_from_layer(4):
-                if item.text.lower() in self.current.composition:
-                    item.value = str(self.current.composition[item.text.lower()]) + ' %'
-                else:
-                    item.value = '0'
+            Systems.get_current().remove_astro_obj(self.current)
+            if Systems.get_current().add_astro_obj(moon):
+                self.current = moon
+
         self.fill()
 
     def clear(self, event):

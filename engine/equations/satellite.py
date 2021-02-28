@@ -82,6 +82,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
 
 class Minor(Satellite):
     celestial_type = 'asteroid'
+    habitable = False
 
     def __init__(self, data):
         self.composition = data['composition']
@@ -104,6 +105,7 @@ class Minor(Satellite):
         self.radius = q(max([a, b, c]), 'km')
         self.cls = self.shape.split(' ')[0]
         self.clase = 'Minor Moon'
+        self.title = self.cls
 
         # ID values make each satellite unique, even if they have the same characteristics.
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])

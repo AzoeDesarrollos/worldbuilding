@@ -282,7 +282,7 @@ class OrbitPanel(BaseWidget):
         if hasattr(orb, 'eccentricity'):
             d['e'] = orb.eccentricity.m
         if hasattr(orb, 'astrobody'):
-            d['astrobody'] = orb.astrobody.name
+            d['astrobody'] = orb.astrobody.id
             d['star_id'] = orb.astrobody.orbit.star.id
         return d
 
@@ -300,7 +300,7 @@ class OrbitPanel(BaseWidget):
                 e = q(orbit_data['e'])
                 i = q(orbit_data['i'], 'degree')
                 system = Systems.get_system_by_id(orbit_data['star_id'])
-                planet = system.get_planet_by_name(orbit_data['astrobody'])
+                planet = system.get_astrobody_by(orbit_data['astrobody'], tag_type='id')
                 star = system.star_system
                 planet.set_orbit(star, [a, e, i])
                 self.add_orbit_marker(planet.orbit)
@@ -359,16 +359,17 @@ class OrbitPanel(BaseWidget):
             marker.enable()
         m.select()
 
-    def link_planet_to_orbit(self, planet):
+    def link_astrobody_to_stellar_orbit(self, astrobody):
         locked = [i for i in self.buttons if i.locked]
         if len(locked):
             orbit = PseudoOrbit(locked[0].linked_marker.orbit)
             locked[0].linked_marker.orbit = orbit
             locked[0].linked_type.show()
-            locked[0].linked_type.link_astrobody(planet)
+            locked[0].linked_type.link_astrobody(astrobody)
             self.add_orbits_button.disable()
-            self.recomendation.suggest(planet, orbit, Systems.get_current_star())
-            self.recomendation.show_suggestion(planet, orbit.temperature)
+            if astrobody.celestial_type == 'planet':
+                self.recomendation.suggest(astrobody, orbit, Systems.get_current_star())
+                self.recomendation.show_suggestion(astrobody, orbit.temperature)
 
     def update(self):
         super().update()
@@ -670,12 +671,20 @@ class RoguePlanet(AvailablePlanet):
     def on_mousebuttondown(self, event):
         if not self.parent.parent.visible_markers:
             self.enabled = False
-            self.parent.parent.link_planet_to_orbit(self.object_data)
+            self.parent.parent.link_astrobody_to_stellar_orbit(self.object_data)
 
 
 class AvailablePlanets(AvailableObjects):
     listed_type = RoguePlanet
     name = 'Planets'
+
+    def show(self):
+        system = Systems.get_current()
+        if system is not None:
+            population = [i for i in system.planets+system.asteroids if i.orbit is None]
+            if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
+                self.populate(population)
+        super().show()
 
 
 class AddOrbitButton(TextButton):
