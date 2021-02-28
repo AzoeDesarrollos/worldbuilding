@@ -48,5 +48,11 @@ class ListedArea(BaseWidget):
         for listed in self.listed_objects.widgets():
             listed.deselect()
 
+    def objects(self):
+        return [o.object_data for o in self.listed_objects.widgets()]
+
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
+
+    def __len__(self):
+        return len(self.listed_objects)

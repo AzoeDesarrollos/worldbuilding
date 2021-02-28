@@ -17,6 +17,7 @@ class PlanetarySystem:
         self.planets = []
         self.satellites = []
         self.asteroids = []
+        self.astro_bodies = []
         self.star_system = star_system
         self.id = star_system.id
         self.body_mass = q(16 * exp(-0.6931 * star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
@@ -41,6 +42,7 @@ class PlanetarySystem:
             assert minus_mass <= self.body_mass, text
             self.body_mass -= minus_mass
             group.append(astro_obj)
+            self.astro_bodies.append(astro_obj)
             if not astro_obj.has_name:
                 astro_obj.name = astro_obj.clase + ' #' + str(group.index(astro_obj))
             return True

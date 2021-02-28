@@ -230,12 +230,6 @@ class AvailableStars(ListedArea):
                 listed = ListedStar(self, star, self.rect.x + 3, i * 16 + self.rect.y + 21)
                 self.listed_objects.add(listed)
 
-    def __len__(self):
-        return len(self.listed_objects)
-
-    def objects(self):
-        return [o.object_data for o in self.listed_objects.widgets()]
-
     def show(self):
         super().show()
         self.populate(Systems.loose_stars)

@@ -2,6 +2,7 @@ from .general import BodyInHydrostaticEquilibrium
 from .lagrange import get_lagrange_points
 from .planetary_system import Systems
 from math import sqrt, pi, pow
+from datetime import datetime
 from .orbit import Orbit
 from engine import q
 
@@ -64,13 +65,14 @@ class Planet(BodyInHydrostaticEquilibrium):
             self._mass = gravity * pow(radius, 2)
 
         self.set_qs(unit)
-        self.composition = {
-            'water ice': data['composition'].get('water ice', 0),
-            'silicates': data['composition'].get('silicates', 0),
-            'iron': data['composition'].get('iron', 0),
-            'helium': data['composition'].get('helium', 0),
-            'hydrogen': data['composition'].get('hydrogen', 0),
-        } if 'composition' in data else None
+        if 'composition' in data and data['composition'] is not None:
+            self.composition = {
+                'water ice': data['composition'].get('water ice', 0),
+                'silicates': data['composition'].get('silicates', 0),
+                'iron': data['composition'].get('iron', 0),
+                'helium': data['composition'].get('helium', 0),
+                'hydrogen': data['composition'].get('hydrogen', 0),
+            }
 
         self.atmosphere = {}
         self.habitable = self.set_habitability()
@@ -85,6 +87,10 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.spin = star.spin
         elif 90 <= self.axial_tilt <= 180:
             self.spin = 'CW' if star.spin == 'CCW' else 'CCW'
+
+        # ID values make each planet unique, even if they have the same characteristics.
+        now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
+        self.id = data['id'] if 'id' in data else now
 
     def set_qs(self, unit):
         m = unit + '_mass'

@@ -58,7 +58,8 @@ class SatellitePanel(BasePanel):
             moon_data = {
                 'name': moon.name,
                 'radius': moon.radius.m,
-                'composition': moon.composition
+                'composition': moon.composition,
+                'id': moon.id
             }
             data.append(moon_data)
             EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Satellites": data})
@@ -143,10 +144,13 @@ class SatelliteType(ObjectType):
                 text = material.text_area.value.strip(' %')
                 data['composition'][material.text.lower()] = float(text)
         for item in self.properties.get_widgets_from_layer(1):
-            if type(item.text_area.value) is not str:
-                data[item.text.lower()] = float(item.text_area.value)
+            text = item.text_area.value
+            if type(text) is not str:
+                data[item.text.lower()] = float(text)
+            elif text != '' and not text.isalpha():
+                data[item.text.lower()] = float(text)
             else:
-                data[item.text.lower()] = item.text_area.value
+                data[item.text.lower()] = text
 
         if self.current is not None:
             data['radius'] = self.current.radius.m
@@ -161,7 +165,7 @@ class SatelliteType(ObjectType):
             Systems.get_current().remove_astro_obj(self.current)
             if Systems.get_current().add_astro_obj(moon):
                 self.current = moon
-
+        self.parent.button_add.enable()
         self.fill()
 
     def show_current(self, satellite):

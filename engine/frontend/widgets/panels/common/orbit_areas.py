@@ -24,9 +24,9 @@ class ToggleableButton(Meta):
 
 
 class AvailablePlanet(PlanetButton):
-    def __init__(self, parent, planet, x, y):
-        super().__init__(parent, planet, x, y)
-        self.object_data = planet
+    def __init__(self, parent, astro, x, y):
+        super().__init__(parent, astro, x, y)
+        self.object_data = astro
 
     def on_mousebuttondown(self, event):
         raise NotImplementedError()
@@ -40,11 +40,7 @@ class AvailableObjects(ListedArea):
         for i, obj in enumerate(population):
             x = self.rect.x + 3
             y = i * 16 + self.rect.y + 21
-            if obj.celestial_type == 'planet':
-                listed.append(self.listed_type(self, obj, x, y))
-
-            elif obj.celestial_type == 'satellite':
-                pass
+            listed.append(self.listed_type(self, obj, x, y))
 
         self.listed_objects.add(*listed, layer=Systems.get_current_idx())
 

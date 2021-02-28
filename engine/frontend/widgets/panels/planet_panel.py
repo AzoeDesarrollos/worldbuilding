@@ -49,7 +49,8 @@ class PlanetPanel(BasePanel):
                         'atmosphere': planet.atmosphere,
                         'composition': planet.composition,
                         'clase': planet.clase,
-                        'system': system.id
+                        'system': system.id,
+                        'id': planet.id
                     }
                     data.append(planet_data)
         EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": data})

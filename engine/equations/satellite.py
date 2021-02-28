@@ -2,14 +2,22 @@ from engine.frontend.globales import COLOR_ICYMOON, COLOR_ROCKYMOON, COLOR_IRONM
 from .general import BodyInHydrostaticEquilibrium
 from engine import q, material_densities
 from engine.backend import roll
+from datetime import datetime
 from math import pi, sqrt
+from .orbit import Orbit
 
 
 class Satellite:
+    mass = None
     density = None
     celestial_type = ''
     has_name = False
     cls = None
+    orbit = None
+    hill_sphere = 0
+    roches_limit = 0
+    temperature = 'N/A'
+    comp = ''
 
     @staticmethod
     def calculate_density(ice, silicate, iron):
@@ -17,8 +25,18 @@ class Satellite:
         density = q(sum([comp[material] * material_densities[material] for material in comp]), 'g/cm^3')
         return density
 
-    def set_orbit(self):
-        pass
+    def set_orbit(self, planet, orbital_parameters):
+        orbit = Orbit(*orbital_parameters)
+        orbit.set_astrobody(planet, self)
+        # self.lagrange_points = get_lagrange_points(self.orbit.semi_major_axis.m, star.mass.m, self.mass.m)
+        self.hill_sphere = self.set_hill_sphere()
+        return self.orbit
+
+    def set_hill_sphere(self):
+        a = self.orbit.semi_major_axis.magnitude
+        mp = self.mass.to('earth_mass').magnitude
+        ms = self.orbit.star.mass.to('sol_mass').magnitude
+        return q(round((a * pow(mp / ms, 1 / 3) * 235), 3), 'earth_radius')
 
     def __repr__(self):
         return self.cls
@@ -37,24 +55,23 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         self.radius = q(data['radius'], 'earth_radius')
         self.density = self.set_density(data['composition'])
         self.mass = q((float(self.radius.m) ** 3 * self.density.to('earth_density').m), 'earth_mass')
-        self.gravity = q(self.mass.m / (self.radius.m ** 2), 'earth_gravity')
+        self.gravity = q(self.mass.m / (float(self.radius.m) ** 2), 'earth_gravity')
         self.volume = q(self.calculate_volume(self.radius.to('km').m), 'km^3')
         self.surface = q(self.calculate_surface_area(self.radius.to('km').m), 'km^2')
         self.circumference = q(self.calculate_circumference(self.radius.to('km').m), 'km')
         self.escape_velocity = q(sqrt(self.mass.magnitude / self.radius.magnitude), 'earth_escape_velocity')
         self.clase = 'Major Moon'
-        self.cls += ' Major'
+        self.cls = self.comp + ' Major'
+        self.title = 'Major'
+
+        # ID values make each satellite unique, even if they have the same characteristics.
+        now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
+        self.id = data['id'] if 'id' in data else now
 
     # noinspection PyUnusedLocal
     @staticmethod
     def set_density(composition):
         return NotImplemented
-
-    def __eq__(self, other):
-        return all([
-            self.radius.m == other.radius.m,
-            *[self.composition[m] == other.composition[m] for m in self.composition]
-        ])
 
 
 class Minor(Satellite):
@@ -82,6 +99,9 @@ class Minor(Satellite):
         self.cls = self.shape.split(' ')[0]
         self.clase = 'Minor Moon'
 
+        # ID values make each satellite unique, even if they have the same characteristics.
+        now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
+        self.id = data['id'] if 'id' in data else now
     # noinspection PyUnusedLocal
     @staticmethod
     def set_density(composition):
@@ -92,7 +112,7 @@ class RockyMoon(Satellite):
     """A natural satellite made mostly of Silicates"""
 
     color = COLOR_ROCKYMOON
-    cls = 'Rocky'
+    comp = 'Rocky'
 
     def set_density(self, composition: dict):
         percent = sum(composition.values())
@@ -106,7 +126,7 @@ class IcyMoon(Satellite):
     """A natural satellite made mostly of Ice"""
 
     color = COLOR_ICYMOON
-    cls = 'Icy'
+    comp = 'Icy'
 
     def set_density(self, composition: dict):
         percent = sum(composition.values())
@@ -120,7 +140,7 @@ class IronMoon(Satellite):
     """Fictional moon made mostly of Iron"""
 
     color = COLOR_IRONMOON
-    cls = 'Iron'
+    comp = 'Iron'
 
     def set_density(self, composition: dict):
         percent = sum(composition.values())

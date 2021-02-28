@@ -142,16 +142,19 @@ class Orbit(Ellipse):
     def __repr__(self):
         return 'Orbit @' + str(round(self.semi_major_axis.m, 3))
 
-    def set_astrobody(self, star, astro_body):
+    def set_astrobody(self, main, astro_body):
         if astro_body.celestial_type == 'planet':
-            astro_body.orbit = PlanetOrbit(star.mass, self.semi_major_axis, self.eccentricity, self.inclination)
+            astro_body.orbit = PlanetOrbit(main.mass, self.semi_major_axis, self.eccentricity, self.inclination)
+            astro_body.orbit.reset_astrobody(astro_body)
 
         elif astro_body.celestial_type == 'satellite':
-            astro_body.orbit = SatelliteOrbit(star.mass, self.semi_major_axis, self.eccentricity, self.inclination)
+            astro_body.orbit = SatelliteOrbit(self.semi_major_axis, self.eccentricity, self.inclination)
+            astro_body.orbit.reset_astrobody(astro_body)
+            astro_body.orbit.reset_period_and_speed(main.mass)
 
-        astro_body.orbit.reset_astrobody(astro_body)
-        astro_body.orbit._star = star
-        self.temperature = astro_body.set_temperature(star.mass.m, self._a)
+        astro_body.orbit._star = main
+        if astro_body.celestial_type == 'planet':
+            self.temperature = astro_body.set_temperature(main.mass.m, self._a)
 
     def get_planet_position(self):
         x = self._a * cos(self.true_anomaly.m)
@@ -247,12 +250,12 @@ class PlanetOrbit(Orbit):
 class SatelliteOrbit(Orbit):
     primary = 'Planet'
 
-    def __init__(self, planet_mass, a, e, i):
+    def __init__(self, a, e, i):
         super().__init__(a, e, i, 'earth_radius')
-        self.reset_period_and_speed(planet_mass)
+        # self.reset_period_and_speed(planet_mass)
 
     def reset_period_and_speed(self, main_body_mass):
-        satellite = self.astrobody.satellite
+        satellite = self.astrobody
         self.velocity = q(sqrt(main_body_mass.m / self._a), 'earth_orbital_velocity').to('kilometer per second')
         self.period = q(0.0588 * (pow(self._a, 3) / sqrt(main_body_mass.m + satellite.mass.m)), 'day')
 

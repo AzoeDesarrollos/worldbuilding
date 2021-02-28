@@ -32,6 +32,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.properties = WidgetGroup()
         self.buttons = WidgetGroup()
         self.orbit_descriptions = WidgetGroup()
+        self._markers = {}
         self.markers = []
         self.added = []
         self.objects = []
@@ -57,9 +58,9 @@ class PlanetaryOrbitPanel(BaseWidget):
             for marker in self.markers:
                 marker.hide()
         else:
+            self.hide_orbit_types()
             for marker in self.markers:
                 marker.show()
-            self.hide_orbit_types()
             self.show_markers_button.disable()
             self.add_orbits_button.enable()
             self.area_modify.color_standby()
@@ -69,19 +70,22 @@ class PlanetaryOrbitPanel(BaseWidget):
     def hide_orbit_types(self):
         for orbit_type in self.orbit_descriptions.widgets():
             orbit_type.hide()
-        # for orbit_button in self.buttons:
-        #     orbit_button.unlock()
+        for orbit_button in self.buttons.widgets():
+            orbit_button.enable()
 
     def populate(self):
         planet = self.current
-        markers = {
-            'Hill Sphere': planet.hill_sphere
-        }
-        for i, marker in enumerate(markers, start=1):
-            x = Marker(self, marker, markers[marker])
-            x.locked = True
-            self.markers.append(x)
-            self.properties.add(x, layer=2)
+        if planet.id not in self._markers:
+            self._markers[planet.id] = []
+        self.markers = self._markers[planet.id]
+        for marker in self.markers:
+            if marker.name == 'Hill Sphere':
+                marker.show()
+                return
+        x = Marker(self, 'Hill Sphere',  planet.hill_sphere)
+        x.locked = True
+        self.markers.append(x)
+        self.properties.add(x, layer=2)
         self.sort_markers()
 
     def add_objects(self):
@@ -108,6 +112,7 @@ class PlanetaryOrbitPanel(BaseWidget):
 
     def select_planet(self, planet):
         if planet is not self.current:
+            self.hide_everything()
             self.current = planet
             self.populate()
         for button in self.buttons.widgets():
@@ -162,7 +167,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         text += '\n\nConsider using a less massive satellite for this planet.'
         assert self.current.mass.m >= obj.mass.m, text
 
-        pos = q(round(roll(self.current.roches_limit.m, self.current.hill_sphere.m/2), 3), 'earth_radius')
+        pos = q(round(roll(self.current.roches_limit.m, self.current.hill_sphere.m / 2), 3), 'earth_radius')
         orbit = RawOrbit(Systems.get_current_star(), pos)
         obj_marker = Marker(self, obj_name, pos, color=COLOR_SELECTED, lock=False)
         roches_marker = Marker(self, "Roche's Limit", roches, lock=True)
@@ -189,50 +194,50 @@ class PlanetaryOrbitPanel(BaseWidget):
 
         return orbit, obj_marker
 
+    def hide_everything(self):
+        for marker in self.markers:
+            if marker.linked_button is not None:
+                marker.linked_button.hide_info()
+            marker.hide()
+        self.show_markers_button.disable()
+        for button in self.buttons.widgets():
+            if button.completed:
+                button.disable()
+
     def is_added(self, obj):
         return obj in self.added
 
     def link_satellite_to_planet(self, marker):
-        # moon = marker.obj
-        # planet = self.current
-        marker.orbit = PseudoOrbit(marker.orbit)
+        marker._orbit = PseudoOrbit(marker.orbit)
         button = marker.linked_button
-        self.toggle_stellar_orbits()
+        self.hide_everything()
+        button.update_text(marker.orbit.a)
+        button.info.link_marker(marker)
         button.info.locked = False
         button.info.show()
 
-        # se trata de vincular la órbita del satélite al planeta mediante un procedimiento similar al de las órbitas
-        # planetarias.
-
-        # primero, se selecciona un planeta, aparece su hill sphere marker
-        # segundo, se selecciona un satélite
-        # aparece entonces el satélite en una órbita aleatoria, y junto a él el roche's limit correspondiente.
-        # en este momento, seleccionando la órbita, se puede modificar la posición usando la caja. También se activa
-        # el nuevo boton "set orbit". Cuando estemos satisfechos con la posición de la Raw Orbit, click "Set Orbit".
-        # Esto hace que la órbita pase a ser una PseudoOrbit, y debería aparecer el OrbitType mostrando esa info
-        # Este OrbitType también aparece si se hace click sobre el boton de la orbita (que debería decir algo como
-        # "Rocky Major @54.07 Re"). Para volver a ver los markers y añadir otros satélites, click en el titulo
-        # "satellites".
-
-        # Una vez ingresada la información necesaria para completar la PseudoOrbit, entonces se sigue el procedimiento
-        # normal, pero creando una SatelliteOrbit en lugar de una PlanetOrbit
+    def notify(self):
+        self.planet_area.listed_objects.empty()
+        if not self.visible_markers:
+            self.show_markers_button.enable()
+            for button in self.buttons.widgets():
+                button.disable()
 
 
-class OrbitablePlanet(AvailablePlanet):
+class OrbitableObject(AvailablePlanet):
     def on_mousebuttondown(self, event):
         self.parent.parent.select_planet(self.object_data)
 
 
 class AvailablePlanets(AvailableObjects):
-    listed_type = OrbitablePlanet
-    name = 'Planets'
+    listed_type = OrbitableObject
 
     def show(self):
         system = Systems.get_current()
         if system is not None:
-            planets = [planet for planet in system.planets if planet.hill_sphere != 0]
+            bodies = [body for body in system.astro_bodies if body.hill_sphere != 0]
             if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
-                self.populate(planets)
+                self.populate(bodies)
         super().show()
 
 
@@ -240,42 +245,62 @@ class ObjectButton(Meta):
     enabled = False
     info = None
     linked_marker = None
+    completed = False
 
     def __init__(self, parent, obj, x, y):
         super().__init__(parent)
         self.object_data = obj
-        self.object_info = None
+        self.orbit_data = None
         self.f1 = self.crear_fuente(13)
         self.f2 = self.crear_fuente(13, bold=True)
-        self.img_uns = self.f1.render(obj.cls, True, obj.color, COLOR_AREA)
-        self.img_sel = self.f2.render(obj.cls, True, obj.color, COLOR_AREA)
+        self.color = obj.color
+        self.img_uns = self.f1.render(obj.cls, True, self.color, COLOR_AREA)
+        self.img_sel = self.f2.render(obj.cls, True, self.color, COLOR_AREA)
+        self.img_dis = self.img_uns
         self.w = self.img_sel.get_width()
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))
 
+    def update_text(self, orbit):
+        self.completed = True
+        obj: str = self.object_data.title + ' @{:~}'.format(orbit)
+        self.img_uns = self.f1.render(obj, True, self.color, COLOR_AREA)
+        self.img_sel = self.f2.render(obj, True, self.color, COLOR_AREA)
+        self.img_dis = self.img_uns
+        self.w = self.img_sel.get_width()
+        self.image = self.img_uns
+        self.rect.size = self.image.get_size()
+        self.info = OrbitType(self.parent)
+        self.info.link_astrobody(self.object_data)
+        self.parent.orbit_descriptions.add(self.info)
+        self.parent.sort_buttons()
+
     def on_mousebuttondown(self, event):
-        if not self.parent.is_added(self.object_data) and self.parent.current is not None:
-            orbit, marker = self.parent.add_new(self.object_data)
-            self.create_type(orbit)
-            self.link_marker(marker)
-        else:
-            self.info = OrbitType(self.parent)
-            self.info.link_satellite(self.object_data)
-            self.parent.toggle_stellar_orbits()
-            self.parent.show_markers_button.enable()
-            self.parent.orbit_descriptions.add(self.info)
-            self.info.link_marker(self.linked_marker)
-            self.info.show()
+        if self.enabled:
+            if not self.parent.is_added(self.object_data) and self.parent.current is not None:
+                orbit, marker = self.parent.add_new(self.object_data)
+                self.create_type(orbit)
+                self.link_marker(marker)
+            else:
+                self.parent.toggle_stellar_orbits()
+                self.parent.show_markers_button.enable()
+                self.info.link_marker(self.linked_marker)
+                self.info.show()
+                self.disable()
 
     def move(self, x, y):
         self.rect.topleft = x, y
 
     def create_type(self, info):
-        self.object_info = PseudoOrbit(info)
+        self.orbit_data = PseudoOrbit(info)
 
     def link_marker(self, marker):
         self.linked_marker = marker
         marker.linked_button = self
+
+    def hide_info(self):
+        if self.info is not None:
+            self.info.hide()
 
 
 class Marker(Meta, IncrementalValue):
@@ -286,8 +311,10 @@ class Marker(Meta, IncrementalValue):
     max_value = None
     min_value = None
 
-    orbit = None
+    _orbit = None
     obj = None
+
+    linked_button = None
 
     def __init__(self, parent, name, value, color=None, lock=True):
         super().__init__(parent)
@@ -313,6 +340,15 @@ class Marker(Meta, IncrementalValue):
         self.min_value = value
 
     @property
+    def orbit(self):
+        return self._orbit
+
+    @orbit.setter
+    def orbit(self, orbit):
+        self._orbit = orbit
+        self.parent.notify()
+
+    @property
     def value(self):
         return q(self._value, self.unit)
 
@@ -321,9 +357,6 @@ class Marker(Meta, IncrementalValue):
             if not self.locked:
                 self.parent.deselect_markers(self)
                 self.parent.anchor_maker(self)
-
-        # elif event.button == 3:
-        #     self.parent.delete_marker(self)
 
         return self
 
@@ -334,7 +367,7 @@ class Marker(Meta, IncrementalValue):
             t = 'Regular satellites must orbit close to their planet, that is within half of the maximun value.'
             t += '\n\nTry moving the satellite to a lower orbit.'
             test = self._value + self.increment >= 0 and self.min_value < self._value + self.increment < self.max_value
-            assert test(t)
+            assert test, t
             self._value += self.increment
             self.increment = 0
             self.parent.sort_markers()
@@ -364,4 +397,5 @@ class SetOrbitButton(TextButton):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
+            self.parent.hide_everything()
             self.parent.link_satellite_to_planet(self.linked_marker)

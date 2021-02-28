@@ -281,9 +281,9 @@ class OrbitPanel(BaseWidget):
             d['i'] = orb.inclination.m
         if hasattr(orb, 'eccentricity'):
             d['e'] = orb.eccentricity.m
-        if hasattr(orb, 'planet'):
-            d['planet'] = orb.planet.name
-            d['star_id'] = orb.planet.orbit.star.id
+        if hasattr(orb, 'astrobody'):
+            d['astrobody'] = orb.astrobody.name
+            d['star_id'] = orb.astrobody.orbit.star.id
         return d
 
     def load_orbits(self, event):
@@ -300,7 +300,7 @@ class OrbitPanel(BaseWidget):
                 e = q(orbit_data['e'])
                 i = q(orbit_data['i'], 'degree')
                 system = Systems.get_system_by_id(orbit_data['star_id'])
-                planet = system.get_planet_by_name(orbit_data['planet'])
+                planet = system.get_planet_by_name(orbit_data['astrobody'])
                 star = system.star_system
                 planet.set_orbit(star, [a, e, i])
                 self.add_orbit_marker(planet.orbit)
@@ -365,7 +365,7 @@ class OrbitPanel(BaseWidget):
             orbit = PseudoOrbit(locked[0].linked_marker.orbit)
             locked[0].linked_marker.orbit = orbit
             locked[0].linked_type.show()
-            locked[0].linked_type.link_planet(planet)
+            locked[0].linked_type.link_astrobody(planet)
             self.add_orbits_button.disable()
             self.recomendation.suggest(planet, orbit, Systems.get_current_star())
             self.recomendation.show_suggestion(planet, orbit.temperature)
@@ -440,7 +440,7 @@ class Intertwined:
 
 
 class OrbitType(BaseWidget, Intertwined):
-    linked_planet = None
+    linked_astrobody = None
     locked = True
 
     modifiable = True
@@ -450,12 +450,8 @@ class OrbitType(BaseWidget, Intertwined):
         super().__init__(parent)
         self.properties = WidgetGroup()
 
-    def link_planet(self, planet):
-        self.linked_planet = planet
-        self.locked = False
-
-    def link_satellite(self, satellite):
-        self.linked_planet = satellite
+    def link_astrobody(self, astro):
+        self.linked_astrobody = astro
         self.locked = False
 
     def get_orbit(self):
@@ -468,16 +464,17 @@ class OrbitType(BaseWidget, Intertwined):
         self.clear()
         props = ['Semi-major axis', 'Semi-minor axis', 'Eccentricity', 'Inclination',
                  'Periapsis', 'Apoapsis', 'Orbital motion', 'Temperature', 'Orbital velocity', 'Orbital period',
-                 'Argument of periapsis', 'Longuitude of the ascending node', 'True anomaly', 'Planet']
+                 'Argument of periapsis', 'Longuitude of the ascending node', 'True anomaly', 'Body']
         attr = ['semi_major_axis', 'semi_minor_axis', 'eccentricity', 'inclination',
                 'periapsis', 'apoapsis', 'motion', 'temperature', 'velocity', 'period',
-                'argument_of_periapsis', 'longuitude_of_the_ascending_node', 'true_anomaly', 'planet']
+                'argument_of_periapsis', 'longuitude_of_the_ascending_node', 'true_anomaly', 'astrobody']
+        modifiables = ['Semi-major axis', 'Eccentricity', 'Inclination',
+                       'Argument of periapsis', 'Longuitude of the ascending node']
         for i, prop in enumerate([j for j in attr if hasattr(orbit, j)]):
-            post_modifiable = True if i in [0, 2, 3, 10, 11] else False
             value = getattr(orbit, prop)
             vt = ValueText(self, props[attr.index(prop)], 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
             vt.value = value
-            vt.editable = post_modifiable
+            vt.modifiable = props[attr.index(prop)] in modifiables
             self.properties.add(vt)
 
     def fill(self):
@@ -490,12 +487,13 @@ class OrbitType(BaseWidget, Intertwined):
             else:
                 value = 'au'
             parametros.append(value)
-        star = self.parent.current
-        orbit = self.linked_planet.set_orbit(star, parametros)
+        main = self.parent.current
+        orbit = self.linked_astrobody.set_orbit(main, parametros)
         self.linked_marker.orbit = orbit
         self.show()
-        self.parent.planet_area.delete_objects(self.linked_planet)
-        self.parent.recomendation.hide()
+        self.parent.planet_area.delete_objects(self.linked_astrobody)
+        if hasattr(self.parent, 'recomendation'):
+            self.parent.recomendation.hide()
         self.locked = True
         self.has_values = True
 
