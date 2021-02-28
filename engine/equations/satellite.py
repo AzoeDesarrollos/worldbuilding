@@ -1,5 +1,6 @@
 from engine.frontend.globales import COLOR_ICYMOON, COLOR_ROCKYMOON, COLOR_IRONMOON
 from .general import BodyInHydrostaticEquilibrium
+from .lagrange import get_lagrange_points
 from engine import q, material_densities
 from engine.backend import roll
 from datetime import datetime
@@ -18,6 +19,7 @@ class Satellite:
     roches_limit = 0
     temperature = 'N/A'
     comp = ''
+    lagrange_points = None
 
     @staticmethod
     def calculate_density(ice, silicate, iron):
@@ -28,7 +30,11 @@ class Satellite:
     def set_orbit(self, planet, orbital_parameters):
         orbit = Orbit(*orbital_parameters)
         orbit.set_astrobody(planet, self)
-        # self.lagrange_points = get_lagrange_points(self.orbit.semi_major_axis.m, star.mass.m, self.mass.m)
+
+        semi_major_axis = self.orbit.semi_major_axis.to('au').m
+        planet_mass = planet.mass.to('sol_mass').m
+        self.lagrange_points = get_lagrange_points(semi_major_axis, planet_mass, self.mass.to('earth_mass').m)
+
         self.hill_sphere = self.set_hill_sphere()
         return self.orbit
 
@@ -102,6 +108,7 @@ class Minor(Satellite):
         # ID values make each satellite unique, even if they have the same characteristics.
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
         self.id = data['id'] if 'id' in data else now
+
     # noinspection PyUnusedLocal
     @staticmethod
     def set_density(composition):
@@ -117,8 +124,8 @@ class RockyMoon(Satellite):
     def set_density(self, composition: dict):
         percent = sum(composition.values())
         s = composition['silicates'] if 'silicates' in composition else roll(60, 90) if percent < 100 else 0
-        i = composition['water ice'] if 'water ice' in composition else roll(100 - s, 90 - s)if percent < 100 else 0
-        r = composition['iron'] if 'iron' in composition else 100 - (s + i)if percent < 100 else 0
+        i = composition['water ice'] if 'water ice' in composition else roll(100 - s, 90 - s) if percent < 100 else 0
+        r = composition['iron'] if 'iron' in composition else 100 - (s + i) if percent < 100 else 0
         return self.calculate_density(i, s, r)
 
 

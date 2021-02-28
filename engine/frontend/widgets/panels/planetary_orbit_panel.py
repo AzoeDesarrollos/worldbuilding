@@ -321,7 +321,7 @@ class Marker(Meta, IncrementalValue):
         self.f1 = self.crear_fuente(16)
         self.f2 = self.crear_fuente(16, bold=True)
         self.name = name
-        self._value = value.m
+        self._value = value
         self.unit = value.u
 
         if not lock:
@@ -350,7 +350,15 @@ class Marker(Meta, IncrementalValue):
 
     @property
     def value(self):
-        return q(self._value, self.unit)
+        if self.orbit is not None:
+            return round(self._orbit.semi_major_axis, 3)
+        else:
+            return self._value
+
+    @value.setter
+    def value(self, new_value):
+        if self._orbit is not None:
+            self._orbit.semi_major_axis = new_value
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -366,9 +374,10 @@ class Marker(Meta, IncrementalValue):
             self.increment *= delta
             t = 'Regular satellites must orbit close to their planet, that is within half of the maximun value.'
             t += '\n\nTry moving the satellite to a lower orbit.'
-            test = self._value + self.increment >= 0 and self.min_value < self._value + self.increment < self.max_value
+            test = self.value.m + self.increment >= 0
+            test = test and self.min_value < self.value.m + self.increment < self.max_value
             assert test, t
-            self._value += self.increment
+            self.value += q(self.increment, self.value.u)
             self.increment = 0
             self.parent.sort_markers()
 

@@ -252,12 +252,11 @@ class SatelliteOrbit(Orbit):
 
     def __init__(self, a, e, i):
         super().__init__(a, e, i, 'earth_radius')
-        # self.reset_period_and_speed(planet_mass)
 
     def reset_period_and_speed(self, main_body_mass):
-        satellite = self.astrobody
+        satellite_mass = round(self.astrobody.mass.m, 3)
         self.velocity = q(sqrt(main_body_mass.m / self._a), 'earth_orbital_velocity').to('kilometer per second')
-        self.period = q(0.0588 * (pow(self._a, 3) / sqrt(main_body_mass.m + satellite.mass.m)), 'day')
+        self.period = q(round(0.0588 * sqrt(pow(self._a, 3) / (main_body_mass.m + satellite_mass)), 2), 'day')
 
 
 class BinaryStarOrbit(Orbit):
