@@ -11,12 +11,15 @@ class Renderer:
     def init(cls):
         init()
         os.environ['SDL_VIDEO_CENTERED'] = "{!s},{!s}".format(0, 0)
+        display.set_caption("WorldBuilding")
         display.set_mode((ANCHO, ALTO), SCALED)
+
         cls.contents = LayeredUpdates()
 
     @classmethod
     def reset(cls):
-        display.set_mode((ANCHO, ALTO))
+        display.set_caption("WorldBuilding")
+        display.set_mode((ANCHO, ALTO), SCALED)
 
     @classmethod
     def add_widget(cls, widget, layer=1):

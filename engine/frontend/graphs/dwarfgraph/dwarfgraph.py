@@ -38,6 +38,16 @@ mass_imgs = [fuente.render(str(mass_keys[i]), True, COLOR_TEXTO, COLOR_BOX) for 
 radius_imgs = [fuente.render(str(radius_keys[i]), True, COLOR_TEXTO, COLOR_BOX) for i in range(len(radius_keys))]
 
 exes, yes = [], []
+numbers = WidgetGroup()
+for i in [i for i in range(len(radius_keys))]:
+    n = Number(radius_imgs[i], x=i * 40 + 53, y=3)
+    numbers.add(n)
+    exes.append(n.rect.centerx)
+
+for i in [i for i in range(len(mass_keys))]:
+    n = Number(mass_imgs[i], right=53, centery=i * 20 + 32)
+    numbers.add(n)
+    yes.append(n.rect.y - 16)
 
 ruta = join(getcwd(), 'engine', 'frontend', 'graphs', 'dwarfgraph', 'dwarfgraph.png')
 bg = image.load(ruta)
@@ -62,17 +72,6 @@ def dwarfgraph_loop(limit_mass=None):
     text_mass = 'Mass: N/A'
     text_radius = 'Radius: N/A'
     text_density = 'Density: N/A'
-
-    numbers = WidgetGroup()
-    for i in [i for i in range(len(radius_keys))]:
-        n = Number(radius_imgs[i], x=i * 40 + 53, y=3)
-        numbers.add(n)
-        exes.append(n.rect.centerx)
-
-    for i in [i for i in range(len(mass_keys))]:
-        n = Number(mass_imgs[i], right=53, centery=i * 20 + 32)
-        numbers.add(n)
-        yes.append(n.rect.y - 16)
 
     done = False
     data = {}
