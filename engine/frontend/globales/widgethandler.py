@@ -1,7 +1,6 @@
 from pygame import event, QUIT, KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION, K_KP_ENTER, K_BACKSPACE
-from pygame import K_KP1, K_KP2, K_KP3, K_KP4, K_KP5, K_KP6, K_KP7, K_KP8, K_KP9, K_KP0, K_KP_PERIOD, K_KP_EQUALS
-from pygame import K_UP, K_DOWN
-from pygame import K_ESCAPE, time, mouse
+from pygame import K_KP_EQUALS, K_UP, K_DOWN, K_ESCAPE, time, mouse, key
+from pygame import KMOD_RSHIFT, KMOD_LSHIFT
 from engine.backend.eventhandler import EventHandler
 from pygame.sprite import LayeredUpdates
 
@@ -48,13 +47,7 @@ class WidgetHandler:
                 EventHandler.trigger('salir', 'engine', {'mensaje': 'normal'})
 
             elif e.type == KEYDOWN and not cls.locked:
-                numbers = [K_KP0, K_KP1, K_KP2, K_KP3, K_KP4, K_KP5, K_KP6, K_KP7, K_KP8, K_KP9]
-                if e.key in numbers:
-                    digit = numbers.index(e.key)
-                    EventHandler.trigger('Key', cls.origin, {'value': str(digit)})
-                elif e.key == K_KP_PERIOD:
-                    EventHandler.trigger('Key', cls.origin, {'value': '.'})
-                elif e.key in (K_KP_ENTER, K_KP_EQUALS):
+                if e.key in (K_KP_ENTER, K_KP_EQUALS):
                     EventHandler.trigger('Fin', cls.origin)
                 elif e.key == K_BACKSPACE:
                     EventHandler.trigger('BackSpace', cls.origin)
@@ -62,6 +55,19 @@ class WidgetHandler:
                     EventHandler.trigger('Arrow', cls.origin, {'word': 'arriba', 'delta': -1})
                 elif e.key == K_DOWN:
                     EventHandler.trigger('Arrow', cls.origin, {'word': 'abajo', 'delta': +1})
+                else:
+                    name = key.name(e.key).strip('[]')
+                    if len(name) == 1:  # single character, excludes "space" and things like that.
+                        if name == '.':  # bc there's not other way to identifying it.
+                            EventHandler.trigger('Key', cls.origin, {'value': '.'})
+                        elif name.isdigit():
+                            EventHandler.trigger('Key', cls.origin, {'value': name})
+                        elif name.isalpha():
+                            if e.mod & KMOD_LSHIFT or e.mod & KMOD_RSHIFT:
+                                name = name.capitalize()
+                            EventHandler.trigger('Typed', cls.origin, {'value': name})
+                    elif name == 'space':
+                        EventHandler.trigger('Typed', cls.origin, {'value': ' '})
 
             elif e.type == MOUSEBUTTONDOWN:
                 widgets = [i for i in cls.contents.sprites() if i.rect.collidepoint(e.pos)]

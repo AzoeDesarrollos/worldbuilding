@@ -17,7 +17,7 @@ class ValueText(BaseWidget):
     do_round = True
     editable = False
 
-    def __init__(self, parent, text, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
+    def __init__(self, parent, text, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX, kind='digits'):
         super().__init__(parent)
         self.text = text
 
@@ -31,7 +31,11 @@ class ValueText(BaseWidget):
         self.rect = self.image.get_rect(topleft=(x, y))
         EventHandler.register(self.clear_selection, 'Clear')
 
-        self.text_area = NumberArea(self, text, self.rect.right + 3, self.rect.y, fg, bg)
+        if kind == 'digits':
+            self.text_area = NumberArea(self, text, self.rect.right + 3, self.rect.y, fg, bg)
+
+        elif kind == 'letters':
+            self.text_area = TextArea(self, text, self.rect.right + 3, self.rect.y, fg, bg)
 
     @property
     def modifiable(self):
@@ -148,6 +152,7 @@ class ValueText(BaseWidget):
             else:
                 self.active = True
                 self.text_area.enable()
+            return self.text
 
     def on_mousebuttonup(self, event):
         if event.button == 1:
@@ -175,12 +180,9 @@ class ValueText(BaseWidget):
         return self.text
 
 
-class NumberArea(BaseWidget, IncrementalValue):
-    value = None
-    unit = None
-    min = 0
-    max = None
+class BaseArea(BaseWidget):
     modifiable = False
+    unit = None
 
     def __init__(self, parent, name, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
         super().__init__(parent)
@@ -193,6 +195,15 @@ class NumberArea(BaseWidget, IncrementalValue):
 
         self.great_grandparent = self.parent.parent.parent
         self.grandparent = self.parent.parent
+
+    def set_value(self, quantity):
+        return NotImplemented
+
+
+class NumberArea(BaseArea, IncrementalValue):
+    value = None
+    min = 0
+    max = None
 
     def input(self, event):
         if self.enabled and not self.grandparent.locked:
@@ -274,11 +285,11 @@ class NumberArea(BaseWidget, IncrementalValue):
         EventHandler.deregister(self.input, 'Key')
 
     def show(self):
-        Renderer.add_widget(self)
+        super().show()
         EventHandler.register(self.input, 'Key', 'BackSpace', 'Fin')
 
     def hide(self):
-        Renderer.del_widget(self)
+        super().hide()
         EventHandler.deregister(self.input, 'Key', 'BackSpace', 'Fin')
 
     def update(self):
@@ -294,4 +305,27 @@ class NumberArea(BaseWidget, IncrementalValue):
         else:
             value = str(self.value)
         self.image = self.f.render(value, True, self.fg, self.bg)
+        self.rect = self.image.get_rect(topleft=self.rect.topleft)
+
+
+class TextArea(BaseArea):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        EventHandler.register(self.input, 'Typed', 'BackSpace')
+
+    def input(self, tecla):
+        if self.enabled and tecla.origin == self.name:
+            if tecla.tipo == 'Typed':
+                self.value += tecla.data['value']
+
+            elif tecla.tipo == 'BackSpace':
+                self.value = self.value[0:-1]
+
+        elif tecla.origin != self.name:
+            self.deselect()
+
+        return self.grandparent
+
+    def update(self):
+        self.image = self.f.render(self.value, True, self.fg, self.bg)
         self.rect = self.image.get_rect(topleft=self.rect.topleft)

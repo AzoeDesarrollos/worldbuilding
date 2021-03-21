@@ -1,4 +1,4 @@
-from pygame import display, init, SCALED
+from pygame import display, init, SCALED, image
 from pygame.sprite import LayeredUpdates
 from .constantes import ALTO, ANCHO, COLOR_FONDO
 import os
@@ -11,6 +11,7 @@ class Renderer:
     def init(cls):
         init()
         os.environ['SDL_VIDEO_CENTERED'] = "{!s},{!s}".format(0, 0)
+        display.set_icon(image.load(os.path.join(os.getcwd(), 'data', 'favicon.png')))
         display.set_caption("WorldBuilding")
         display.set_mode((ANCHO, ALTO), SCALED)
 
@@ -18,6 +19,7 @@ class Renderer:
 
     @classmethod
     def reset(cls):
+        display.set_icon(image.load(os.path.join(os.getcwd(), 'data', 'favicon.png')))
         display.set_caption("WorldBuilding")
         display.set_mode((ANCHO, ALTO), SCALED)
 

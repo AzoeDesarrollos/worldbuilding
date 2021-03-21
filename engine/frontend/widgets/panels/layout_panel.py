@@ -1,4 +1,4 @@
-from engine.frontend.globales import ALTO, ANCHO, WidgetGroup, COLOR_TEXTO, COLOR_BOX
+from engine.frontend.globales import ALTO, ANCHO, WidgetGroup, COLOR_TEXTO, COLOR_SELECTED, COLOR_BOX
 from engine.frontend.globales import Renderer, WidgetHandler
 from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface, draw, transform, SRCALPHA
@@ -6,9 +6,9 @@ from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.meta import Meta
 from engine.backend.util import abrir_json
-from engine.frontend.widgets import panels
 from os.path import exists, join
 from os import getcwd
+from . import panels
 
 
 class LayoutPanel(BaseWidget):
@@ -17,7 +17,7 @@ class LayoutPanel(BaseWidget):
     def __init__(self):
         super().__init__()
         self.image = Surface((ANCHO, ALTO))
-        self.image.fill(COLOR_BOX)
+        self.image.fill(COLOR_SELECTED)
         self.rect = self.image.get_rect()
         self.show()
 
@@ -115,8 +115,8 @@ class BaseButton(Meta):
         super().__init__(parent)
         f1 = self.crear_fuente(16)
         f2 = self.crear_fuente(16, bold=True)
-        self.img_uns = f1.render(text, True, COLOR_TEXTO, COLOR_BOX)
-        self.img_sel = f2.render(text, True, COLOR_TEXTO, COLOR_BOX)
+        self.img_uns = f1.render(text, True, COLOR_TEXTO, COLOR_SELECTED)
+        self.img_sel = f2.render(text, True, COLOR_TEXTO, COLOR_SELECTED)
         self.image = self.img_uns
         self.rect = self.image.get_rect(centerx=x, y=y)
 

@@ -85,6 +85,10 @@ class Minor(Satellite):
     habitable = False
 
     def __init__(self, data):
+        name = data.get('name', None)
+        if name:
+            self.name = name
+            self.has_name = True
         self.composition = data['composition']
         self.density = self.set_density(data['composition'])
         a, b, c = data.get('a axis', 0), data.get('b axis', 0), data.get('c axis', 0)

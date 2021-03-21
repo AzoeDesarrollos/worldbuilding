@@ -36,21 +36,20 @@ class Planet(BodyInHydrostaticEquilibrium):
     sprite = None
 
     def __init__(self, data):
-        name = data.get('name', None)
         mass = data.get('mass', False)
         radius = data.get('radius', False)
         gravity = data.get('gravity', False)
         if not mass and not radius and not gravity:
             raise AssertionError('must specify at least two values')
 
-        if name:
+        name = data.get('true_name', None)
+        if name is not None:
             self.name = name
             self.has_name = True
-        else:
-            self.name = ''
 
         unit = data.get('unit', "earth")
         self.unit = unit
+        self.idx = data.get('idx', 0)
 
         self._mass = None if not mass else mass
         self._radius = None if not radius else radius
@@ -179,6 +178,9 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     def __repr__(self):
         return self.clase + ' ' + str(self.mass.m)
+
+    def __str__(self):
+        return "{} #{}".format(self.clase, self.idx)
 
 
 def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):

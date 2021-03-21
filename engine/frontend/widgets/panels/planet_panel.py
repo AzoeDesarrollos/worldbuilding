@@ -88,10 +88,12 @@ class PlanetPanel(BasePanel):
                 x = 3
                 y += 32
 
-    def select_one(self, btn):
+    def select_one(self, btn=None):
         for button in self.planet_buttons.widgets():
             button.deselect()
-        btn.select()
+
+        if btn is not None:
+            btn.select()
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -184,6 +186,8 @@ class PlanetType(ObjectType):
         if event.data['panel'] is self.parent:
             for button in self.properties.get_sprites_from_layer(1):
                 button.text_area.clear()
+        self.parent.select_one()
+        self.parent.button_del.disable()
         self.has_values = False
         self.parent.image.fill(COLOR_BOX, self.hab_rect)
         if self.current is not None:
@@ -238,6 +242,7 @@ class PlanetType(ObjectType):
         if len(attrs) > 1:
             unit = self.parent.unit.name.lower()
             attrs['unit'] = 'jupiter' if unit == 'gas giant' else 'earth'
+            attrs['idx'] = len(self.parent.planet_buttons.get_widgets_from_layer(Systems.get_current_idx()))
             if composition is not None:
                 attrs['composition'] = composition
             self.current = Planet(attrs)

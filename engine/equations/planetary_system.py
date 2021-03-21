@@ -43,8 +43,6 @@ class PlanetarySystem:
             self.body_mass -= minus_mass
             group.append(astro_obj)
             self.astro_bodies.append(astro_obj)
-            if not astro_obj.has_name:
-                astro_obj.name = astro_obj.clase + ' #' + str(group.index(astro_obj))
             return True
 
         return False
@@ -80,6 +78,20 @@ class PlanetarySystem:
         pln_orbit = planet.orbit.semi_major_axis
         star = self.star_system
         return star.habitable_inner.m <= pln_orbit.m <= star.habitable_outer.m
+
+    def get_unnamed(self):
+        unnamed = []
+        if not self.star_system.has_name:
+            unnamed.append(self.star_system)
+        if self.star_system.letter is not None:
+            for star in self.star_system:
+                if not star.has_name:
+                    unnamed.append(star)
+        for body in self.astro_bodies:
+            if not body.has_name:
+                unnamed.append(body)
+
+        return unnamed
 
     def __eq__(self, other):
         return self.star_system == other.star_system

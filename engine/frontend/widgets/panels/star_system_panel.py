@@ -126,9 +126,9 @@ class StarSystemPanel(BaseWidget):
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
-        # if len(self.systems) or len(self.stars_area):
-        #     for s in self.systems + self.stars_area.objects():
-        #         Systems.set_system(s)
+        if len(self.systems) or len(self.stars_area):
+            for s in self.systems + self.stars_area.objects():
+                Systems.set_system(s)
 
 
 class SystemType(BaseWidget):
