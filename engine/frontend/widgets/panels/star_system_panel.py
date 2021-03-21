@@ -28,7 +28,7 @@ class StarSystemPanel(BaseWidget):
         self.properties = WidgetGroup()
         self.f1 = self.crear_fuente(16, underline=True)
         self.write(self.name + ' Panel', self.f1, centerx=(ANCHO // 4) * 1.5, y=0)
-        self.stars_area = AvailableStars(self, ANCHO - 200, 32, 200, 350)
+        self.stars_area = AvailableStars(self, ANCHO - 200, 32, 200, 340)
         self.properties.add(self.stars_area)
         self.current = SystemType(self)
         self.properties.add(self.current)

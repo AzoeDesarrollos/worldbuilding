@@ -40,7 +40,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.area_markers = Rect(3, 58, 380, 20 * 16)
         self.curr_x = self.area_buttons.x + 3
         self.curr_y = self.area_buttons.y + 21
-        self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 350)
+        self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.add_orbits_button = SetOrbitButton(self, ANCHO - 100, 416)
         self.area_modify = ModifyArea(self, ANCHO - 200, 399)
         self.show_markers_button = ToggleableButton(self, 'Satellites', self.toggle_stellar_orbits, 3, 421)

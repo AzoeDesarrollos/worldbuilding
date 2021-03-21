@@ -1,8 +1,8 @@
 from .common import TextButton, AvailableObjects, ToggleableButton, AvailablePlanet, ModifyArea
 from engine.frontend.globales import WidgetGroup, Renderer, render_textrect
+from engine.equations.orbit import RawOrbit, PseudoOrbit  # , from_resonance
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.equations.orbit import RawOrbit, PseudoOrbit
 from engine.frontend.visualization import topdown_view
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
@@ -24,6 +24,7 @@ class OrbitPanel(BaseWidget):
 
     offset = 0
     curr_x, curr_y = 3, 442
+    curr_digit = None
 
     visible_markers = True
     orbits = None
@@ -44,11 +45,11 @@ class OrbitPanel(BaseWidget):
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.area_markers = Rect(3, 58, 380, 20 * 16)
         self.area_scroll = Rect(3, 32, 387, 388)
-        self.area_modify = ModifyArea(self, ANCHO - 200, 399)
+        self.area_modify = ModifyArea(self, ANCHO - 201, 374)
 
         self.f = self.crear_fuente(16, underline=True)
         self.write(self.name + ' Panel', self.f, centerx=(ANCHO // 4) * 1.5, y=0)
-        self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 350)
+        self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.recomendation = Recomendation(self, 80, ALTO // 2 - 130)
 
         self._orbits = {}
@@ -59,11 +60,17 @@ class OrbitPanel(BaseWidget):
         self.orbit_descriptions = WidgetGroup()
         self.show_markers_button = ToggleableButton(self, 'Stellar Orbits', self.toggle_stellar_orbits, 3, 421)
         self.show_markers_button.disable()
-        self.add_orbits_button = AddOrbitButton(self, ANCHO - 100, 416)
+        self.add_orbits_button = AddOrbitButton(self, ANCHO - 84, 394)
         self.view_button = VisualizationButton(self, 3, 58)
+        self.resonances_button = AddResonanceButton(self, ANCHO - 130, 416)
+
+        self.digit_x = RatioDigit(self, 'x', self.resonances_button.rect.left - 71, self.resonances_button.rect.y)
+        self.write(':', self.crear_fuente(16), topleft=[self.digit_x.rect.right + 1, self.resonances_button.rect.y-1])
+        self.digit_y = RatioDigit(self, 'y', self.digit_x.rect.right + 9, self.resonances_button.rect.y)
+        self.ratios = [self.digit_x, self.digit_y]
 
         self.properties.add([self.area_modify, self.planet_area, self.show_markers_button, self.add_orbits_button,
-                             self.view_button], layer=2)
+                             self.view_button, self.resonances_button, self.digit_x, self.digit_y], layer=2)
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
@@ -390,6 +397,18 @@ class OrbitPanel(BaseWidget):
     def __repr__(self):
         return 'Orbit Panel'
 
+    def set_current_digit(self, idx):
+        self.curr_digit = self.ratios.index(idx)
+
+    def cycle(self, delta):
+        if self.curr_digit+delta == 1:
+            self.curr_digit = 1
+        else:
+            self.curr_digit = 0
+        for ratio in self.ratios:
+            ratio.deselect()
+        self.ratios[self.curr_digit].select()
+
 
 class Intertwined:
     linked_type = None
@@ -681,7 +700,7 @@ class AvailablePlanets(AvailableObjects):
     def show(self):
         system = Systems.get_current()
         if system is not None:
-            population = [i for i in system.planets+system.asteroids if i.orbit is None]
+            population = [i for i in system.planets + system.asteroids if i.orbit is None]
             if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
                 self.populate(population)
         super().show()
@@ -712,6 +731,91 @@ class AddOrbitButton(TextButton):
     def unlink(self):
         self.lock()
         self.disable()
+
+
+class AddResonanceButton(TextButton):
+    def __init__(self, parent, x, y):
+        super().__init__(parent, 'Add Resonance', x, y)
+
+    def on_mousebuttondown(self, event):
+        pass
+
+
+class RatioDigit(BaseWidget):
+    enabled = False
+    value = ''
+    name = ''
+
+    def __init__(self, parent, digit, x, y):
+        super().__init__(parent)
+        self.f = self.crear_fuente(14)
+        self.image = Surface((20, 20))
+        self.rect = self.image.get_rect(topleft=(x, y))
+        r = self.rect.inflate(-1, -1)
+        self.image.fill(COLOR_BOX, (1, 1, r.w - 1, r.h - 1))
+        self.name = 'Ratio Digit {}'.format(digit.capitalize())
+
+    def on_keydown(self, tecla):
+        if self.enabled and self.selected and tecla.origin.name == self.name:
+            if tecla.tipo == 'Key' and len(self.value) < 2:
+                self.value += tecla.data['value']
+
+            elif tecla.tipo == 'Fin' and tecla.origin.name == self.name:
+                self.parent.cycle(+1)
+
+            elif tecla.tipo == 'BackSpace':
+                self.value = self.value[0:-1]
+
+            # elif tecla.tipo == 'Arrow' and tecla.origin == self.name:
+            #     gp.cycle(tecla.data['delta'])
+
+        elif tecla.origin != self.name:
+            self.deselect()
+
+        return self
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1:
+            for ratio in self.parent.ratios:
+                ratio.deselect()
+            self.enabled = True
+            self.select()
+            self.parent.set_current_digit(self)
+            return self
+
+    def show(self):
+        super().show()
+        EventHandler.register(self.on_keydown, 'Arrow')
+
+    def hide(self):
+        super().hide()
+        EventHandler.deregister(self.on_keydown, 'Arrow')
+
+    def deselect(self):
+        self.selected = False
+        self.image.fill((0, 0, 0))
+        w, h = self.rect.size
+        self.image.fill(COLOR_BOX, [1, 1, w - 2, h - 2])
+        EventHandler.deregister(self.on_keydown)
+
+    def select(self):
+        self.selected = True
+        self.image.fill((255, 255, 255))
+        w, h = self.rect.size
+        self.image.fill(COLOR_BOX, [1, 1, w - 2, h - 2])
+        EventHandler.register(self.on_keydown, 'Key', 'BackSpace', 'Fin')
+
+    def clear(self):
+        self.value = ''
+
+    def update(self):
+        w, h = self.rect.size
+        self.image.fill(COLOR_BOX, [1, 1, w - 2, h - 2])
+        render = self.f.render(self.value, True, COLOR_TEXTO, COLOR_BOX)
+        self.image.blit(render, (1, 1))
+
+    def __repr__(self):
+        return self.name
 
 
 class VisualizationButton(TextButton):
