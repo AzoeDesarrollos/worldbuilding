@@ -288,14 +288,12 @@ def from_resonance(reference, primary, resonance: str):
 
     if primary.celestial_type == 'planet':
         time_unit = 'year'
-        earths = 326.26
     else:
         time_unit = 'day'
-        earths = 24
 
     x, y = [int(i) for i in resonance.split(':')]
     period = q((y * primary.orbit.period.to(time_unit).m) / x, time_unit)
-    semi_major_axis = q(pow(pow(period.m/earths, 2) * reference.mass.m, (1 / 3)), 'au')
+    semi_major_axis = q(pow(pow(period.m, 2) * reference.mass.m, (1 / 3)), 'au')
     return semi_major_axis
 
 

@@ -1,6 +1,6 @@
 from .common import TextButton, AvailableObjects, ToggleableButton, AvailablePlanet, ModifyArea
-from engine.frontend.globales import WidgetGroup, Renderer, render_textrect
-from engine.equations.orbit import RawOrbit, PseudoOrbit  # , from_resonance
+from engine.frontend.globales import WidgetGroup, Renderer, render_textrect, WidgetHandler
+from engine.equations.orbit import RawOrbit, PseudoOrbit, from_resonance
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.frontend.visualization import topdown_view
@@ -12,19 +12,21 @@ from engine import q, recomendation
 from pygame import Surface, Rect
 from engine.backend import roll
 from ..values import ValueText
+from itertools import cycle
 from math import sqrt, pow
 
 
 class OrbitPanel(BaseWidget):
     current = None  # ahora será la estrella o sistema seleccionado.
     curr_idx = None  # ahora será el layer de self.Buttons.
+    selected_marker = None
 
     last_idx = 0
     _loaded_orbits = None
 
     offset = 0
     curr_x, curr_y = 3, 442
-    curr_digit = None
+    curr_digit = 0
 
     visible_markers = True
     orbits = None
@@ -48,6 +50,7 @@ class OrbitPanel(BaseWidget):
         self.area_modify = ModifyArea(self, ANCHO - 201, 374)
 
         self.f = self.crear_fuente(16, underline=True)
+        self.order_f = self.crear_fuente(14)
         self.write(self.name + ' Panel', self.f, centerx=(ANCHO // 4) * 1.5, y=0)
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.recomendation = Recomendation(self, 80, ALTO // 2 - 130)
@@ -60,14 +63,16 @@ class OrbitPanel(BaseWidget):
         self.orbit_descriptions = WidgetGroup()
         self.show_markers_button = ToggleableButton(self, 'Stellar Orbits', self.toggle_stellar_orbits, 3, 421)
         self.show_markers_button.disable()
-        self.add_orbits_button = AddOrbitButton(self, ANCHO - 84, 394)
+        self.add_orbits_button = AddOrbitButton(self, ANCHO - 94, 394)
         self.view_button = VisualizationButton(self, 3, 58)
-        self.resonances_button = AddResonanceButton(self, ANCHO - 130, 416)
+        self.resonances_button = AddResonanceButton(self, ANCHO - 140, 416)
 
-        self.digit_x = RatioDigit(self, 'x', self.resonances_button.rect.left - 71, self.resonances_button.rect.y)
-        self.write(':', self.crear_fuente(16), topleft=[self.digit_x.rect.right + 1, self.resonances_button.rect.y-1])
+        self.digit_x = RatioDigit(self, 'x', self.resonances_button.rect.left - 60, self.resonances_button.rect.y)
+        self.write(':', self.crear_fuente(16), topleft=[self.digit_x.rect.right + 1, self.resonances_button.rect.y - 1])
         self.digit_y = RatioDigit(self, 'y', self.digit_x.rect.right + 9, self.resonances_button.rect.y)
         self.ratios = [self.digit_x, self.digit_y]
+        self.cycler = cycle(self.ratios)
+        next(self.cycler)
 
         self.properties.add([self.area_modify, self.planet_area, self.show_markers_button, self.add_orbits_button,
                              self.view_button, self.resonances_button, self.digit_x, self.digit_y], layer=2)
@@ -133,23 +138,28 @@ class OrbitPanel(BaseWidget):
             for button in self.buttons:
                 button.toggle(toggle)
 
-    def add_orbit_marker(self, position):
+    def add_orbit_marker(self, position, resonance=False):
         star = self.current
         inner = star.inner_boundry
         outer = star.outer_boundry
+        bc = False if resonance is False else True
         if type(position) is q:
-            bool_a = True
-            bool_b = False
-            test = inner < position < outer
-            color = COLOR_TEXTO
+            ba = True
+            bb = False
+            if not resonance:
+                test = inner < position < outer
+                color = COLOR_TEXTO
+            else:
+                test = inner < position  # TNOs orbit well outside of 40AUs.
+                color = (255, 0, 0)  # color provisorio
         else:  # type(position) is PlanetOrbit
-            bool_a = False
-            bool_b = True
-            test = inner < position.semi_major_axis < outer
+            ba = False
+            bb = True
+            test = True  # saved orbits are valid by definition
             color = COLOR_STARORBIT
 
         if test is True:
-            new = OrbitMarker(self, 'Orbit', star, position, is_orbit=bool_a, is_complete_orbit=bool_b)
+            new = OrbitMarker(self, 'Orbit', star, position, is_orbit=ba, is_complete_orbit=bb, is_resonance=bc)
             self.markers.append(new)
             self.orbits.append(new)
             self.sort_markers()
@@ -254,6 +264,7 @@ class OrbitPanel(BaseWidget):
 
     def anchor_maker(self, marker):
         self.area_modify.link(marker)
+        self.selected_marker = marker
 
     def clear(self, event):
         if event.data['panel'] is self:
@@ -262,6 +273,7 @@ class OrbitPanel(BaseWidget):
             for orbit in self.buttons:
                 orbit.kill()
             self.markers.clear()
+            self.clear_ratios()
 
     def save_orbits(self, event):
         orbits = self._loaded_orbits
@@ -400,14 +412,32 @@ class OrbitPanel(BaseWidget):
     def set_current_digit(self, idx):
         self.curr_digit = self.ratios.index(idx)
 
-    def cycle(self, delta):
-        if self.curr_digit+delta == 1:
-            self.curr_digit = 1
-        else:
-            self.curr_digit = 0
+    def cycle(self):
+        has_values = False
         for ratio in self.ratios:
             ratio.deselect()
-        self.ratios[self.curr_digit].select()
+            has_values = ratio.value != ''
+
+        valid = has_values and not self.no_star_error
+        valid = valid and self.selected_marker is not None
+
+        if valid:
+            self.resonances_button.enable()
+        else:
+            ratio = next(self.cycler)
+            ratio.select()
+            WidgetHandler.set_origin(ratio)
+
+    def ratios_to_string(self):
+        x = int(self.digit_x.value)
+        y = int(self.digit_y.value)
+        diff = y - x if y > x else x - y
+        self.write('{}° Order'.format(diff), self.order_f, right=self.digit_x.rect.left - 2, y=self.digit_x.rect.y)
+        return '{}:{}'.format(x, y)
+
+    def clear_ratios(self):
+        self.digit_x.clear()
+        self.digit_y.clear()
 
 
 class Intertwined:
@@ -554,7 +584,7 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
     locked = False
     orbit = None
 
-    def __init__(self, parent, name, star, value, is_orbit=False, is_complete_orbit=False):
+    def __init__(self, parent, name, star, value, is_orbit=False, is_complete_orbit=False, is_resonance=False):
         super().__init__(parent)
         self.f1 = self.crear_fuente(16)
         self.f2 = self.crear_fuente(16, bold=True)
@@ -738,11 +768,24 @@ class AddResonanceButton(TextButton):
         super().__init__(parent, 'Add Resonance', x, y)
 
     def on_mousebuttondown(self, event):
-        pass
+        if event.button == 1:
+            assert hasattr(self.parent.selected_marker.orbit, 'astrobody'), "The orbit is empty."
+            planet = self.parent.selected_marker.orbit.astrobody
+
+            star = self.parent.current
+            position = from_resonance(star, planet, self.parent.ratios_to_string())
+            self.parent.add_orbit_marker(position, resonance=True)
+            self.parent.check_orbits()
+            self.disable()
+            self.parent.clear_ratios()
+
+    def enable(self):
+        super().enable()
+        self.parent.image.fill(COLOR_BOX, [325, 396, 63, 18])
 
 
 class RatioDigit(BaseWidget):
-    enabled = False
+    enabled = True
     value = ''
     name = ''
 
@@ -761,35 +804,16 @@ class RatioDigit(BaseWidget):
                 self.value += tecla.data['value']
 
             elif tecla.tipo == 'Fin' and tecla.origin.name == self.name:
-                self.parent.cycle(+1)
+                self.parent.cycle()
 
             elif tecla.tipo == 'BackSpace':
                 self.value = self.value[0:-1]
 
-            # elif tecla.tipo == 'Arrow' and tecla.origin == self.name:
-            #     gp.cycle(tecla.data['delta'])
-
-        elif tecla.origin != self.name:
-            self.deselect()
-
-        return self
-
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            for ratio in self.parent.ratios:
-                ratio.deselect()
-            self.enabled = True
             self.select()
             self.parent.set_current_digit(self)
             return self
-
-    def show(self):
-        super().show()
-        EventHandler.register(self.on_keydown, 'Arrow')
-
-    def hide(self):
-        super().hide()
-        EventHandler.deregister(self.on_keydown, 'Arrow')
 
     def deselect(self):
         self.selected = False
@@ -812,7 +836,8 @@ class RatioDigit(BaseWidget):
         w, h = self.rect.size
         self.image.fill(COLOR_BOX, [1, 1, w - 2, h - 2])
         render = self.f.render(self.value, True, COLOR_TEXTO, COLOR_BOX)
-        self.image.blit(render, (1, 1))
+        rect = render.get_rect(centerx=self.rect.centerx - self.rect.x, y=1)
+        self.image.blit(render, rect)
 
     def __repr__(self):
         return self.name
