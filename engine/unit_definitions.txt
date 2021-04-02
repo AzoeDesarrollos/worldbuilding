@@ -4,11 +4,12 @@ earth_radius = 6378.1 km = Re
 earth_gravity = 9.807 m/s ** 2 = Ge
 earth_density = 5.514 g/cm ** 3 = De
 earth_escape_velocity = 11.186 km/s = Ve
-earth_orbital_period = year = earth_year
+earth_orbital_period = 1 year = earth_year
 earth_day = day
 earth_orbital_velocity = 29.78 km/s = earth_orbital_speed
 earth_temperature = 288 kelvin
 earth_volume =  1.08321e+12 km**3 = Ve
+earth_hill_sphere = 235 * earth_radius = 0.01 au
 
 # Jupiter Units
 jupiter_mass = 317.8 earth_mass = Mj

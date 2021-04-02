@@ -154,6 +154,7 @@ class SatelliteType(ObjectType):
 
         if self.current is not None:
             data['radius'] = self.current.radius.m
+            data['id'] = self.current.id
 
         self.has_values = True
 

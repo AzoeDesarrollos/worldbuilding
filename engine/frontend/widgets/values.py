@@ -238,6 +238,7 @@ class NumberArea(BaseArea, IncrementalValue):
                     self.grandparent.calculate()
 
                 elif self.great_grandparent.name == 'Planetary Orbit':
+                    self.great_grandparent.show_markers_button.enable()
                     self.grandparent.fill()
 
     def set_value(self, quantity):

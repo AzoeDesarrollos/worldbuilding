@@ -71,6 +71,7 @@ class AsteroidPanel(BasePanel):
         self.properties.add(button)
         self.sort_buttons()
         self.current.erase()
+        self.button_add.disable()
 
     def del_button(self, satellite):
         button = [i for i in self.asteroids.widgets() if i.object_data == satellite][0]
@@ -168,6 +169,7 @@ class AsteroidType(BaseWidget):
             data['a axis'] = self.current.a_axis.m
             data['b axis'] = self.current.b_axis.m
             data['c axis'] = self.current.c_axis.m
+            data['id'] = self.current.id
 
         moon = minor_moon_by_composition(data)
         if self.current is None:

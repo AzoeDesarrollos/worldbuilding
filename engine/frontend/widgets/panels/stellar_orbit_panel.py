@@ -1,6 +1,6 @@
 from .common import TextButton, AvailableObjects, ToggleableButton, AvailablePlanet, ModifyArea
 from engine.frontend.globales import WidgetGroup, Renderer, render_textrect, WidgetHandler
-from engine.equations.orbit import RawOrbit, PseudoOrbit, from_resonance
+from engine.equations.orbit import RawOrbit, PseudoOrbit, from_stellar_resonance
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.frontend.visualization import topdown_view
@@ -289,7 +289,7 @@ class OrbitPanel(BaseWidget):
                     d = self.create_save_data(marker.orbit)
                     orbits.append(d)
 
-        EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Orbits': orbits})
+        EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Stellar Orbits': orbits})
 
     @staticmethod
     def create_save_data(orb):
@@ -306,7 +306,7 @@ class OrbitPanel(BaseWidget):
         return d
 
     def load_orbits(self, event):
-        for position in event.data.get('Orbits', []):
+        for position in event.data.get('Stellar Orbits', []):
             if position not in self._loaded_orbits:
                 self._loaded_orbits.append(position)
 
@@ -431,8 +431,8 @@ class OrbitPanel(BaseWidget):
     def ratios_to_string(self):
         x = int(self.digit_x.value)
         y = int(self.digit_y.value)
-        diff = y - x if y > x else x - y
-        self.write('{}° Order'.format(diff), self.order_f, right=self.digit_x.rect.left - 2, y=self.digit_x.rect.y)
+        assert x >= y, 'invalid ratio'
+        self.write('{}° Order'.format(x-y), self.order_f, right=self.digit_x.rect.left - 2, y=self.digit_x.rect.y)
         return '{}:{}'.format(x, y)
 
     def clear_ratios(self):
@@ -602,6 +602,8 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
         else:
             self.color = COLOR_TEXTO
             self.text = '{:~}'.format(value)
+        if is_resonance:
+            pass
         self.update()
         self.image = self.img_uns
         self.rect = self.image.get_rect(x=3)
@@ -773,7 +775,7 @@ class AddResonanceButton(TextButton):
             planet = self.parent.selected_marker.orbit.astrobody
 
             star = self.parent.current
-            position = from_resonance(star, planet, self.parent.ratios_to_string())
+            position = from_stellar_resonance(star, planet, self.parent.ratios_to_string())
             self.parent.add_orbit_marker(position, resonance=True)
             self.parent.check_orbits()
             self.disable()

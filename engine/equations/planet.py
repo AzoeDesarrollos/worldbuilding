@@ -130,10 +130,10 @@ class Planet(BodyInHydrostaticEquilibrium):
         return self.orbit
 
     def set_hill_sphere(self):
-        a = self.orbit.semi_major_axis.magnitude
+        a = self.orbit.semi_major_axis.to('au').magnitude
         mp = self.mass.to('earth_mass').magnitude
         ms = self.orbit.star.mass.to('sol_mass').magnitude
-        return q(round((a * pow(mp / ms, 1 / 3) * 235), 3), 'earth_radius')
+        return q(round((a * pow(mp / ms, 1 / 3)), 3), 'earth_hill_sphere').to('earth_radius')
 
     def set_roche(self, obj_density):
         density = self.density.to('earth_density').m

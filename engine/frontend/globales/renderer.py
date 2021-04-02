@@ -1,4 +1,4 @@
-from pygame import display, init, SCALED, image
+from pygame import display, init, SCALED, image, event
 from pygame.sprite import LayeredUpdates
 from .constantes import ALTO, ANCHO, COLOR_FONDO
 import os
@@ -22,6 +22,7 @@ class Renderer:
         display.set_icon(image.load(os.path.join(os.getcwd(), 'data', 'favicon.png')))
         display.set_caption("WorldBuilding")
         display.set_mode((ANCHO, ALTO), SCALED)
+        event.clear()
 
     @classmethod
     def add_widget(cls, widget, layer=1):
