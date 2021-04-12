@@ -279,6 +279,10 @@ class PlanetaryOrbitPanel(BaseWidget):
     def create_complete_button(self, obj):
         pass
 
+    def get_raw_orbit_markers(self):
+        raws = [m for m in self.markers if ((not m.locked) and (type(m.orbit) == RawOrbit))]
+        return raws
+
     def link_satellite_to_planet(self, marker):
         marker._orbit = PseudoOrbit(marker.orbit)
         button = marker.linked_button
@@ -324,6 +328,11 @@ class PlanetaryOrbitPanel(BaseWidget):
         diff = y - x if y > x else x - y
         self.write('{}° Order'.format(diff), self.order_f, right=self.digit_x.rect.left - 2, y=self.digit_x.rect.y)
         return '{}:{}'.format(x, y)
+
+    def get_difference(self):
+        x = int(self.digit_x.value)
+        y = int(self.digit_y.value)
+        return x - y
 
     def clear_ratios(self):
         self.digit_x.clear()
@@ -465,12 +474,14 @@ class Marker(Meta, IncrementalValue):
         if self._orbit is not None:
             self._orbit.semi_major_axis = new_value
 
+    def force_selection(self):
+        if not self.locked:
+            self.parent.deselect_markers(self)
+            self.parent.anchor_maker(self)
+
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            if not self.locked:
-                self.parent.deselect_markers(self)
-                self.parent.anchor_maker(self)
-
+            self.force_selection()
         return self
 
     def tune_value(self, delta):
@@ -530,12 +541,24 @@ class AddResonanceButton(TextButton):
         super().__init__(parent, 'Add Resonance', x, y)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.button == 1 and self.enabled:
             assert self.parent.selected_marker.obj is not None, "The orbit is empty."
             satellite = self.parent.selected_marker.obj
             planet = self.parent.current
             position = from_planetary_resonance(planet, satellite, self.parent.ratios_to_string())
-            print(position)
+            difference = self.parent.get_difference()
+            selected = None
+            for sat in self.parent.get_raw_orbit_markers():
+                if difference > 0:  # 3:2
+                    if sat.value > satellite.orbit.a:
+                        selected = sat
+                        break
+                elif difference < 0:  # 2:3
+                    if sat.value < satellite.orbit.a:
+                        selected = sat
+                        break
+            selected.value = round(position, 3)
+            selected.force_selection()
             self.disable()
             self.parent.clear_ratios()
 
