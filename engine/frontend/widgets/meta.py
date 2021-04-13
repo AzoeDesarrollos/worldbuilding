@@ -2,7 +2,6 @@ from .basewidget import BaseWidget
 
 
 class Meta(BaseWidget):
-    enabled = False
     img_sel = None
     img_uns = None
     img_dis = None

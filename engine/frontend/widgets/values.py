@@ -74,13 +74,11 @@ class ValueText(BaseWidget):
         self.text_area.disable()
 
     def show(self):
-        Renderer.add_widget(self)
-        WidgetHandler.add_widget(self)
+        super().show()
         self.text_area.show()
 
     def hide(self):
-        Renderer.del_widget(self)
-        WidgetHandler.del_widget(self)
+        super().hide()
         self.text_area.hide()
 
     def on_mousebuttondown(self, event):

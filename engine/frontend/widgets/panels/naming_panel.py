@@ -47,6 +47,11 @@ class NamingPanel(BaseWidget):
             render = render_textrect(text, f, rect.w, (0, 0, 0), COLOR_BOX, 1)
             self.image.blit(render, rect)
 
+    def hide(self):
+        super().hide()
+        for item in self.unnamed.widgets():
+            item.hide()
+
     def show_current(self, idx):
         for button in self.unnamed.widgets():
             button.hide()

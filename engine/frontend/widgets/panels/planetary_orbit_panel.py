@@ -82,7 +82,6 @@ class PlanetaryOrbitPanel(BaseWidget):
             i = q(orbit_data['i'], 'degree')
             system = Systems.get_system_by_id(orbit_data['star_id'])
             planet = system.get_astrobody_by(orbit_data['planet_id'], tag_type='id')
-            self.create_hill_marker(planet)
             if planet.id not in self.satellites:
                 self.satellites[planet.id] = []
 
@@ -120,7 +119,6 @@ class PlanetaryOrbitPanel(BaseWidget):
             d['astrobody'] = orb.astrobody.id
             d['planet_id'] = orb.astrobody.parent.id
             d['star_id'] = orb.astrobody.parent.parent.id
-            d['name'] = orb.astrobody.name
         return d
 
     def toggle_stellar_orbits(self):
@@ -131,10 +129,10 @@ class PlanetaryOrbitPanel(BaseWidget):
                 marker.hide()
         else:
             self.hide_orbit_types()
-            for marker in self.markers:
-                marker.show()
+            if self.current is not None:
+                for marker in self.markers:
+                    marker.show()
             self.show_markers_button.disable()
-            self.add_orbits_button.enable()
             self.area_modify.color_standby()
         self.visible_markers = not self.visible_markers
         self.area_modify.visible_markers = self.visible_markers
@@ -151,6 +149,8 @@ class PlanetaryOrbitPanel(BaseWidget):
             self._markers[planet.id] = []
         self.markers = self._markers[planet.id]
         for marker in self.markers:
+            if marker not in self.properties:
+                self.properties.add(marker, layer=3)
             marker.show()
 
         self.create_hill_marker(planet)
@@ -183,7 +183,7 @@ class PlanetaryOrbitPanel(BaseWidget):
 
     def hide(self):
         super().hide()
-        for prop in self.properties.get_widgets_from_layer(2):
+        for prop in self.properties.widgets():
             prop.hide()
 
     def select_planet(self, planet):
@@ -202,6 +202,11 @@ class PlanetaryOrbitPanel(BaseWidget):
         if len(densest):
             self.create_roches_marker(densest[0])
         self.sort_markers()
+
+    def select_one(self, button):
+        for bttn in self.buttons.widgets():
+            bttn.deselect()
+        button.select()
 
     def anchor_maker(self, marker):
         self.area_modify.link(marker)
@@ -249,7 +254,7 @@ class PlanetaryOrbitPanel(BaseWidget):
             self.markers[0] = roches_marker
         else:
             self.markers.append(roches_marker)
-        self.properties.add(roches_marker, layer=2)
+        self.properties.add(roches_marker, layer=3)
         return roches
 
     def create_hill_marker(self, planet):
@@ -261,7 +266,7 @@ class PlanetaryOrbitPanel(BaseWidget):
             self.markers[-1] = x
         else:
             self.markers.append(x)
-        self.properties.add(x, layer=2)
+        self.properties.add(x, layer=3)
 
     def add_new(self, obj):
         if obj not in self.added:
@@ -288,7 +293,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         obj_marker.links(orbit, obj)
 
         self.markers.append(obj_marker)
-        self.properties.add(obj_marker, layer=2)
+        self.properties.add(obj_marker, layer=3)
         self.sort_markers()
 
         return orbit, obj_marker
@@ -303,6 +308,10 @@ class PlanetaryOrbitPanel(BaseWidget):
         obj_marker.links(orbit, obj)
         self._markers[pln_id].append(obj_marker)
 
+    def hide_markers(self):
+        for marker in self.markers:
+            marker.hide()
+
     def hide_everything(self):
         for marker in self.markers:
             if marker.linked_button is not None:
@@ -310,9 +319,6 @@ class PlanetaryOrbitPanel(BaseWidget):
             marker.hide()
         self.visible_markers = False
         self.show_markers_button.disable()
-        # for button in self.buttons.widgets():
-        #     if button.completed:
-        #         button.disable()
 
     def is_added(self, obj):
         return obj in self.added
@@ -379,6 +385,8 @@ class PlanetaryOrbitPanel(BaseWidget):
 
 class OrbitableObject(AvailablePlanet):
     def on_mousebuttondown(self, event):
+        self.parent.parent.hide_orbit_types()
+        self.parent.select_one(self)
         self.parent.parent.select_planet(self.object_data)
 
 
@@ -393,9 +401,13 @@ class AvailablePlanets(AvailableObjects):
                 self.populate(bodies)
         super().show()
 
+    def on_mousebuttondown(self, event):
+        super().on_mousebuttondown(event)
+        self.parent.hide_markers()
+        self.parent.current = None
+
 
 class ObjectButton(Meta):
-    enabled = False
     info = None
     linked_marker = None
     completed = False
@@ -416,6 +428,7 @@ class ObjectButton(Meta):
 
     def update_text(self, orbit):
         self.completed = True
+        self.enable()
         obj: str = self.object_data.title + ' @{:~}'.format(orbit)
         self.img_uns = self.f1.render(obj, True, self.color, COLOR_AREA)
         self.img_sel = self.f2.render(obj, True, self.color, COLOR_AREA)
@@ -430,6 +443,7 @@ class ObjectButton(Meta):
 
     def on_mousebuttondown(self, event):
         if self.enabled:
+            self.parent.select_one(self)
             if not self.parent.is_added(self.object_data) and self.parent.current is not None:
                 orbit, marker = self.parent.add_new(self.object_data)
                 self.create_type(orbit)
@@ -439,7 +453,8 @@ class ObjectButton(Meta):
                     self.parent.toggle_stellar_orbits()
                 else:
                     self.parent.hide_everything()
-                self.parent.show_markers_button.enable()
+                if self.parent.current is not None:
+                    self.parent.show_markers_button.enable()
                 self.info.link_marker(self.linked_marker)
                 self.info.show()
 
@@ -456,6 +471,10 @@ class ObjectButton(Meta):
     def hide_info(self):
         if self.info is not None:
             self.info.hide()
+
+    def hide(self):
+        super().hide()
+        self.hide_info()
 
 
 class Marker(Meta, IncrementalValue):
@@ -516,7 +535,8 @@ class Marker(Meta, IncrementalValue):
     def force_selection(self):
         if not self.locked:
             self.parent.deselect_markers(self)
-            self.parent.anchor_maker(self)
+            if self._orbit is None:
+                self.parent.anchor_maker(self)
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -563,12 +583,16 @@ class Marker(Meta, IncrementalValue):
     def __repr__(self):
         return self.name+' Marker'
 
+    def show(self):
+        super().show()
+
 
 class SetOrbitButton(TextButton):
     linked_marker = None
 
     def __init__(self, parent, x, y):
         super().__init__(parent, 'Set Orbit', x, y)
+        self.disable()
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
