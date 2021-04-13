@@ -1,4 +1,4 @@
-from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, WidgetGroup, render_textrect
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, WidgetGroup, render_textrect, WidgetHandler
 from engine.equations.planetary_system import Systems
 from engine.frontend.widgets.values import ValueText
 from engine.frontend.widgets import BaseWidget
@@ -8,6 +8,9 @@ from pygame import Surface, Rect
 class NamingPanel(BaseWidget):
     skippable = False
     last_idx = -1
+
+    curr_idx = 0
+    current = None
 
     def __init__(self, parent):
         self.name = 'Naming'
@@ -56,6 +59,24 @@ class NamingPanel(BaseWidget):
         if idx != self.last_idx:
             self.show_current(idx)
             self.last_idx = idx
+
+    def cycle(self, delta):
+        for elm in self.unnamed.widgets():
+            elm.deselect()
+            elm.active = False
+            elm.disable()
+            elm.text_area.disable()
+        if 0 <= self.curr_idx + delta < len(self.unnamed.widgets()):
+            self.curr_idx += delta
+        else:
+            self.curr_idx = 0
+
+        self.current = self.unnamed.widgets()[self.curr_idx]
+        self.current.select()
+        self.current.enable()
+        self.current.active = True
+        self.current.text_area.enable()
+        WidgetHandler.origin = self.current.text_area.name
 
 
 class DummyType(BaseWidget):

@@ -311,15 +311,18 @@ class NumberArea(BaseArea, IncrementalValue):
 class TextArea(BaseArea):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        EventHandler.register(self.input, 'Typed', 'BackSpace')
+        EventHandler.register(self.input, 'Typed', 'BackSpace', 'Fin', 'Key')
 
     def input(self, tecla):
         if self.enabled and tecla.origin == self.name:
-            if tecla.tipo == 'Typed':
+            if tecla.tipo == 'Typed' or tecla.tipo == 'Key':
                 self.value += tecla.data['value']
 
             elif tecla.tipo == 'BackSpace':
                 self.value = self.value[0:-1]
+
+            elif tecla.tipo == 'Fin':
+                self.great_grandparent.cycle(+1)
 
         elif tecla.origin != self.name:
             self.deselect()
@@ -329,3 +332,6 @@ class TextArea(BaseArea):
     def update(self):
         self.image = self.f.render(self.value, True, self.fg, self.bg)
         self.rect = self.image.get_rect(topleft=self.rect.topleft)
+
+    def __repr__(self):
+        return self.name + ' Text'
