@@ -156,6 +156,7 @@ class Orbit(Ellipse):
             astro_body.orbit.reset_period_and_speed(main.mass)
 
         astro_body.orbit._star = main
+        astro_body.parent = main
         if astro_body.celestial_type == 'planet':
             self.temperature = astro_body.set_temperature(main.mass.m, self._a)
 
@@ -185,7 +186,8 @@ class Orbit(Ellipse):
         self._b = self._a * sqrt(1 - pow(self._e, 2))
         self._Q = self._a * (1 + self._e)
         self._q = self._a * (1 - self._e)
-        self.temperature = self.astrobody.set_temperature(self._star.mass.m, self._a)
+        if self.temperature != 'N/A':
+            self.temperature = self.astrobody.set_temperature(self._star.mass.m, self._a)
         self.reset_period_and_speed(self._star.mass.m)
 
     @property
@@ -259,7 +261,7 @@ class SatelliteOrbit(Orbit):
     def reset_period_and_speed(self, main_body_mass):
         satellite_mass = round(self.astrobody.mass.m, 3)
         self.velocity = q(sqrt(main_body_mass.m / self._a), 'earth_orbital_velocity').to('kilometer per second')
-        self.period = q(round(0.0588 * sqrt(pow(self._a, 3) / (main_body_mass.m + satellite_mass)), 2), 'day')
+        self.period = q(sqrt(pow(self.a.to('au').m, 3) / (main_body_mass.m + satellite_mass)), 'year').to('day')
 
 
 class BinaryStarOrbit(Orbit):
@@ -272,31 +274,30 @@ class BinaryStarOrbit(Orbit):
         self.velocity = q(sqrt(main_body_mass / self._a), 'earth_orbital_velocity').to('kilometer per second')
 
 
-def from_resonance(reference, primary, resonance: str):
+def from_stellar_resonance(star, planet, resonance: str):
     """Return the semi-major axis in AU of the resonant orbit.
 
-    The reference is the body around which the object orbits.
-    In the case of a resonant kupier belt object, the reference
-    is the star, while the primary is the last gas giant.
+    The resonance argument is a string in the form of 'x:y'
+    where both x and y are integers and x >= y.
+    """
+    x, y = [int(i) for i in resonance.split(':')]
+    period = (x/y) * planet.orbit.period.to('year').m
+    semi_major_axis = q(pow(pow(period, 2) * star.mass.to('sol_mass').m, (1 / 3)), 'au')
+    return semi_major_axis
 
-    If the resonances are calculated for a gas giant's minor moons,
-    then the reference is the gas giant itself, and each moon in
-    turn is the primary of the others.
+
+def from_planetary_resonance(planet, satellite, resonance: str):
+    """Return the semi-major axis in Re of the resonant orbit.
 
     The resonance argument is a string in the form of 'x:y'
+    where both x and y are integers and x >= y.
     """
 
-    if primary.celestial_type == 'planet':
-        time_unit = 'year'
-        earths = 326.26
-    else:
-        time_unit = 'day'
-        earths = 24
-
     x, y = [int(i) for i in resonance.split(':')]
-    period = q((y * primary.orbit.period.to(time_unit).m) / x, time_unit)
-    semi_major_axis = q(pow(pow(period.m/earths, 2) * reference.mass.m, (1 / 3)), 'au')
-    return semi_major_axis
+    period = (x/y) * satellite.orbit.period.to('year').m
+    mass = planet.mass.m + satellite.mass.m  # earth masses
+    semi_major_axis = q(pow(pow(period, 2) * mass, (1 / 3)), 'au')
+    return semi_major_axis.to('earth_radius')
 
 
 def to_resonance(period_primary, period_secondary):

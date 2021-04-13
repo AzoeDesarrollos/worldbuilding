@@ -1,5 +1,4 @@
 from .eventhandler import EventHandler
-import csv
 import json
 from math import trunc, ceil, floor
 from os.path import exists, join
@@ -99,32 +98,6 @@ def collapse_factor_lists(a: list, b: list):
     return collapse(a), collapse(b)
 
 
-class MyCSV(csv.excel):
-    delimiter = ';'
-
-
-def read_csv(ruta):
-    """Lee archivos CSV y los devuelve como una lista."""
-
-    table = []
-    with open(ruta, encoding='windows-1252') as file:
-        data = csv.reader(file, dialect=MyCSV)
-        for row in data:
-            for i, value in enumerate(row[1:], 1):
-                row[i] = float(row[i])
-            table.append(row)
-
-    return table
-
-
-def open_float_list_txt(ruta):
-    lines = []
-    with open(ruta, mode='rt', encoding='utf-8') as file:
-        for line in file.readlines():
-            lines.append(float(line.rstrip('\n')))
-        return lines
-
-
 def guardar_json(nombre, datos, encoding='utf-8'):
     with open(nombre, mode='w', encoding=encoding) as file:
         json.dump(datos, file, ensure_ascii=False, indent=2, separators=(',', ':'), sort_keys=True)
@@ -153,8 +126,6 @@ if not exists(route):
 EventHandler.register(salir_handler, 'salir')
 
 __all__ = [
-    'read_csv',
-    'open_float_list_txt',
     'guardar_json',
     'abrir_json',
     'load_from_data',

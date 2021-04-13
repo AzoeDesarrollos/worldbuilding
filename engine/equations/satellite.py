@@ -9,6 +9,7 @@ from .orbit import Orbit
 
 
 class Satellite:
+    name = None
     mass = None
     density = None
     celestial_type = ''
@@ -20,6 +21,7 @@ class Satellite:
     temperature = 'N/A'
     comp = ''
     lagrange_points = None
+    id = None
 
     @staticmethod
     def calculate_density(ice, silicate, iron):
@@ -39,20 +41,39 @@ class Satellite:
         return self.orbit
 
     def set_hill_sphere(self):
-        a = self.orbit.semi_major_axis.magnitude
+        a = self.orbit.semi_major_axis.to('au').magnitude
         mp = self.mass.to('earth_mass').magnitude
         ms = self.orbit.star.mass.to('sol_mass').magnitude
-        return q(round((a * pow(mp / ms, 1 / 3) * 235), 3), 'earth_radius')
+        # "star" is actually the planet in this case
+        return q(round((a * pow(mp / ms, 1 / 3)), 3), 'earth_hill_sphere').to('earth_radius')
+
+    def set_roche(self, obj_density):
+        density = self.density.to('earth_density').m
+        radius = self.get_radius().to('earth_radius').m
+
+        roches = q(round(2.44 * radius * pow(density / obj_density, 1 / 3), 3), 'earth_radius')
+        if self.roches_limit == 0 or roches < self.roches_limit:
+            self.roches_limit = roches
+        return self.roches_limit
+
+    def get_radius(self):
+        if hasattr(self, 'radius'):
+            return getattr(self, 'radius')
+        else:
+            return NotImplemented
 
     def __repr__(self):
         return self.cls
+
+    def __eq__(self, other):
+        return self.id == other.id
 
 
 class Major(Satellite, BodyInHydrostaticEquilibrium):
     celestial_type = 'satellite'
 
     def __init__(self, data):
-        name = data.get('name', None)
+        name = data.get('true_name', None)
         if name:
             self.name = name
             self.has_name = True
@@ -85,7 +106,7 @@ class Minor(Satellite):
     habitable = False
 
     def __init__(self, data):
-        name = data.get('name', None)
+        name = data.get('true_name', None)
         if name:
             self.name = name
             self.has_name = True
@@ -119,6 +140,10 @@ class Minor(Satellite):
     @staticmethod
     def set_density(composition):
         return NotImplemented
+
+    def get_radius(self):
+        # chapuza
+        return q((self.a_axis.m+self.b_axis.m+self.c_axis.m)/3, 'km')
 
 
 class RockyMoon(Satellite):

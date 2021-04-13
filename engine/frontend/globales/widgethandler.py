@@ -38,6 +38,10 @@ class WidgetHandler:
         cls.locked = False
 
     @classmethod
+    def set_origin(cls, widget):
+        cls.origin = widget
+
+    @classmethod
     def update(cls):
         cls.clock.tick(60)
         events = event.get([KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, QUIT, MOUSEMOTION])
