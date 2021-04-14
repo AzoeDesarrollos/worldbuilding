@@ -6,7 +6,7 @@
   "O":{"name":"Atomic Oxygen","weight":0.015999, "boiling": null, "melting": null},
   "CH4":{"name":"Methane","weight":0.01604,"max_atm":0.05, "boiling": -161.5, "melting": -182.50},
   "NH3":{"name":"Ammonia","weight":0.017031,"max_atm":0.0001, "boiling": -33.33, "melting": -77.73},
-  "H2O":{"name":"Water vapour","weight":0.01801528, "boiling": 100, "melting": 0},
+  "H2O":{"name":"Water vapour","weight":0.01801528, "boiling": null, "melting": 0},
   "Ne":{"name":"Neon","weight":0.0201797,"max_atm":5, "boiling": -246.046, "melting": -248.59},
   "N2":{"name":"Molecular Nitrogen","weight":0.0280134,"max_atm":3, "boiling": -195.795, "melting": -210},
   "CO":{"name":"Carbon Monoxide","weight":0.02801,"atm":0.0001, "boiling": -191.5, "melting": -205.02},

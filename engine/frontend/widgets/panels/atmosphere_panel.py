@@ -33,12 +33,15 @@ class AtmospherePanel(BaseWidget):
         f1 = self.crear_fuente(16, underline=True)
         self.f2 = self.crear_fuente(12)
         self.f3 = self.crear_fuente(16)
+        f4 = self.crear_fuente(11)
+        self.f5 = self.crear_fuente(11, bold=True)
 
         self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5, y=0)
         self.write('Composition', self.f3, centerx=65, y=35)
+        self.water_state_rect = self.write('State of Water at Surface: ', f4, x=3, y=ALTO-50)
         EventHandler.register(self.load_atmosphere, 'LoadData')
         EventHandler.register(self.clear, 'ClearData')
-        self.area_info = Rect(190, 460, 195, 132 - 21)
+        self.area_info = Rect(190, 460, 195, 132 - 41)
         self.warning_rect = Rect(self.area_info.x, self.area_info.bottom, self.area_info.w, 21)
 
         for i, element in enumerate(molecular_weight):
@@ -171,6 +174,16 @@ class AtmospherePanel(BaseWidget):
 
         self.curr_planet = planet
         self.show_name()
+
+        state = 'liquid'
+        if planet.temperature.m <= 0:
+            state = 'solid'
+        elif planet.temperature.m >= 100:
+            state = 'gaseous'
+
+        self.image.fill(COLOR_BOX, [159, 580, 52, 14])
+        dx, dy = self.water_state_rect.topright
+        self.write(state, self.f5, x=dx+1, y=dy)
 
     def cycle(self, delta):
         for elm in self.elements.widgets():
