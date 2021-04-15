@@ -167,7 +167,7 @@ class PlanetType(ObjectType):
                 self.create_button(planet)
                 if planet.composition is not None:
                     planet.sprite = PlanetSprite(self, planet, 460, 100)
-                    self.properties.add(planet.sprite)
+                    self.properties.add(planet.sprite, layer=3)
             self.current = self.parent.planet_buttons.widgets()[0].object_data
             self.loaded_data.clear()
 
@@ -267,7 +267,7 @@ class PlanetType(ObjectType):
 
         if self.current.sprite is None and self.current.composition is not None:
             self.current.sprite = PlanetSprite(self, self.current, 460, 100)
-            self.properties.add(self.current.sprite)
+            self.properties.add(self.current.sprite, layer=3)
             self.parent.properties.add(self.current.sprite)
 
         if self.current.sprite is not None:

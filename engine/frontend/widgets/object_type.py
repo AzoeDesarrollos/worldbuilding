@@ -52,7 +52,9 @@ class ObjectType(BaseWidget):
             obj.modifiable = True
 
     def show(self):
-        for p in self.properties.widgets():
+        for p in self.properties.get_widgets_from_layer(1):
+            p.show()
+        for p in self.properties.get_widgets_from_layer(2):
             p.show()
 
     def hide(self):

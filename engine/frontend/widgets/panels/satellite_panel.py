@@ -129,7 +129,7 @@ class SatelliteType(ObjectType):
 
         for i, name in enumerate(sorted(material_densities)):
             a = ValueText(self, name.capitalize(), 3, 420 + 21 + i * 21, bg=COLOR_AREA)
-            self.properties.add(a, layer=7)
+            self.properties.add(a, layer=2)
             a.modifiable = True
 
     def calculate(self):

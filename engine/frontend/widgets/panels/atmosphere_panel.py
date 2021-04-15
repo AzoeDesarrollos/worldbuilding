@@ -147,14 +147,14 @@ class AtmospherePanel(BaseWidget):
         self.show_pressure.show()
 
     def show_name(self):
-        text = 'Atmosphere of planet'
+        self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
         planet = self.curr_planet
         if planet is not None:
+            text = 'Atmosphere of planet'
             idx = Systems.get_current().planets.index(planet)
             text += ' #' + str(idx) + ' (' + planet.clase + ')'
 
-        self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
-        self.write(text, self.f2, centerx=self.rect.centerx, y=21)
+            self.write(text, self.f2, centerx=self.rect.centerx, y=21)
 
     def hide(self):
         super().hide()
@@ -176,12 +176,14 @@ class AtmospherePanel(BaseWidget):
         self.show_name()
 
         state = 'liquid'
-        if planet.temperature.m <= 0:
+        if self.elements.get_widget(7).escaped:
+            state = "non-existent"
+        elif planet.temperature.m <= 0:
             state = 'solid'
         elif planet.temperature.m >= 100:
             state = 'gaseous'
 
-        self.image.fill(COLOR_BOX, [159, 580, 52, 14])
+        self.image.fill(COLOR_BOX, [159, 580, 80, 14])
         dx, dy = self.water_state_rect.topright
         self.write(state, self.f5, x=dx+1, y=dy)
 
@@ -227,7 +229,7 @@ class Element(BaseWidget):
             color = COLOR_TEXTO
         else:
             self.color_ovewritten = True
-            self.color = color
+            self._color = color
         self.image = self.write_name(color)
         self.rect = self.image.get_rect(topleft=(x, y))
         self.percent = PercentageCell(self, 45, y)
@@ -266,17 +268,30 @@ class Element(BaseWidget):
         super().hide()
         self.percent.hide()
 
+    @property
+    def color(self):
+        color = (0, 0, 0) if not self.color_ovewritten else self._color
+        if self.calculate_pressure():
+            color = 255, 0, 0
+        return color
+
+    @property
+    def escaped(self):
+        return self.calculate_pressure()
+
+    def is_enabled(self):
+        return self.calculate_pressure()
+
     def calculate_pressure(self):
-        color = (0, 0, 0) if not self.color_ovewritten else self.color
         planet = self.parent.curr_planet
         if planet is not None:
             t = planet.temperature.to('earth_temperature').m
             m = planet.mass.to('earth_mass').m
             r = planet.radius.to('earth_radius').m
             if (sqrt((3 * 8.3144598 * (t * 1500)) / self.weight)) / ((sqrt(m / r) * 11200) / 6) > 1:
-                color = 255, 0, 0
-
-        return color
+                return True
+            else:
+                return False
 
     def calculate_temperature(self):
         planet = self.parent.curr_planet
@@ -311,11 +326,7 @@ class Element(BaseWidget):
         return self.symbol
 
     def update(self):
-        if self.parent.curr_planet is not None:
-            color = self.calculate_pressure()
-        else:
-            color = 0, 0, 0
-        self.image = self.write_name(color)
+        self.image = self.write_name(self.color)
 
 
 class PercentageCell(BaseWidget):
@@ -413,11 +424,12 @@ class PercentageCell(BaseWidget):
 
     def update(self):
         color = COLOR_DISABLED
-        if self.parent.calculate_pressure() not in [(255, 255, 0), (0, 0, 0)]:
+        state = self.parent.calculate_temperature()
+        if self.parent.is_enabled():
             self.enabled = False
-        elif self.parent.calculate_temperature() != 'gas':
+        elif state != 'gas':
             self.enabled = False
-            self.value = self.parent.calculate_temperature()
+            self.value = state
         else:
             color = COLOR_BOX
             self.enabled = True
@@ -437,7 +449,6 @@ class Atmograph(BaseWidget):
 
     enabled = False
     reached = False
-    blocked = False
 
     def __init__(self, parent, x, y):
         super().__init__(parent)
@@ -451,8 +462,10 @@ class Atmograph(BaseWidget):
 
     def unbreatheable(self):
         planet = self.parent.curr_planet
+        base = None
         if planet is not None and not planet.habitable:
-            t = f"The selected planet of type '{planet.clase}' can't have a breathable atmosphere."
+            t = f"The selected planet of type '{planet.clase}' can't have a breathable atmosphere"
+            t += " due to not being habitable in the first place."
             self.enabled = False
             base = Surface(self.image.get_size(), SRCALPHA)
             base.fill((0, 0, 0, 150))
@@ -463,8 +476,7 @@ class Atmograph(BaseWidget):
             render = render_textrect(t, f, rect, COLOR_TEXTO, COLOR_BOX, 1)
             base.blit(render, rect)
 
-            return True, base
-        return False, None
+        return base
 
     def on_mousebuttondown(self, event):
         delta_y = 0
@@ -543,12 +555,13 @@ class Atmograph(BaseWidget):
             pressure = convert(self.pressure)
             self.parent.show_pressure.update_text(pressure)
         else:
-            b, img = self.unbreatheable()
-            if b and not self.blocked:
+            img = self.unbreatheable()
+            self.image.blit(graph, (0, 0))
+            if img is not None:
                 self.parent.show_pressure.unlock()
-                self.image.blit(graph, (0, 0))
                 self.image.blit(img, (0, 0))
-                self.blocked = True
+            else:
+                self.image.blit(self.canvas, (0, 0))
 
 
 class AvailablePlanets(ListedArea):
@@ -565,11 +578,16 @@ class AvailablePlanets(ListedArea):
             for listed in self.listed_objects.widgets():
                 listed.show()
 
+    def on_mousebuttondown(self, event):
+        super().on_mousebuttondown(event)
+        self.parent.curr_planet = None
+        self.parent.show_name()
+
 
 class ListedPlanet(AvailablePlanet):
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            self.select()
+            self.parent.select_one(self)
             self.parent.parent.set_planet(self.object_data)
 
 
