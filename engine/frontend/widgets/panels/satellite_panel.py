@@ -45,9 +45,11 @@ class SatellitePanel(BasePanel):
 
     def show_loaded(self):
         if self.loaded_data is not None:
-            for satellite_data in self.loaded_data:
+            for idx, satellite_data in enumerate(self.loaded_data):
+                satellite_data['idx'] = idx
                 moon = major_moon_by_composition(satellite_data)
-                if Systems.get_current().add_astro_obj(moon):
+                system = Systems.get_system_by_id(satellite_data['system'])
+                if system.add_astro_obj(moon):
                     self.current.current = moon
                     self.add_button()
             self.loaded_data.clear()

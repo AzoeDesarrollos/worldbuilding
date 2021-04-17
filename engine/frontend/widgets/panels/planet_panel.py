@@ -170,7 +170,8 @@ class PlanetType(ObjectType):
 
     def show_loaded(self):
         if self.loaded_data is not None:
-            for planet_data in self.loaded_data:
+            for idx, planet_data in enumerate(self.loaded_data):
+                planet_data['idx'] = idx
                 planet = Planet(planet_data)
                 self.create_button(planet)
                 if planet.composition is not None:

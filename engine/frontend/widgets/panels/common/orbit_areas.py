@@ -51,14 +51,3 @@ class AvailableObjects(ListedArea):
             if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
                 self.populate(planets)
         super().show()
-
-    def show_current(self, idx):
-        for listed in self.listed_objects.widgets():
-            listed.hide()
-        self.show()
-        for listed in self.listed_objects.get_widgets_from_layer(idx):
-            listed.show()
-
-    def update(self):
-        super().update()
-        self.show_current(Systems.get_current_idx())

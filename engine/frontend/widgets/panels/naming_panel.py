@@ -27,6 +27,9 @@ class NamingPanel(BaseWidget):
 
     def show(self):
         super().show()
+        self.add_current()
+
+    def add_current(self):
         idx = Systems.get_current_idx()
         system = Systems.get_current()
         if system is not None:
@@ -38,7 +41,8 @@ class NamingPanel(BaseWidget):
 
                 vt = ValueText(self.dummy, name, 3, 55 + i * 13 * 2, kind='letters')
                 vt.enable()
-                self.unnamed.add(vt, layer=idx)
+                if vt not in self.unnamed:
+                    self.unnamed.add(vt, layer=idx)
         else:
             f = self.crear_fuente(16)
             text = 'There is no system nor there are astronomical bodies to name.'
@@ -47,19 +51,17 @@ class NamingPanel(BaseWidget):
             render = render_textrect(text, f, rect.w, (0, 0, 0), COLOR_BOX, 1)
             self.image.blit(render, rect)
 
-    def hide(self):
-        super().hide()
-        for item in self.unnamed.widgets():
-            item.hide()
-
     def show_current(self, idx):
         for button in self.unnamed.widgets():
             button.hide()
+
+        if not len(self.unnamed.get_widgets_from_layer(idx)):
+            self.add_current()
+
         for button in self.unnamed.get_widgets_from_layer(idx):
             button.show()
 
     def update(self):
-        self.unnamed.draw(self.image)
         idx = Systems.get_current_idx()
         if idx != self.last_idx:
             self.show_current(idx)

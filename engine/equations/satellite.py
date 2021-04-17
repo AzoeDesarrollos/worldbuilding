@@ -22,6 +22,7 @@ class Satellite:
     comp = ''
     lagrange_points = None
     id = None
+    idx = None
 
     @staticmethod
     def calculate_density(ice, silicate, iron):
@@ -65,6 +66,9 @@ class Satellite:
     def __repr__(self):
         return self.cls
 
+    def __str__(self):
+        return "{} #{}".format(self.cls, self.idx)
+
     def __eq__(self, other):
         return self.id == other.id
 
@@ -77,6 +81,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         if name:
             self.name = name
             self.has_name = True
+        self.idx = data.get('idx', 0)
         self.composition = data['composition']
         assert data.get('radius'), "Must fill parameter \n'Radius'"
         self.radius = q(data['radius'], 'earth_radius')

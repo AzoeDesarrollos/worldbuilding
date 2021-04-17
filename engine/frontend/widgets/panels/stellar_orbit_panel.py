@@ -110,7 +110,7 @@ class OrbitPanel(BaseWidget):
             x = OrbitMarker(self, marker, star, markers[marker])
             x.locked = True
             self._markers[star].append(x)
-            self.properties.add(x, layer=2)
+            self.properties.add(x, layer=4)
 
         if hasattr(star, 'habitable_orbit'):
             markers = {
@@ -121,7 +121,7 @@ class OrbitPanel(BaseWidget):
                 x = OrbitMarker(self, marker, star, markers[marker])
                 x.locked = True
                 self._markers[star].append(x)
-                self.properties.add(x, layer=2)
+                self.properties.add(x, layer=4)
             self.add_orbit_marker(star.habitable_orbit)
 
         self.sort_markers()
@@ -160,7 +160,7 @@ class OrbitPanel(BaseWidget):
             self._orbits[star].append(new)
             self.sort_markers()
             self.add_button_and_type(star, new, color)
-            self.properties.add(new, layer=2)
+            self.properties.add(new, layer=4)
 
     def add_button_and_type(self, star, marker, color):
         orbit_type = OrbitType(self)
@@ -175,8 +175,8 @@ class OrbitPanel(BaseWidget):
         self.orbit_descriptions.add(orbit_type)
         if len(self.buttons):
             self.sort_buttons()
-        self.properties.add(button, layer=2)
-        self.properties.add(orbit_type, layer=3)
+        self.properties.add(button, layer=4)
+        self.properties.add(orbit_type, layer=4)
         button.enable()
 
     def sort_markers(self):
