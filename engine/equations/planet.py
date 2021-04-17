@@ -91,6 +91,8 @@ class Planet(BodyInHydrostaticEquilibrium):
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
         self.id = data['id'] if 'id' in data else now
 
+        self.system_id = data['system']
+
     def set_qs(self, unit):
         m = unit + '_mass'
         r = unit + '_radius'

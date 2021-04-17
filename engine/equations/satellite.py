@@ -95,6 +95,8 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
         self.id = data['id'] if 'id' in data else now
 
+        self.system_id = data['system']
+
     # noinspection PyUnusedLocal
     @staticmethod
     def set_density(composition):
@@ -135,6 +137,8 @@ class Minor(Satellite):
         # ID values make each satellite unique, even if they have the same characteristics.
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
         self.id = data['id'] if 'id' in data else now
+
+        self.system_id = data['system']
 
     # noinspection PyUnusedLocal
     @staticmethod

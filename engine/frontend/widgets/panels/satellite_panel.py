@@ -17,6 +17,7 @@ class SatellitePanel(BasePanel):
 
     mass_number = None
     loaded_data = None
+    last_idx = None
 
     def __init__(self, parent):
         super().__init__('Satellite', parent)
@@ -78,9 +79,17 @@ class SatellitePanel(BasePanel):
                 x = 3
                 y += 32
 
+    def show_current(self, idx):
+        for button in self.satellites.widgets():
+            button.hide()
+        for button in self.satellites.get_widgets_from_layer(idx):
+            button.show()
+        self.sort_buttons()
+
     def add_button(self):
         button = SatelliteButton(self.current, self.current.current, self.curr_x, self.curr_y)
-        self.satellites.add(button, layer=Systems.get_current_idx())
+        layer_number = Systems.get_system_idx_by_id(self.current.current.system_id)
+        self.satellites.add(button, layer=layer_number)
         self.properties.add(button)
         self.sort_buttons()
         self.current.erase()
@@ -112,6 +121,12 @@ class SatellitePanel(BasePanel):
         for pr in self.properties.widgets():
             pr.hide()
 
+    def update(self):
+        idx = Systems.get_current_idx()
+        if idx != self.last_idx:
+            self.show_current(idx)
+            self.last_idx = idx
+
 
 class SatelliteType(ObjectType):
 
@@ -131,6 +146,11 @@ class SatelliteType(ObjectType):
             a = ValueText(self, name.capitalize(), 3, 420 + 21 + i * 21, bg=COLOR_AREA)
             self.properties.add(a, layer=2)
             a.modifiable = True
+
+        EventHandler.register(self.name_current, 'NameObject')
+
+    def name_current(self, event):
+        pass
 
     def calculate(self):
         data = {'composition': None}

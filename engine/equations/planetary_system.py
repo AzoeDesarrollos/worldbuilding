@@ -177,21 +177,21 @@ class Systems:
             cls.cycle_systems()
 
     @classmethod
-    def get_system_by_id(cls, number):
-        systems = [s for s in cls._systems if s.id == number]
+    def get_system_by_id(cls, id_number):
+        systems = [s for s in cls._systems if s.id == id_number]
         if len(systems) == 1:
             return systems[0]
         else:
             raise AssertionError('System ID is invalid')
 
     @classmethod
-    def get_star_by_id(cls, idx):
+    def get_star_by_id(cls, id_number):
         for star in cls.loose_stars:
-            if star.id == idx:
+            if star.id == id_number:
                 return star
         for system in cls._systems:
             for star in system:
-                if star.id == idx:
+                if star.id == id_number:
                     return star
 
     @classmethod
@@ -251,6 +251,11 @@ class Systems:
         return cls._current_idx
 
     @classmethod
+    def get_system_idx_by_id(cls, id_number):
+        star = cls.get_star_by_id(id_number)
+        return cls.get_star_idx(star)
+
+    @classmethod
     def add_star(cls, star):
         cls.loose_stars.append(star)
 
@@ -275,8 +280,12 @@ class Systems:
         return [star for star in cls.loose_stars if cls.loose_stars.index(star) in cls._flagged]
 
     @classmethod
-    def get_stars(cls):
+    def get_loose_stars(cls):
         return [i for i in cls.loose_stars if i not in cls._flagged]
+
+    @classmethod
+    def get_stars(cls):
+        return [i.star_system for i in cls._systems]
 
     @staticmethod
     def save(event):

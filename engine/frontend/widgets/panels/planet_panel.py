@@ -57,9 +57,10 @@ class PlanetPanel(BasePanel):
 
     def add_button(self, planet):
         button = CreatedPlanet(self.current, planet, self.curr_x, self.curr_y)
-        self.planet_buttons.add(button, layer=Systems.get_current_idx())
+        layer_number = Systems.get_system_idx_by_id(planet.system_id)
+        self.planet_buttons.add(button, layer=layer_number)
         self.sort_buttons()
-        self.properties.add(button, layer=2)
+        self.properties.add(button, layer=3)
 
     def del_button(self, planet):
         button = [i for i in self.planet_buttons.widgets() if i.object_data == planet][0]
@@ -73,6 +74,7 @@ class PlanetPanel(BasePanel):
             button.hide()
         for button in self.planet_buttons.get_widgets_from_layer(idx):
             button.show()
+        self.sort_buttons()
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
@@ -114,7 +116,9 @@ class PlanetPanel(BasePanel):
         super().show()
         if self.mass_number is None:
             self.properties.add(ShownMass(self))
-        for item in self.properties.widgets():
+        props = self.properties.get_widgets_from_layer(1)
+        props += self.properties.get_widgets_from_layer(2)
+        for item in props:
             item.show()
 
     def hide(self):
@@ -197,9 +201,9 @@ class PlanetType(ObjectType):
     def create_button(self, planet=None):
         if planet is None:
             planet = self.current
-        create = Systems.get_current().add_astro_obj(planet)
+        create = Systems.get_system_by_id(planet.system_id).add_astro_obj(planet)
         if create:
-            for button in self.properties.get_sprites_from_layer(1):
+            for button in self.properties.get_widgets_from_layer(1):
                 button.text_area.clear()
             self.parent.button_add.disable()
             self.parent.add_button(planet)
@@ -209,7 +213,7 @@ class PlanetType(ObjectType):
                 self.current.sprite.hide()
 
     def destroy_button(self):
-        destroyed = Systems.get_current().remove_astro_obj(self.current)
+        destroyed = Systems.get_system_by_id(self.current.system_id).remove_astro_obj(self.current)
         if destroyed:
             self.parent.image.fill(COLOR_BOX, self.hab_rect)
             self.parent.del_button(self.current)

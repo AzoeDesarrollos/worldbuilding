@@ -42,3 +42,6 @@ class PlanetButton(ListedBody):
 
     def move(self, x, y):
         self.rect.topleft = x, y
+
+    def __repr__(self):
+        return 'Button of '+str(self.object_data)

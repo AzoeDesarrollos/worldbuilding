@@ -16,6 +16,7 @@ class AsteroidPanel(BasePanel):
     curr_y = 0
     mass_number = None
     loaded_data = None
+    last_idx = None
 
     def __init__(self, parent):
         super().__init__('Asteroid', parent)
@@ -67,7 +68,8 @@ class AsteroidPanel(BasePanel):
 
     def add_button(self):
         button = AsteroidButton(self.current, self.current.current, self.curr_x, self.curr_y)
-        self.asteroids.add(button, layer=Systems.get_current_idx())
+        layer_number = Systems.get_system_idx_by_id(self.current.current.system_id)
+        self.asteroids.add(button, layer=layer_number)
         self.properties.add(button)
         self.sort_buttons()
         self.current.erase()
@@ -79,6 +81,13 @@ class AsteroidPanel(BasePanel):
         self.sort_buttons()
         self.properties.remove(button)
         self.button_del.disable()
+
+    def show_current(self, idx):
+        for button in self.asteroids.widgets():
+            button.hide()
+        for button in self.asteroids.get_widgets_from_layer(idx):
+            button.show()
+        self.sort_buttons()
 
     def select_one(self, btn):
         for button in self.asteroids.widgets():
@@ -117,6 +126,12 @@ class AsteroidPanel(BasePanel):
         flag = Systems.get_current() is not None
         flag = not len(Systems.get_current().asteroids + Systems.get_current().satellites) if flag else False
         self.parent.set_skippable('Planetary Orbit', flag)
+
+    def update(self):
+        idx = Systems.get_current_idx()
+        if idx != self.last_idx:
+            self.show_current(idx)
+            self.last_idx = idx
 
 
 class AsteroidType(BaseWidget):
