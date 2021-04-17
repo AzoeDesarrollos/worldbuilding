@@ -57,7 +57,11 @@ class PlanetPanel(BasePanel):
 
     def add_button(self, planet):
         button = CreatedPlanet(self.current, planet, self.curr_x, self.curr_y)
-        layer_number = Systems.get_system_idx_by_id(planet.system_id)
+        if planet.system_id is not None:
+            layer_number = Systems.get_system_idx_by_id(planet.system_id)
+        else:
+            layer_number = Systems.get_current_idx()
+            planet.system_id = Systems.get_current().id
         self.planet_buttons.add(button, layer=layer_number)
         self.sort_buttons()
         self.properties.add(button, layer=3)
@@ -201,8 +205,11 @@ class PlanetType(ObjectType):
     def create_button(self, planet=None):
         if planet is None:
             planet = self.current
-        create = Systems.get_system_by_id(planet.system_id).add_astro_obj(planet)
-        if create:
+            system = Systems.get_current()
+        else:
+            system = Systems.get_system_by_id(planet.system_id)
+
+        if system.add_astro_obj(planet):
             for button in self.properties.get_widgets_from_layer(1):
                 button.text_area.clear()
             self.parent.button_add.disable()

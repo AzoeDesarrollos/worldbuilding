@@ -60,7 +60,8 @@ class SatellitePanel(BasePanel):
                 'name': moon.name,
                 'radius': moon.radius.m,
                 'composition': moon.composition,
-                'id': moon.id
+                'id': moon.id,
+                'system': moon.system_id
             }
             data.append(moon_data)
             EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Satellites": data})
@@ -88,7 +89,12 @@ class SatellitePanel(BasePanel):
 
     def add_button(self):
         button = SatelliteButton(self.current, self.current.current, self.curr_x, self.curr_y)
-        layer_number = Systems.get_system_idx_by_id(self.current.current.system_id)
+        if self.current.current.system_id is not None:
+            layer_number = Systems.get_system_idx_by_id(self.current.current.system_id)
+        else:
+            layer_number = Systems.get_current_idx()
+            self.current.current.system_id = Systems.get_current().id
+
         self.satellites.add(button, layer=layer_number)
         self.properties.add(button)
         self.sort_buttons()
@@ -159,7 +165,7 @@ class SatelliteType(ObjectType):
         else:
             data['composition'] = self.current.composition
 
-        for material in self.properties.get_sprites_from_layer(7):
+        for material in self.properties.get_sprites_from_layer(2):
             if material.text_area.value:  # not empty
                 text = material.text_area.value.strip(' %')
                 data['composition'][material.text.lower()] = float(text)
@@ -175,6 +181,7 @@ class SatelliteType(ObjectType):
         if self.current is not None:
             data['radius'] = self.current.radius.m
             data['id'] = self.current.id
+            data['system'] = self.current.system_id
 
         self.has_values = True
 
@@ -186,6 +193,10 @@ class SatelliteType(ObjectType):
             Systems.get_current().remove_astro_obj(self.current)
             if Systems.get_current().add_astro_obj(moon):
                 self.current = moon
+
+        if self.current.system_id is None:
+            self.current.system_id = Systems.get_current().id
+
         self.parent.button_add.enable()
         self.fill()
 

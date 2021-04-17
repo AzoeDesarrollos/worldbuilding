@@ -61,14 +61,20 @@ class AsteroidPanel(BasePanel):
                 'b axis': moon.b_axis.m,
                 'c axis': moon.c_axis.m,
                 'composition': moon.composition,
-                'id': moon.id
+                'id': moon.id,
+                'system': moon.system_id
             }
             data.append(moon_data)
             EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Asteroids": data})
 
     def add_button(self):
         button = AsteroidButton(self.current, self.current.current, self.curr_x, self.curr_y)
-        layer_number = Systems.get_system_idx_by_id(self.current.current.system_id)
+        if self.current.current.system_id is not None:
+            layer_number = Systems.get_system_idx_by_id(self.current.current.system_id)
+        else:
+            layer_number = Systems.get_current_idx()
+            self.current.current.system_id = Systems.get_current().id
+        layer_number = Systems.get_system_idx_by_id(layer_number)
         self.asteroids.add(button, layer=layer_number)
         self.properties.add(button)
         self.sort_buttons()
@@ -185,6 +191,7 @@ class AsteroidType(BaseWidget):
             data['b axis'] = self.current.b_axis.m
             data['c axis'] = self.current.c_axis.m
             data['id'] = self.current.id
+            data['system'] = self.current.system_id
 
         moon = minor_moon_by_composition(data)
         if self.current is None:
@@ -195,6 +202,9 @@ class AsteroidType(BaseWidget):
             Systems.get_current().remove_astro_obj(self.current)
             if Systems.get_current().add_astro_obj(moon):
                 self.current = moon
+
+        if self.current.system_id is None:
+            self.current.system_id = Systems.get_current().id
 
         self.fill()
 
