@@ -55,11 +55,13 @@ class OrbitPanel(BaseWidget):
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.recomendation = Recomendation(self, 80, ALTO // 2 - 130)
 
-        self._orbits = {}
         self._loaded_orbits = []
-        self._buttons = WidgetGroup()
         self.indexes = []
+
+        self._orbits = {}
+        self._buttons = {}
         self._markers = {}
+
         self.orbit_descriptions = WidgetGroup()
         self.show_markers_button = ToggleableButton(self, 'Stellar Orbits', self.toggle_stellar_orbits, 3, 421)
         self.show_markers_button.disable()
@@ -83,21 +85,15 @@ class OrbitPanel(BaseWidget):
     def set_current(self):
         self.toggle_current_markers_and_buttons(False)
         star = Systems.get_current_star()
-        assert star is not None
-        if star not in self._markers:
-            self._markers[star] = []
-            self._orbits[star] = []
-            self.indexes.append(star)
-
         self.current = star
         self.curr_idx = self.indexes.index(star)
         self.orbits = self._orbits[star]
         self.markers = self._markers[star]
-        self.buttons = self._buttons.get_widgets_from_layer(self.curr_idx)
-        if not len(self.markers):
+        self.buttons = self._buttons[star]
+        if not len(self.markers) or not self.markers[0].locked:
             self.populate()
-        else:
-            self.toggle_current_markers_and_buttons(True)
+        self.toggle_current_markers_and_buttons(True)
+        self.sort_buttons()
         self.add_orbits_button.enable()
         self.visible_markers = False
         self.toggle_stellar_orbits()
@@ -113,7 +109,7 @@ class OrbitPanel(BaseWidget):
         for marker in markers:
             x = OrbitMarker(self, marker, star, markers[marker])
             x.locked = True
-            self.markers.append(x)
+            self._markers[star].append(x)
             self.properties.add(x, layer=2)
 
         if hasattr(star, 'habitable_orbit'):
@@ -124,7 +120,7 @@ class OrbitPanel(BaseWidget):
             for marker in markers:
                 x = OrbitMarker(self, marker, star, markers[marker])
                 x.locked = True
-                self.markers.append(x)
+                self._markers[star].append(x)
                 self.properties.add(x, layer=2)
             self.add_orbit_marker(star.habitable_orbit)
 
@@ -139,7 +135,7 @@ class OrbitPanel(BaseWidget):
                 button.toggle(toggle)
 
     def add_orbit_marker(self, position, resonance=False):
-        star = self.current
+        star = self.current if not hasattr(position, 'star') else position.star
         inner = star.inner_boundry
         outer = star.outer_boundry
         bc = False if resonance is False else True
@@ -160,19 +156,16 @@ class OrbitPanel(BaseWidget):
 
         if test is True:
             new = OrbitMarker(self, 'Orbit', star, position, is_orbit=ba, is_complete_orbit=bb, is_resonance=bc)
-            self.markers.append(new)
-            self.orbits.append(new)
+            self._markers[star].append(new)
+            self._orbits[star].append(new)
             self.sort_markers()
-            self.add_button_and_type(new, color)
+            self.add_button_and_type(star, new, color)
             self.properties.add(new, layer=2)
-            return True
-        return False
 
-    def add_button_and_type(self, marker, color):
+    def add_button_and_type(self, star, marker, color):
         orbit_type = OrbitType(self)
         button = OrbitButton(self, color)
-        self._buttons.add(button, layer=self.curr_idx)
-        self.buttons = self._buttons.get_widgets_from_layer(self.curr_idx)
+        self._buttons[star].append(button)
 
         # Buttons, OrbitTypes and Markers are all Intertwined.
         orbit_type.intertwine(m=marker, b=button)
@@ -180,11 +173,11 @@ class OrbitPanel(BaseWidget):
         marker.intertwine(o=orbit_type, b=button)
 
         self.orbit_descriptions.add(orbit_type)
-        self.sort_buttons()
+        if len(self.buttons):
+            self.sort_buttons()
         self.properties.add(button, layer=2)
         self.properties.add(orbit_type, layer=3)
         button.enable()
-        button.show()
 
     def sort_markers(self):
         self.markers.sort(key=lambda m: m.value)
@@ -326,10 +319,21 @@ class OrbitPanel(BaseWidget):
                 self.planet_area.delete_objects(planet)
 
         # borrar las órbitas cargadas para evitar que se dupliquen.
+        self.sort_markers()
         self._loaded_orbits.clear()
+
+    def fill_indexes(self):
+        for system in Systems.get_systems():
+            star = system.star_system
+            if star not in self._markers:
+                self._markers[star] = []
+                self._orbits[star] = []
+                self._buttons[star] = []
+                self.indexes.append(star)
 
     def show(self):
         try:
+            self.fill_indexes()
             self.set_current()
             self.no_star_error = False
 
