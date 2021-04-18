@@ -1,6 +1,7 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, WidgetGroup, render_textrect, WidgetHandler
 from engine.equations.planetary_system import Systems
 from engine.frontend.widgets.values import ValueText
+from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets import BaseWidget
 from pygame import Surface, Rect
 
@@ -23,6 +24,7 @@ class NamingPanel(BaseWidget):
         self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5, y=0)
 
         self.unnamed = WidgetGroup()
+        self.objects = []
         self.dummy = DummyType(self)
 
     def show(self):
@@ -43,6 +45,7 @@ class NamingPanel(BaseWidget):
                 vt.enable()
                 if vt not in self.unnamed:
                     self.unnamed.add(vt, layer=idx)
+                    self.objects.append(astrobody)
         else:
             f = self.crear_fuente(16)
             text = 'There is no system nor there are astronomical bodies to name.'
@@ -84,6 +87,15 @@ class NamingPanel(BaseWidget):
         self.current.active = True
         self.current.text_area.enable()
         WidgetHandler.origin = self.current.text_area.name
+
+    def set_current(self, current):
+        self.current = current
+
+    def name_objects(self):
+        text = self.current.text_area.value
+        idx = self.unnamed.widgets().index(self.current)
+        obj = self.objects[idx]
+        EventHandler.trigger('NameObject', self, {'object': obj, 'name': text})
 
 
 class DummyType(BaseWidget):

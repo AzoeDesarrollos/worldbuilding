@@ -64,9 +64,6 @@ class EventHandler:
         _cola = cls._cola
         while len(_cola) > 0:
             evento = _cola.popleft()
-            if evento in cls._oyentes:
-                for listener in cls._oyentes[evento]:
-                    listener()
             if evento.tipo in cls._oyentes:
                 for listener in cls._oyentes[evento.tipo]:
                     listener(evento)

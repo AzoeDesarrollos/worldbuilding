@@ -36,8 +36,10 @@ class SatellitePanel(BasePanel):
         self.button_del = DelMoonButton(self, ANCHO - 13, 416)
         self.properties.add(self.button_add, self.button_del)
         self.satellites = WidgetGroup()
+        self.moons = []
         EventHandler.register(self.load_satellites, 'LoadData')
         EventHandler.register(self.save_satellites, 'Save')
+        EventHandler.register(self.name_current, 'NameObject')
 
     def load_satellites(self, event):
         if 'Satellites' in event.data and len(event.data['Satellites']):
@@ -97,6 +99,7 @@ class SatellitePanel(BasePanel):
             layer_number = Systems.get_current_idx()
             self.current.current.system_id = Systems.get_current().id
 
+        self.moons.append(self.current.current)
         self.satellites.add(button, layer=layer_number)
         self.properties.add(button)
         self.sort_buttons()
@@ -105,10 +108,17 @@ class SatellitePanel(BasePanel):
 
     def del_button(self, satellite):
         button = [i for i in self.satellites.widgets() if i.object_data == satellite][0]
+        self.moons.remove(satellite)
         self.satellites.remove(button)
         self.sort_buttons()
         self.properties.remove(button)
         self.button_del.disable()
+
+    def name_current(self, event):
+        if event.data['object'] in self.moons:
+            moon = event.data['object']
+            moon.name = event.data['name']
+            moon.has_name = True
 
     def select_one(self, btn):
         for button in self.satellites.widgets():
@@ -154,11 +164,6 @@ class SatelliteType(ObjectType):
             a = ValueText(self, name.capitalize(), 3, 420 + 21 + i * 21, bg=COLOR_AREA)
             self.properties.add(a, layer=2)
             a.modifiable = True
-
-        EventHandler.register(self.name_current, 'NameObject')
-
-    def name_current(self, event):
-        pass
 
     def calculate(self):
         data = {'composition': None}
@@ -267,8 +272,12 @@ class SatelliteButton(Meta):
         self.object_data = satellite
         self.f1 = self.crear_fuente(13)
         self.f2 = self.crear_fuente(13, bold=True)
-        self.img_uns = self.f1.render(satellite.cls, True, satellite.color, COLOR_AREA)
-        self.img_sel = self.f2.render(satellite.cls, True, satellite.color, COLOR_AREA)
+        if satellite.has_name:
+            name = satellite.name
+        else:
+            name = satellite.cls
+        self.img_uns = self.f1.render(name, True, satellite.color, COLOR_AREA)
+        self.img_sel = self.f2.render(name, True, satellite.color, COLOR_AREA)
         self.w = self.img_sel.get_width()
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))

@@ -39,6 +39,13 @@ class StarSystemPanel(BaseWidget):
         self.system_buttons = WidgetGroup()
         EventHandler.register(self.save_systems, 'Save')
         EventHandler.register(self.load_systems, 'LoadData')
+        EventHandler.register(self.name_current, 'NameObject')
+
+    def name_current(self, event):
+        if event.data['object'] in self.systems:
+            system = event.data['object']
+            system.name = event.data['name']
+            system.has_name = True
 
     def set_current(self, system_data):
         self.current.reset(system_data)
@@ -82,7 +89,8 @@ class StarSystemPanel(BaseWidget):
                 'avg_s': current.average_separation.m,
                 'ecc_p': current.ecc_p.m,
                 "ecc_s": current.ecc_s.m,
-                "id": current.id
+                "id": current.id,
+                "name": current.name
             }
             data.append(d)
 
@@ -241,7 +249,10 @@ class ListedStar(ListedBody):
     enabled = True
 
     def __init__(self, parent, star, x, y):
-        name = star.classification + ' #{}'.format(star.idx)
+        if not star.has_name:
+            name = star.classification + ' #{}'.format(star.idx)
+        else:
+            name = star.name
         super().__init__(parent, star, name, x, y)
 
     def on_mousebuttondown(self, event):

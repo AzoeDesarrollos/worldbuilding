@@ -176,11 +176,21 @@ class SystemName(BaseWidget):
     def __init__(self, parent, **kwargs):
         super().__init__(parent)
         self.f = self.crear_fuente(13)
-        self.image = self.f.render(str(Systems.get_current_star()), True, COLOR_TEXTO, COLOR_BOX)
+
+        self.image = self.f.render(self.get_name(), True, COLOR_TEXTO, COLOR_BOX)
         self._rect = self.image.get_rect(**kwargs)
         self.rect = self._rect.copy()
         self.show()
 
+    @staticmethod
+    def get_name():
+        star = Systems.get_current_star()
+        if star is not None and star.has_name:
+            name = star.name
+        else:
+            name = str(star)
+        return name
+
     def update(self):
-        self.image = self.f.render(str(Systems.get_current_star()), True, COLOR_TEXTO, COLOR_BOX)
+        self.image = self.f.render(self.get_name(), True, COLOR_TEXTO, COLOR_BOX)
         self.rect = self.image.get_rect(topleft=self._rect.topleft)

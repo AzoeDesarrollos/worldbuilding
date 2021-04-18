@@ -210,7 +210,10 @@ class Star(BodyInHydrostaticEquilibrium):
         return "{}-Star #{}".format(self.cls, self.idx)
 
     def __repr__(self):
-        return "Star " + self.name + ' {}'.format(self.mass.m)
+        if self.has_name is False:
+            return "Star " + self.name + ' {}'.format(self.mass.m)
+        else:
+            return self.name
 
     def __eq__(self, other):
         test = all([self.mass.m == other.mass.m, self.name == other.name, self.id == other.id])

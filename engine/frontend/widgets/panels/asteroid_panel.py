@@ -35,8 +35,16 @@ class AsteroidPanel(BasePanel):
         self.button_del = DelAsteroidButton(self, ANCHO - 13, 416)
         self.properties.add(self.button_add, self.button_del)
         self.asteroids = WidgetGroup()
+        self.moons = []
         EventHandler.register(self.load_satellites, 'LoadData')
         EventHandler.register(self.save_satellites, 'Save')
+        EventHandler.register(self.name_current, 'NameObject')
+
+    def name_current(self, event):
+        if event.data['object'] in self.moons:
+            moon = event.data['object']
+            moon.name = event.data['name']
+            moon.has_name = True
 
     def load_satellites(self, event):
         if 'Asteroids' in event.data and len(event.data['Asteroids']):
@@ -46,7 +54,8 @@ class AsteroidPanel(BasePanel):
         if self.loaded_data is not None:
             for satellite_data in self.loaded_data:
                 moon = minor_moon_by_composition(satellite_data)
-                if Systems.get_current().add_astro_obj(moon):
+                system = Systems.get_system_by_id(satellite_data['system'])
+                if system.add_astro_obj(moon):
                     self.current.current = moon
                     self.add_button()
             self.loaded_data.clear()
@@ -74,7 +83,7 @@ class AsteroidPanel(BasePanel):
         else:
             layer_number = Systems.get_current_idx()
             self.current.current.system_id = Systems.get_current().id
-        layer_number = Systems.get_system_idx_by_id(layer_number)
+        self.moons.append(self.current.current)
         self.asteroids.add(button, layer=layer_number)
         self.properties.add(button)
         self.sort_buttons()
@@ -83,6 +92,7 @@ class AsteroidPanel(BasePanel):
 
     def del_button(self, satellite):
         button = [i for i in self.asteroids.widgets() if i.object_data == satellite][0]
+        self.moons.remove(satellite)
         self.asteroids.remove(button)
         self.sort_buttons()
         self.properties.remove(button)
@@ -304,8 +314,12 @@ class AsteroidButton(Meta):
         self.object_data = satellite
         self.f1 = self.crear_fuente(13)
         self.f2 = self.crear_fuente(13, bold=True)
-        self.img_uns = self.f1.render(satellite.cls, True, satellite.color, COLOR_AREA)
-        self.img_sel = self.f2.render(satellite.cls, True, satellite.color, COLOR_AREA)
+        if satellite.has_name:
+            name = satellite.name
+        else:
+            name = satellite.cls
+        self.img_uns = self.f1.render(name, True, satellite.color, COLOR_AREA)
+        self.img_sel = self.f2.render(name, True, satellite.color, COLOR_AREA)
         self.w = self.img_sel.get_width()
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))

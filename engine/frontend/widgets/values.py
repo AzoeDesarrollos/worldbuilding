@@ -63,12 +63,6 @@ class ValueText(BaseWidget):
         self.text_area.min = min_v
         self.text_area.max = max_v
 
-    def select(self):
-        self.selected = True
-
-    def deselect(self):
-        self.selected = False
-
     def disable(self):
         super().disable()
         self.text_area.disable()
@@ -147,6 +141,10 @@ class ValueText(BaseWidget):
                 elif self.editable:
                     self.active = True
                     self.text_area.enable()
+            elif p.parent.name == 'Naming' and not p.has_values:
+                p.parent.set_current(self)
+                self.active = True
+                self.text_area.enable()
             else:
                 self.active = True
                 self.text_area.enable()
@@ -321,6 +319,7 @@ class TextArea(BaseArea):
                 self.value = self.value[0:-1]
 
             elif tecla.tipo == 'Fin':
+                self.great_grandparent.name_objects()
                 self.great_grandparent.cycle(+1)
 
         elif tecla.origin != self.name:

@@ -29,6 +29,7 @@ class StarPanel(BasePanel):
         self.stars = []
         EventHandler.register(self.save_stars, 'Save')
         EventHandler.register(self.load_stars, 'LoadData')
+        EventHandler.register(self.name_current, 'NameObject')
 
     @property
     def star_buttons(self):
@@ -55,7 +56,6 @@ class StarPanel(BasePanel):
             if star not in self.stars:
                 self.stars.append(star)
                 self.add_button(star)
-                # Systems.set_system(star)
 
         if len(self.star_buttons):
             self.current.current = self.star_buttons[0].object_data
@@ -130,6 +130,12 @@ class StarPanel(BasePanel):
 
     def update(self):
         self.add_on_exit = len(self.stars) == 1
+
+    def name_current(self, event):
+        if event.data['object'] in self.stars:
+            star = event.data['object']
+            star.name = event.data['name']
+            star.has_name = True
 
 
 class StarType(ObjectType):
@@ -220,7 +226,10 @@ class StarButton(Meta):
         self.object_data = star
         self.f1 = self.crear_fuente(13)
         self.f2 = self.crear_fuente(13, bold=True)
-        name = star.classification + ' #{}'.format(len(self.parent.parent.star_buttons))
+        if not star.has_name:
+            name = star.classification + ' #{}'.format(len(self.parent.parent.star_buttons))
+        else:
+            name = star.name
         self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)
         self.img_sel = self.f2.render(name, True, COLOR_TEXTO, COLOR_AREA)
         self.w = self.img_sel.get_width()

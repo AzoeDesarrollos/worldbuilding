@@ -77,7 +77,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
     celestial_type = 'satellite'
 
     def __init__(self, data):
-        name = data.get('true_name', None)
+        name = data.get('name', None)
         if name:
             self.name = name
             self.has_name = True
@@ -113,7 +113,7 @@ class Minor(Satellite):
     habitable = False
 
     def __init__(self, data):
-        name = data.get('true_name', None)
+        name = data.get('name', None)
         if name:
             self.name = name
             self.has_name = True

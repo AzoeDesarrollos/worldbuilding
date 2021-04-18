@@ -35,6 +35,9 @@ class PlanetButton(ListedBody):
         elif astro.comp == 'Iron':
             color = COLOR_IRONMOON
 
+        if astro.has_name:
+            name = astro.name
+
         super().__init__(parent, astro, name, x, y, fg_color=color)
 
     def on_mousebuttondown(self, event):

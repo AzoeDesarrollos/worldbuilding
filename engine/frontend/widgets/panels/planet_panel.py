@@ -33,13 +33,14 @@ class PlanetPanel(BasePanel):
         self.button_del = DelPlanetButton(self, ANCHO - 13, 416)
         self.properties.add(self.button_add, self.button_del)
         self.planet_buttons = WidgetGroup()
+        self.planets = []
         EventHandler.register(self.save_planets, 'Save')
+        EventHandler.register(self.name_current, 'NameObject')
 
     def save_planets(self, event):
         data = self.current.loaded_data if self.current.loaded_data is not None else []
         for system in Systems.get_systems():
-            for planet_button in self.planet_buttons.widgets():
-                planet = planet_button.object_data
+            for planet in self.planets:
                 if planet in system.planets:
                     planet_data = {
                         'name': planet.name,
@@ -63,12 +64,14 @@ class PlanetPanel(BasePanel):
             layer_number = Systems.get_current_idx()
             planet.system_id = Systems.get_current().id
         self.planet_buttons.add(button, layer=layer_number)
+        self.planets.append(planet)
         self.sort_buttons()
         self.properties.add(button, layer=3)
 
     def del_button(self, planet):
         button = [i for i in self.planet_buttons.widgets() if i.object_data == planet][0]
         self.planet_buttons.remove(button)
+        self.planets.remove(planet)
         self.sort_buttons()
         self.properties.remove(button)
         self.button_del.disable()
@@ -135,6 +138,12 @@ class PlanetPanel(BasePanel):
         if idx != self.last_idx:
             self.show_current(idx)
             self.last_idx = idx
+
+    def name_current(self, event):
+        if event.data['object'] in self.planets:
+            planet = event.data['object']
+            planet.name = event.data['name']
+            planet.has_name = True
 
 
 class PlanetType(ObjectType):

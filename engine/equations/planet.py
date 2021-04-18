@@ -42,7 +42,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         if not mass and not radius and not gravity:
             raise AssertionError('must specify at least two values')
 
-        name = data.get('true_name', None)
+        name = data.get('name', None)
         if name is not None:
             self.name = name
             self.has_name = True
@@ -175,6 +175,8 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     def __eq__(self, other):
         a = (self.mass.m, self.radius.m, self.clase, self.orbit, self.unit, self.name)
+        if not hasattr(other, 'clase') or not hasattr(other, 'unit'):
+            return False
         b = (other.mass.m, other.radius.m, other.clase, self.orbit, other.unit, other.name)
         return a == b
 
