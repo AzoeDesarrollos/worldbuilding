@@ -207,7 +207,10 @@ class Star(BodyInHydrostaticEquilibrium):
         self.color = self.true_color(self.temperature)
 
     def __str__(self):
-        return "{}-Star #{}".format(self.cls, self.idx)
+        if self.has_name:
+            return self.name
+        else:
+            return "{}-Star #{}".format(self.cls, self.idx)
 
     def __repr__(self):
         if self.has_name is False:

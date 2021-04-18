@@ -1,5 +1,5 @@
 from engine.frontend.globales import WidgetGroup, ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_TEXTO
-from engine.frontend.widgets.panels.common import ListedArea, ListedBody, TextButton
+from engine.frontend.widgets.panels.common import AvailableObjects, ListedBody, TextButton
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
@@ -29,13 +29,14 @@ class StarSystemPanel(BaseWidget):
         self.f1 = self.crear_fuente(16, underline=True)
         self.write(self.name + ' Panel', self.f1, centerx=(ANCHO // 4) * 1.5, y=0)
         self.stars_area = AvailableStars(self, ANCHO - 200, 32, 200, 340)
-        self.properties.add(self.stars_area)
+
         self.current = SystemType(self)
-        self.properties.add(self.current)
+
         self.systems = []
         self.setup_button = SetupButton(self, 484, 416)
         self.undo_button = DissolveButton(self, 334, 416)
-        self.properties.add(self.setup_button, self.undo_button)
+        self.restore_button = UndoButton(self, 234, 416)
+        self.properties.add(self.setup_button, self.undo_button, self.restore_button, self.stars_area, self.current)
         self.system_buttons = WidgetGroup()
         EventHandler.register(self.save_systems, 'Save')
         EventHandler.register(self.load_systems, 'LoadData')
@@ -180,6 +181,11 @@ class SystemType(BaseWidget):
                                  f'\nSelect a star\nthat spins {spin}.')
         else:
             self.secondary.value = star
+            self.parent.restore_button.enable()
+
+    def unset_stars(self):
+        self.parent.stars_area.populate(Systems.loose_stars)
+        self.erase()
 
     def get_determinants(self):
         names = ['primary', 'secondary', 'separation', 'ecc_p', 'ecc_s']
@@ -191,7 +197,7 @@ class SystemType(BaseWidget):
             if self.current is None:
                 self.current = system_type(self.separation.value)(*self.get_determinants())
             props = ['average_separation', 'ecc_p', 'ecc_s', 'barycenter', 'max_sep',
-                     'min_sep', 'inner_forbbiden_zone', 'outer_forbbiden_zone', 'system_name']
+                     'min_sep', 'inner_forbbiden_zone', 'outer_forbbiden_zone', 'name']
             for i, attr in enumerate(props, start=2):
                 value = getattr(self.current, attr)
                 pr = self.properties.get_widget(i)
@@ -229,22 +235,6 @@ class SystemType(BaseWidget):
             prop.hide()
 
 
-class AvailableStars(ListedArea):
-    name = 'Stars'
-
-    def populate(self, stars):
-        for i, star in enumerate(sorted(stars, key=lambda s: s.mass, reverse=True)):
-            if star not in [listado.object_data for listado in self.listed_objects]:
-                listed = ListedStar(self, star, self.rect.x + 3, i * 16 + self.rect.y + 21)
-                self.listed_objects.add(listed)
-
-    def show(self):
-        super().show()
-        self.populate(Systems.loose_stars)
-        for listed in self.listed_objects.widgets():
-            listed.show()
-
-
 class ListedStar(ListedBody):
     enabled = True
 
@@ -263,6 +253,15 @@ class ListedStar(ListedBody):
 
     def move(self, x, y):
         self.rect.topleft = x, y
+
+
+class AvailableStars(AvailableObjects):
+    name = 'Stars'
+    listed_type = ListedStar
+
+    def show(self):
+        self.populate(Systems.loose_stars)
+        super().show()
 
 
 class SetupButton(TextButton):
@@ -326,3 +325,14 @@ class SystemButton(Meta):
 
     def move(self, x, y):
         self.rect.topleft = x, y
+
+
+class UndoButton(TextButton):
+    enabled = False
+
+    def __init__(self, parent, x, y):
+        name = 'Undo'
+        super().__init__(parent, name, x, y)
+
+    def on_mousebuttondown(self, event):
+        self.parent.current.unset_stars()
