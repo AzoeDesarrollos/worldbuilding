@@ -55,7 +55,6 @@ class ListedArea(BaseWidget):
     def show_current(self, idx):
         for listed in self.listed_objects.widgets():
             listed.hide()
-        self.show()
         for listed in self.listed_objects.get_widgets_from_layer(idx):
             listed.show()
 

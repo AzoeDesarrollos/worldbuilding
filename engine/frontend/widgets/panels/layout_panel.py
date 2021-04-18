@@ -56,8 +56,8 @@ class LayoutPanel(BaseWidget):
         WidgetHandler.add_widget(e)
 
     def cycle(self, delta):
-        self.current.hide()
         if 0 <= self.curr_idx + delta < len(self.panels):
+            self.current.hide()
             self.curr_idx += delta
             self.current = self.panels[self.curr_idx]
             if self.current.skippable is True and self.current.skip is True:

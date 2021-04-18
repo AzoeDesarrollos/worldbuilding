@@ -127,6 +127,8 @@ class PlanetPanel(BasePanel):
         props += self.properties.get_widgets_from_layer(2)
         for item in props:
             item.show()
+        if self.last_idx is not None:
+            self.show_current(self.last_idx)
 
     def hide(self):
         super().hide()
