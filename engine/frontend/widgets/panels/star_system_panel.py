@@ -160,7 +160,7 @@ class SystemType(BaseWidget):
         props = [
             'Primary Star', 'Secondary Star', 'Average Separation', 'Eccentriciy (primary)', 'Eccentricty (secondary)',
             'Barycenter', 'Maximun Separation', 'Minimun Separation', 'Forbbiden Zone Inner edge',
-            'Forbbiden Zone Outer edge', 'System Type']
+            'Forbbiden Zone Outer edge', 'System Type', 'System Name']
 
         for i, prop in enumerate([j for j in props]):
             vt = ValueText(self, prop, 3, 64 + i * 25, COLOR_TEXTO, COLOR_BOX)
@@ -197,7 +197,7 @@ class SystemType(BaseWidget):
             if self.current is None:
                 self.current = system_type(self.separation.value)(*self.get_determinants())
             props = ['average_separation', 'ecc_p', 'ecc_s', 'barycenter', 'max_sep',
-                     'min_sep', 'inner_forbbiden_zone', 'outer_forbbiden_zone', 'name']
+                     'min_sep', 'inner_forbbiden_zone', 'outer_forbbiden_zone', 'system_name', 'name']
             for i, attr in enumerate(props, start=2):
                 value = getattr(self.current, attr)
                 pr = self.properties.get_widget(i)
