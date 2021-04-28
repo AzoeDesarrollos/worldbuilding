@@ -1,4 +1,4 @@
-from .general import BodyInHydrostaticEquilibrium
+from .general import BodyInHydrostaticEquilibrium, Ring
 from .lagrange import get_lagrange_points
 from .planetary_system import Systems
 from math import sqrt, pi, pow
@@ -145,6 +145,24 @@ class Planet(BodyInHydrostaticEquilibrium):
         if self.roches_limit == 0 or roches < self.roches_limit:
             self.roches_limit = roches
         return self.roches_limit
+
+    def create_ring(self, asteroid):
+        mass = asteroid.mass.to('ring_mass').m
+        density = asteroid.density.to('earth_density').m
+        vol = mass/density
+
+        outer_limit = self.roches_limit.to('km')
+        inner_limit = q(self._radius+10000, 'km')
+        # "10K" debería ser seteado por el Atmosphere Panel, porque es el fin de la atmósfera.
+        wideness = outer_limit-inner_limit
+
+        ro = outer_limit.to('earth_radius').m
+        ri = inner_limit.to('earth_radius').m
+        ra = pow((vol/(4/3*pi)), 3)
+
+        thickness = q(4 / 3 * (pow(ra, 3) / (pow(ro, 2) - pow(ri, 2))), 'km').to('m')
+
+        return Ring(self, inner_limit, outer_limit, wideness, thickness)
 
     @staticmethod
     def set_class(mass, radius):

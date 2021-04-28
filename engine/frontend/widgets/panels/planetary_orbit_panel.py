@@ -128,6 +128,9 @@ class PlanetaryOrbitPanel(BaseWidget):
             for marker in self.markers:
                 marker.hide()
         else:
+            for button in self.buttons.widgets():
+                button.deselect()
+
             self.hide_orbit_types()
             if self.current is not None:
                 for marker in self.markers:
@@ -195,6 +198,7 @@ class PlanetaryOrbitPanel(BaseWidget):
                 self.satellites[planet.id] = []
         for button in self.buttons.widgets():
             button.enable()
+            button.deselect()
 
         self.visible_markers = True
         sats = self.satellites[planet.id]
@@ -311,6 +315,7 @@ class PlanetaryOrbitPanel(BaseWidget):
     def hide_markers(self):
         for marker in self.markers:
             marker.hide()
+        self.show_markers_button.enable()
 
     def hide_everything(self):
         for marker in self.markers:
@@ -337,7 +342,6 @@ class PlanetaryOrbitPanel(BaseWidget):
         button.info.show()
 
     def notify(self):
-        self.planet_area.listed_objects.empty()
         if not self.visible_markers:
             self.show_markers_button.enable()
             for button in self.buttons.widgets():
@@ -403,7 +407,8 @@ class AvailablePlanets(AvailableObjects):
 
     def on_mousebuttondown(self, event):
         super().on_mousebuttondown(event)
-        self.parent.hide_markers()
+        if self.parent.visible_markers:
+            self.parent.hide_markers()
         self.parent.current = None
 
 
@@ -419,8 +424,12 @@ class ObjectButton(Meta):
         self.f1 = self.crear_fuente(13)
         self.f2 = self.crear_fuente(13, bold=True)
         self.color = obj.color
-        self.img_uns = self.f1.render(obj.cls, True, self.color, COLOR_AREA)
-        self.img_sel = self.f2.render(obj.cls, True, self.color, COLOR_AREA)
+        if obj.has_name:
+            name = obj.name
+        else:
+            name = obj.cls
+        self.img_uns = self.f1.render(name, True, self.color, COLOR_AREA)
+        self.img_sel = self.f2.render(name, True, self.color, COLOR_AREA)
         self.img_dis = self.img_uns
         self.w = self.img_sel.get_width()
         self.image = self.img_uns
@@ -429,7 +438,11 @@ class ObjectButton(Meta):
     def update_text(self, orbit):
         self.completed = True
         self.enable()
-        obj: str = self.object_data.title + ' @{:~}'.format(orbit)
+        if self.object_data.has_name:
+            name = self.object_data.name
+        else:
+            name = self.object_data.title
+        obj: str = name + ' @{:~}'.format(orbit)
         self.img_uns = self.f1.render(obj, True, self.color, COLOR_AREA)
         self.img_sel = self.f2.render(obj, True, self.color, COLOR_AREA)
         self.img_dis = self.img_uns
@@ -535,8 +548,7 @@ class Marker(Meta, IncrementalValue):
     def force_selection(self):
         if not self.locked:
             self.parent.deselect_markers(self)
-            if self._orbit is None:
-                self.parent.anchor_maker(self)
+            self.parent.anchor_maker(self)
 
     def on_mousebuttondown(self, event):
         if event.button == 1:

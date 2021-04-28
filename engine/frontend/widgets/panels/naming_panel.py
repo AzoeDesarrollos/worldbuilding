@@ -31,6 +31,11 @@ class NamingPanel(BaseWidget):
         super().show()
         self.add_current()
 
+    def hide(self):
+        super().hide()
+        for item in self.unnamed.widgets():
+            item.hide()
+
     def add_current(self):
         idx = Systems.get_current_idx()
         system = Systems.get_current()
