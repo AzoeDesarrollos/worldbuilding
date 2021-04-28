@@ -229,24 +229,7 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
     return round(kelvin.to('celsius'))
 
 
-# Mass
-# terrestial: 0.1 to 10 earth masses (not earth-like)
-# Gas Giant: 10 earth masses to 13 Jupiter masses
-# PuffyGiant less than 2 Jupiter masses
-
-# Radius:
-# Mini neptune 1.7 to 3.9 earth radius
-# Super earth:  1.25 to 2 earth radius
-# Gas Giant:
-# ------- if mass <= 2 Jupiter masses: 1.10 Jupiter radius or more
-# ------- elif 2 < mass <= 13 Jupiter masses: 1 +- 0.10 Jupiter radius
-# PuffyGiant: more than 1 Jupiter radius
-
-
-# Gravity
-# Terrestial: 0.4 to 1.6
-
-# use graph with these parameters # earth units
+# Terrestial Graph parameters
 Terrestial = [0.0, 3.5, 0.0, 1.5]
 GasDwarf = [1, 20.5, 2, 0]
 
