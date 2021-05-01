@@ -27,12 +27,9 @@ class NamingPanel(BaseWidget):
         self.objects = []
         self.dummy = DummyType(self)
 
-    def show(self):
-        super().show()
-        self.add_current()
-
     def hide(self):
         super().hide()
+        self.last_idx = -1
         for item in self.unnamed.widgets():
             item.hide()
 

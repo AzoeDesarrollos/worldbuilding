@@ -237,7 +237,7 @@ class SatelliteType(ObjectType):
         }
         super().fill(tos)
 
-        for elemento in self.properties.get_widgets_from_layer(7):
+        for elemento in self.properties.get_widgets_from_layer(2):
             got_attr = self.current.composition.get(elemento.text.lower(), 0)
             attr = str(round(got_attr, 3)) + ' %'
             elemento.value = attr

@@ -123,7 +123,7 @@ class BaseButton(Meta):
 
 class SaveButton(BaseButton):
     def __init__(self, parent, x, y):
-        super().__init__(parent, x, y, 'Guardar')
+        super().__init__(parent, x, y, 'Save')
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -132,7 +132,7 @@ class SaveButton(BaseButton):
 
 class LoadButton(BaseButton):
     def __init__(self, parent, x, y):
-        super().__init__(parent, x, y, 'Cargar')
+        super().__init__(parent, x, y, 'Load')
 
     def on_mousebuttondown(self, event):
         ruta = join(getcwd(), 'data', 'savedata.json')
@@ -145,7 +145,7 @@ class LoadButton(BaseButton):
 class NewButton(BaseButton):
 
     def __init__(self, parent, x, y):
-        super().__init__(parent, x, y, 'Nuevo')
+        super().__init__(parent, x, y, 'New')
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
