@@ -5,3 +5,6 @@ __pycache__
 /data/savedata.json
 /posición de las estrellas.txt
 /test.py
+/build/
+/setup.py
+/data/favicon.ico

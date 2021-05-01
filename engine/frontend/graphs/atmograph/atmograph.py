@@ -4,7 +4,11 @@ from bisect import bisect_left
 from os import getcwd, path
 from engine import q
 
-ruta = path.join(getcwd(), 'engine', 'frontend', 'graphs', 'atmograph', 'atmograph04rev24.png')
+if path.exists(path.join(getcwd(), "lib")):
+    ruta = path.join(getcwd(), 'lib', 'engine', 'frontend', 'graphs', 'atmograph', 'atmograph04rev24.png')
+else:
+    ruta = path.join(getcwd(), 'engine', 'frontend', 'graphs', 'atmograph', 'atmograph04rev24.png')
+
 graph = image.load(ruta).convert_alpha()
 
 pos_psi = [12, 20, 27, 36, 46, 59, 74, 93, 120, 166, 174, 181, 190, 200, 213, 228, 247, 274]

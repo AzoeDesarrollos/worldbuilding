@@ -32,7 +32,10 @@ mass_keys += [float(i * 1000) for i in range(1, 5)]
 mass_keys.sort()
 
 radius_keys = [0.1] + [i / 10 for i in range(2, 10, 2)] + [float(i) for i in range(1, 12)]
-ruta = path.join(getcwd(), 'engine', 'frontend', 'graphs', 'graph', 'data')
+if path.exists(path.join(getcwd(), "lib")):
+    ruta = path.join(getcwd(), 'lib', 'engine', 'frontend', 'graphs', 'graph', 'data')
+else:
+    ruta = path.join(getcwd(), 'engine', 'frontend', 'graphs', 'graph', 'data')
 
 graph = image.load(path.join(ruta, 'graph.png'))
 exes = [59, 93, 114, 128, 139, 148, 156, 162, 169, 173, 209, 229, 244, 254, 263, 271, 278, 284, 288, 325, 345, 360, 370,

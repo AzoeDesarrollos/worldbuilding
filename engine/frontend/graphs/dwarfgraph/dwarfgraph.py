@@ -6,9 +6,8 @@ from engine.frontend.globales import WidgetGroup
 from pygame import init, quit, Rect, Surface
 from engine.backend.randomness import roll
 from pygame.sprite import Sprite
+from os import getcwd, path
 from math import pi, pow
-from os.path import join
-from os import getcwd
 from sys import exit
 
 
@@ -48,8 +47,11 @@ for i in [i for i in range(len(mass_keys))]:
     n = Number(mass_imgs[i], right=53, centery=i * 20 + 32)
     numbers.add(n)
     yes.append(n.rect.y - 16)
+if path.exists(path.join(getcwd(), "lib")):
+    ruta = path.join(getcwd(), 'lib', 'engine', 'frontend', 'graphs', 'dwarfgraph', 'dwarfgraph.png')
+else:
+    ruta = path.join(getcwd(), 'engine', 'frontend', 'graphs', 'dwarfgraph', 'dwarfgraph.png')
 
-ruta = join(getcwd(), 'engine', 'frontend', 'graphs', 'dwarfgraph', 'dwarfgraph.png')
 bg = image.load(ruta)
 bg_rect = bg.get_rect(topleft=(54, 24))
 

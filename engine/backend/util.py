@@ -4,6 +4,7 @@ from math import trunc, ceil, floor
 from os.path import exists, join
 from os import getcwd
 from pygame import quit
+from sys import exit
 
 
 def decimal_round(number: float):
