@@ -14,7 +14,7 @@ build_exe_options = {"packages": ["pygame", "pint"],
 
                                   "pygame.camera", "pygame.joystick", "pygame.mixer", "pygame.music", "pygame.cdrom",
                                   "pygame.examples", "pygame.scrap", "pygame.tests", "pygame.touch", "pygame.midi",
-                                  "pygame.sndarray","pygame.surfarray","pygame.pixelcopy"
+                                  "pygame.sndarray", "pygame.surfarray", "pygame.pixelcopy"
 
                                   ],
                      "include_files": [('data/favicon.png',) * 2],
