@@ -72,6 +72,7 @@ class Star(BodyInHydrostaticEquilibrium):
         self.classification = self.stellar_classification()
         self.cls = self.classification
         self.color = self.true_color(self.temperature)
+        self.peak_light = LightWave(self.peak_lightwave_frequency(self.temperature))
 
         # ID values make each star unique, even if they have the same mass and name.
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
@@ -185,6 +186,10 @@ class Star(BodyInHydrostaticEquilibrium):
         color = Color(r, g, b)
         return color
 
+    @staticmethod
+    def peak_lightwave_frequency(temperature):
+        return 0.0028977729 / (temperature * 5778) * 1000000000
+
     def validate_orbit(self, orbit):
         return self._inner_boundry < orbit < self._outer_boundry
 
@@ -224,3 +229,98 @@ class Star(BodyInHydrostaticEquilibrium):
 
     def __hash__(self):
         return hash((self.mass.m, self.name, self.id))
+
+
+class LightWave:
+    _color = None
+    frequency = None
+
+    def __init__(self, frequency):
+        self.frequency = frequency
+        self.spectrum = self.radiation_type(frequency)
+
+    @staticmethod
+    def visible_color(frequency):
+        color = None
+        if 43.4941208 < frequency < 1664.635167:
+            if 43.4941208 <= frequency <= 400:
+                color = Color(0, 0, 0)
+            elif 400 <= frequency <= 410:
+                color = Color(37, 12, 83)
+            elif 410 <= frequency <= 420:
+                color = Color(66, 28, 163)
+            elif 420 <= frequency <= 430:
+                color = Color(96, 37, 247)
+            elif 430 <= frequency <= 440:
+                color = Color(78, 55, 232)
+            elif 440 <= frequency <= 450:
+                color = Color(63, 73, 217)
+            elif 450 <= frequency <= 460:
+                color = Color(58, 92, 203)
+            elif 460 <= frequency <= 470:
+                color = Color(63, 111, 188)
+            elif 470 <= frequency <= 480:
+                color = Color(68, 120, 173)
+            elif 480 <= frequency <= 490:
+                color = Color(73, 129, 157)
+            elif 490 <= frequency <= 500:
+                color = Color(78, 138, 143)
+            elif 500 <= frequency <= 510:
+                color = Color(83, 147, 128)
+            elif 510 <= frequency <= 520:
+                color = Color(88, 156, 114)
+            elif 520 <= frequency <= 530:
+                color = Color(93, 165, 100)
+            elif 530 <= frequency <= 540:
+                color = Color(99, 175, 87)
+            elif 540 <= frequency <= 550:
+                color = Color(115, 190, 76)
+            elif 550 <= frequency <= 560:
+                color = Color(141, 206, 68)
+            elif 560 <= frequency <= 570:
+                color = Color(175, 222, 62)
+            elif 570 <= frequency <= 580:
+                color = Color(214, 238, 59)
+            elif 580 <= frequency <= 590:
+                color = Color(255, 255, 60)
+            elif 590 <= frequency <= 600:
+                color = Color(234, 169, 40)
+            elif 600 <= frequency <= 610:
+                color = Color(223, 86, 15)
+            elif 610 <= frequency <= 620:
+                color = Color(219, 0, 0)
+            elif 620 <= frequency <= 630:
+                color = Color(197, 0, 0)
+            elif 630 <= frequency <= 640:
+                color = Color(174, 0, 0)
+            elif 640 <= frequency <= 650:
+                color = Color(152, 0, 0)
+            elif 650 <= frequency <= 660:
+                color = Color(130, 0, 0)
+            elif 660 <= frequency <= 670:
+                color = Color(109, 0, 0)
+            elif 670 <= frequency <= 680:
+                color = Color(87, 0, 0)
+            elif 680 <= frequency <= 690:
+                color = Color(67, 0, 0)
+            elif 690 <= frequency <= 700:
+                color = Color(47, 0, 0)
+            elif 700 <= frequency <= 710:
+                color = Color(27, 0, 0)
+            elif 710 <= frequency <= 1664.635167:
+                color = Color(0, 0, 0)
+
+        return color
+
+    def radiation_type(self, frequency):
+        if frequency < 400:
+            return "ULTRA-VIOLET"
+        elif frequency > 710:
+            return "INFRARED"
+        else:
+            self._color = self.visible_color(frequency)
+            return "VISIBLE"
+
+    @property
+    def color(self):
+        return self._color

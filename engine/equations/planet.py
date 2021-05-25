@@ -1,8 +1,9 @@
 from .general import BodyInHydrostaticEquilibrium, Ring
 from .lagrange import get_lagrange_points
 from .planetary_system import Systems
-from math import sqrt, pi, pow
+from math import sqrt, pi, pow, tan
 from datetime import datetime
+from pygame import Color
 from .orbit import Orbit
 from engine import q
 
@@ -34,6 +35,11 @@ class Planet(BodyInHydrostaticEquilibrium):
     spin = ''
 
     sprite = None
+
+    duracion_ciclo_precession = 0
+    radio_circulo_precession = 0
+
+    sky_color = None
 
     def __init__(self, data):
         mass = data.get('mass', False)
@@ -129,6 +135,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         orbit.set_astrobody(star, self)
         self.lagrange_points = get_lagrange_points(self.orbit.semi_major_axis.m, star.mass.m, self.mass.m)
         self.hill_sphere = self.set_hill_sphere()
+        self.sky_color = self.set_sky_color(star)
         return self.orbit
 
     def set_hill_sphere(self):
@@ -146,23 +153,153 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.roches_limit = roches
         return self.roches_limit
 
+    def set_precession_cycle(self):
+        tilt = self.axial_tilt
+        self.duracion_ciclo_precession = q(-7.095217823187172 * pow(tilt, 2) + 1277.139208333333 * tilt, 'years')
+        self.radio_circulo_precession = tan(tilt) * self.radius.to('km')
+
     def create_ring(self, asteroid):
         mass = asteroid.mass.to('ring_mass').m
         density = asteroid.density.to('earth_density').m
-        vol = mass/density
+        vol = mass / density
 
         outer_limit = self.roches_limit.to('km')
-        inner_limit = q(self._radius+10000, 'km')
+        inner_limit = q(self._radius + 10000, 'km')
         # "10K" debería ser seteado por el Atmosphere Panel, porque es el fin de la atmósfera.
-        wideness = outer_limit-inner_limit
+        wideness = outer_limit - inner_limit
 
         ro = outer_limit.to('earth_radius').m
         ri = inner_limit.to('earth_radius').m
-        ra = pow((vol/(4/3*pi)), 3)
+        ra = pow((vol / (4 / 3 * pi)), 3)
 
         thickness = q(4 / 3 * (pow(ra, 3) / (pow(ro, 2) - pow(ri, 2))), 'km').to('m')
 
         return Ring(self, inner_limit, outer_limit, wideness, thickness)
+
+    @staticmethod
+    def set_sky_color(star):
+        p = star.peak_light.frequency
+
+        color = None
+        if 43.4941208 <= p <= 1664.635167:
+            if 43.4941208 <= p <= 290:
+                color = Color(73, 96, 251)
+            elif 290 <= p <= 300:
+                color = Color(88, 104, 251)
+            elif 300 <= p <= 310:
+                color = Color(91, 112, 251)
+            elif 310 <= p <= 320:
+                color = Color(97, 117, 251)
+            elif 320 <= p <= 330:
+                color = Color(104, 124, 251)
+            elif 330 <= p <= 340:
+                color = Color(112, 131, 251)
+            elif 340 <= p <= 350:
+                color = Color(117, 136, 251)
+            elif 350 <= p <= 360:
+                color = Color(125, 143, 252)
+            elif 360 <= p <= 370:
+                color = Color(131, 148, 252)
+            elif 370 <= p <= 380:
+                color = Color(136, 152, 252)
+            elif 380 <= p <= 390:
+                color = Color(141, 157, 252)
+            elif 390 <= p <= 400:
+                color = Color(146, 162, 252)
+            elif 400 <= p <= 410:
+                color = Color(149, 164, 252)
+            elif 410 <= p <= 420:
+                color = Color(155, 168, 252)
+            elif 420 <= p <= 430:
+                color = Color(160, 174, 252)
+            elif 430 <= p <= 440:
+                color = Color(163, 176, 252)
+            elif 440 <= p <= 450:
+                color = Color(166, 180, 252)
+            elif 450 <= p <= 460:
+                color = Color(171, 183, 253)
+            elif 460 <= p <= 470:
+                color = Color(174, 186, 253)
+            elif 470 <= p <= 480:
+                color = Color(178, 189, 253)
+            elif 480 <= p <= 490:
+                color = Color(182, 192, 253)
+            elif 490 <= p <= 500:
+                color = Color(185, 195, 253)
+            elif 500 <= p <= 510:
+                color = Color(188, 198, 253)
+            elif 510 <= p <= 520:
+                color = Color(191, 200, 253)
+            elif 520 <= p <= 530:
+                color = Color(194, 203, 253)
+            elif 530 <= p <= 540:
+                color = Color(197, 205, 253)
+            elif 540 <= p <= 550:
+                color = Color(200, 208, 253)
+            elif 550 <= p <= 560:
+                color = Color(203, 210, 253)
+            elif 560 <= p <= 570:
+                color = Color(205, 212, 253)
+            elif 570 <= p <= 580:
+                color = Color(207, 214, 253)
+            elif 580 <= p <= 590:
+                color = Color(209, 216, 254)
+            elif 590 <= p <= 600:
+                color = Color(212, 218, 254)
+            elif 600 <= p <= 610:
+                color = Color(214, 220, 254)
+            elif 610 <= p <= 620:
+                color = Color(216, 222, 254)
+            elif 620 <= p <= 630:
+                color = Color(218, 223, 254)
+            elif 630 <= p <= 640:
+                color = Color(220, 225, 254)
+            elif 640 <= p <= 650:
+                color = Color(222, 227, 254)
+            elif 650 <= p <= 660:
+                color = Color(224, 228, 254)
+            elif 660 <= p <= 670:
+                color = Color(226, 230, 254)
+            elif 670 <= p <= 680:
+                color = Color(229, 233, 254)
+            elif 680 <= p <= 690:
+                color = Color(230, 233, 254)
+            elif 690 <= p <= 700:
+                color = Color(231, 234, 254)
+            elif 700 <= p <= 710:
+                color = Color(233, 236, 254)
+            elif 710 <= p <= 720:
+                color = Color(235, 237, 254)
+            elif 720 <= p <= 730:
+                color = Color(236, 238, 254)
+            elif 730 <= p <= 740:
+                color = Color(240, 243, 255)
+            elif 740 <= p <= 750:
+                color = Color(244, 246, 255)
+            elif 750 <= p <= 760:
+                color = Color(248, 250, 255)
+            elif 760 <= p <= 770:
+                color = Color(254, 255, 255)
+            elif 770 <= p <= 780:
+                color = Color(253, 249, 233)
+            elif 780 <= p <= 790:
+                color = Color(251, 241, 202)
+            elif 790 <= p <= 800:
+                color = Color(249, 232, 168)
+            elif 800 <= p <= 810:
+                color = Color(247, 224, 138)
+            elif 810 <= p <= 820:
+                color = Color(244, 215, 106)
+            elif 820 <= p <= 830:
+                color = Color(242, 207, 81)
+            elif 830 <= p <= 840:
+                color = Color(240, 198, 57)
+            elif 840 <= p <= 850:
+                color = Color(239, 191, 45)
+            elif 850 <= p <= 860:
+                color = Color(239, 174, 45)
+
+        return color
 
     @staticmethod
     def set_class(mass, radius):
@@ -294,8 +431,8 @@ def temp_by_lat(lat) -> q:
         temp = -(17 * lat / 24) + 44
 
     elif 61 <= lat <= 75:
-        a = ((lat/60)-3)
-        b = (lat-60)
+        a = ((lat / 60) - 3)
+        b = (lat - 60)
         temp = a * b if b != 0 else 0.0
 
     elif 76 <= lat <= 90:
