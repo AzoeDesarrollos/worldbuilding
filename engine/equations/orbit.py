@@ -1,9 +1,9 @@
 from engine.backend.util import collapse_factor_lists, prime_factors
-from math import sqrt, pow, cos, sin
+from math import sqrt, pow, cos, sin, pi
 from .general import Ellipse
 from random import randint
 from pygame import draw
-from engine import q
+from engine import q, d
 
 
 class RawOrbit:
@@ -107,27 +107,27 @@ class Orbit(Ellipse):
 
     argument_of_periapsis = 'undefined'
     longuitude_of_the_ascending_node = 0
-    true_anomaly = q(0, 'degree')
+    true_anomaly = q(d(0), 'degree')
 
     def __init__(self, a, e, i, unit='au'):
         super().__init__(a, e)
         self._unit = unit
-        assert 0 <= float(i.m) <= 180, 'inclination values range from 0 to 180 degrees.'
-        self._i = float(i.m)
+        assert d(0) <= d(i.m) <= d(180), 'inclination values range from 0 to 180 degrees.'
+        self._i = d(i.m)
         self._Q = self._a * (1 + self._e)
         self._q = -self._a * (1 - self._e)
 
-        if self._i in (0, 180):
+        if self._i in (d(0), d(180)):
             self.motion = 'equatorial'
             self.direction = 'prograde' if self._i == 0 else 'retrograde'  # if self._i == 180
-        elif self._i == 90:
+        elif self._i == d(90):
             self.motion = 'polar'
             self.direction = 'perpendicular'
 
-        if 0 <= self._i < 90:
+        if d(0) <= self._i < d(90):
             self.direction = 'prograde'
             self.motion = self.direction
-        elif 90 < self._i < 180:
+        elif d(90) < self._i < d(180):
             self.direction = 'retrograde'
             self.motion = self.direction
 
@@ -141,6 +141,12 @@ class Orbit(Ellipse):
 
     def __repr__(self):
         return 'Orbit @' + str(round(self.semi_major_axis.m, 3))
+
+    def apparent_brightness_of_host_star(self):
+        luminosity = d(self._star.luminosity.to('watt').m)
+        distance = d(self.semi_major_axis.to('km').m)
+
+        return q(luminosity/(d(4)*d(pi)*pow(distance, d(2))), "w/m**2").to('sol_aparent_brightness')
 
     def set_astrobody(self, main, astro_body):
         body_around_star = main.celestial_type == "star" or main.celestial_type == 'system'
@@ -258,20 +264,20 @@ class SatelliteOrbit(Orbit):
     def __init__(self, a, e, i):
         super().__init__(a, e, i, 'earth_radius')
 
-    def reset_period_and_speed(self, main_body_mass):
-        satellite_mass = round(self.astrobody.mass.m, 3)
-        self.velocity = q(sqrt(main_body_mass.m / self._a), 'earth_orbital_velocity').to('kilometer per second')
-        self.period = q(sqrt(pow(self.a.to('au').m, 3) / (main_body_mass.m + satellite_mass)), 'year').to('day')
+    def reset_period_and_speed(self, main_mass):
+        satellite_mass = round(d(self.astrobody.mass.m), 3)
+        self.velocity = q(sqrt(d(main_mass.m) / self._a), 'earth_orbital_velocity').to('kilometer per second')
+        self.period = q(sqrt(pow(d(self.a.to('au').m), d(3)) / (d(main_mass.m + satellite_mass))), 'year').to('day')
 
 
 class BinaryStarOrbit(Orbit):
     def __init__(self, star, other, a, e):
-        super().__init__(a, e, q(0, 'degrees'))
+        super().__init__(a, e, q(d(0), 'degrees'))
         self.reset_period_and_speed(star.mass.m+other.mass.m)
 
     def reset_period_and_speed(self, main_body_mass):
-        self.period = q(sqrt(pow(self._a, 3) / main_body_mass), 'year')
-        self.velocity = q(sqrt(main_body_mass / self._a), 'earth_orbital_velocity').to('kilometer per second')
+        self.period = q(sqrt(pow(self._a, d(3)) / d(main_body_mass)), 'year')
+        self.velocity = q(sqrt(d(main_body_mass) / self._a), 'earth_orbital_velocity').to('kilometer per second')
 
 
 def from_stellar_resonance(star, planet, resonance: str):
@@ -315,19 +321,19 @@ def to_resonance(period_primary, period_secondary):
 
 def _set_random_angle(value):
     if value is None:
-        value = q(randint(0, 360), 'degree')
+        value = q(d(randint(0, 360)), 'degree')
     return value
 
 
 def set_argument_of_periapsis(inclination, value=None):
-    if inclination not in (0, 180):
+    if d(inclination) not in (d(0), d(180)):
         return _set_random_angle(value)
     else:
         return 'undefined'
 
 
 def set_longuitude_of_the_ascending_node(inclination, value=None):
-    if inclination not in (0, 180):
+    if d(inclination) not in (d(0), d(180)):
         return _set_random_angle(value)
     else:
-        return q(0, 'degree')
+        return q(d(0), 'degree')

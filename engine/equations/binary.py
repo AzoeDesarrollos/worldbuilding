@@ -1,4 +1,4 @@
-from engine import q
+from engine import q, d
 from math import sqrt
 from datetime import datetime
 from .orbit import BinaryStarOrbit
@@ -52,8 +52,8 @@ class BinarySystem:
 
     @staticmethod
     def calculate_distances(e, ref):
-        max_sep = q((1 + e) * round(ref, 2), 'au')
-        min_sep = q((1 - e) * round(ref, 2), 'au')
+        max_sep = q((d(1) + d(e)) * round(ref, 2), 'au')
+        min_sep = q((d(1) - d(e)) * round(ref, 2), 'au')
         return max_sep, min_sep
 
     def __str__(self):
@@ -97,33 +97,33 @@ class PTypeSystem(BinarySystem):
     luminosity = 0
 
     def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
-        super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
+        super().__init__(name, primary, secondary, d(avgsep), d(ep), d(es), id=id)
 
-        assert 0.4 <= ep <= 0.7, 'Primary eccentricity must be between 0.4 and 0.7'
-        max_sep_p, min_sep_p = self.calculate_distances(ep, self.primary_distance.m)
+        assert d(0.4) <= d(ep) <= d(0.7), 'Primary eccentricity must be between 0.4 and 0.7'
+        max_sep_p, min_sep_p = self.calculate_distances(d(ep), self.primary_distance.m)
 
-        assert 0.4 <= es <= 0.7, 'Secondary eccentricity must be between 0.4 and 0.7'
-        max_sep_s, min_sep_s = self.calculate_distances(es, self.secondary_distance.m)
+        assert d(0.4) <= d(es) <= d(0.7), 'Secondary eccentricity must be between 0.4 and 0.7'
+        max_sep_s, min_sep_s = self.calculate_distances(d(es), self.secondary_distance.m)
 
         self.max_sep = max_sep_p + max_sep_s
         self.min_sep = min_sep_p + min_sep_s
-        assert self.min_sep.m > 0.1, "Stars will merge at {:~} minimum distance".format(self.min_sep)
+        assert self.min_sep.m > d(0.1), "Stars will merge at {:~} minimum distance".format(self.min_sep)
 
         self._mass = primary.mass + secondary.mass
         self._luminosity = primary.luminosity + secondary.luminosity
 
-        self._habitable_inner = round(sqrt(self._luminosity.m / 1.1), 3)
-        self._habitable_outer = round(sqrt(self._luminosity.m / 0.53), 3)
-        self._inner_boundry = round(self._mass.m * 0.01, 3)
-        self._outer_boundry = round(self._mass.m * 40, 3)
-        self._frost_line = round(4.85 * sqrt(self._luminosity.m), 3)
+        self._habitable_inner = round(sqrt(self._luminosity.m / d(1.1)), 3)
+        self._habitable_outer = round(sqrt(self._luminosity.m / d(0.53)), 3)
+        self._inner_boundry = round(self._mass.m * d(0.01), 3)
+        self._outer_boundry = round(self._mass.m * d(40), 3)
+        self._frost_line = round(d(4.85) * sqrt(self._luminosity.m), 3)
         self.set_qs()
         self.spin = self.primary.spin
 
-        self.inner_forbbiden_zone = q(round(self.min_sep.m / 3, 3), 'au')
-        self.outer_forbbiden_zone = q(round(self.max_sep.m * 3, 3), 'au')
+        self.inner_forbbiden_zone = q(round(self.min_sep.m / d(3), 3), 'au')
+        self.outer_forbbiden_zone = q(round(self.max_sep.m * d(3), 3), 'au')
 
-        self.habitable_orbit = round(self.max_sep * 4, 3)
+        self.habitable_orbit = round(self.max_sep * d(4), 3)
 
     def set_qs(self):
         self.mass = q(self._mass.m, 'sol_mass')
@@ -142,28 +142,28 @@ class STypeSystem(BinarySystem):
     letter = 'S'
 
     def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
-        super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
+        super().__init__(name, primary, secondary, d(avgsep), d(ep), d(es), id=id)
 
-        assert 0.4 <= ep <= 0.7, 'Primary eccentricity must be between 0.4 and 0.7'
-        max_sep_p, min_sep_p = self.calculate_distances(ep, self.average_separation.m)
+        assert d(0.4) <= d(ep) <= d(0.7), 'Primary eccentricity must be between 0.4 and 0.7'
+        max_sep_p, min_sep_p = self.calculate_distances(d(ep), self.average_separation.m)
 
-        assert 0.4 <= es <= 0.7, 'Secondary eccentricity must be between 0.4 and 0.7'
-        max_sep_s, min_sep_s = self.calculate_distances(es, self.average_separation.m)
+        assert d(0.4) <= d(es) <= d(0.7), 'Secondary eccentricity must be between 0.4 and 0.7'
+        max_sep_s, min_sep_s = self.calculate_distances(d(es), self.average_separation.m)
 
         self.max_sep = max_sep_p + max_sep_s
         self.min_sep = min_sep_p + min_sep_s
 
-        self.inner_forbbiden_zone = q(self.min_sep.m / 3, 'au')
-        self.outer_forbbiden_zone = q(self.max_sep.m * 3, 'au')
+        self.inner_forbbiden_zone = q(self.min_sep.m / d(3), 'au')
+        self.outer_forbbiden_zone = q(self.max_sep.m * d(3), 'au')
 
 
 def system_type(separation):
-    if 0.15 <= float(separation) < 6:
+    if d(0.15) <= d(separation) < d(6):
         system = PTypeSystem
-    elif 120 <= float(separation) <= 600:
+    elif d(120) <= d(separation) <= d(600):
         system = STypeSystem
     else:
-        raise AssertionError('The Average Separation is incompatible with\n'
-                             'S-Type (120 to 600 AU) or\n'
+        raise AssertionError('The Average Separation is not compatible with\n'
+                             'either S-Type (120 to 600 AU) nor\n'
                              'P-Type (0.15 to 6 AU) systems')
     return system

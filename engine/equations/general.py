@@ -1,5 +1,8 @@
-from math import pi, sqrt, asin
+from math import pi, sqrt, asin, pow
 from pygame import Rect
+from engine import d
+
+pi = d(pi)
 
 
 class BodyInHydrostaticEquilibrium:
@@ -12,15 +15,15 @@ class BodyInHydrostaticEquilibrium:
 
     @staticmethod
     def calculate_circumference(r):
-        return 2 * pi * r
+        return d('2') * pi * r
 
     @staticmethod
     def calculate_surface_area(r):
-        return 4 * pi * r ** 2
+        return d('4') * pi * r ** d('2')
 
     @staticmethod
     def calculate_volume(r):
-        return (4 / 3) * pi * r ** 3
+        return (d('4') / d('3')) * pi * r ** d('3')
 
     @classmethod
     def calculate_density(cls, m, r):
@@ -45,29 +48,29 @@ class Ellipse:
 
     def __init__(self, a, e):
         assert 0 <= e < 1, 'eccentricity has to be greater than 0\nbut less than 1.'
-        self._a = float(a.m)
-        self._e = float(e.m)
-        self._b = self._a * sqrt(1 - (self._e ** 2))
-        self.focus = sqrt(self._a ** 2 - self._b ** 2)
+        self._a = d(a.m)
+        self._e = d(e.m)
+        self._b = self._a * sqrt(1 - pow(self._e, d(2)))
+        self.focus = sqrt(pow(self._a, d(2)) - pow(self._b, d(2)))
 
     def get_rect(self, x, y):
         """returns the rect of the ellipse for the use of pygame.draw.ellipse().
         x and y form the center of the ellipse, not its topleft point."""
 
-        w = self._a * 2
-        h = self._b * 2
-        return Rect(x // 2, y // 2, w, h)
+        w = self._a * d(2)
+        h = self._b * d(2)
+        return Rect(int(d(x) // d(2)), int(d(y) // d(2)), w, h)
 
 
 class OblateSpheroid(Ellipse, BodyInHydrostaticEquilibrium):
     def calculate_circumference(self, r):
-        return 2 * pi * sqrt((self._a + self._b) / 2)
+        return d(2) * d(pi) * sqrt((self._a + self._b) / d(2))
 
     def calculate_surface_area(self, r):
-        return 2 * pi * self._a * (self._a + (self._b / self._e) * asin(self._e))
+        return d(2) * d(pi) * self._a * (self._a + (self._b / self._e) * asin(self._e))
 
     def calculate_volume(self, r):
-        return 4 / 3 * pi * (self._a ** 2) * self._b
+        return d('4/3') * d(pi) * (self._a ** d(2)) * self._b
 
 
 class Ring:

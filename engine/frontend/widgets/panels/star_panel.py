@@ -42,7 +42,7 @@ class StarPanel(BasePanel):
             star = star_button.object_data
             star_data = {
                 'name': star.name,
-                'mass': star.mass.m,
+                'mass': str(star.mass.m),
                 'id': star.id,
                 'spin': star.spin
             }

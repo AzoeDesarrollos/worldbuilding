@@ -5,7 +5,7 @@ from math import sqrt, pi, pow, tan
 from datetime import datetime
 from pygame import Color
 from .orbit import Orbit
-from engine import q
+from engine import q, d
 
 
 class Planet(BodyInHydrostaticEquilibrium):
@@ -36,8 +36,8 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     sprite = None
 
-    duracion_ciclo_precession = 0
-    radio_circulo_precession = 0
+    duracion_ciclo = 0
+    radio_circulo = 0
 
     sky_color = None
 
@@ -60,14 +60,14 @@ class Planet(BodyInHydrostaticEquilibrium):
         self._mass = None if not mass else mass
         self._radius = None if not radius else radius
         self._gravity = None if not gravity else gravity
-        self._temperature = 0
+        self._temperature = d(0)
 
         if not self._gravity:
-            self._gravity = mass / pow(radius, 2)
+            self._gravity = d(mass) / pow(d(radius), d(2))
         if not self._radius:
-            self._radius = sqrt(mass / gravity)
+            self._radius = sqrt(d(mass) / d(gravity))
         if not self._mass:
-            self._mass = gravity * pow(radius, 2)
+            self._mass = d(gravity) * pow(d(radius), d(2))
 
         self.set_qs(unit)
         if 'composition' in data and data['composition'] is not None:
@@ -82,15 +82,16 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.atmosphere = {}
         self.habitable = self.set_habitability()
         self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)
-        self.albedo = q(data['albedo']) if 'albedo' in data else q(29)
-        self.greenhouse = q(data['greenhouse']) if 'albedo' in data else q(1)
+        self.albedo = q(data['albedo']) if 'albedo' in data else q(d(29))
+        self.greenhouse = q(data['greenhouse']) if 'albedo' in data else q(d(1))
+        self.axial_tilt = q(data['tilt']) if 'tilt' in data else q(d(0))
 
         self.satellites = []
 
         star = Systems.get_current_star()
-        if 0 <= self.axial_tilt < 90:
+        if d(0) <= self.axial_tilt < d(90):
             self.spin = star.spin
-        elif 90 <= self.axial_tilt <= 180:
+        elif d(90) <= self.axial_tilt <= d(180):
             self.spin = 'CW' if star.spin == 'CCW' else 'CCW'
 
         # ID values make each planet unique, even if they have the same characteristics.
@@ -117,10 +118,10 @@ class Planet(BodyInHydrostaticEquilibrium):
         radius = self.radius
         gravity = self.gravity
 
-        habitable = q(0.1, 'earth_mass') < mass < q(3.5, 'earth_mass')
-        habitable = habitable and q(0.5, 'earth_radius') < radius < q(1.5, 'earth_radius')
-        habitable = habitable and q(0.4, 'earth_gravity') < gravity < q(1.6, 'earth_gravity')
-        habitable = habitable and (0 <= self.axial_tilt <= 80 or 110 <= self.axial_tilt <= 180)
+        habitable = q(d(0.1), 'earth_mass') < mass < q(d(3.5), 'earth_mass')
+        habitable = habitable and q(d(0.5), 'earth_radius') < radius < q(d(1.5), 'earth_radius')
+        habitable = habitable and q(d(0.4), 'earth_gravity') < gravity < q(d(1.6), 'earth_gravity')
+        habitable = habitable and (d(0) <= self.axial_tilt <= d(80) or d(110) <= self.axial_tilt <= d(180))
         return habitable
 
     def set_temperature(self, star_mass, semi_major_axis):
@@ -142,21 +143,21 @@ class Planet(BodyInHydrostaticEquilibrium):
         a = self.orbit.semi_major_axis.to('au').magnitude
         mp = self.mass.to('earth_mass').magnitude
         ms = self.orbit.star.mass.to('sol_mass').magnitude
-        return q(round((a * pow(mp / ms, 1 / 3)), 3), 'earth_hill_sphere').to('earth_radius')
+        return q(round((a * pow(mp / ms, d('1/3'))), 3), 'earth_hill_sphere').to('earth_radius')
 
     def set_roche(self, obj_density):
         density = self.density.to('earth_density').m
         radius = self.radius.to('earth_radius').m
 
-        roches = q(round(2.44 * radius * pow(density / obj_density, 1 / 3), 3), 'earth_radius')
+        roches = q(round(d(2.44) * radius * pow(density / obj_density, d('1/3')), 3), 'earth_radius')
         if self.roches_limit == 0 or roches < self.roches_limit:
             self.roches_limit = roches
         return self.roches_limit
 
     def set_precession_cycle(self):
         tilt = self.axial_tilt
-        self.duracion_ciclo_precession = q(-7.095217823187172 * pow(tilt, 2) + 1277.139208333333 * tilt, 'years')
-        self.radio_circulo_precession = tan(tilt) * self.radius.to('km')
+        self.duracion_ciclo = q(d(-7.095217823187172) * pow(tilt, d(2)) + d(1277.139208333333) * tilt, 'years')
+        self.radio_circulo = tan(tilt) * self.radius.to('km')
 
     def create_ring(self, asteroid):
         mass = asteroid.mass.to('ring_mass').m
@@ -164,15 +165,15 @@ class Planet(BodyInHydrostaticEquilibrium):
         vol = mass / density
 
         outer_limit = self.roches_limit.to('km')
-        inner_limit = q(self._radius + 10000, 'km')
+        inner_limit = q(self._radius + d(10000), 'km')
         # "10K" debería ser seteado por el Atmosphere Panel, porque es el fin de la atmósfera.
         wideness = outer_limit - inner_limit
 
-        ro = outer_limit.to('earth_radius').m
-        ri = inner_limit.to('earth_radius').m
-        ra = pow((vol / (4 / 3 * pi)), 3)
+        ro = d(outer_limit.to('earth_radius').m)
+        ri = d(inner_limit.to('earth_radius').m)
+        ra = pow((d(vol) / (d('4/3') * d(pi))), d(3))
 
-        thickness = q(4 / 3 * (pow(ra, 3) / (pow(ro, 2) - pow(ri, 2))), 'km').to('m')
+        thickness = q(d('4 / 3') * (pow(ra, d(3)) / (pow(ro, d(2)) - pow(ri, d(2)))), 'km').to('m')
 
         return Ring(self, inner_limit, outer_limit, wideness, thickness)
 

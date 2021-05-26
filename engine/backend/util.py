@@ -1,23 +1,9 @@
 from .eventhandler import EventHandler
-import json
-from math import trunc, ceil, floor
 from os.path import exists, join
-from os import getcwd
 from pygame import quit
+from os import getcwd
 from sys import exit
-
-
-def decimal_round(number: float):
-    """
-    :rtype: int
-    """
-    entero = trunc(number)
-    decimal = number - entero
-    assert type(number) is float
-    if decimal >= 0.5:
-        return int(ceil(number))
-    else:
-        return int(floor(number))
+import json
 
 
 def add_decimal(text: str):
@@ -130,7 +116,6 @@ __all__ = [
     'guardar_json',
     'abrir_json',
     'load_from_data',
-    'decimal_round',
     'add_decimal',
     'collapse_factor_lists',
     'prime_factors'
