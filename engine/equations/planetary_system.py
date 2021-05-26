@@ -1,8 +1,8 @@
 from engine.backend.util import abrir_json, guardar_json
 from engine.backend.eventhandler import EventHandler
 from os.path import join
+from engine import q, d
 from os import getcwd
-from engine import q
 from math import exp
 
 
@@ -20,7 +20,7 @@ class PlanetarySystem:
         self.astro_bodies = []
         self.star_system = star_system
         self.id = star_system.id
-        self.body_mass = q(16 * exp(-0.6931 * star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
+        self.body_mass = q(16 * d(exp(d('-0.6931') * star_system.mass.m)) * d('0.183391347289428'), 'jupiter_mass')
 
     def update(self):
         self.body_mass = q(16 * exp(-0.6931 * self.star_system.mass.m) * 0.183391347289428, 'jupiter_mass')

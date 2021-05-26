@@ -1,3 +1,6 @@
+from engine import d
+
+
 class IncrementalValue:
     ticks = 0
     potencia = 0
@@ -14,7 +17,7 @@ class IncrementalValue:
         else:
             self.clicks += 1
 
-        return round((0.001 * (pow(10, self.potencia))), 4)
+        return d(round((0.001 * (pow(10, self.potencia))), 4))
 
     def reset_power(self):
         self.ticks += 1

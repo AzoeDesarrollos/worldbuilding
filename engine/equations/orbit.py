@@ -254,8 +254,8 @@ class PlanetOrbit(Orbit):
         self.reset_period_and_speed(star_mass.m)
 
     def reset_period_and_speed(self, main_body_mass):
-        self.period = q(sqrt(pow(self._a, 3) / main_body_mass), 'year')
-        self.velocity = q(sqrt(main_body_mass / self._a), 'earth_orbital_velocity').to('kilometer per second')
+        self.period = q(((self._a ** 3) / main_body_mass).sqrt(), 'year')
+        self.velocity = q((main_body_mass / self._a).sqrt(), 'earth_orbital_velocity').to('kilometer per second')
 
 
 class SatelliteOrbit(Orbit):
@@ -266,8 +266,8 @@ class SatelliteOrbit(Orbit):
 
     def reset_period_and_speed(self, main_mass):
         satellite_mass = round(d(self.astrobody.mass.m), 3)
-        self.velocity = q(sqrt(d(main_mass.m) / self._a), 'earth_orbital_velocity').to('kilometer per second')
-        self.period = q(sqrt(pow(d(self.a.to('au').m), d(3)) / (d(main_mass.m + satellite_mass))), 'year').to('day')
+        self.velocity = q((d(main_mass.m) / self._a).sqrt(), 'earth_orbital_velocity').to('kilometer per second')
+        self.period = q(((d(self.a.to('au').m)**3) / (d(main_mass.m + satellite_mass))).sqrt(), 'year').to('day')
 
 
 class BinaryStarOrbit(Orbit):
@@ -276,8 +276,8 @@ class BinaryStarOrbit(Orbit):
         self.reset_period_and_speed(star.mass.m+other.mass.m)
 
     def reset_period_and_speed(self, main_body_mass):
-        self.period = q(sqrt(pow(self._a, d(3)) / d(main_body_mass)), 'year')
-        self.velocity = q(sqrt(d(main_body_mass) / self._a), 'earth_orbital_velocity').to('kilometer per second')
+        self.period = q(((self._a ** 3) / d(main_body_mass)).sqrt(), 'year')
+        self.velocity = q((d(main_body_mass) / self._a).sqrt(), 'earth_orbital_velocity').to('kilometer per second')
 
 
 def from_stellar_resonance(star, planet, resonance: str):
@@ -288,7 +288,7 @@ def from_stellar_resonance(star, planet, resonance: str):
     """
     x, y = [int(i) for i in resonance.split(':')]
     period = (x/y) * planet.orbit.period.to('year').m
-    semi_major_axis = q(pow(pow(period, 2) * star.mass.to('sol_mass').m, (1 / 3)), 'au')
+    semi_major_axis = q((((period ** 2) * star.mass.to('sol_mass').m) ** d(1 / 3)), 'au')
     return semi_major_axis
 
 
@@ -302,7 +302,7 @@ def from_planetary_resonance(planet, satellite, resonance: str):
     x, y = [int(i) for i in resonance.split(':')]
     period = (x/y) * satellite.orbit.period.to('year').m
     mass = planet.mass.m + satellite.mass.m  # earth masses
-    semi_major_axis = q(pow(pow(period, 2) * mass, (1 / 3)), 'au')
+    semi_major_axis = q((((period ** 2) * mass) ** d(1 / 3)), 'au')
     return semi_major_axis.to('earth_radius')
 
 

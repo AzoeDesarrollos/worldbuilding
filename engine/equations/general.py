@@ -1,4 +1,4 @@
-from math import pi, sqrt, asin, pow
+from math import pi, asin
 from pygame import Rect
 from engine import d
 
@@ -50,8 +50,8 @@ class Ellipse:
         assert 0 <= e < 1, 'eccentricity has to be greater than 0\nbut less than 1.'
         self._a = d(a.m)
         self._e = d(e.m)
-        self._b = self._a * sqrt(1 - pow(self._e, d(2)))
-        self.focus = sqrt(pow(self._a, d(2)) - pow(self._b, d(2)))
+        self._b = self._a * (1 - (self._e ** d(2)).sqrt())
+        self.focus = ((self._a ** d(2)) - (self._b ** d(2))).sqrt()
 
     def get_rect(self, x, y):
         """returns the rect of the ellipse for the use of pygame.draw.ellipse().
@@ -64,17 +64,17 @@ class Ellipse:
 
 class OblateSpheroid(Ellipse, BodyInHydrostaticEquilibrium):
     def calculate_circumference(self, r):
-        return d(2) * d(pi) * sqrt((self._a + self._b) / d(2))
+        return d(2) * d(pi) * ((self._a + self._b) / d(2)).sqrt()
 
     def calculate_surface_area(self, r):
-        return d(2) * d(pi) * self._a * (self._a + (self._b / self._e) * asin(self._e))
+        return d(2) * d(pi) * self._a * (self._a + (self._b / self._e) * d(asin(self._e)))
 
     def calculate_volume(self, r):
         return d('4/3') * d(pi) * (self._a ** d(2)) * self._b
 
 
 class Ring:
-    def __init__(self, planet,  inner, outer, w, h):
+    def __init__(self, planet, inner, outer, w, h):
         self.inner = inner
         self.outer = outer
         self.wideness = w

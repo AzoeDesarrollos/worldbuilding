@@ -1,18 +1,13 @@
 from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, KEYUP, K_LSHIFT, K_LCTRL, SCALED
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO
+from ..common import Linea, Punto, find_and_interpolate, density
 from pygame import display, event, font, transform, image
-from ..common import Linea, Punto, find_and_interpolate
 from engine.frontend.globales import WidgetGroup
 from pygame import init, quit, Rect, Surface
 from engine.backend.randomness import roll
 from pygame.sprite import Sprite
 from os import getcwd, path
-from math import pi, pow
 from sys import exit
-
-
-def density(m, r):
-    return m / ((4 / 3) * pi * pow(r, 3))
 
 
 class Number(Sprite):
@@ -114,10 +109,10 @@ def dwarfgraph_loop(limit_mass=None):
                     radius = round(find_and_interpolate(linea_v.rect.x, exes, radius_keys), 3)
 
                     data.update({'mass': mass, 'radius': radius, 'clase': 'Dwarf Planet'})
-                    d = density(mass, radius)
+                    densidad = density(mass, radius)
                     text_mass = 'Mass: {}'.format(mass)
                     text_radius = 'Radius: {}'.format(radius)
-                    text_density = 'Density: {}'.format(d)
+                    text_density = 'Density: {}'.format(densidad)
                     color = bg.get_at((dx - 54, dy - 24))
                     composition = {}
                     s, i, r = 0, 0, 0

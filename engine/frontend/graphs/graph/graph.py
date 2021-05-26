@@ -5,6 +5,7 @@ from pygame import display, init as py_init, quit as py_quit, SCALED
 from engine.backend.util import abrir_json
 from pygame.sprite import LayeredUpdates
 from os import environ, getcwd, path
+from engine import d
 import sys
 
 py_init()
@@ -38,6 +39,7 @@ else:
     ruta = path.join(getcwd(), 'engine', 'frontend', 'graphs', 'graph', 'data')
 
 graph = image.load(path.join(ruta, 'graph.png'))
+gas_drawf = image.load(path.join(ruta, 'gas_dwarves.png'))
 exes = [59, 93, 114, 128, 139, 148, 156, 162, 169, 173, 209, 229, 244, 254, 263, 271, 278, 284, 288, 325, 345, 360, 370,
         380, 387, 394, 400, 405, 440, 460, 475, 485, 495, 502, 509, 515, 520, 555, 575, 589]
 yes = [478, 453, 431, 412, 395, 379, 279, 221, 179, 147, 121, 99, 79, 62, 47, 1]
@@ -47,7 +49,8 @@ composiciones = abrir_json(path.join(ruta, 'compositions.json'))
 mascara = mask.from_threshold(image.load(path.join(ruta, 'mask.png')), (255, 0, 255), (250, 1, 250))
 
 
-def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.0, radius_upper_limit=0.0):
+def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.0, radius_upper_limit=0.0,
+               is_gas_drwaf=False):
     m_lo_l = mass_lower_limit
     m_hi_l = mass_upper_limit
     r_lo_l = radius_lower_limit
@@ -242,6 +245,8 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                 block.fill([0] * 3 + [alpha], (0, lim_radius_a, rect.w, rect.h - lim_radius_a))
             if lim_radius_b:
                 block.fill([0] * 3 + [alpha], (0, rect.y - 2, rect.w, lim_radius_b))
+            if is_gas_drwaf:
+                block.blit(gas_drawf, (0, 0))
 
             block_mask = mask.from_surface(block)
             point_x, point_y = punto.rect.center

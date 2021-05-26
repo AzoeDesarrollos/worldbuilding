@@ -8,12 +8,11 @@ from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.globales.constantes import *
 from engine.frontend.widgets.meta import Meta
-from engine import q, recomendation
+from engine import q, recomendation, d
 from pygame import Surface, Rect
 from engine.backend import roll
 from ..values import ValueText
 from itertools import cycle
-from math import sqrt, pow
 
 
 class OrbitPanel(BaseWidget):
@@ -274,29 +273,29 @@ class OrbitPanel(BaseWidget):
             if system.star_system.letter == 'S':
                 for star in system:
                     for marker in self._orbits.get(star, []):
-                        d = self.create_save_data(marker.orbit)
-                        orbits.append(d)
+                        data = self.create_save_data(marker.orbit)
+                        orbits.append(data)
             else:
                 star = system.star_system
                 for marker in self._orbits.get(star, []):
-                    d = self.create_save_data(marker.orbit)
-                    orbits.append(d)
+                    data = self.create_save_data(marker.orbit)
+                    orbits.append(data)
 
         EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Stellar Orbits': orbits})
 
     @staticmethod
     def create_save_data(orb):
-        d = {}
+        data = {}
         if hasattr(orb, 'semi_major_axis'):
-            d['a'] = round(orb.semi_major_axis.m, 2)
+            data['a'] = round(orb.semi_major_axis.m, 2)
         if hasattr(orb, 'inclination'):
-            d['i'] = orb.inclination.m
+            data['i'] = orb.inclination.m
         if hasattr(orb, 'eccentricity'):
-            d['e'] = orb.eccentricity.m
+            data['e'] = orb.eccentricity.m
         if hasattr(orb, 'astrobody'):
-            d['astrobody'] = orb.astrobody.id
-            d['star_id'] = orb.astrobody.orbit.star.id
-        return d
+            data['astrobody'] = orb.astrobody.id
+            data['star_id'] = orb.astrobody.orbit.star.id
+        return data
 
     def load_orbits(self, event):
         for position in event.data.get('Stellar Orbits', []):
@@ -535,9 +534,9 @@ class OrbitType(BaseWidget, Intertwined):
         parametros = []
         for elemento in self.properties.widgets():
             if elemento.text == 'Inclination':
-                value = q(0 if elemento.text_area.value == '' else elemento.text_area.value, 'degree')
+                value = q(d(0) if elemento.text_area.value == '' else d(elemento.text_area.value), 'degree')
             elif elemento.text not in ['Orbital motion', 'Temperature']:
-                value = q(elemento.text_area.value)
+                value = q(d(elemento.text_area.value))
             else:
                 value = 'au'
             parametros.append(value)
@@ -645,7 +644,7 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
             self.increment *= delta
 
             if Systems.get_current_star().validate_orbit(self.value.m + self.increment):
-                self.value += q(self.increment, self.value.u)
+                self.value += q(d(self.increment), self.value.u)
                 self.increment = 0
                 self.parent.sort_markers()
 
@@ -754,7 +753,7 @@ class AddOrbitButton(TextButton):
             star = self.parent.current
             inner = star.inner_boundry
             outer = star.outer_boundry
-            position = roll(inner, outer)
+            position = q(d(roll(float(inner.m), float(outer.m))), 'au')
             self.parent.add_orbit_marker(position)
             self.parent.check_orbits()
 
@@ -876,15 +875,15 @@ class Recomendation(BaseWidget):
     def suggest(self, planet, orbit, star):
         data = None
         planets_in_system = len(Systems.get_current().planets)
-        e = round(0.584 * pow(planets_in_system, -1.2), 3) if planets_in_system > 1 else None
+        e = round(d('0.584') * (planets_in_system ** d('-1.2')), 3) if planets_in_system > 1 else None
         if planet.habitable and orbit.temperature == 'habitable':
             data = recomendation['habitable']
-            if e is not None and e <= 0.2:
+            if e is not None and e <= d('0.2'):
                 data.update({'e': e})
 
         elif planet.clase == 'Terrestial Planet':
             data = recomendation['inner']
-            if e is not None and e <= 0.2:
+            if e is not None and e <= d('0.2'):
                 data.update({'e': e})
 
         elif planet.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant', 'Gas Dwarf'):
@@ -892,7 +891,7 @@ class Recomendation(BaseWidget):
             data.update(self.analyze_giants(planet, orbit, star))
             if data.get('eccentric', False):
                 pass
-            elif e is not None and 0.001 <= e <= 0.09:
+            elif e is not None and d('0.001') <= e <= d('0.09'):
                 data.update({'e': e})
 
         self.format = data
@@ -900,17 +899,17 @@ class Recomendation(BaseWidget):
     @staticmethod
     def analyze_giants(planet, orbit, star):
         planets_in_system = len(Systems.get_current().planets)
-        e = round(0.584 * pow(planets_in_system, -1.2), 3) if planets_in_system > 1 else None
+        e = round(d('0.584') * (planets_in_system ** d('-1.2')), 3) if planets_in_system > 1 else None
         # average eccentricity
 
         clase = planet.clase in ('Puffy Giant', 'Gas Giant')
-        orbita = 0.04 <= orbit.a.m <= 0.5
-        period = q(sqrt(pow(orbit.a.m, 3) / star.mass.m), 'year').to('day').m >= 3
+        orbita = d('0.04') <= orbit.a.m <= d('0.5')
+        period = q(((orbit.a.m ** d(3)) / star.mass.m).sqrt(), 'year').to('day').m >= 3
         if all([clase, orbita, period]) is True:
             return recomendation['hot']
 
         clase = planet.clase == 'Super Jupiter'
-        orbita = 0.04 <= orbit.a.m <= 1.2 * star.frost_line.m
+        orbita = d('0.04') <= orbit.a.m <= d('1.2') * star.frost_line.m
         if all([clase, orbita]) is True:
             # this is more of a warning than a suggestion, since a super jupiter
             # can't be placed too far away from the star, and there is no special
@@ -921,7 +920,7 @@ class Recomendation(BaseWidget):
             # needs an "undo" after this.
 
         clase = planet.clase in ('Gas Dwarf', 'Gas Giant')
-        orbita = 1.2 * star.frost_line.m <= orbit.a.m < star.outer_boundry.m
+        orbita = d('1.2') * star.frost_line.m <= orbit.a.m < star.outer_boundry.m
         if all([clase, orbita]) is True:
             return recomendation['giant']
 
@@ -932,7 +931,7 @@ class Recomendation(BaseWidget):
         error = f'An eccentric Jupiter must have an orbital eccentricity of 0.1 or greater, up to 0.2 if there is a '
         error += f'habitable world in the system. However, there are {planets_in_system} planets in this system, so '
         error += f'the eccentricity should be {e} which falls ouside of those parameters.'
-        assert all([habitable, planets_in_system not in (3, 4), e > 0.1]), error
+        assert all([habitable, planets_in_system not in (3, 4), e > d('0.1')]), error
         if all([clase, habitable]) is True:
             data.update(recomendation['eccentric_2'])
         elif not habitable:

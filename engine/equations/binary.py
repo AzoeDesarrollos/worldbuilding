@@ -99,24 +99,24 @@ class PTypeSystem(BinarySystem):
     def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
         super().__init__(name, primary, secondary, d(avgsep), d(ep), d(es), id=id)
 
-        assert d(0.4) <= d(ep) <= d(0.7), 'Primary eccentricity must be between 0.4 and 0.7'
+        assert d('0.4') <= d(ep) <= d('0.7'), 'Primary eccentricity must be between 0.4 and 0.7'
         max_sep_p, min_sep_p = self.calculate_distances(d(ep), self.primary_distance.m)
 
-        assert d(0.4) <= d(es) <= d(0.7), 'Secondary eccentricity must be between 0.4 and 0.7'
+        assert d('0.4') <= d(es) <= d('0.7'), 'Secondary eccentricity must be between 0.4 and 0.7'
         max_sep_s, min_sep_s = self.calculate_distances(d(es), self.secondary_distance.m)
 
         self.max_sep = max_sep_p + max_sep_s
         self.min_sep = min_sep_p + min_sep_s
-        assert self.min_sep.m > d(0.1), "Stars will merge at {:~} minimum distance".format(self.min_sep)
+        assert self.min_sep.m > d('0.1'), "Stars will merge at {:~} minimum distance".format(self.min_sep)
 
         self._mass = primary.mass + secondary.mass
         self._luminosity = primary.luminosity + secondary.luminosity
 
-        self._habitable_inner = round(sqrt(self._luminosity.m / d(1.1)), 3)
-        self._habitable_outer = round(sqrt(self._luminosity.m / d(0.53)), 3)
-        self._inner_boundry = round(self._mass.m * d(0.01), 3)
-        self._outer_boundry = round(self._mass.m * d(40), 3)
-        self._frost_line = round(d(4.85) * sqrt(self._luminosity.m), 3)
+        self._habitable_inner = round(sqrt(self._luminosity.m / d('1.1')), 3)
+        self._habitable_outer = round(sqrt(self._luminosity.m / d('0.53')), 3)
+        self._inner_boundry = round(self._mass.m * d('0.01'), 3)
+        self._outer_boundry = round(self._mass.m * d('40'), 3)
+        self._frost_line = round(d('4.85') * self._luminosity.m.sqrt(), 3)
         self.set_qs()
         self.spin = self.primary.spin
 

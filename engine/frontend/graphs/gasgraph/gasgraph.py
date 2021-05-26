@@ -1,16 +1,11 @@
 from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, image, K_LSHIFT, K_LCTRL, KEYUP
 from pygame import init, quit, display, font, event, Rect, Surface, SCALED
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, ANCHO, ALTO
-from ..common import find_and_interpolate, Linea, Punto
+from ..common import find_and_interpolate, Linea, Punto, density
 from engine.frontend.globales import WidgetGroup
 from pygame.sprite import Sprite
-from sys import exit
 from os import getcwd, path
-from math import pi
-
-
-def density(m, r):
-    return m / ((4 / 3) * pi * pow(r, 3))
+from sys import exit
 
 
 radius_keys = [1 + i / 100 for i in range(-3, 11)] + [1 + i / 10 for i in range(2, 10)]
