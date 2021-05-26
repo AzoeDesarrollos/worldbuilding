@@ -1,5 +1,5 @@
 from engine.backend.util import collapse_factor_lists, prime_factors
-from math import sqrt, pow, cos, sin, pi
+from math import cos, sin, pi
 from .general import Ellipse
 from random import randint
 from pygame import draw
@@ -146,7 +146,7 @@ class Orbit(Ellipse):
         luminosity = d(self._star.luminosity.to('watt').m)
         distance = d(self.semi_major_axis.to('km').m)
 
-        return q(luminosity/(d(4)*d(pi)*pow(distance, d(2))), "w/m**2").to('sol_aparent_brightness')
+        return q(luminosity/(d(4)*d(pi)*(distance ** d(2))), "w/m**2").to('sol_aparent_brightness')
 
     def set_astrobody(self, main, astro_body):
         body_around_star = main.celestial_type == "star" or main.celestial_type == 'system'
@@ -171,7 +171,7 @@ class Orbit(Ellipse):
         y = self._b * sin(self.true_anomaly.m)
         return x, y
 
-    def set_true_anomaly(self, value: float):
+    def set_true_anomaly(self, value: d):
         self.true_anomaly = q(round(value, 3), 'degree')
 
     @property
@@ -188,8 +188,8 @@ class Orbit(Ellipse):
 
     @semi_major_axis.setter
     def semi_major_axis(self, quantity):
-        self._a = float(quantity.m)
-        self._b = self._a * sqrt(1 - pow(self._e, 2))
+        self._a = d(quantity.m)
+        self._b = self._a * (1 - (self._e ** 2).sqrt())
         self._Q = self._a * (1 + self._e)
         self._q = self._a * (1 - self._e)
         if self.temperature != 'N/A':
@@ -219,7 +219,7 @@ class Orbit(Ellipse):
     @eccentricity.setter
     def eccentricity(self, value):
         assert 0 <= value < 1, 'eccentricity has to be greater than 0\nbut less than 1.'
-        self._e = float(value)
+        self._e = d(value)
 
     @property
     def inclination(self):
@@ -231,8 +231,8 @@ class Orbit(Ellipse):
 
     @inclination.setter
     def inclination(self, value):
-        assert 0 <= float(value.m) <= 180, 'inclination values range from 0 to 180 degrees.'
-        self._i = float(value)
+        assert d('0') <= d(value.m) <= d('180'), 'inclination values range from 0 to 180 degrees.'
+        self._i = d(value)
 
     @property
     def star(self):
@@ -267,13 +267,13 @@ class SatelliteOrbit(Orbit):
     def reset_period_and_speed(self, main_mass):
         satellite_mass = round(d(self.astrobody.mass.m), 3)
         self.velocity = q((d(main_mass.m) / self._a).sqrt(), 'earth_orbital_velocity').to('kilometer per second')
-        self.period = q(((d(self.a.to('au').m)**3) / (d(main_mass.m + satellite_mass))).sqrt(), 'year').to('day')
+        self.period = q(((d(self.a.to('au').m) ** 3) / (d(main_mass.m + satellite_mass))).sqrt(), 'year').to('day')
 
 
 class BinaryStarOrbit(Orbit):
     def __init__(self, star, other, a, e):
         super().__init__(a, e, q(d(0), 'degrees'))
-        self.reset_period_and_speed(star.mass.m+other.mass.m)
+        self.reset_period_and_speed(star.mass.m + other.mass.m)
 
     def reset_period_and_speed(self, main_body_mass):
         self.period = q(((self._a ** 3) / d(main_body_mass)).sqrt(), 'year')
