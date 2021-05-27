@@ -1,7 +1,6 @@
 from .general import BodyInHydrostaticEquilibrium
 from bisect import bisect_right
 from datetime import datetime
-from math import sqrt, pow
 from random import choice
 from pygame import Color
 from engine import q, d
@@ -57,10 +56,10 @@ class Star(BodyInHydrostaticEquilibrium):
             self._luminosity = d(luminosity)
 
         if not mass and luminosity:
-            self._mass = pow(d(luminosity), (d('1') / d('3.5')))
+            self._mass = d(luminosity) ** (d('1') / d('3.5'))
 
         elif not luminosity and mass:
-            self._luminosity = d(pow(d(mass), d('3.5')))
+            self._luminosity = d((d(mass) ** d('3.5')))
 
         self._spin = choice(['clockwise', 'counter-clockwise']) if 'spin' not in data else data['spin']
         self._radius = self.set_radius()
@@ -88,19 +87,19 @@ class Star(BodyInHydrostaticEquilibrium):
     def set_radius(self):
         radius = '1'
         if self._mass < d('1'):
-            radius = pow(self._mass, d('0.8'))
+            radius = self._mass ** d('0.8')
         elif self._mass > d('1'):
-            radius = pow(self._mass, d('0.5'))
+            radius = self._mass ** d('0.5')
         return d(radius)
 
     def set_derivated_characteristics(self):
         self._lifetime = self._mass / self._luminosity
         self._temperature = (self._luminosity / (self._radius ** d('2'))) ** (d('1') / d('4'))
-        self._habitable_inner = round(d(sqrt(self._luminosity / d('1.1'))), 3)
-        self._habitable_outer = round(d(sqrt(self._luminosity / d('0.53'))), 3)
+        self._habitable_inner = round(d((self._luminosity / d('1.1')).sqrt()), 3)
+        self._habitable_outer = round(d((self._luminosity / d('0.53')).sqrt()), 3)
         self._inner_boundry = self._mass * d('0.01')
         self._outer_boundry = self._mass * d('40')
-        self._frost_line = round(d('4.85') * d(sqrt(self._luminosity)), 3)
+        self._frost_line = round(d('4.85') * self._luminosity.sqrt(), 3)
 
     def set_qs(self):
         self.mass = q(self._mass, 'sol_mass')
@@ -202,7 +201,7 @@ class Star(BodyInHydrostaticEquilibrium):
 
         elif self.luminosity != self._luminosity:
             self._luminosity = self.luminosity.m
-            self._mass = pow(self._luminosity, (d('1') / d('3.5')))
+            self._mass = self._luminosity ** (d('1') / d('3.5'))
 
         self._radius = self.set_radius()
         self.set_derivated_characteristics()
