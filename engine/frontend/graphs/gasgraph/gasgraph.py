@@ -120,7 +120,7 @@ def gasgraph_loop(limit_mass):
                     clase = 'Puffy Giant' if valid[0] else ''
                     clase = 'Gas Giant' if valid[1] else clase
                     clase = 'Super Jupiter' if valid[2] else clase
-                    data.update({'mass': mass, 'radius': radius, 'clase': clase})
+                    data.update({'mass': mass, 'radius': radius, 'clase': clase, 'albedo': 42.25})
 
                     d = round(density(mass, radius), 5)
                     text_mass = 'Mass: {}'.format(mass)

@@ -113,7 +113,7 @@ def dwarfgraph_loop(limit_mass=None):
                     mass = round(find_and_interpolate(linea_h.rect.y - 26, yes, mass_keys), 5)
                     radius = round(find_and_interpolate(linea_v.rect.x, exes, radius_keys), 3)
 
-                    data.update({'mass': mass, 'radius': radius, 'clase': 'Dwarf Planet'})
+                    data.update({'mass': mass, 'radius': radius, 'clase': 'Dwarf Planet', 'albedo': 40})
                     d = density(mass, radius)
                     text_mass = 'Mass: {}'.format(mass)
                     text_radius = 'Radius: {}'.format(radius)

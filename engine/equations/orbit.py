@@ -1,4 +1,5 @@
 from engine.backend.util import collapse_factor_lists, prime_factors
+from .planetary_system import Systems
 from math import sqrt, pow, cos, sin
 from .general import Ellipse
 from random import randint
@@ -160,9 +161,17 @@ class Orbit(Ellipse):
         if astro_body.celestial_type == 'planet':
             self.temperature = astro_body.set_temperature(main.mass.m, self._a)
 
+        system = Systems.get_system_by_star(main)
+        system.visibility_by_albedo()
+
     def get_planet_position(self):
         x = self._a * cos(self.true_anomaly.m)
         y = self._b * sin(self.true_anomaly.m)
+        return x, y
+
+    def get_measured_position(self, anomaly, unit):
+        x = self.a.to(unit).m * cos(anomaly)
+        y = self.b.to(unit).m * sin(anomaly)
         return x, y
 
     def set_true_anomaly(self, value: float):

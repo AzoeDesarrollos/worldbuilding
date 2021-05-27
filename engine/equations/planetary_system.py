@@ -1,9 +1,9 @@
 from engine.backend.util import abrir_json, guardar_json
 from engine.backend.eventhandler import EventHandler
+from math import exp, sqrt, pow
 from os.path import join
 from os import getcwd
 from engine import q
-from math import exp
 
 
 class PlanetarySystem:
@@ -12,6 +12,9 @@ class PlanetarySystem:
     asteroids = None
     stars = None
     id = None
+
+    aparent_brightness = None
+    average_visibility = None
 
     def __init__(self, star_system):
         self.planets = []
@@ -22,11 +25,51 @@ class PlanetarySystem:
         self.id = star_system.id
         self.body_mass = q(16 * exp(-0.6931 * star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
 
+        self.aparent_brightness = {}
+        self.average_visibility = {}
+
     def update(self):
         self.body_mass = q(16 * exp(-0.6931 * self.star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
 
     def get_available_mass(self):
         return self.body_mass
+
+    def visibility_by_albedo(self):
+        luminosity = self.star_system.luminosity.to('watt').m
+        for i, planet in enumerate(self.planets):
+            if planet.id not in self.aparent_brightness:
+                self.aparent_brightness[planet.id] = []
+                self.average_visibility[planet.id] = {}
+
+            others = self.planets[:i] + self.planets[i + 1:]
+            if planet.orbit is not None:
+                for day in range(int(planet.orbit.period.to('day').m)):
+                    ab_others = {}
+                    anomaly_o = day * 360 / planet.orbit.period.to('day').m
+                    x1, y1 = planet.orbit.get_measured_position(anomaly_o, 'm')  # position of the Oberver's planet
+                    for other in [o for o in others if o.orbit is not None]:
+                        anomaly_p = day * 360 / other.orbit.period.to('day').m
+                        x2, y2 = other.orbit.get_measured_position(anomaly_p, 'm')  # position of the observed planet
+
+                        distance = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))  # Euclidean distance between the two points.
+                        albedo = other.albedo.m / 100
+                        radius = other.radius.to('m').m
+                        semi_major_axis = other.orbit.semi_major_axis.to('m').m
+
+                        ab = (albedo * luminosity * pow(radius, 2)) / (pow(semi_major_axis, 2) * pow(distance, 2))
+                        ab_others[other.id] = ab
+
+                    if len(ab_others):
+                        self.aparent_brightness[planet.id].append(ab_others)
+                    else:
+                        break
+
+            if len(self.aparent_brightness[planet.id]):
+                brightness = self.aparent_brightness[planet.id]
+                for other in others:
+                    sub = [brightness[day][other.id] for day in range(int(planet.orbit.period.to('day').m))]
+
+                    self.average_visibility[planet.id][other.id] = sum(sub) / len(sub)
 
     @property
     def star(self):

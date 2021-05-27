@@ -81,9 +81,9 @@ class Planet(BodyInHydrostaticEquilibrium):
 
         self.atmosphere = {}
         self.habitable = self.set_habitability()
+        self.albedo = q(data['albedo']) if not self.habitable else q(29)
+        self.greenhouse = q(data['greenhouse']) if 'greenhouse' in data else q(1)
         self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)
-        self.albedo = q(data['albedo']) if 'albedo' in data else q(29)
-        self.greenhouse = q(data['greenhouse']) if 'albedo' in data else q(1)
 
         self.satellites = []
 
@@ -121,6 +121,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         habitable = habitable and q(0.5, 'earth_radius') < radius < q(1.5, 'earth_radius')
         habitable = habitable and q(0.4, 'earth_gravity') < gravity < q(1.6, 'earth_gravity')
         habitable = habitable and (0 <= self.axial_tilt <= 80 or 110 <= self.axial_tilt <= 180)
+
         return habitable
 
     def set_temperature(self, star_mass, semi_major_axis):
@@ -178,7 +179,7 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     @staticmethod
     def set_sky_color(star):
-        p = star.peak_light.frequency
+        p = star.peak_light.frequency.m
 
         color = None
         if 43.4941208 <= p <= 1664.635167:
