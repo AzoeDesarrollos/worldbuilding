@@ -9,7 +9,6 @@ from ..object_type import ObjectType
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
 from .common import TextButton
-from engine import d
 
 
 class SatellitePanel(BasePanel):
@@ -176,13 +175,13 @@ class SatelliteType(ObjectType):
         for material in self.properties.get_sprites_from_layer(2):
             if material.text_area.value:  # not empty
                 text = material.text_area.value.strip(' %')
-                data['composition'][material.text.lower()] = d(text)
+                data['composition'][material.text.lower()] = float(text)
         for item in self.properties.get_widgets_from_layer(1):
             text = item.text_area.value
             if type(text) is not str:
-                data[item.text.lower()] = d(text)
+                data[item.text.lower()] = float(text)
             elif text != '' and not text.isalpha():
-                data[item.text.lower()] = d(text)
+                data[item.text.lower()] = float(text)
             else:
                 data[item.text.lower()] = text
 

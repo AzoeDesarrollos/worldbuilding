@@ -7,13 +7,13 @@ from engine.backend.textrect import render_textrect
 from pygame import Surface, draw, SRCALPHA, Rect
 from .common import ListedArea, AvailablePlanet
 from engine import molecular_weight, q
-from math import sqrt, exp
+from math import sqrt
 
 
 class AtmospherePanel(BaseWidget):
     current = None
     curr_idx = 0
-
+    pre_loaded = False
     pressure = None
     curr_planet = None
 
@@ -39,7 +39,7 @@ class AtmospherePanel(BaseWidget):
         self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5, y=0)
         self.write('Composition', self.f3, centerx=65, y=35)
         self.water_state_rect = self.write('State of Water at Surface: ', f4, x=3, y=ALTO-50)
-        EventHandler.register(self.load_data, 'LoadData')
+        EventHandler.register(self.load_atmosphere, 'LoadData')
         EventHandler.register(self.clear, 'ClearData')
         self.area_info = Rect(190, 460, 195, 132 - 41)
         self.warning_rect = Rect(self.area_info.x, self.area_info.bottom, self.area_info.w, 21)
@@ -65,9 +65,8 @@ class AtmospherePanel(BaseWidget):
         self.show_pressure = ShownPressure(self, x=self.atmograph.rect.x, centery=self.atmograph.rect.bottom + 10)
         self.show_pressure.update_text('Not stablished')
         self.properties = WidgetGroup()
-        self.listed_planets = AvailablePlanets(self, ANCHO - 200, 460, 200, 132)
-        self.properties.add(self.listed_planets)
-        self.planets = {}
+        self.planets = AvailablePlanets(self, ANCHO - 200, 460, 200, 132)
+        self.properties.add(self.planets)
 
     def clear(self, event):
         if event.data['panel'] is self:
@@ -115,54 +114,35 @@ class AtmospherePanel(BaseWidget):
             self.image.fill(COLOR_BOX, self.warning_rect)
 
     def set_planet_atmosphere(self, pressure):
-        plnt = self.curr_planet
-        elements = [i for i in self.elements.widgets() if bool(i.value) is not False]
-        avg_atmc_wth = q((1/100)*sum([e.atomic_weight for e in elements]), 'kg/mol')
+        planet = self.curr_planet
+        elements = [i for i in self.elements.widgets() if bool(i.value()) is not False]
         data = dict(zip([e.symbol for e in elements], [float(e.percent.get_value()) for e in elements]))
         data.update({'pressure_at_sea_level': {'value': pressure.m, 'unit': str(pressure.u)}})
-        data.update({'average_atomic_weight': {'value': avg_atmc_wth.m, 'unit': str(avg_atmc_wth.u)}})
-        scale_hight = (8.3144598*plnt.temperature.to('kelvin').m)/(avg_atmc_wth.m*plnt.gravity.to('earth_gravity').m)
-        altitude = 0
-        condition = True
-        while condition:
-            altitude += 100
-            atmospheric_pressure = pressure.m * exp(-(plnt.gravity.to('earth_gravity').m * altitude) / scale_hight)
-            condition = round(atmospheric_pressure.m, 6) > 0
-            print(atmospheric_pressure)
+        planet.set_atmosphere(data)
+        self.planets.delete_objects(planet)
+        self.planets.show()
 
-        print('\n\n', altitude)
-
-        data.update({'end_of_atmosphere': altitude})
-        plnt.set_atmosphere(data)
-        self.listed_planets.delete_objects(plnt)
-        self.listed_planets.show()
-
-    def load_data(self, event):
+    def load_atmosphere(self, event):
         if 'Planets' in event.data and len(event.data['Planets']):
-            for planet_data in event.data['Planets']:
-                planet_id = planet_data['id']
-                self.planets[planet_id] = planet_data["atmosphere"]
-
-    def show_current(self, planet_id):
-        elements = [e.symbol for e in self.elements.widgets()]
-        atmosphere = self.planets[planet_id]
-        composition = atmosphere['composition']
-        for elem in composition:
-            idx = elements.index(elem)
-            element = self.elements.widgets()[idx]
-            element.percent.value = str(composition[elem])
-        value = atmosphere['pressure_at_sea_level']['value']
-        unit = atmosphere['pressure_at_sea_level']['unit']
-        self.pressure = q(value, unit)
-        self.show_pressure.toggle_finished_text(True)
-        self.show_pressure.update_text(self.pressure)
+            atmosphere = event.data['Planets'][0]['atmosphere']
+            elements = [e.symbol for e in self.elements.widgets()]
+            for elem in atmosphere:
+                if elem != 'pressure_at_sea_level':
+                    idx = elements.index(elem)
+                    element = self.elements.widgets()[idx]
+                    element.percent.value = str(atmosphere[elem])
+                else:
+                    value = atmosphere[elem]['value']
+                    unit = atmosphere[elem]['unit']
+                    self.pressure = q(value, unit)
+            self.pre_loaded = True
 
     def show(self):
         super().show()
         for element in self.elements.widgets():
             element.show()
         self.atmograph.show()
-        self.listed_planets.show()
+        self.planets.show()
         self.show_name()
         self.show_pressure.show()
 
@@ -181,7 +161,7 @@ class AtmospherePanel(BaseWidget):
         for element in self.elements.widgets():
             element.hide()
         self.atmograph.hide()
-        self.listed_planets.hide()
+        self.planets.hide()
         self.show_pressure.hide()
 
     def set_current(self, elm):
@@ -206,8 +186,6 @@ class AtmospherePanel(BaseWidget):
         self.image.fill(COLOR_BOX, [159, 580, 80, 14])
         dx, dy = self.water_state_rect.topright
         self.write(state, self.f5, x=dx+1, y=dy)
-        if planet.id in self.planets:
-            self.show_current(planet.id)
 
     def cycle(self, delta):
         for elm in self.elements.widgets():
@@ -235,7 +213,6 @@ class AtmospherePanel(BaseWidget):
 
 class Element(BaseWidget):
     color_ovewritten = False
-    atomic_weight = 0
 
     def __init__(self, parent, idx, symbol, name, weight, min_atm, max_atm, boiling, melting, x, y, color=None):
         super().__init__(parent)
@@ -257,13 +234,7 @@ class Element(BaseWidget):
         self.rect = self.image.get_rect(topleft=(x, y))
         self.percent = PercentageCell(self, 45, y)
 
-    @property
     def value(self):
-        value = self.percent.get_value()
-        if value is not False and type(value) is not str:
-            self.atomic_weight = float(value)*self.weight
-        else:
-            self.atomic_weight = 0
         return self.percent.compile()
 
     def write_name(self, color):
@@ -436,7 +407,7 @@ class PercentageCell(BaseWidget):
     def get_value(self):
         if self.value == '':
             return 0
-        elif '.' in self.value:
+        elif self.value.isnumeric():
             return float(self.value)
         else:
             return self.value
@@ -464,7 +435,7 @@ class PercentageCell(BaseWidget):
             self.enabled = True
         w, h = self.rect.size
         self.image.fill(color, [1, 1, w - 2, h - 2])
-        render = self.f.render(str(self.value), True, COLOR_TEXTO, color)
+        render = self.f.render(self.value, True, COLOR_TEXTO, color)
         self.image.blit(render, (1, 1))
 
     def __repr__(self):
@@ -639,13 +610,7 @@ class ShownPressure(BaseWidget):
 
     def unlock(self):
         self.locked = False
-        self.toggle_finished_text(False)
-
-    def toggle_finished_text(self, toggle):
-        if toggle is True:
-            self.finished_text = ' (set)'
-        else:
-            self.finished_text = ''
+        self.finished_text = ''
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and not self.locked:
@@ -666,7 +631,6 @@ class ShownPressure(BaseWidget):
 
             elif key.tipo == 'Fin':
                 self.finished = True
-                self.toggle_finished_text(True)
                 self.update_text(q(float(self._value), 'atm'))
                 self.elevate_pressure()
 
@@ -677,7 +641,7 @@ class ShownPressure(BaseWidget):
 
     def elevate_pressure(self):
         self.parent.set_planet_atmosphere(round(self.value, 3))
-        self.toggle_finished_text(True)
+        self.finished_text = ' (set)'
         self.update_text(self.value)
 
     def update_text(self, text):

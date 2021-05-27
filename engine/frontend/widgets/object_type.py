@@ -93,7 +93,7 @@ class ObjectType(BaseWidget):
                 got_attr = getattr(self.current, arg)
             else:
                 got_attr = getattr(self.current, arg).to(tos[arg])
-            attr = q(str(round(float(got_attr.m), 5)), got_attr.u) if type(got_attr) is not str else got_attr
+            attr = q(str(round(got_attr.m, 5)), got_attr.u) if type(got_attr) is not str else got_attr
             elemento. value = attr
             elemento.text_area.show()
 

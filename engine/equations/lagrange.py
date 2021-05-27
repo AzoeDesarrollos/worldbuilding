@@ -1,5 +1,5 @@
 from math import pi, pow, cos, sin
-from engine import q, d
+from engine import q
 
 
 # sma = semi major axis in AU
@@ -64,9 +64,9 @@ def lagrange_one(sma, m_primary, m_secondary, ref='primary'):
     primary_distance = a  # in meters
     assert ref == 'primary' or ref == 'secondary', 'Requested options are invalid'
     if ref == 'primary':
-        return q(d(primary_distance), 'm')
+        return q(primary_distance, 'm')
     elif ref == 'secondary':
-        return q(d(secondary_distance), 'm')
+        return q(secondary_distance, 'm')
 
 
 def lagrange_two(sma, m_primary, m_secondary, ref='primary'):
@@ -89,9 +89,9 @@ def lagrange_two(sma, m_primary, m_secondary, ref='primary'):
     primary_distance = a  # in meters
     assert ref == 'primary' or ref == 'secondary', 'Requested options are invalid'
     if ref == 'primary':
-        return q(d(primary_distance), 'm')
+        return q(primary_distance, 'm')
     elif ref == 'secondary':
-        return q(d(secondary_distance), 'm')
+        return q(secondary_distance, 'm')
 
 
 def lagrange_three(sma, m_primary, m_secondary, ref='primary'):
@@ -113,12 +113,13 @@ def lagrange_three(sma, m_primary, m_secondary, ref='primary'):
     primary_distance = a  # in meters
     assert ref == 'primary' or ref == 'secondary', 'Requested options are invalid'
     if ref == 'primary':
-        return q(d(primary_distance), 'm')
+        return q(primary_distance, 'm')
     elif ref == 'secondary':
-        return q(d(secondary_distance), 'm')
+        return q(secondary_distance, 'm')
 
 
 def lagrange_four(sma, m_primary, m_secondary, req='distance', ref='primary'):
+
     sma = _lagrange(sma, m_primary, m_secondary)[3]
     secondary_distance = sma  # in meters
     primary_distance = sma  # in meters
@@ -131,17 +132,18 @@ def lagrange_four(sma, m_primary, m_secondary, req='distance', ref='primary'):
     assert req == 'distance' or (req == 'position' and (ref == 'primary' or ref == 'secondary')), error
     if req == 'distance':
         if ref == 'primary':
-            return q(d(primary_distance), 'm')
+            return q(primary_distance, 'm')
         elif ref == 'secondary':
-            return q(d(secondary_distance), 'm')
+            return q(secondary_distance, 'm')
     elif req == 'position':
         if ref == 'primary':
-            return q(d(primary_distance_x), 'm'), q(d(primary_distance_y), 'm')
+            return q(primary_distance_x, 'm'), q(primary_distance_y, 'm')
         elif ref == 'secondary':
-            return q(d(secondary_distance_x), 'm'), q(d(secondary_distance_y), 'm')
+            return q(secondary_distance_x, 'm'), q(secondary_distance_y, 'm')
 
 
 def lagrange_five(sma, m_primary, m_secondary, req='distance', ref='primary'):
+
     sma = _lagrange(sma, m_primary, m_secondary)[3]
     secondary_distance = sma  # in meters
     primary_distance = sma  # in meters
@@ -153,65 +155,62 @@ def lagrange_five(sma, m_primary, m_secondary, req='distance', ref='primary'):
     assert req == 'distance' or (req == 'position' and (ref == 'primary' or ref == 'secondary')), error
     if req == 'distance':
         if ref == 'primary':
-            return q(d(primary_distance), 'm')
+            return q(primary_distance, 'm')
         elif ref == 'secondary':
-            return q(d(secondary_distance), 'm')
+            return q(secondary_distance, 'm')
     elif req == 'position':
         if ref == 'primary':
-            return q(d(primary_distance_x), 'm'), q(d(primary_distance_y), 'm')
+            return q(primary_distance_x, 'm'), q(primary_distance_y, 'm')
         elif ref == 'secondary':
-            return q(d(secondary_distance_x), 'm'), q(d(secondary_distance_y), 'm')
+            return q(secondary_distance_x, 'm'), q(secondary_distance_y, 'm')
 
 
 def compute_l1v(sma, m_primary, m_secondary):
     primary_distance = lagrange_one(sma, m_primary, m_secondary)[0].m
     period_secondary = _lagrange(sma, m_primary, m_secondary)[4]
-    return q(d(2 * pi * primary_distance / period_secondary), 'm/s')
+    return q(2 * pi * primary_distance / period_secondary, 'm/s')
 
 
 def compute_l2v(sma, m_primary, m_secondary):
     primary_distance = lagrange_two(sma, m_primary, m_secondary)[0].m
     period_secondary = _lagrange(sma, m_primary, m_secondary)[4]
-    return q(d(2 * pi * primary_distance / period_secondary), 'm/s')
+    return q(2 * pi * primary_distance / period_secondary, 'm/s')
 
 
 def compute_l3v(sma, m_primary, m_secondary):
     primary_distance = lagrange_three(sma, m_primary, m_secondary)[0].m
     period_secondary = _lagrange(sma, m_primary, m_secondary)[4]
-    return q(d(2 * pi * primary_distance / period_secondary), 'm/s')
+    return q(2 * pi * primary_distance / period_secondary, 'm/s')
 
 
 def compute_l4v(sma, m_primary, m_secondary):
     period_secondary = _lagrange(sma, m_primary, m_secondary)[4]
-    return q(d(2 * pi * sma / period_secondary), 'm/s')
+    return q(2 * pi * sma / period_secondary, 'm/s')
 
 
 def compute_vl5(sma, m_primary, m_secondary):
     period_secondary = _lagrange(sma, m_primary, m_secondary)[4]
-    return q(d(2 * pi * sma / period_secondary), 'm/s')
+    return q(2 * pi * sma / period_secondary, 'm/s')
 
 
 def compute_vl5_xy_components(sma, m_primary, m_secondary):
     v_l5 = compute_vl5(sma, m_primary, m_secondary)
     x_component = v_l5 * cos(pi / 3)
     y_component = v_l5 * sin(pi / 3)
-    return d(x_component), d(y_component)
+    return x_component, y_component
 
 
 def compute_vl4_xy_components(sma, m_primary, m_secondary):
     v_l4 = compute_l4v(sma, m_primary, m_secondary)
     x_component = v_l4 * sin(pi / 3)
     y_component = v_l4 * cos(pi / 3)
-    return d(x_component), d(y_component)
+    return x_component, y_component
 
 
 def get_lagrange_points(semi_major_axis, star_mass, body_mass):
-    semi_major_axis = float(semi_major_axis)
-    star_mass = float(star_mass)
-    body_mass = float(body_mass)
-    data = {'l1': lagrange_one(semi_major_axis, star_mass, body_mass, ref='secondary'),
-            'l2': lagrange_two(semi_major_axis, star_mass, body_mass, ref='secondary'),
-            'l3': lagrange_three(semi_major_axis, star_mass, body_mass, ref='secondary'),
-            'l4': lagrange_four(semi_major_axis, star_mass, body_mass, req='distance', ref='secondary').to('au'),
-            'l5': lagrange_five(semi_major_axis, star_mass, body_mass, req='distance', ref='secondary').to('au')}
-    return data
+    d = {'l1': lagrange_one(semi_major_axis, star_mass, body_mass, ref='secondary'),
+         'l2': lagrange_two(semi_major_axis, star_mass, body_mass, ref='secondary'),
+         'l3': lagrange_three(semi_major_axis, star_mass, body_mass, ref='secondary'),
+         'l4': lagrange_four(semi_major_axis, star_mass, body_mass, req='distance', ref='secondary').to('au'),
+         'l5': lagrange_five(semi_major_axis, star_mass, body_mass, req='distance', ref='secondary').to('au')}
+    return d

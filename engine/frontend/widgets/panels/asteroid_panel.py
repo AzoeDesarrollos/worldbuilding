@@ -4,7 +4,7 @@ from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.meta import Meta
-from engine import material_densities, q, d
+from engine import material_densities, q
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
 from ..values import ValueText
@@ -186,15 +186,15 @@ class AsteroidType(BaseWidget):
 
         for item in self.properties.get_widgets_from_layer(2):
             if item.text_area.value:
-                data[item.text.lower()] = d(item.text_area.value)
+                data[item.text.lower()] = float(item.text_area.value)
 
         for item in self.properties.get_widgets_from_layer(3):
             if item.text_area.value:
-                data[item.text.lower()] = d(item.text_area.value)
+                data[item.text.lower()] = float(item.text_area.value)
 
         for material in self.properties.get_widgets_from_layer(4):
             if material.text_area.value:  # not empty
-                data['composition'][material.text.lower()] = d(material.text_area.value)
+                data['composition'][material.text.lower()] = float(material.text_area.value)
 
         if self.current is not None:
             data['a axis'] = self.current.a_axis.m

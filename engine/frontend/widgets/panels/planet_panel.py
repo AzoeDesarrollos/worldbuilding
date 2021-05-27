@@ -8,9 +8,8 @@ from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.meta import Meta
 from .common import PlanetButton, TextButton
 from engine.equations.planet import Planet
-from decimal import InvalidOperation
 from pygame import Rect
-from engine import q, d
+from engine import q
 
 
 class PlanetPanel(BasePanel):
@@ -258,9 +257,9 @@ class PlanetType(ObjectType):
             if button.text_area.value:  # not empty
                 string = str(button.text_area.value).split(' ')[0]
                 try:
-                    setattr(self, attr, d(string))
-                    attrs[attr] = d(string)
-                except InvalidOperation:
+                    setattr(self, attr, float(string))
+                    attrs[attr] = float(string)
+                except ValueError:
                     setattr(self, attr, button.text_area.value)
                     attrs[attr] = button.text_area.value
 

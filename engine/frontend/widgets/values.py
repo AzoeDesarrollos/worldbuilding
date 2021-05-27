@@ -104,8 +104,7 @@ class ValueText(BaseWidget):
                         m_high = available_mass.m
                     assert m_high > 0.2, not_enough_mass
                     data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
-                                      radius_lower_limit=r_low, radius_upper_limit=r_high,
-                                      is_gas_drwaf=True)
+                                      radius_lower_limit=r_low, radius_upper_limit=r_high)
                 elif p.parent.unit.name == 'Gas Giant':
                     assert available_mass.m >= 0.03, not_enough_mass
                     data = gasgraph_loop(round(available_mass.m, 2))
