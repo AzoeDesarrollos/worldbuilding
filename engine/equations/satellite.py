@@ -95,6 +95,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         self.clase = 'Major Moon'
         self.cls = self.comp + ' Major'
         self.title = 'Major'
+        self.albedo = q(13.6)
 
         # ID values make each satellite unique, even if they have the same characteristics.
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
@@ -138,6 +139,7 @@ class Minor(Satellite):
         self.cls = self.shape.split(' ')[0]
         self.clase = 'Minor Moon'
         self.title = self.cls
+        self.albedo = q(4.76)
 
         # ID values make each satellite unique, even if they have the same characteristics.
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])

@@ -1,5 +1,6 @@
 from engine.frontend.graphs import dwarfgraph_loop, gasgraph_loop, graph_loop
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX
+from engine.frontend.graphs.axial_tilt import axial_loop
 from engine.equations.planet import GasDwarf, Terrestial
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
@@ -79,11 +80,12 @@ class ValueText(BaseWidget):
         not_enough_mass = 'There is not enough mass in the system to create new bodies of this type.'
         if event.button == 1:
             p = self.parent
-            if p.parent.name == 'Planet' and not p.has_values:
+            if p.parent.name == 'Planet':
+                data = None
                 system = Systems.get_current()
                 self.active = True
                 available_mass = system.get_available_mass()
-                if p.parent.unit.name == 'Habitable':
+                if p.parent.unit.name == 'Habitable' and not p.has_values:
                     available_mass = available_mass.to('earth_mass').m
                     m_low, m_high, r_low, r_high = Terrestial
                     if available_mass < m_high:
@@ -91,14 +93,14 @@ class ValueText(BaseWidget):
                     assert m_high >= 3.5, not_enough_mass
                     data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
                                       radius_lower_limit=r_low, radius_upper_limit=r_high)
-                elif p.parent.unit.name == 'Terrestial':
+                elif p.parent.unit.name == 'Terrestial' and not p.has_values:
                     available_mass = available_mass.to('earth_mass').m
                     m_high = 10
                     if available_mass < m_high:
                         m_high = available_mass
                     assert m_high > 0.1, not_enough_mass
                     data = graph_loop(mass_upper_limit=m_high)
-                elif p.parent.unit.name == 'Gas Dwarf':
+                elif p.parent.unit.name == 'Gas Dwarf' and not p.has_values:
                     m_low, m_high, r_low, r_high = GasDwarf
                     if available_mass.to('earth_mass').m < m_high:
                         m_high = available_mass.m
@@ -106,13 +108,15 @@ class ValueText(BaseWidget):
                     data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
                                       radius_lower_limit=r_low, radius_upper_limit=r_high,
                                       is_gas_drwaf=True)
-                elif p.parent.unit.name == 'Gas Giant':
+                elif p.parent.unit.name == 'Gas Giant' and not p.has_values:
                     assert available_mass.m >= 0.03, not_enough_mass
                     data = gasgraph_loop(round(available_mass.m, 2))
-                else:
+                elif p.parent.unit.name == 'Dwarf Planet' and not p.has_values:
                     available_mass = round(available_mass.to('earth_mass').m, 4)
                     assert available_mass > 0.0001, not_enough_mass
                     data = dwarfgraph_loop(available_mass if available_mass < 0.1 else None)
+
+                Renderer.reset()
                 if data is not None:
                     for elemento in self.parent.properties.get_sprites_from_layer(1):
                         attr = ''
@@ -127,9 +131,12 @@ class ValueText(BaseWidget):
                             elemento.value = str(data[attr])
                             elemento.text_area.show()
                     self.parent.check_values(data.get('composition', None))
-                    Renderer.reset()
-                else:
-                    self.parent.button.disable()
+
+                elif self.text == 'Axial tilt':
+                    idx = self.parent.current.id
+                    data = axial_loop(idx)
+                    self.parent.update_value(self, data)
+
             elif p.parent.name == 'Orbit' and p.has_values:
                 text = self.text_area
                 if text.unit == 'year' and text.value < 0.01:
@@ -216,10 +223,7 @@ class NumberArea(BaseArea, IncrementalValue):
                     self.value = self.value[0:len(str(self.value)) - 1]
 
             elif event.tipo == 'Fin' and len(str(self.value)):
-                if self.great_grandparent.name == 'Planet':
-                    self.grandparent.check_values()
-
-                elif self.great_grandparent.name == 'Star':
+                if self.great_grandparent.name == 'Star':
                     self.grandparent.set_star({self.parent.text.lower(): float(self.value)})  # for stars
 
                 elif self.great_grandparent.name == 'Star System':

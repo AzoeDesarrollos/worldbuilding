@@ -1,6 +1,5 @@
 from .general import BodyInHydrostaticEquilibrium, Ring
 from .lagrange import get_lagrange_points
-from .planetary_system import Systems
 from math import sqrt, pi, pow, tan
 from datetime import datetime
 from pygame import Color
@@ -31,8 +30,8 @@ class Planet(BodyInHydrostaticEquilibrium):
     hill_sphere = 0
     roches_limit = 0
 
-    axial_tilt = 0
-    spin = ''
+    _tilt = 'Not set'
+    spin = 'N/A'
 
     sprite = None
 
@@ -80,24 +79,31 @@ class Planet(BodyInHydrostaticEquilibrium):
             }
 
         self.atmosphere = {}
-        self.habitable = self.set_habitability()
-        self.albedo = q(data['albedo']) if not self.habitable else q(29)
+        self.albedo = q(data['albedo'])
         self.greenhouse = q(data['greenhouse']) if 'greenhouse' in data else q(1)
         self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)
 
         self.satellites = []
-
-        star = Systems.get_current_star()
-        if 0 <= self.axial_tilt < 90:
-            self.spin = star.spin
-        elif 90 <= self.axial_tilt <= 180:
-            self.spin = 'CW' if star.spin == 'CCW' else 'CCW'
 
         # ID values make each planet unique, even if they have the same characteristics.
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
         self.id = data['id'] if 'id' in data else now
 
         self.system_id = data.get('system', None)
+
+    @property
+    def tilt(self):
+        return self._tilt
+
+    @tilt.setter
+    def tilt(self, value):
+        if 0 <= value < 90:
+            self.spin = 'prograde'
+        elif 90 <= value <= 180:
+            self.spin = 'retrograde'
+        self._tilt = q(value, 'degree')
+        self.habitable = self.set_habitability()
+        self.albedo = self.albedo if not self.habitable else q(29)
 
     def set_qs(self, unit):
         m = unit + '_mass'
@@ -120,7 +126,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         habitable = q(0.1, 'earth_mass') < mass < q(3.5, 'earth_mass')
         habitable = habitable and q(0.5, 'earth_radius') < radius < q(1.5, 'earth_radius')
         habitable = habitable and q(0.4, 'earth_gravity') < gravity < q(1.6, 'earth_gravity')
-        habitable = habitable and (0 <= self.axial_tilt <= 80 or 110 <= self.axial_tilt <= 180)
+        habitable = habitable and (0 <= self.tilt <= 80 or 110 <= self.tilt <= 180)
 
         return habitable
 
@@ -155,7 +161,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         return self.roches_limit
 
     def set_precession_cycle(self):
-        tilt = self.axial_tilt
+        tilt = self.tilt
         self.duracion_ciclo_precession = q(-7.095217823187172 * pow(tilt, 2) + 1277.139208333333 * tilt, 'years')
         self.radio_circulo_precession = tan(tilt) * self.radius.to('km')
 

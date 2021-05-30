@@ -36,20 +36,21 @@ class PlanetarySystem:
 
     def visibility_by_albedo(self):
         luminosity = self.star_system.luminosity.to('watt').m
-        for i, planet in enumerate(self.planets):
-            if planet.id not in self.aparent_brightness:
-                self.aparent_brightness[planet.id] = []
-                self.average_visibility[planet.id] = {}
+        to_see = self.planets+self.satellites+self.asteroids
+        for i, body in enumerate(to_see):
+            if body.id not in self.aparent_brightness:
+                self.aparent_brightness[body.id] = []
+                self.average_visibility[body.id] = {}
 
-            others = self.planets[:i] + self.planets[i + 1:]
-            if planet.orbit is not None:
-                for day in range(int(planet.orbit.period.to('day').m)):
+            others = to_see[:i] + to_see[i + 1:]
+            if body.orbit is not None:
+                for day in range(int(body.orbit.period.to('day').m)):
                     ab_others = {}
-                    anomaly_o = day * 360 / planet.orbit.period.to('day').m
-                    x1, y1 = planet.orbit.get_measured_position(anomaly_o, 'm')  # position of the Oberver's planet
+                    anomaly_o = day * 360 / body.orbit.period.to('day').m
+                    x1, y1 = body.orbit.get_measured_position(anomaly_o, 'm')  # position of the Oberver's planet
                     for other in [o for o in others if o.orbit is not None]:
                         anomaly_p = day * 360 / other.orbit.period.to('day').m
-                        x2, y2 = other.orbit.get_measured_position(anomaly_p, 'm')  # position of the observed planet
+                        x2, y2 = other.orbit.get_measured_position(anomaly_p, 'm')  # position of the observed body
 
                         distance = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))  # Euclidean distance between the two points.
                         albedo = other.albedo.m / 100
@@ -60,16 +61,16 @@ class PlanetarySystem:
                         ab_others[other.id] = ab
 
                     if len(ab_others):
-                        self.aparent_brightness[planet.id].append(ab_others)
+                        self.aparent_brightness[body.id].append(ab_others)
                     else:
                         break
 
-            if len(self.aparent_brightness[planet.id]):
-                brightness = self.aparent_brightness[planet.id]
+            if len(self.aparent_brightness[body.id]):
+                brightness = self.aparent_brightness[body.id]
                 for other in others:
-                    sub = [brightness[day][other.id] for day in range(int(planet.orbit.period.to('day').m))]
+                    sub = [brightness[day][other.id] for day in range(int(body.orbit.period.to('day').m))]
 
-                    self.average_visibility[planet.id][other.id] = sum(sub) / len(sub)
+                    self.average_visibility[body.id][other.id] = sum(sub) / len(sub)
 
     @property
     def star(self):

@@ -518,12 +518,12 @@ class OrbitType(BaseWidget, Intertwined):
         self.clear()
         props = ['Semi-major axis', 'Semi-minor axis', 'Eccentricity', 'Inclination',
                  'Periapsis', 'Apoapsis', 'Orbital motion', 'Temperature', 'Orbital velocity', 'Orbital period',
-                 'Argument of periapsis', 'Longuitude of the ascending node', 'True anomaly', 'Body']
+                 'Argument of periapsis', 'Longitude of the ascending node', 'True anomaly', 'Body']
         attr = ['semi_major_axis', 'semi_minor_axis', 'eccentricity', 'inclination',
                 'periapsis', 'apoapsis', 'motion', 'temperature', 'velocity', 'period',
-                'argument_of_periapsis', 'longuitude_of_the_ascending_node', 'true_anomaly', 'astrobody']
+                'argument_of_periapsis', 'longitude_of_the_ascending_node', 'true_anomaly', 'astrobody']
         modifiables = ['Semi-major axis', 'Eccentricity', 'Inclination',
-                       'Argument of periapsis', 'Longuitude of the ascending node']
+                       'Argument of periapsis', 'Longitude of the ascending node']
         for i, prop in enumerate([j for j in attr if hasattr(orbit, j)]):
             value = getattr(orbit, prop)
             vt = ValueText(self, props[attr.index(prop)], 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
@@ -774,7 +774,7 @@ class AddResonanceButton(TextButton):
         super().__init__(parent, 'Add Resonance', x, y)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.button == 1 and self.enabled:
             assert hasattr(self.parent.selected_marker.orbit, 'astrobody'), "The orbit is empty."
             planet = self.parent.selected_marker.orbit.astrobody
 

@@ -1,8 +1,9 @@
 from engine.backend.util import collapse_factor_lists, prime_factors
+from engine.frontend.graphs.orbital_properties import rotation_loop
+from engine.frontend.globales import Renderer
 from .planetary_system import Systems
 from math import sqrt, pow, cos, sin
 from .general import Ellipse
-from random import randint
 from pygame import draw
 from engine import q
 
@@ -107,7 +108,7 @@ class Orbit(Ellipse):
     _star = None
 
     argument_of_periapsis = 'undefined'
-    longuitude_of_the_ascending_node = 0
+    longitude_of_the_ascending_node = 0
     true_anomaly = q(0, 'degree')
 
     def __init__(self, a, e, i, unit='au'):
@@ -131,9 +132,6 @@ class Orbit(Ellipse):
         elif 90 < self._i < 180:
             self.direction = 'retrograde'
             self.motion = self.direction
-
-        self.longuitude_of_the_ascending_node = set_longuitude_of_the_ascending_node(self._i)
-        self.argument_of_periapsis = set_argument_of_periapsis(self._i)
 
     def draw(self, surface):
         screen_rect_center = surface.get_rect().center
@@ -161,6 +159,8 @@ class Orbit(Ellipse):
         if astro_body.celestial_type == 'planet':
             self.temperature = astro_body.set_temperature(main.mass.m, self._a)
 
+        if body_around_planet:
+            main = astro_body.parent.orbit.star
         system = Systems.get_system_by_star(main)
         system.visibility_by_albedo()
 
@@ -255,6 +255,9 @@ class PlanetOrbit(Orbit):
     def __init__(self, star_mass, a, e, i):
         super().__init__(a, e, i, 'au')
         self.reset_period_and_speed(star_mass.m)
+        orbital_properties = set_orbital_properties(self._i)
+        self.longitude_of_the_ascending_node = orbital_properties[0]
+        self.argument_of_periapsis = orbital_properties[1]
 
     def reset_period_and_speed(self, main_body_mass):
         self.period = q(sqrt(pow(self._a, 3) / main_body_mass), 'year')
@@ -266,6 +269,9 @@ class SatelliteOrbit(Orbit):
 
     def __init__(self, a, e, i):
         super().__init__(a, e, i, 'earth_radius')
+        orbital_properties = set_orbital_properties(self._i)
+        self.longitude_of_the_ascending_node = orbital_properties[0]
+        self.argument_of_periapsis = orbital_properties[1]
 
     def reset_period_and_speed(self, main_body_mass):
         satellite_mass = round(self.astrobody.mass.m, 3)
@@ -322,21 +328,10 @@ def to_resonance(period_primary, period_secondary):
     return False  # objects are not in mean motion resonance
 
 
-def _set_random_angle(value):
-    if value is None:
-        value = q(randint(0, 360), 'degree')
-    return value
-
-
-def set_argument_of_periapsis(inclination, value=None):
-    if inclination not in (0, 180):
-        return _set_random_angle(value)
+def set_orbital_properties(inclination):
+    if inclination in (0, 180):
+        return q(0, 'degree'), 'undefined'
     else:
-        return 'undefined'
-
-
-def set_longuitude_of_the_ascending_node(inclination, value=None):
-    if inclination not in (0, 180):
-        return _set_random_angle(value)
-    else:
-        return q(0, 'degree')
+        values = rotation_loop()
+        Renderer.reset()
+        return values

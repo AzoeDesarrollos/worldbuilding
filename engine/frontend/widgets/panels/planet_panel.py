@@ -156,12 +156,12 @@ class PlanetType(ObjectType):
     def __init__(self, parent):
         rel_props = ['Mass', 'Radius', 'Surface gravity', 'Escape velocity']
         rel_args = ['mass', 'radius', 'gravity', 'escape_velocity']
-        abs_args = ['density', 'volume', 'surface', 'circumference', 'albedo', 'greenhouse', 'clase']
-        abs_props = ['Density', 'Volume', 'Surface area', 'Circumference', 'Albedo (bond)', 'Greenhouse effect',
-                     'Class']
+        abs_args = ['density', 'volume', 'surface', 'circumference', 'tilt', 'spin', 'albedo', 'greenhouse', 'clase']
+        abs_props = ['Density', 'Volume', 'Surface area', 'Circumference', 'Axial tilt', 'Spin', 'Albedo (bond)',
+                     'Greenhouse effect', 'Class']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
         self.set_modifiables('relatives', 0, 1)
-        self.set_modifiables('absolutes', 4, 5)
+        self.set_modifiables('absolutes', 4, 6, 7)
         self.absolutes.widgets()[4].set_min_and_max(0, 100)
         f = self.crear_fuente(14)
         f.set_underline(True)
@@ -278,6 +278,12 @@ class PlanetType(ObjectType):
                 self.parent.button_add.disable()
                 self.parent.mass_number.mass_color = 200, 0, 0
             self.fill()
+
+    def update_value(self, button, data):
+        idx = self.absolutes.widgets().index(button)
+        attr = self.absolute_args[idx]
+        setattr(self.current, attr, data)
+        self.fill()
 
     def fill(self, tos=None):
         tos = {

@@ -27,17 +27,16 @@ class ObjectType(BaseWidget):
             if len(relative_names) == 6:
                 vt = ValueText(self, button, 50, 55 + i * 13 * 2)
             else:
-                vt = ValueText(self, button, 50, 55 + i * 15 * 2)
+                vt = ValueText(self, button, 50, 45 + i * 15 * 2)
             self.relatives.add(vt)
             self.properties.add(vt, layer=1)
 
         self.absolutes = WidgetGroup()
         for i, button in enumerate(absolute_names):
-            vt = None
             if len(absolute_names) in [5, 6]:
                 vt = ValueText(self, button, 50, 210 + i * 15 * 2)
-            elif len(absolute_names) == 7:
-                vt = ValueText(self, button, 50, 180 + i * 15 * 2)
+            else:
+                vt = ValueText(self, button, 50, 160 + i * 13 * 2)
             self.absolutes.add(vt)
             self.properties.add(vt, layer=1)
 
