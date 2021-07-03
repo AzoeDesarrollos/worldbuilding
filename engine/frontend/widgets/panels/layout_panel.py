@@ -52,6 +52,8 @@ class LayoutPanel(BaseWidget):
         WidgetHandler.add_widget(e)
         WidgetHandler.add_widget(g)
 
+        self.load_button = d
+
     def cycle(self, delta):
         if 0 <= self.curr_idx + delta < len(self.panels):
             self.current.hide()
@@ -126,6 +128,7 @@ class SaveButton(BaseButton):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             EventHandler.trigger('Save', 'SaveButton', {})
+            self.parent.load_button.enable()
 
 
 class LoadButton(BaseButton):
@@ -202,3 +205,4 @@ class ClearButton(BaseButton):
         ruta = join(getcwd(), 'data', 'savedata.json')
         if event.button == 1 and exists(ruta):
             guardar_json(ruta, {})
+            self.parent.load_button.disable()

@@ -1,9 +1,8 @@
 from .common import TextButton, AvailableObjects, ToggleableButton, AvailablePlanet, ModifyArea
-from engine.frontend.globales import WidgetGroup, Renderer, render_textrect, WidgetHandler
+from engine.frontend.globales import WidgetGroup, render_textrect, WidgetHandler
 from engine.equations.orbit import RawOrbit, PseudoOrbit, from_stellar_resonance
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.frontend.visualization import topdown_view
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.globales.constantes import *
@@ -66,7 +65,6 @@ class OrbitPanel(BaseWidget):
         self.show_markers_button = ToggleableButton(self, 'Stellar Orbits', self.toggle_stellar_orbits, 3, 421)
         self.show_markers_button.disable()
         self.add_orbits_button = AddOrbitButton(self, ANCHO - 94, 394)
-        self.view_button = VisualizationButton(self, 3, 58)
         self.resonances_button = AddResonanceButton(self, ANCHO - 140, 416)
 
         self.digit_x = RatioDigit(self, 'x', self.resonances_button.rect.left - 60, self.resonances_button.rect.y)
@@ -76,8 +74,9 @@ class OrbitPanel(BaseWidget):
         self.cycler = cycle(self.ratios)
         next(self.cycler)
 
-        self.properties.add([self.area_modify, self.planet_area, self.show_markers_button, self.add_orbits_button,
-                             self.view_button, self.resonances_button, self.digit_x, self.digit_y], layer=2)
+        self.properties.add([self.area_modify, self.planet_area, self.show_markers_button,
+                             self.add_orbits_button, self.resonances_button, self.digit_x,
+                             self.digit_y], layer=2)
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
@@ -323,6 +322,7 @@ class OrbitPanel(BaseWidget):
         self._loaded_orbits.clear()
 
     def fill_indexes(self):
+        assert len(Systems.get_systems())
         for system in Systems.get_systems():
             star = system.star_system
             if star not in self._markers:
@@ -405,7 +405,7 @@ class OrbitPanel(BaseWidget):
             self.image.fill(COLOR_BOX, self.area_markers)
         else:
             f = self.crear_fuente(16)
-            text = 'There is no star system set. Go back to the Star Panel and set star first.'
+            text = 'There is no star system set. Go back to the Star Panel and set a star first.'
             rect = Rect(50, 100, 200, 100)
             render = render_textrect(text, f, rect.w, (0, 0, 0), COLOR_BOX)
             self.image.blit(render, rect)
@@ -847,20 +847,6 @@ class RatioDigit(BaseWidget):
 
     def __repr__(self):
         return self.name
-
-
-class VisualizationButton(TextButton):
-    enabled = False
-
-    def __init__(self, parent, x, y):
-        super().__init__(parent, 'View', x, y)
-
-    def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
-            topdown_view(Systems.get_current())
-            Renderer.reset()
-            if not self.parent.visible_markers:
-                self.parent.toggle_stellar_orbits()
 
 
 class Recomendation(BaseWidget):
