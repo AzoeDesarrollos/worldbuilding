@@ -1,11 +1,11 @@
-from engine.frontend.globales import ALTO, ANCHO, WidgetGroup, COLOR_TEXTO, COLOR_SELECTED, COLOR_BOX
+from engine.frontend.globales import ALTO, ANCHO, COLOR_TEXTO, COLOR_SELECTED, COLOR_BOX, COLOR_DISABLED
 from engine.frontend.globales import Renderer, WidgetHandler
 from engine.frontend.widgets.basewidget import BaseWidget
+from engine.backend.util import abrir_json, guardar_json
 from pygame import Surface, draw, transform, SRCALPHA
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.meta import Meta
-from engine.backend.util import abrir_json
 from os.path import exists, join
 from os import getcwd
 from . import panels
@@ -24,7 +24,6 @@ class LayoutPanel(BaseWidget):
         Systems.init()
 
         self.panels = []
-        self.properties = WidgetGroup()
         for panel in panels:
             self.panels.append(panel(self))
 
@@ -34,26 +33,24 @@ class LayoutPanel(BaseWidget):
         a = Arrow(self, 'backward', 180, self.rect.left + 16, self.rect.bottom)
         b = Arrow(self, 'forward', 0, self.rect.right - 16, self.rect.bottom)
 
-        c = SaveButton(self, 450, self.rect.bottom - 26)
-        d = LoadButton(self, 300, self.rect.bottom - 26)
-        e = NewButton(self, 150, self.rect.bottom - 26)
+        e = NewButton(self, (self.rect.w // 5) * 1, self.rect.bottom - 26)
+        d = LoadButton(self, (self.rect.w // 5) * 2, self.rect.bottom - 26)
+        c = SaveButton(self, (self.rect.w // 5) * 3, self.rect.bottom - 26)
+        g = ClearButton(self, (self.rect.w // 5) * 4, self.rect.bottom - 26)
 
-        f = SwapSystem(self, ANCHO-200, 2)
+        SwapSystem(self, ANCHO-200, 2)
 
-        self.properties.add(a, b, layer=3)
         Renderer.add_widget(a)
         Renderer.add_widget(b)
-
-        self.properties.add(e, layer=4)
         Renderer.add_widget(c)
         Renderer.add_widget(d)
         Renderer.add_widget(e)
-
-        self.properties.add(f, layer=4)
+        Renderer.add_widget(g)
 
         WidgetHandler.add_widget(c)
         WidgetHandler.add_widget(d)
         WidgetHandler.add_widget(e)
+        WidgetHandler.add_widget(g)
 
     def cycle(self, delta):
         if 0 <= self.curr_idx + delta < len(self.panels):
@@ -117,6 +114,7 @@ class BaseButton(Meta):
         f2 = self.crear_fuente(16, bold=True)
         self.img_uns = f1.render(text, True, COLOR_TEXTO, COLOR_SELECTED)
         self.img_sel = f2.render(text, True, COLOR_TEXTO, COLOR_SELECTED)
+        self.img_dis = f1.render(text, True, COLOR_DISABLED, COLOR_SELECTED)
         self.image = self.img_uns
         self.rect = self.image.get_rect(centerx=x, y=y)
 
@@ -194,3 +192,13 @@ class SystemName(BaseWidget):
     def update(self):
         self.image = self.f.render(self.get_name(), True, COLOR_TEXTO, COLOR_BOX)
         self.rect = self.image.get_rect(topleft=self._rect.topleft)
+
+
+class ClearButton(BaseButton):
+    def __init__(self, parent, x, y):
+        super().__init__(parent, x, y, 'Clear')
+
+    def on_mousebuttondown(self, event):
+        ruta = join(getcwd(), 'data', 'savedata.json')
+        if event.button == 1 and exists(ruta):
+            guardar_json(ruta, {})

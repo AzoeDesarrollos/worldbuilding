@@ -82,6 +82,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.albedo = q(data['albedo'])
         self.greenhouse = q(data['greenhouse']) if 'greenhouse' in data else q(1)
         self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)
+        self.tilt = data['tilt'] if 'tilt' in data else 0
 
         self.satellites = []
 

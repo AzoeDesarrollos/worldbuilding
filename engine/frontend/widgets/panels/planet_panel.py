@@ -51,7 +51,9 @@ class PlanetPanel(BasePanel):
                         'composition': planet.composition,
                         'clase': planet.clase,
                         'system': system.id,
-                        'id': planet.id
+                        'id': planet.id,
+                        'albedo': planet.albedo.m,
+                        'tilt': planet.tilt.m
                     }
                     data.append(planet_data)
         EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": data})
