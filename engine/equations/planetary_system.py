@@ -123,6 +123,14 @@ class PlanetarySystem:
         star = self.star_system
         return star.habitable_inner.m <= pln_orbit.m <= star.habitable_outer.m
 
+    @property
+    def habitable(self):
+        # the system is considered habitable only if it hosts a habitable planet.
+        for planet in self.planets:
+            if planet.habitable and self.is_habitable(planet):
+                return True
+        return False
+
     def get_unnamed(self):
         unnamed = []
         if not self.star_system.has_name:

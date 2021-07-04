@@ -1,8 +1,8 @@
 from engine.backend.util import collapse_factor_lists, prime_factors
 from engine.frontend.graphs.orbital_properties import rotation_loop
 from engine.frontend.globales import Renderer
+from math import sqrt, pow, cos, sin, pi
 from .planetary_system import Systems
-from math import sqrt, pow, cos, sin
 from .general import Ellipse
 from pygame import draw
 from engine import q
@@ -287,6 +287,18 @@ class BinaryStarOrbit(Orbit):
     def reset_period_and_speed(self, main_body_mass):
         self.period = q(sqrt(pow(self._a, 3) / main_body_mass), 'year')
         self.velocity = q(sqrt(main_body_mass / self._a), 'earth_orbital_velocity').to('kilometer per second')
+
+
+class GalacticStellarOrbit(Orbit):
+    def __init__(self, a, e):
+        super().__init__(a, e, q(0, 'degrees'), unit='kpc')
+        age = self.star.age.m
+        self.star.z = q(49*cos((2*pi/72)*age), 'kpc')
+        # z difined as the star's shift ("bobbing") with respect to the galactic plane
+        # also, this fuction is completely made up, as the actual formula dependes on observational data.
+
+    def reset_period_and_speed(self, main):
+        raise NotImplementedError
 
 
 def from_stellar_resonance(star, planet, resonance: str):

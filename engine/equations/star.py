@@ -3,9 +3,9 @@ from engine.backend.util import decimal_round
 from bisect import bisect_right
 from datetime import datetime
 from math import sqrt, pow
+from engine import q, roll
 from random import choice
 from pygame import Color
-from engine import q
 
 
 class Star(BodyInHydrostaticEquilibrium):
@@ -39,6 +39,9 @@ class Star(BodyInHydrostaticEquilibrium):
     _frost_line = 0
 
     _spin = ''
+
+    _age = -1
+    age = 0
 
     def __init__(self, data):
         mass = data.get('mass', False)
@@ -93,6 +96,12 @@ class Star(BodyInHydrostaticEquilibrium):
             radius = pow(self._mass, 0.5)
         return radius
 
+    def set_age(self):
+        if self._age == -1:
+            # reseting the star's mass should not change it's age, because it is the same star that is being remodeled.
+            self._age = roll(b=self._lifetime)
+            # this value may be manually set up at some point in the future.
+
     def set_derivated_characteristics(self):
         self._lifetime = self._mass / self._luminosity
         self._temperature = pow((self._luminosity / pow(self._radius, 2)), (1 / 4))
@@ -101,6 +110,7 @@ class Star(BodyInHydrostaticEquilibrium):
         self._inner_boundry = self._mass * 0.01
         self._outer_boundry = self._mass * 40
         self._frost_line = round(4.85 * sqrt(self._luminosity), 3)
+        self.set_age()
 
     def set_qs(self):
         self.mass = q(self._mass, 'sol_mass')
@@ -117,6 +127,7 @@ class Star(BodyInHydrostaticEquilibrium):
         self.inner_boundry = q(self._inner_boundry, 'au')
         self.outer_boundry = q(self._outer_boundry, 'au')
         self.frost_line = q(self._frost_line, 'au')
+        self.age = q(self._age, 'years')
 
     def stellar_classification(self):
         masses = [0.08, 0.45, 0.8, 1.04, 1.4, 2.1, 16]
