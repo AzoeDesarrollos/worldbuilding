@@ -10,7 +10,7 @@ __all__ = [
 
 def roll(a: float = 0.0, b: float = 0.0):
     """Base function to generate random float values"""
-    if a != 0.0 and b != 0.0:
+    if a != 0.0 or b != 0.0:
         return uniform(a, b)
     else:
         return random()

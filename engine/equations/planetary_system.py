@@ -1,6 +1,6 @@
 from engine.backend.util import abrir_json, guardar_json
 from engine.backend.eventhandler import EventHandler
-from math import exp, sqrt, pow
+from math import exp, pow
 from os.path import join
 from os import getcwd
 from engine import q
@@ -26,7 +26,6 @@ class PlanetarySystem:
         self.body_mass = q(16 * exp(-0.6931 * star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
 
         self.aparent_brightness = {}
-        self.average_visibility = {}
 
     def update(self):
         self.body_mass = q(16 * exp(-0.6931 * self.star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
@@ -34,43 +33,41 @@ class PlanetarySystem:
     def get_available_mass(self):
         return self.body_mass
 
+    def visibility_of_stars(self, body):
+        if body.id not in self.aparent_brightness:
+            self.aparent_brightness[body.id] = {}
+
+        for star in self.star_system:
+            if body.orbit is not None and star.id not in self.aparent_brightness[body.id]:
+                ab = star.luminosity.m/pow(body.orbit.a.m, 2)
+                self.aparent_brightness[body.id][star.id] = ab
+
     def visibility_by_albedo(self):
         luminosity = self.star_system.luminosity.to('watt').m
         to_see = self.planets+self.satellites+self.asteroids
         for i, body in enumerate(to_see):
             if body.id not in self.aparent_brightness:
-                self.aparent_brightness[body.id] = []
-                self.average_visibility[body.id] = {}
+                self.aparent_brightness[body.id] = {}
 
             others = to_see[:i] + to_see[i + 1:]
             if body.orbit is not None:
-                for day in range(int(body.orbit.period.to('day').m)):
-                    ab_others = {}
-                    anomaly_o = day * 360 / body.orbit.period.to('day').m
-                    x1, y1 = body.orbit.get_measured_position(anomaly_o, 'm')  # position of the Oberver's planet
-                    for other in [o for o in others if o.orbit is not None]:
-                        anomaly_p = day * 360 / other.orbit.period.to('day').m
-                        x2, y2 = other.orbit.get_measured_position(anomaly_p, 'm')  # position of the observed body
+                x = body.orbit.a.to('m').m  # position of the Observer's planet
+                for other in [o for o in others if o.orbit is not None]:
+                    y = other.orbit.a.to('m').m  # position of the observed body
 
-                        distance = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))  # Euclidean distance between the two points.
-                        albedo = other.albedo.m / 100
-                        radius = other.radius.to('m').m
-                        semi_major_axis = other.orbit.semi_major_axis.to('m').m
+                    distance = y-x if y >= x else x-y  # linear distance, much quicker
+                    albedo = other.albedo.m / 100
+                    radius = other.radius.to('m').m
+                    semi_major_axis = other.orbit.semi_major_axis.to('m').m
 
-                        ab = (albedo * luminosity * pow(radius, 2)) / (pow(semi_major_axis, 2) * pow(distance, 2))
-                        ab_others[other.id] = ab
-
-                    if len(ab_others):
-                        self.aparent_brightness[body.id].append(ab_others)
+                    ab = (albedo * luminosity * pow(radius, 2)) / (pow(semi_major_axis, 2) * pow(distance, 2))
+                    if ab > 1.3e-7:
+                        visibility = 'naked'
+                    elif ab < 1.2e-9:
+                        visibility = 'telescope'
                     else:
-                        break
-
-            if len(self.aparent_brightness[body.id]):
-                brightness = self.aparent_brightness[body.id]
-                for other in others:
-                    sub = [brightness[day][other.id] for day in range(int(body.orbit.period.to('day').m))]
-
-                    self.average_visibility[body.id][other.id] = sum(sub) / len(sub)
+                        visibility = 'undetermined'
+                    self.aparent_brightness[body.id][other.id] = visibility
 
     @property
     def star(self):

@@ -3,9 +3,9 @@ from engine.backend.util import decimal_round
 from bisect import bisect_right
 from datetime import datetime
 from math import sqrt, pow
-from engine import q, roll
 from random import choice
 from pygame import Color
+from engine import q
 
 
 class Star(BodyInHydrostaticEquilibrium):
@@ -99,7 +99,7 @@ class Star(BodyInHydrostaticEquilibrium):
     def set_age(self):
         if self._age == -1:
             # reseting the star's mass should not change it's age, because it is the same star that is being remodeled.
-            self._age = roll(b=self._lifetime)
+            self._age = 4.5
             # this value may be manually set up at some point in the future.
 
     def set_derivated_characteristics(self):
@@ -235,11 +235,16 @@ class Star(BodyInHydrostaticEquilibrium):
             return self.name
 
     def __eq__(self, other):
-        test = all([self.mass.m == other.mass.m, self.name == other.name, self.id == other.id])
-        return test
+        return all([self.mass.m == other.mass.m, self.name == other.name, self.id == other.id])
 
     def __hash__(self):
         return hash((self.mass.m, self.name, self.id))
+
+    def __getitem__(self, item):
+        if type(item) is int:
+            if item == 0:
+                return self
+            raise StopIteration()
 
 
 class LightWave:

@@ -13,7 +13,6 @@ from math import sqrt
 class AtmospherePanel(BaseWidget):
     current = None
     curr_idx = 0
-    pre_loaded = False
     pressure = None
     curr_planet = None
 
@@ -38,8 +37,7 @@ class AtmospherePanel(BaseWidget):
 
         self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5, y=0)
         self.write('Composition', self.f3, centerx=65, y=35)
-        self.water_state_rect = self.write('State of Water at Surface: ', f4, x=3, y=ALTO-50)
-        EventHandler.register(self.load_atmosphere, 'LoadData')
+        self.water_state_rect = self.write('State of Water at Surface: ', f4, x=3, y=ALTO - 50)
         EventHandler.register(self.clear, 'ClearData')
         self.area_info = Rect(190, 460, 195, 132 - 41)
         self.warning_rect = Rect(self.area_info.x, self.area_info.bottom, self.area_info.w, 21)
@@ -122,20 +120,20 @@ class AtmospherePanel(BaseWidget):
         self.planets.delete_objects(planet)
         self.planets.show()
 
-    def load_atmosphere(self, event):
-        if 'Planets' in event.data and len(event.data['Planets']):
-            atmosphere = event.data['Planets'][0]['atmosphere']
-            elements = [e.symbol for e in self.elements.widgets()]
-            for elem in atmosphere:
-                if elem != 'pressure_at_sea_level':
-                    idx = elements.index(elem)
-                    element = self.elements.widgets()[idx]
-                    element.percent.value = str(atmosphere[elem])
-                else:
-                    value = atmosphere[elem]['value']
-                    unit = atmosphere[elem]['unit']
-                    self.pressure = q(value, unit)
-            self.pre_loaded = True
+    def fill(self, atmosphere):
+        for e in self.elements.widgets():
+            e.percent.clear()
+        elements = [e.symbol for e in self.elements.widgets()]
+        for elem in atmosphere:
+            if elem != 'pressure_at_sea_level':
+                idx = elements.index(elem)
+                element = self.elements.widgets()[idx]
+                element.percent.value = str(atmosphere[elem])
+            else:
+                value = atmosphere[elem]['value']
+                unit = atmosphere[elem]['unit']
+                self.pressure = q(value, unit)
+                self.show_pressure.update_text(self.pressure)
 
     def show(self):
         super().show()
@@ -185,7 +183,11 @@ class AtmospherePanel(BaseWidget):
 
         self.image.fill(COLOR_BOX, [159, 580, 80, 14])
         dx, dy = self.water_state_rect.topright
-        self.write(state, self.f5, x=dx+1, y=dy)
+        self.write(state, self.f5, x=dx + 1, y=dy)
+
+        if len(planet.atmosphere):
+            self.fill(planet.atmosphere)
+            self.update()
 
     def cycle(self, delta):
         for elm in self.elements.widgets():
@@ -202,8 +204,9 @@ class AtmospherePanel(BaseWidget):
     def update(self):
         self.total = 0
         for element in self.elements.widgets():
-            if type(element.percent.get_value()) is not str:
-                self.total += element.percent.get_value()
+            value = element.percent.get_value()
+            if value not in ('solid', 'liquid', 'non-existant'):
+                self.total += float(value)
 
         self.image.fill(COLOR_BOX, (0, ALTO - 87, 160, 32))
         self.write('Total: ' + str(self.total) + '%', self.f3, x=3, y=ALTO - 87)
@@ -575,7 +578,7 @@ class AvailablePlanets(ListedArea):
     def show(self):
         system = Systems.get_current()
         if system is not None:
-            pop = [planet for planet in system.planets if not len(planet.atmosphere) and planet.orbit is not None]
+            pop = [planet for planet in system.planets if planet.orbit is not None]
             if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
                 self.populate(pop)
         super().show()
@@ -589,6 +592,7 @@ class AvailablePlanets(ListedArea):
 class ListedPlanet(AvailablePlanet):
     def on_mousebuttondown(self, event):
         if event.button == 1:
+            self.parent.parent.show_pressure.clear()
             self.parent.select_one(self)
             self.parent.parent.set_planet(self.object_data)
 
@@ -643,6 +647,12 @@ class ShownPressure(BaseWidget):
         self.parent.set_planet_atmosphere(round(self.value, 3))
         self.finished_text = ' (set)'
         self.update_text(self.value)
+
+    def clear(self):
+        self._value = ''
+        self.value = q(0, 'atm')
+        self.finished = False
+        self.update_text('not stablished')
 
     def update_text(self, text):
         if type(text) is q:

@@ -1,10 +1,10 @@
 from .general import BodyInHydrostaticEquilibrium, Ring
 from .lagrange import get_lagrange_points
+from engine import molecular_weight, q
 from math import sqrt, pi, pow, tan
 from datetime import datetime
 from pygame import Color
 from .orbit import Orbit
-from engine import q
 
 
 class Planet(BodyInHydrostaticEquilibrium):
@@ -79,8 +79,11 @@ class Planet(BodyInHydrostaticEquilibrium):
             }
 
         self.atmosphere = {}
+        if len(data.get('atmosphere', [])):
+            self.set_atmosphere(data['atmosphere'])
+        else:
+            self.greenhouse = q(1)
         self.albedo = q(data['albedo'])
-        self.greenhouse = q(data['greenhouse']) if 'greenhouse' in data else q(1)
         self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)
         self.tilt = data['tilt'] if 'tilt' in data else 0
 
@@ -104,7 +107,6 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.spin = 'retrograde'
         self._tilt = q(value, 'degree')
         self.habitable = self.set_habitability()
-        self.albedo = self.albedo if not self.habitable else q(29)
 
     def set_qs(self, unit):
         m = unit + '_mass'
@@ -325,6 +327,17 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     def set_atmosphere(self, data):
         self.atmosphere.update(data)
+        self.greenhouse = q(self.global_warming())
+        self.update_everything()
+
+    def global_warming(self):
+        gases = ['CO2', 'H2O', 'CH4', 'N2O']  # Greenhouse gases
+        effect = 0
+        for symbol in gases:
+            gas = molecular_weight[symbol]
+            if symbol in self.atmosphere:
+                effect += (self.atmosphere[symbol]/100)*gas['GWP']
+        return effect
 
     def update_everything(self):
         if self.orbit is not None:
@@ -337,10 +350,10 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.set_orbit(star, [a, e, i, u])
 
     def __eq__(self, other):
-        a = (self.mass.m, self.radius.m, self.clase, self.orbit, self.unit, self.name)
+        a = (self.mass.m, self.radius.m, self.clase, self.orbit, self.unit, self.name, self.id)
         if not hasattr(other, 'clase') or not hasattr(other, 'unit'):
             return False
-        b = (other.mass.m, other.radius.m, other.clase, self.orbit, other.unit, other.name)
+        b = (other.mass.m, other.radius.m, other.clase, other.orbit, other.unit, other.name, other.id)
         return a == b
 
     def __repr__(self):
@@ -377,42 +390,6 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
 # Terrestial Graph parameters
 Terrestial = [0.0, 3.5, 0.0, 1.5]
 GasDwarf = [1, 20.5, 2, 0]
-
-
-def temp_by_pos(star, albedo=29, greenhouse=1):
-    granularidad = 10
-    resultados = []
-    if hasattr(star, 'mass'):
-        # star_class = star.classification
-        # noinspection PyUnresolvedReferences
-        rel_mass = star.mass.m
-        hab_inner = star.habitable_inner.m
-        hab_outer = star.habitable_outer.m
-    elif type(star) is list:
-        # star_class = star[0]
-        rel_mass = star[1]
-        hab_inner = star[6]
-        hab_outer = star[7]
-    else:  # suponemos un dict
-        # star_class = star['class']
-        rel_mass = star['mass']
-        hab_inner = star['inner']
-        hab_outer = star['outer']
-
-    total_dist = hab_outer - hab_inner
-    unidad = total_dist / granularidad
-
-    for i in range(granularidad):
-        dist = hab_inner + unidad * i
-        if dist <= hab_outer:
-            t = planet_temperature(rel_mass, dist, albedo, greenhouse).magnitude
-            if 13 <= t < 16:
-                resultados.append(round(dist, 5))
-                # resultados.append({'name': star_class, 'd': round(dist, 5), 'temp': t})
-
-    resultados.sort(reverse=True)
-
-    return resultados[0]
 
 
 def temp_by_lat(lat) -> q:
