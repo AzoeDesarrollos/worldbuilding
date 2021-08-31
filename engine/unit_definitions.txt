@@ -1,9 +1,10 @@
 # Earth Units
 earth_mass = 5.97237e+24 kg = Me
 earth_radius = 6378.1 km = Re
+earth_diameter = 2 * earth_radius = Diam_e
 earth_gravity = 9.807 m/s ** 2 = Ge
 earth_density = 5.514 g/cm ** 3 = De
-earth_escape_velocity = 11.186 km/s = Ve
+earth_escape_velocity = 11.186 km/s = EVe
 earth_orbital_period = 1 year = earth_year
 earth_day = day
 earth_orbital_velocity = 29.78 km/s = earth_orbital_speed
@@ -26,7 +27,7 @@ sol_temperature = 5778 kelvin = Ts
 sol_lifetime = 4.6e+12 earth_years = LTs
 sol_aparent_brightness = 1.379 w/m2 = Vs
 
-solar_lifetime = 1e+10 = ten_billion_years
+solar_lifetime = 10*10**7 = ten_billion_years
 
 # Saturn's Ring
 ring_mass = 1.54e+19 kg = SRm

@@ -16,6 +16,8 @@ class PlanetarySystem:
     aparent_brightness = None
     average_visibility = None
 
+    age = 0
+
     def __init__(self, star_system):
         self.planets = []
         self.satellites = []
