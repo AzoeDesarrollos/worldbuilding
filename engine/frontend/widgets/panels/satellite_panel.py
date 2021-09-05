@@ -47,8 +47,10 @@ class SatellitePanel(BasePanel):
 
     def show_loaded(self):
         if self.loaded_data is not None:
-            for idx, satellite_data in enumerate(self.loaded_data):
+            for idx, id in enumerate(self.loaded_data):
+                satellite_data = self.loaded_data[id]
                 satellite_data['idx'] = idx
+                satellite_data['id'] = id
                 moon = major_moon_by_composition(satellite_data)
                 system = Systems.get_system_by_id(satellite_data['system'])
                 if system.add_astro_obj(moon):
@@ -57,17 +59,16 @@ class SatellitePanel(BasePanel):
             self.loaded_data.clear()
 
     def save_satellites(self, event):
-        data = []
+        data = {}
         for moon_button in self.satellites.widgets():
             moon = moon_button.object_data
             moon_data = {
                 'name': moon.name,
                 'radius': moon.radius.m,
                 'composition': moon.composition,
-                'id': moon.id,
                 'system': moon.system_id
             }
-            data.append(moon_data)
+            data[moon.id] = moon_data
             EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Satellites": data})
 
     def sort_buttons(self):

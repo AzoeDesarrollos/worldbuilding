@@ -43,7 +43,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.added = []
         self.objects = []
         self.satellites = {}
-        self._loaded_orbits = []
+        self._loaded_orbits = {}
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.area_markers = Rect(3, 58, 380, 20 * 16)
         self.curr_x = self.area_buttons.x + 3
@@ -71,17 +71,19 @@ class PlanetaryOrbitPanel(BaseWidget):
         EventHandler.register(self.load_orbits, 'LoadData')
 
     def load_orbits(self, event):
-        for position in event.data.get('Planetary Orbits', []):
+        for id in event.data.get('Planetary Orbits', []):
+            position = event.data['Planetary Orbits'][id]
             if position not in self._loaded_orbits:
-                self._loaded_orbits.append(position)
+                self._loaded_orbits[id] = position
 
     def set_loaded_orbits(self):
-        for orbit_data in self._loaded_orbits:
+        for id in self._loaded_orbits:
+            orbit_data = self._loaded_orbits[id]
             a = q(orbit_data['a'], 'earth_radius')
             e = q(orbit_data['e'])
             i = q(orbit_data['i'], 'degree')
             system = Systems.get_system_by_id(orbit_data['star_id'])
-            planet = system.get_astrobody_by(orbit_data['planet_id'], tag_type='id')
+            planet = system.get_astrobody_by(id, tag_type='id')
             if planet.id not in self.satellites:
                 self.satellites[planet.id] = []
 
@@ -102,7 +104,7 @@ class PlanetaryOrbitPanel(BaseWidget):
             for marker in self._markers.get(planet.id, []):
                 if marker.orbit is not None:
                     d = self.create_save_data(marker.orbit)
-                    orbits.append(d)
+                    orbits[planet.id] = d
 
         EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Planetary Orbits': orbits})
 
@@ -117,7 +119,6 @@ class PlanetaryOrbitPanel(BaseWidget):
             d['e'] = orb.eccentricity.m
         if hasattr(orb, 'astrobody'):
             d['astrobody'] = orb.astrobody.id
-            d['planet_id'] = orb.astrobody.parent.id
             d['star_id'] = orb.astrobody.parent.parent.id
         return d
 
@@ -449,9 +450,10 @@ class ObjectButton(Meta):
         self.w = self.img_sel.get_width()
         self.image = self.img_uns
         self.rect.size = self.image.get_size()
-        self.info = OrbitType(self.parent)
-        self.info.link_astrobody(self.object_data)
-        self.parent.orbit_descriptions.add(self.info)
+        if self.info is None:
+            self.info = OrbitType(self.parent)
+            self.info.link_astrobody(self.object_data)
+            self.parent.orbit_descriptions.add(self.info)
         self.parent.sort_buttons()
 
     def on_mousebuttondown(self, event):
@@ -572,6 +574,7 @@ class Marker(Meta, IncrementalValue):
             assert test_b, tb
 
             self.value += q(self.increment, self.value.u)
+            self.linked_button.update_text(self.value)
             self.increment = 0
             self.parent.sort_markers()
 

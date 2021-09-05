@@ -67,6 +67,7 @@ class Star(BodyInHydrostaticEquilibrium):
             self._luminosity = pow(mass, 3.5)
 
         self.habitable = 0.5 <= self._mass <= 1.4
+        # luminosity = exp((age-0.09)/1.8)+0.7 # (percent)
         self._spin = choice(['clockwise', 'counter-clockwise']) if 'spin' not in data else data['spin']
         self._radius = self.set_radius()
         self.set_derivated_characteristics()

@@ -52,7 +52,9 @@ class AsteroidPanel(BasePanel):
 
     def show_loaded(self):
         if self.loaded_data is not None:
-            for satellite_data in self.loaded_data:
+            for id in self.loaded_data:
+                satellite_data = self.loaded_data[id]
+                satellite_data['id'] = id
                 moon = minor_moon_by_composition(satellite_data)
                 system = Systems.get_system_by_id(satellite_data['system'])
                 if system.add_astro_obj(moon):
@@ -61,7 +63,7 @@ class AsteroidPanel(BasePanel):
             self.loaded_data.clear()
 
     def save_satellites(self, event):
-        data = []
+        data = {}
         for moon_button in self.asteroids.widgets():
             moon = moon_button.object_data
             moon_data = {
@@ -70,10 +72,9 @@ class AsteroidPanel(BasePanel):
                 'b axis': moon.b_axis.m,
                 'c axis': moon.c_axis.m,
                 'composition': moon.composition,
-                'id': moon.id,
                 'system': moon.system_id
             }
-            data.append(moon_data)
+            data[moon.id] = moon_data
             EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Asteroids": data})
 
     def add_button(self):

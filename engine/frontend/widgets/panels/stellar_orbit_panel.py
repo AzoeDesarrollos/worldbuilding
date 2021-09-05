@@ -54,7 +54,7 @@ class OrbitPanel(BaseWidget):
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.recomendation = Recomendation(self, 80, ALTO // 2 - 130)
 
-        self._loaded_orbits = []
+        self._loaded_orbits = {}
         self.indexes = []
 
         self._orbits = {}
@@ -121,7 +121,6 @@ class OrbitPanel(BaseWidget):
                 x.locked = True
                 self._markers[star.id].append(x)
                 self.properties.add(x, layer=4)
-            self.add_orbit_marker(star.habitable_orbit)
 
         self.sort_markers()
 
@@ -213,6 +212,7 @@ class OrbitPanel(BaseWidget):
                 self.area_modify.unlink()
             idx = self.markers.index(marker)
             del self.markers[idx]
+            self._orbits[marker.orbit.star.id].remove(marker)
             self.buttons.remove(marker.linked_button)
             self.sort_markers()
             self.sort_buttons()
@@ -272,14 +272,16 @@ class OrbitPanel(BaseWidget):
             if system.star_system.letter == 'S':
                 for star in system:
                     for marker in self._orbits.get(star.id, []):
+                        astrobody_id = marker.orbit.astrobody.id
                         d = self.create_save_data(marker.orbit)
-                        self._loaded_orbits.append(d)
+                        self._loaded_orbits[astrobody_id] = d
             else:
                 star = system.star_system
                 for marker in self._orbits.get(star.id, []):
                     d = self.create_save_data(marker.orbit)
-                    if d not in self._loaded_orbits:
-                        self._loaded_orbits.append(d)
+                    astrobody_id = marker.orbit.astrobody.id
+                    if astrobody_id not in self._loaded_orbits:
+                        self._loaded_orbits[astrobody_id] = d
 
         EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Stellar Orbits': self._loaded_orbits})
 
@@ -298,12 +300,14 @@ class OrbitPanel(BaseWidget):
         return d
 
     def load_orbits(self, event):
-        for position in event.data.get('Stellar Orbits', []):
-            if position not in self._loaded_orbits:
-                self._loaded_orbits.append(position)
+        for id in event.data.get('Stellar Orbits', []):
+            position = event.data['Stellar Orbits'][id]
+            if id not in self._loaded_orbits:
+                self._loaded_orbits[id] = position
 
     def set_loaded_orbits(self):
-        for orbit_data in self._loaded_orbits:
+        for id in self._loaded_orbits:
+            orbit_data = self._loaded_orbits[id]
             a = q(orbit_data['a'], 'au')
             if 'e' not in orbit_data:
                 self.add_orbit_marker(a)
@@ -311,7 +315,7 @@ class OrbitPanel(BaseWidget):
                 e = q(orbit_data['e'])
                 i = q(orbit_data['i'], 'degree')
                 system = Systems.get_system_by_id(orbit_data['star_id'])
-                planet = system.get_astrobody_by(orbit_data['astrobody'], tag_type='id')
+                planet = system.get_astrobody_by(id, tag_type='id')
                 star = system.star_system
                 planet.set_orbit(star, [a, e, i])
                 self.add_orbit_marker(planet.orbit)
@@ -435,7 +439,7 @@ class OrbitPanel(BaseWidget):
         x = int(self.digit_x.value)
         y = int(self.digit_y.value)
         assert x >= y, 'invalid ratio'
-        self.write('{}° Order'.format(x-y), self.order_f, right=self.digit_x.rect.left - 2, y=self.digit_x.rect.y)
+        self.write('{}° Order'.format(x - y), self.order_f, right=self.digit_x.rect.left - 2, y=self.digit_x.rect.y)
         return '{}:{}'.format(x, y)
 
     def clear_ratios(self):
@@ -864,6 +868,10 @@ class Recomendation(BaseWidget):
         e = round(0.584 * pow(planets_in_system, -1.2), 3) if planets_in_system > 1 else None
         if planet.habitable and orbit.temperature == 'habitable':
             data = recomendation['habitable']
+            if hasattr(star, 'habitable_orbit'):
+                # though this may never come into play.
+                if orbit.a.m <= star.habitable_orbit:
+                    data = recomendation['inner']
             if e is not None and e <= 0.2:
                 data.update({'e': e})
 

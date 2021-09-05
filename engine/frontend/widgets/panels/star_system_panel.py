@@ -64,6 +64,7 @@ class StarSystemPanel(BaseWidget):
             self.system_buttons.add(button)
             self.properties.add(button)
             self.sort_buttons()
+            Systems.set_system(system_data)
             return button
 
     def sort_buttons(self):
@@ -81,7 +82,7 @@ class StarSystemPanel(BaseWidget):
                 y += 32
 
     def save_systems(self, event):
-        data = []
+        data = {}
         for button in self.system_buttons.widgets():
             current = button.object_data
             d = {
@@ -90,24 +91,23 @@ class StarSystemPanel(BaseWidget):
                 'avg_s': current.average_separation.m,
                 'ecc_p': current.ecc_p.m,
                 "ecc_s": current.ecc_s.m,
-                "id": current.id,
                 "name": current.name
             }
-            data.append(d)
+            data[current.id] = d
 
         EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Systems': data})
 
     def load_systems(self, event):
-        for system_data in event.data.get('Systems', []):
+        for id in event.data['Systems']:
+            system_data = event.data['Systems'][id]
             avg_s = system_data['avg_s']
             ecc_p = system_data['ecc_p']
             ecc_s = system_data['ecc_s']
             prim = Systems.get_star_by_id(system_data['primary'])
             scnd = Systems.get_star_by_id(system_data['secondary'])
-            idx = system_data['id']
             name = system_data['name']
 
-            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=idx, name=name)
+            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
             button = self.create_button(system)
             button.hide()
             Systems.set_system(system)
@@ -124,6 +124,8 @@ class StarSystemPanel(BaseWidget):
         self.sort_buttons()
         self.properties.remove(button)
         self.undo_button.disable()
+        if system in self.systems:
+            Systems.dissolve_system(system)
 
     def show(self):
         for system in Systems.get_systems():
@@ -136,6 +138,9 @@ class StarSystemPanel(BaseWidget):
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
+        for star_widget in self.stars_area.listed_objects.widgets():
+            star = star_widget.object_data
+            Systems.set_system(star)
 
 
 class SystemType(BaseWidget):

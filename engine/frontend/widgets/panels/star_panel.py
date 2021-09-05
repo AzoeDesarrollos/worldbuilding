@@ -37,21 +37,21 @@ class StarPanel(BasePanel):
         return self.properties.get_widgets_from_layer(2)
 
     def save_stars(self, event):
-        data = []
+        data = {}
         for star_button in self.star_buttons:
             star = star_button.object_data
             star_data = {
                 'name': star.name,
                 'mass': star.mass.m,
-                'id': star.id,
                 'spin': star.spin
             }
-            data.append(star_data)
+            data[star.id] = star_data
         EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data})
 
     def load_stars(self, event):
-        for idx, star_data in enumerate(event.data.get('Stars', [])):
-            star_data.update({'idx': idx})
+        for idx, id in enumerate(event.data['Stars']):
+            star_data = event.data['Stars'][id]
+            star_data.update({'idx': idx, 'id': id})
             star = Star(star_data)
             if star not in self.stars:
                 self.stars.append(star)
@@ -88,13 +88,14 @@ class StarPanel(BasePanel):
         self.current.erase()
         self.button_add.disable()
 
-    def del_button(self, planet):
-        button = [i for i in self.star_buttons if i.object_data == planet][0]
+    def del_button(self, star):
+        button = [i for i in self.star_buttons if i.object_data == star][0]
         self.properties.remove(button)
         if self.is_visible:
             self.sort_buttons()
         self.button_del.disable()
         self.stars.remove(button.object_data)
+        Systems.remove_star(star)
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y

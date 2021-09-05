@@ -146,13 +146,13 @@ class Orbit(Ellipse):
         body_around_planet = main.celestial_type == "planet"
 
         if body_around_star:
-            astro_body.orbit = PlanetOrbit(main.mass, self.semi_major_axis, self.eccentricity, self.inclination)
+            astro_body.orbit = PlanetOrbit(main, self.semi_major_axis, self.eccentricity, self.inclination)
             astro_body.orbit.reset_astrobody(astro_body)
 
         elif body_around_planet:
             astro_body.orbit = SatelliteOrbit(self.semi_major_axis, self.eccentricity, self.inclination)
             astro_body.orbit.reset_astrobody(astro_body)
-            astro_body.orbit.reset_period_and_speed(main.mass)
+            astro_body.orbit.reset_period_and_speed(main)
 
         astro_body.orbit._star = main
         astro_body.parent = main
@@ -197,7 +197,7 @@ class Orbit(Ellipse):
         self._q = self._a * (1 - self._e)
         if self.temperature != 'N/A':
             self._temperature = self.astrobody.set_temperature(self._star.mass.m, self._a)
-        self.reset_period_and_speed(self._star.mass.m)
+        self.reset_period_and_speed(self._star.mass)
 
     @property
     def semi_minor_axis(self):
@@ -248,7 +248,7 @@ class Orbit(Ellipse):
     def star(self):
         return self._star
 
-    def reset_period_and_speed(self, main_body_mass):
+    def reset_period_and_speed(self, main):
         raise NotImplementedError
 
     def reset_astrobody(self, astro_body):
@@ -259,14 +259,15 @@ class Orbit(Ellipse):
 class PlanetOrbit(Orbit):
     primary = 'Star'
 
-    def __init__(self, star_mass, a, e, i):
+    def __init__(self, star, a, e, i):
         super().__init__(a, e, i, 'au')
-        self.reset_period_and_speed(star_mass.m)
+        self.reset_period_and_speed(star)
         orbital_properties = set_orbital_properties(self._i)
         self.longitude_of_the_ascending_node = orbital_properties[0]
         self.argument_of_periapsis = orbital_properties[1]
 
-    def reset_period_and_speed(self, main_body_mass):
+    def reset_period_and_speed(self, main):
+        main_body_mass = main.mass.m
         self.period = q(sqrt(pow(self._a, 3) / main_body_mass), 'year')
         self.velocity = q(sqrt(main_body_mass / self._a), 'earth_orbital_velocity').to('kilometer per second')
 
@@ -280,10 +281,14 @@ class SatelliteOrbit(Orbit):
         self.longitude_of_the_ascending_node = orbital_properties[0]
         self.argument_of_periapsis = orbital_properties[1]
 
-    def reset_period_and_speed(self, main_body_mass):
+    def reset_period_and_speed(self, main):
+        main_body_mass = main.mass.m
         satellite_mass = round(self.astrobody.mass.m, 3)
-        self.velocity = q(sqrt(main_body_mass.m / self._a), 'earth_orbital_velocity').to('kilometer per second')
-        self.period = q(sqrt(pow(self.a.to('au').m, 3) / (main_body_mass.m + satellite_mass)), 'year').to('day')
+        self.velocity = q(sqrt(main_body_mass / self._a), 'earth_orbital_velocity').to('kilometer per second')
+        if main.habitable:
+            self.period = q(round(0.0588 * sqrt(pow(self._a, 3) / (main_body_mass + satellite_mass)), 2), 'day')
+        else:
+            self.period = q(sqrt(pow(self.a.to('au').m, 3) / (main_body_mass + satellite_mass)), 'year').to('day')
 
 
 class BinaryStarOrbit(Orbit):
