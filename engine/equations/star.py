@@ -66,6 +66,7 @@ class Star(BodyInHydrostaticEquilibrium):
         elif not luminosity and mass:
             self._luminosity = pow(mass, 3.5)
 
+        self.habitable = 0.5 <= self._mass <= 1.4
         self._spin = choice(['clockwise', 'counter-clockwise']) if 'spin' not in data else data['spin']
         self._radius = self.set_radius()
         self.set_derivated_characteristics()
@@ -213,6 +214,7 @@ class Star(BodyInHydrostaticEquilibrium):
             self._luminosity = self.luminosity.m
             self._mass = pow(self._luminosity, (1 / 3.5))
 
+        self.habitable = 0.5 <= self._mass <= 1.4
         self._radius = self.set_radius()
         self.set_derivated_characteristics()
         self.set_qs()
@@ -236,6 +238,9 @@ class Star(BodyInHydrostaticEquilibrium):
 
     def __eq__(self, other):
         return all([self.mass.m == other.mass.m, self.name == other.name, self.id == other.id])
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __hash__(self):
         return hash((self.mass.m, self.name, self.id))

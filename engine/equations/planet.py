@@ -1,6 +1,6 @@
 from .general import BodyInHydrostaticEquilibrium, Ring
+from engine import molecular_weight, q, albedos
 from .lagrange import get_lagrange_points
-from engine import molecular_weight, q
 from math import sqrt, pi, pow, tan
 from datetime import datetime
 from pygame import Color
@@ -21,7 +21,7 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     orbit = None
     albedo = 29
-    greenhouse = 1
+    _greenhouse = 1
     temperature = q(0, 'celsius')
 
     atmosphere = None
@@ -82,7 +82,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         if len(data.get('atmosphere', [])):
             self.set_atmosphere(data['atmosphere'])
         else:
-            self.greenhouse = q(1)
+            self._greenhouse = 1
         self.albedo = q(data['albedo'])
         self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)
         self.tilt = data['tilt'] if 'tilt' in data else 0
@@ -107,6 +107,10 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.spin = 'retrograde'
         self._tilt = q(value, 'degree')
         self.habitable = self.set_habitability()
+
+    @property
+    def greenhouse(self):
+        return q(self.global_warming())
 
     def set_qs(self, unit):
         m = unit + '_mass'
@@ -136,16 +140,17 @@ class Planet(BodyInHydrostaticEquilibrium):
     def set_temperature(self, star_mass, semi_major_axis):
         t = planet_temperature(star_mass, semi_major_axis, self.albedo.m, self.greenhouse.m)
         self._temperature = round(t.to('earth_temperature').m)
+        self.temperature = q(self._temperature, 'earth_temperature').to('celsius')
         return t
 
     def set_orbit(self, star, orbital_parameters):
         orbit = Orbit(*orbital_parameters)
         self.temperature = self.set_temperature(star.mass.m, orbit.semi_minor_axis.m)
-        orbit.temperature = self.temperature
         orbit.set_astrobody(star, self)
         self.lagrange_points = get_lagrange_points(self.orbit.semi_major_axis.m, star.mass.m, self.mass.m)
         self.hill_sphere = self.set_hill_sphere()
-        self.sky_color = self.set_sky_color(star)
+        if star.celestial_type == 'Star':
+            self.sky_color = self.set_sky_color(star)
         return self.orbit
 
     def set_hill_sphere(self):
@@ -327,7 +332,6 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     def set_atmosphere(self, data):
         self.atmosphere.update(data)
-        self.greenhouse = q(self.global_warming())
         self.update_everything()
 
     def global_warming(self):
@@ -336,7 +340,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         for symbol in gases:
             gas = molecular_weight[symbol]
             if symbol in self.atmosphere:
-                effect += (self.atmosphere[symbol]/100)*gas['GWP']
+                effect += (self.atmosphere[symbol] / 100) * gas['GWP']
         return effect
 
     def update_everything(self):
@@ -427,3 +431,15 @@ def temp_by_lat(lat) -> q:
         return q(round(temp, 2), 'celsius')
     else:
         raise ValueError('La latitud "{}" no es válida'.format(lat))
+
+
+def albedo_by_lat(material: str, lat: float) -> float:
+    """Devuelve el Albedo de un material según la latitud"""
+    y1 = albedos[material]['low']
+    y2 = albedos[material]['high']
+
+    dx = 90
+    m = (y2 - y1) / -dx
+    n = y1 - m * dx
+
+    return round(m * lat + n, 2)

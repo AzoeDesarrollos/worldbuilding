@@ -1,4 +1,4 @@
-from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, WidgetGroup, ANCHO
+from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, WidgetGroup, ANCHO, COLOR_BOX
 from engine.frontend.widgets.panels.common import TextButton
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.object_type import ObjectType
@@ -83,14 +83,16 @@ class StarPanel(BasePanel):
         Systems.add_star(star)
         if star not in self.stars:
             self.stars.append(star)
-        self.sort_buttons()
+        if self.is_visible:
+            self.sort_buttons()
         self.current.erase()
         self.button_add.disable()
 
     def del_button(self, planet):
         button = [i for i in self.star_buttons if i.object_data == planet][0]
         self.properties.remove(button)
-        self.sort_buttons()
+        if self.is_visible:
+            self.sort_buttons()
         self.button_del.disable()
         self.stars.remove(button.object_data)
 
@@ -147,12 +149,17 @@ class StarType(ObjectType):
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
         self.set_modifiables('relatives', 0, 1)
 
+        f = self.crear_fuente(16, bold=True)
+        self.habitable = f.render('Habitable', True, (0, 255, 0), COLOR_BOX)
+        self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right - 10, y=self.parent.rect.y + 50)
+
     def set_star(self, star_data):
         star_data.update({'idx': len(self.parent.star_buttons)})
         star = Star(star_data)
         self.parent.button_add.enable()
         self.current = star
         self.fill()
+        self.toggle_habitable()
 
     def destroy_button(self):
         Systems.remove_star(self.current)
@@ -173,7 +180,14 @@ class StarType(ObjectType):
     def erase(self):
         if self.has_values:
             self.current.sprite.kill()
+            self.parent.image.fill(COLOR_BOX, self.hab_rect)
         super().erase()
+
+    def toggle_habitable(self):
+        if self.current.habitable:
+            self.parent.image.blit(self.habitable, self.hab_rect)
+        else:
+            self.parent.image.fill(COLOR_BOX, self.hab_rect)
 
     def fill(self, tos=None):
         tos = {
@@ -243,6 +257,7 @@ class StarButton(Meta):
                 self.object_data.sprite.show()
             self.parent.parent.select_one(self)
             self.parent.parent.button_del.enable()
+            self.parent.toggle_habitable()
 
     def move(self, x, y):
         self.rect.topleft = x, y

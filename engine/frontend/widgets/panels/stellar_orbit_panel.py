@@ -86,9 +86,9 @@ class OrbitPanel(BaseWidget):
         star = Systems.get_current_star()
         self.current = star
         self.curr_idx = self.indexes.index(star)
-        self.orbits = self._orbits[star]
-        self.markers = self._markers[star]
-        self.buttons = self._buttons[star]
+        self.orbits = self._orbits[star.id]
+        self.markers = self._markers[star.id]
+        self.buttons = self._buttons[star.id]
         if not len(self.markers) or not self.markers[0].locked:
             self.populate()
         self.toggle_current_markers_and_buttons(True)
@@ -108,7 +108,7 @@ class OrbitPanel(BaseWidget):
         for marker in markers:
             x = OrbitMarker(self, marker, star, markers[marker])
             x.locked = True
-            self._markers[star].append(x)
+            self._markers[star.id].append(x)
             self.properties.add(x, layer=4)
 
         if hasattr(star, 'habitable_orbit'):
@@ -119,7 +119,7 @@ class OrbitPanel(BaseWidget):
             for marker in markers:
                 x = OrbitMarker(self, marker, star, markers[marker])
                 x.locked = True
-                self._markers[star].append(x)
+                self._markers[star.id].append(x)
                 self.properties.add(x, layer=4)
             self.add_orbit_marker(star.habitable_orbit)
 
@@ -155,8 +155,8 @@ class OrbitPanel(BaseWidget):
 
         if test is True:
             new = OrbitMarker(self, 'Orbit', star, position, is_orbit=ba, is_complete_orbit=bb, is_resonance=bc)
-            self._markers[star].append(new)
-            self._orbits[star].append(new)
+            self._markers[star.id].append(new)
+            self._orbits[star.id].append(new)
             self.sort_markers()
             self.add_button_and_type(star, new, color)
             self.properties.add(new, layer=4)
@@ -164,7 +164,7 @@ class OrbitPanel(BaseWidget):
     def add_button_and_type(self, star, marker, color):
         orbit_type = OrbitType(self)
         button = OrbitButton(self, color)
-        self._buttons[star].append(button)
+        self._buttons[star.id].append(button)
 
         # Buttons, OrbitTypes and Markers are all Intertwined.
         orbit_type.intertwine(m=marker, b=button)
@@ -268,20 +268,20 @@ class OrbitPanel(BaseWidget):
             self.clear_ratios()
 
     def save_orbits(self, event):
-        orbits = self._loaded_orbits
         for system in Systems.get_systems():
             if system.star_system.letter == 'S':
                 for star in system:
-                    for marker in self._orbits.get(star, []):
+                    for marker in self._orbits.get(star.id, []):
                         d = self.create_save_data(marker.orbit)
-                        orbits.append(d)
+                        self._loaded_orbits.append(d)
             else:
                 star = system.star_system
-                for marker in self._orbits.get(star, []):
+                for marker in self._orbits.get(star.id, []):
                     d = self.create_save_data(marker.orbit)
-                    orbits.append(d)
+                    if d not in self._loaded_orbits:
+                        self._loaded_orbits.append(d)
 
-        EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Stellar Orbits': orbits})
+        EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Stellar Orbits': self._loaded_orbits})
 
     @staticmethod
     def create_save_data(orb):
@@ -325,13 +325,14 @@ class OrbitPanel(BaseWidget):
         assert len(Systems.get_systems())
         for system in Systems.get_systems():
             star = system.star_system
-            if star not in self._markers:
-                self._markers[star] = []
-                self._orbits[star] = []
-                self._buttons[star] = []
+            if star.id not in self._markers:
+                self._markers[star.id] = []
+                self._orbits[star.id] = []
+                self._buttons[star.id] = []
                 self.indexes.append(star)
 
     def show(self):
+        super().show()
         try:
             self.fill_indexes()
             self.set_current()
@@ -346,8 +347,6 @@ class OrbitPanel(BaseWidget):
         if len(self._loaded_orbits):
             self.set_loaded_orbits()
         self.show_markers_button.show()
-
-        super().show()
 
     def hide(self):
         super().hide()

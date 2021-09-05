@@ -143,7 +143,7 @@ class PlanetarySystem:
         return unnamed
 
     def __eq__(self, other):
-        return self.star_system == other.star_system
+        return self.id == other.id
 
     def __repr__(self):
         return 'System of ' + str(self.star_system)
@@ -239,9 +239,12 @@ class Systems:
             if star.id == id_number:
                 return star
         for system in cls._systems:
-            for star in system:
-                if star.id == id_number:
-                    return star
+            if id_number == system.id:
+                return system
+            else:
+                for star in system:
+                    if star.id == id_number:
+                        return star
 
     @classmethod
     def load_system(cls, star):

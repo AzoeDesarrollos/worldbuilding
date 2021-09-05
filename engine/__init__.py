@@ -14,3 +14,4 @@ q = ureg.Quantity
 material_densities = abrir_json(path.join(ruta, 'material_densities.json'))
 molecular_weight = abrir_json(path.join(ruta, 'molecular_weight.json'))
 recomendation = abrir_json(path.join(ruta, 'recomendation.json'))
+albedos = abrir_json(path.join(ruta, 'albedo_values.json'))

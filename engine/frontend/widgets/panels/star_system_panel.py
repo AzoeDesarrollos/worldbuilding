@@ -105,8 +105,9 @@ class StarSystemPanel(BaseWidget):
             prim = Systems.get_star_by_id(system_data['primary'])
             scnd = Systems.get_star_by_id(system_data['secondary'])
             idx = system_data['id']
+            name = system_data['name']
 
-            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=idx)
+            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=idx, name=name)
             button = self.create_button(system)
             button.hide()
             Systems.set_system(system)
@@ -135,9 +136,6 @@ class StarSystemPanel(BaseWidget):
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
-        if len(self.systems) or len(self.stars_area):
-            for s in self.systems + self.stars_area.objects():
-                Systems.set_system(s)
 
 
 class SystemType(BaseWidget):

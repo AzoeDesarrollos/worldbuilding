@@ -1,0 +1,12 @@
+{
+  "Thick Clouds": {"min":50, "max":90},
+  "Thin Clouds": { "min": 25, "max":60},
+  "Open Ocean": { "min": 6, "max":8},
+  "Sea Ice": { "min": 50, "max":70},
+  "Urban": { "min": 5, "max":25},
+  "Desert": { "min": 20, "max":40},
+  "Grassland": { "min": 10, "max":25},
+  "Inland Water Bodies": { "min": 6, "max":8},
+  "Snow and Ice": { "min": 50, "max":90},
+  "Forest": { "min": 5, "max":20}
+}

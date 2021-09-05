@@ -1,5 +1,6 @@
+from engine.frontend.graphs.atmograph.atmograph import graph, atmo, reversed_atmo, interpolacion_lineal, convert
 from engine.frontend import WidgetHandler, ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO, WidgetGroup, COLOR_DISABLED
-from engine.frontend.graphs.atmograph.atmograph import graph, atmo, interpolacion_lineal, convert
+from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
@@ -49,6 +50,8 @@ class AtmospherePanel(BaseWidget):
             c = None
             if name == 'Molecular Nitrogen':
                 c = (255, 255, 0)
+            elif name in ('Methane', 'Water vapour', 'Carbon Dioxide', 'Nitrous Oxide'):
+                c = (0, 100, 50)
             weight = gas['weight']
             min_atm = q(gas.get('min_atm', 0), 'atm')
             max_atm = q(gas.get('max_atm', 0), 'atm')
@@ -70,6 +73,8 @@ class AtmospherePanel(BaseWidget):
         if event.data['panel'] is self:
             for element in self.elements.widgets():
                 element.percent.value = ''
+        if self.curr_planet is not None:
+            self.curr_planet.atmosphere.clear()
         self.image.fill(COLOR_BOX, [3, ALTO - 87, 190, 21])
 
     def warn(self, element):
@@ -117,7 +122,7 @@ class AtmospherePanel(BaseWidget):
         data = dict(zip([e.symbol for e in elements], [float(e.percent.get_value()) for e in elements]))
         data.update({'pressure_at_sea_level': {'value': pressure.m, 'unit': str(pressure.u)}})
         planet.set_atmosphere(data)
-        self.planets.delete_objects(planet)
+        # self.planets.delete_objects(planet)
         self.planets.show()
 
     def fill(self, atmosphere):
@@ -186,6 +191,7 @@ class AtmospherePanel(BaseWidget):
         self.write(state, self.f5, x=dx + 1, y=dy)
 
         if len(planet.atmosphere):
+            self.atmograph.set_preloaded_data(planet.atmosphere)
             self.fill(planet.atmosphere)
             self.update()
 
@@ -201,6 +207,17 @@ class AtmospherePanel(BaseWidget):
         self.current.enable()
         WidgetHandler.origin = self.current.percent.name
 
+    def global_warming(self):
+        gases = ['CO2', 'H2O', 'CH4', 'N2O']  # Greenhouse gases
+        gas_id = [15, 7, 5, 16]
+        effect = 0
+        for symbol in gases:
+            gas = molecular_weight[symbol]
+            percent = float(self.elements.widgets()[gas_id[gases.index(symbol)]].percent.get_value())
+            effect += (percent / 100) * gas['GWP']
+
+        return round(effect, 2)
+
     def update(self):
         self.total = 0
         for element in self.elements.widgets():
@@ -208,10 +225,12 @@ class AtmospherePanel(BaseWidget):
             if value not in ('solid', 'liquid', 'non-existant'):
                 self.total += float(value)
 
-        self.image.fill(COLOR_BOX, (0, ALTO - 87, 160, 32))
-        self.write('Total: ' + str(self.total) + '%', self.f3, x=3, y=ALTO - 87)
+        self.image.fill(COLOR_BOX, (0, ALTO - 85, 170, 34))
+        self.write('Total: ' + str(round(self.total, 2)) + '%', self.f3, x=3, y=ALTO - 87)
         a = self.atmograph
         self.image.fill(COLOR_BOX, [a.rect.x, a.rect.bottom, 200, 21])
+
+        self.write('Greenhouse effect: '+str(self.global_warming()), self.f2, x=3, y=ALTO - 67)
 
 
 class Element(BaseWidget):
@@ -332,7 +351,7 @@ class Element(BaseWidget):
         self.image = self.write_name(self.color)
 
 
-class PercentageCell(BaseWidget):
+class PercentageCell(BaseWidget, IncrementalValue):
     enabled = False
     value = ''
     name = ''
@@ -353,10 +372,11 @@ class PercentageCell(BaseWidget):
             gp = self.grandparent
             if tecla.data is not None and tecla.tipo == 'Key':
 
-                if tecla.data['value'] == '.' and not len(self.value):
-                    self.value = "0."
-                elif tecla.data['value'] == '.':
-                    self.value += '.'
+                if tecla.data['value'] == '.':
+                    if self.value == '':
+                        self.value = "0."
+                    elif '.' not in self.value:
+                        self.value += '.'
                 else:
                     self.value += tecla.data['value']
 
@@ -375,6 +395,8 @@ class PercentageCell(BaseWidget):
         return self.grandparent
 
     def on_mousebuttondown(self, event):
+        self.increment = self.update_increment()
+        value = 0
         if event.button == 1:
             for element in self.grandparent.elements:
                 element.percent.deselect()
@@ -382,6 +404,13 @@ class PercentageCell(BaseWidget):
             self.select()
             self.grandparent.set_current(self.parent)
             return self.__repr__()
+        elif event.button == 5 and float(self.value) + self.increment <= 100:
+            value = round(float(self.value) + self.increment, 3)
+        elif event.button == 4 and float(self.value) - self.increment >= 0:
+            value = round(float(self.value) - self.increment, 3)
+        if event.button in (4, 5):
+            self.value = str(value)
+            self.increment = 0
 
     def show(self):
         super().show()
@@ -426,6 +455,7 @@ class PercentageCell(BaseWidget):
         self.value = ''
 
     def update(self):
+        self.reset_power()
         color = COLOR_DISABLED
         state = self.parent.calculate_temperature()
         if self.parent.is_enabled():
@@ -436,6 +466,12 @@ class PercentageCell(BaseWidget):
         else:
             color = COLOR_BOX
             self.enabled = True
+
+        if self.grandparent.curr_planet is not None and self.value != '':
+            planet = self.grandparent.curr_planet
+            if self.value not in ('solid', 'liquid', 'non-existant'):
+                planet.atmosphere[self.parent.symbol] = float(self.value)
+
         w, h = self.rect.size
         self.image.fill(color, [1, 1, w - 2, h - 2])
         render = self.f.render(self.value, True, COLOR_TEXTO, color)
@@ -463,6 +499,14 @@ class Atmograph(BaseWidget):
         self.name = 'atmograph'
         EventHandler.register(self.on_keydown, 'Fin', 'Arrow')
 
+    def set_preloaded_data(self, atmosphere):
+        self.reached = True
+        n2 = atmosphere['N2']
+        self.vol_n2 = interpolacion_lineal(float(n2))
+        pressure = atmosphere['pressure_at_sea_level']
+        psi = q(pressure['value'], pressure['unit']).to('psi').m
+        self.pressure = reversed_atmo(round(psi))
+
     def unbreatheable(self):
         planet = self.parent.curr_planet
         base = None
@@ -481,31 +525,37 @@ class Atmograph(BaseWidget):
 
         return base
 
+    def draw_on_canvas(self, min_pressure, max_pressure, sel_pressure):
+        self.max_p, self.min_p = max_pressure, min_pressure
+        self.pressure = sel_pressure
+        draw.line(self.canvas, (0, 0, 0, 255), (0, max_pressure), (self.rect.right, max_pressure))
+        draw.line(self.canvas, (0, 0, 0, 255), (0, min_pressure), (self.rect.right, min_pressure))
+        self.enabled = True
+
+        pressure = convert(sel_pressure)
+        self.parent.show_pressure.update_text(pressure)
+
     def on_mousebuttondown(self, event):
         delta_y = 0
         n2 = self.parent.elements.widgets()[9]
         n2_value = n2.percent.get_value()
-        if any([self.parent.curr_planet is None, n2_value == 0, not n2.percent.value.isnumeric()]):
-            return
-        vol_n2 = interpolacion_lineal(n2_value)
+        vol_n2 = interpolacion_lineal(float(n2_value))
         if vol_n2 != self.vol_n2:
             self.reached = False
-        self.vol_n2 = interpolacion_lineal(n2_value)
+        self.vol_n2 = interpolacion_lineal(float(n2_value))
+
+        warning_text = 'Pressure at sea level depends on Nitrogen concentration.' \
+                       ' Please, fill its value before proceeding.'
+        assert n2_value, warning_text
+        max_pressure, min_pressure = atmo(float(n2_value), self.rect)
+
         if event.button == 1 and not self.reached:
-            warning_text = 'Pressure at sea level depends on Nitrogen concentration.' \
-                           ' Please, fill a value before proceeding.'
-            assert n2_value, warning_text
-
-            max_pressure, min_pressure = atmo(n2_value, self.rect)
-            self.max_p, self.min_p = max_pressure, min_pressure
             selected_pressure = (max_pressure + min_pressure) // 2
-            self.pressure = selected_pressure
-            draw.line(self.canvas, (0, 0, 0, 255), (0, max_pressure), (self.rect.right, max_pressure))
-            draw.line(self.canvas, (0, 0, 0, 255), (0, min_pressure), (self.rect.right, min_pressure))
-            self.enabled = True
+            self.draw_on_canvas(min_pressure, max_pressure, selected_pressure)
 
-            pressure = convert(selected_pressure)
-            self.parent.show_pressure.update_text(pressure)
+        elif self.reached:
+            selected_pressure = self.pressure
+            self.draw_on_canvas(min_pressure, max_pressure, selected_pressure)
 
         elif event.button == 4:
             if self.max_p < (self.pressure - 1) < self.min_p:
@@ -516,7 +566,6 @@ class Atmograph(BaseWidget):
                 delta_y = +1
 
         if event.button in (4, 5) and delta_y:
-            self.reached = True
             self.pressure += delta_y
 
         return self.name

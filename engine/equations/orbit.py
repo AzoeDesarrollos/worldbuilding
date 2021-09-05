@@ -104,7 +104,7 @@ class Orbit(Ellipse):
     _Q = 0  # apoapsis
 
     astrobody = None
-    temperature = 0
+    _temperature = 0
     _star = None
 
     argument_of_periapsis = 'undefined'
@@ -157,7 +157,7 @@ class Orbit(Ellipse):
         astro_body.orbit._star = main
         astro_body.parent = main
         if astro_body.celestial_type == 'planet':
-            self.temperature = astro_body.set_temperature(main.mass.m, self._a)
+            self._temperature = astro_body.set_temperature(main.mass.m, self._a)
 
         if body_around_planet:
             main = astro_body.parent.orbit.star
@@ -196,7 +196,7 @@ class Orbit(Ellipse):
         self._Q = self._a * (1 + self._e)
         self._q = self._a * (1 - self._e)
         if self.temperature != 'N/A':
-            self.temperature = self.astrobody.set_temperature(self._star.mass.m, self._a)
+            self._temperature = self.astrobody.set_temperature(self._star.mass.m, self._a)
         self.reset_period_and_speed(self._star.mass.m)
 
     @property
@@ -238,6 +238,13 @@ class Orbit(Ellipse):
         self._i = float(value)
 
     @property
+    def temperature(self):
+        if self._temperature == 'N/A':
+            return 'N/A'
+        else:
+            return self.astrobody.temperature
+
+    @property
     def star(self):
         return self._star
 
@@ -246,7 +253,7 @@ class Orbit(Ellipse):
 
     def reset_astrobody(self, astro_body):
         self.astrobody = astro_body
-        self.temperature = astro_body.temperature
+        self._temperature = astro_body.temperature
 
 
 class PlanetOrbit(Orbit):
