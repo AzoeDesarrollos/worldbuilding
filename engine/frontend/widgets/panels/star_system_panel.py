@@ -95,7 +95,7 @@ class StarSystemPanel(BaseWidget):
             }
             data[current.id] = d
 
-        EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Systems': data})
+        EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': data})
 
     def load_systems(self, event):
         for id in event.data['Systems']:

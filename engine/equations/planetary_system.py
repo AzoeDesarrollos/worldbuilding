@@ -318,30 +318,15 @@ class Systems:
         ruta = join(getcwd(), 'data', 'savedata.json')
         data = abrir_json(ruta)
         read_data = abrir_json(ruta)
-        keys_orbits = 'Planetary Orbits',  'Stellar Orbits'
-        keys_id = 'Planets', 'Satellites', 'Stars', 'Systems'
-        for key in keys_id:
+        keys = 'Asteroids', 'Planets', 'Satellites', 'Stars', 'Binary Systems', 'Planetary Orbits', 'Stellar Orbits'
+        for key in keys:
             new_data = event.data.get(key, [])
-            for new_item in new_data:
-                for item in read_data[key]:
-                    if item['id'] == new_item['id']:
-                        idx = data[key].index(item)
-                        data[key][idx] = new_item
-                    else:
-                        data[key].append(new_item)
-                        break
-
-        for key in keys_orbits:
-            new_data = event.data[key]
-            for new_item in new_data:
-                for item in read_data[key]:
-                    test_1 = item['astrobody'] == new_item['astrobody']
-                    test_2 = item['star_id'] == new_item['star_id']
-                    if test_1 and test_2:
-                        idx = data[key].index(item)
-                        data[key][idx] = new_item
-                    else:
-                        data[key].append(new_item)
+            for item_id in new_data:
+                item_data = new_data[item_id]
+                if item_id in read_data[key]:
+                    data[key][item_id].update(item_data)
+                else:
+                    data[key][item_id] = item_data
 
         for id in cls._flagged:
             for key in data:

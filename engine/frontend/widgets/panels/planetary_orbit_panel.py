@@ -73,7 +73,7 @@ class PlanetaryOrbitPanel(BaseWidget):
     def load_orbits(self, event):
         for id in event.data.get('Planetary Orbits', []):
             position = event.data['Planetary Orbits'][id]
-            if position not in self._loaded_orbits:
+            if id not in self._loaded_orbits:
                 self._loaded_orbits[id] = position
 
     def set_loaded_orbits(self):
@@ -164,15 +164,15 @@ class PlanetaryOrbitPanel(BaseWidget):
         system = Systems.get_current()
         if system is not None:
             for obj in system.satellites + system.asteroids:
-                if obj not in self.objects:
+                if obj not in self.objects and obj.hill_sphere == 0:
                     self.objects.append(obj)
                     btn = ObjectButton(self, obj, self.curr_x, self.curr_y)
-                    if obj.orbit is not None:
-                        btn.update_text(obj.orbit.a)
-                        markers = self._markers[obj.orbit.star.id]
-                        marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
-                        marker = markers[marker_idx]
-                        btn.link_marker(marker)
+                    # if obj.orbit is not None:
+                    #     btn.update_text(obj.orbit.a)
+                    #     markers = self._markers[obj.orbit.star.id]
+                    #     marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
+                    #     marker = markers[marker_idx]
+                    #     btn.link_marker(marker)
 
                     self.buttons.add(btn, layer=Systems.get_current_idx())
                     self.properties.add(btn)
@@ -276,16 +276,18 @@ class PlanetaryOrbitPanel(BaseWidget):
     def add_new(self, obj):
         if obj not in self.added:
             self.added.append(obj)
-        obj_name = obj.cls
+        obj_name = '{} #{}'.format(obj.cls, obj.idx)
         pln_habitable = Systems.get_current().is_habitable(self.current)
         pln_hill = self.current.hill_sphere.m
         obj_type = obj.celestial_type
+
+        text = "A satellite's mass must be less than or equal to the\nmass of its host."
+        text += '\n\nConsider using a less massive satellite for this host.'
+        if self.current.mass.to('earth_mass').m < obj.mass.to('earth_mass').m:
+            self.added.remove(obj)
+            raise AssertionError(text)
+
         roches = self.create_roches_marker(obj)
-
-        text = "A satellite's mass must be less than or equal to the\nmass of the planet."
-        text += '\n\nConsider using a less massive satellite for this planet.'
-        assert self.current.mass.to('earth_mass').m >= obj.mass.to('earth_mass').m, text
-
         pos = q(round(roll(self.current.roches_limit.m, self.current.hill_sphere.m / 2), 3), 'earth_radius')
         orbit = RawOrbit(Systems.get_current_star(), pos)
         obj_marker = Marker(self, obj_name, pos, color=COLOR_SELECTED, lock=False)
@@ -306,7 +308,7 @@ class PlanetaryOrbitPanel(BaseWidget):
     def add_existing(self, obj, pln_id):
         if obj not in self.added:
             self.added.append(obj)
-        obj_name = obj.cls
+        obj_name = '{} #{}'.format(obj.cls, obj.idx)
         orbit = obj.orbit
         pos = orbit.a
         obj_marker = Marker(self, obj_name, pos, color=COLOR_SELECTED, lock=False)
@@ -428,7 +430,7 @@ class ObjectButton(Meta):
         if obj.has_name:
             name = obj.name
         else:
-            name = obj.cls
+            name = '{} #{}'.format(obj.cls, obj.idx)
         self.img_uns = self.f1.render(name, True, self.color, COLOR_AREA)
         self.img_sel = self.f2.render(name, True, self.color, COLOR_AREA)
         self.img_dis = self.img_uns

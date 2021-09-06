@@ -27,12 +27,13 @@ class PlanetButton(ListedBody):
             name = 'Dwarf'
             color = COLOR_DWARFPLANET
         elif astro.comp == 'Rocky':
-            name = astro.title
+            name = "{} #{}".format(astro.title, astro.idx)
             color = COLOR_ROCKYMOON
         elif astro.comp == 'Icy':
-            name = astro.title
+            name = "{} #{}".format(astro.title, astro.idx)
             color = COLOR_ICYMOON
         elif astro.comp == 'Iron':
+            name = "{} #{}".format(astro.title, astro.idx)
             color = COLOR_IRONMOON
 
         if astro.has_name:

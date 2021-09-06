@@ -118,6 +118,7 @@ class Minor(Satellite):
         if name:
             self.name = name
             self.has_name = True
+        self.idx = data.get('idx', 0)
         self.composition = data['composition']
         self.density = self.set_density(data['composition'])
         a, b, c = data.get('a axis', 0), data.get('b axis', 0), data.get('c axis', 0)

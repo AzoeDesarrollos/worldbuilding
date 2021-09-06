@@ -279,9 +279,10 @@ class OrbitPanel(BaseWidget):
                 star = system.star_system
                 for marker in self._orbits.get(star.id, []):
                     d = self.create_save_data(marker.orbit)
-                    astrobody_id = marker.orbit.astrobody.id
-                    if astrobody_id not in self._loaded_orbits:
-                        self._loaded_orbits[astrobody_id] = d
+                    if not isinstance(marker.orbit, (RawOrbit, PseudoOrbit)):
+                        astrobody_id = marker.orbit.astrobody.id
+                        if astrobody_id not in self._loaded_orbits:
+                            self._loaded_orbits[astrobody_id] = d
 
         EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Stellar Orbits': self._loaded_orbits})
 

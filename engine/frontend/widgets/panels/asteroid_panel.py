@@ -72,10 +72,11 @@ class AsteroidPanel(BasePanel):
                 'b axis': moon.b_axis.m,
                 'c axis': moon.c_axis.m,
                 'composition': moon.composition,
-                'system': moon.system_id
+                'system': moon.system_id,
+                'idx': moon.idx
             }
             data[moon.id] = moon_data
-            EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Asteroids": data})
+            EventHandler.trigger(event.tipo + 'Data', 'Asteroid', {"Asteroids": data})
 
     def add_button(self):
         button = AsteroidButton(self.current, self.current.current, self.curr_x, self.curr_y)
@@ -150,6 +151,18 @@ class AsteroidPanel(BasePanel):
             self.show_current(idx)
             self.last_idx = idx
 
+    def next_idx(self, type):
+        types = 'Obleate', 'Tri-Axial', 'Prolate'
+        type_a = max([moon.idx for moon in self.moons if moon.cls == types[0]])
+        type_b = max([moon.idx for moon in self.moons if moon.cls == types[1]])
+        type_c = max([moon.idx for moon in self.moons if moon.cls == types[2]])
+        if type == types[0]:
+            return type_a + 1
+        elif type == types[1]:
+            return type_b + 1
+        elif type == types[1]:
+            return type_c + 1
+
 
 class AsteroidType(BaseWidget):
     current = None
@@ -205,6 +218,7 @@ class AsteroidType(BaseWidget):
             data['system'] = self.current.system_id
 
         moon = minor_moon_by_composition(data)
+        moon.idx = self.parent.next_idx(moon.cls)
         if self.current is None:
             if Systems.get_current().add_astro_obj(moon):
                 self.current = moon
@@ -318,7 +332,7 @@ class AsteroidButton(Meta):
         if satellite.has_name:
             name = satellite.name
         else:
-            name = satellite.cls
+            name = "{} #{}".format(satellite.cls, satellite.idx)
         self.img_uns = self.f1.render(name, True, satellite.color, COLOR_AREA)
         self.img_sel = self.f2.render(name, True, satellite.color, COLOR_AREA)
         self.w = self.img_sel.get_width()
