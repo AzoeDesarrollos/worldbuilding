@@ -151,16 +151,16 @@ class AsteroidPanel(BasePanel):
             self.show_current(idx)
             self.last_idx = idx
 
-    def next_idx(self, type):
+    def next_idx(self, form):
         types = 'Obleate', 'Tri-Axial', 'Prolate'
-        type_a = max([moon.idx for moon in self.moons if moon.cls == types[0]])
-        type_b = max([moon.idx for moon in self.moons if moon.cls == types[1]])
-        type_c = max([moon.idx for moon in self.moons if moon.cls == types[2]])
-        if type == types[0]:
+        type_a = len([moon.idx for moon in self.moons if moon.cls == types[0]])
+        type_b = len([moon.idx for moon in self.moons if moon.cls == types[1]])
+        type_c = len([moon.idx for moon in self.moons if moon.cls == types[2]])
+        if form == types[0]:
             return type_a + 1
-        elif type == types[1]:
+        elif form == types[1]:
             return type_b + 1
-        elif type == types[1]:
+        elif form == types[2]:
             return type_c + 1
 
 

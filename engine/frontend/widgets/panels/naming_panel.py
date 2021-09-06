@@ -110,6 +110,7 @@ class NamingPanel(BaseWidget):
 
     def set_current(self, current):
         self.current = current
+        self.curr_idx = self.unnamed.widgets().index(current)
 
     def name_objects(self):
         text = self.current.text_area.value

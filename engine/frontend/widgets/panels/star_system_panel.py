@@ -98,8 +98,8 @@ class StarSystemPanel(BaseWidget):
         EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': data})
 
     def load_systems(self, event):
-        for id in event.data['Systems']:
-            system_data = event.data['Systems'][id]
+        for id in event.data['Binary Systems']:
+            system_data = event.data['Binary Systems'][id]
             avg_s = system_data['avg_s']
             ecc_p = system_data['ecc_p']
             ecc_s = system_data['ecc_s']

@@ -1,11 +1,11 @@
 from engine.frontend.globales import ALTO, ANCHO, COLOR_TEXTO, COLOR_SELECTED, COLOR_BOX, COLOR_DISABLED
 from engine.frontend.globales import Renderer, WidgetHandler
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.backend.util import abrir_json, guardar_json
 from pygame import Surface, draw, transform, SRCALPHA
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.meta import Meta
+from engine.backend.util import abrir_json
 from os.path import exists, join
 from os import getcwd
 from . import panels
@@ -33,10 +33,9 @@ class LayoutPanel(BaseWidget):
         a = Arrow(self, 'backward', 180, self.rect.left + 16, self.rect.bottom)
         b = Arrow(self, 'forward', 0, self.rect.right - 16, self.rect.bottom)
 
-        e = NewButton(self, (self.rect.w // 5) * 1, self.rect.bottom - 26)
-        d = LoadButton(self, (self.rect.w // 5) * 2, self.rect.bottom - 26)
-        c = SaveButton(self, (self.rect.w // 5) * 3, self.rect.bottom - 26)
-        g = ClearButton(self, (self.rect.w // 5) * 4, self.rect.bottom - 26)
+        e = NewButton(self, (self.rect.w//6)*1+32, self.rect.bottom - 26)
+        d = LoadButton(self, (self.rect.w//6)*3, self.rect.bottom - 26)
+        c = SaveButton(self, (self.rect.w//6)*5-32, self.rect.bottom - 26)
 
         SwapSystem(self, ANCHO-200, 2)
 
@@ -45,12 +44,10 @@ class LayoutPanel(BaseWidget):
         Renderer.add_widget(c)
         Renderer.add_widget(d)
         Renderer.add_widget(e)
-        Renderer.add_widget(g)
 
         WidgetHandler.add_widget(c)
         WidgetHandler.add_widget(d)
         WidgetHandler.add_widget(e)
-        WidgetHandler.add_widget(g)
 
         self.load_button = d
 
@@ -80,9 +77,9 @@ class Arrow(Meta):
         WidgetHandler.add_widget(self)
         self.direccion = direccion
 
-        self.img_uns = self.create((255, 0, 0, 255), angulo)
-        self.img_sel = self.create((0, 0, 255, 255), angulo)
-        self.img_dis = self.create((200, 200, 200, 222), angulo)
+        self.img_uns = self.create(COLOR_BOX, angulo)
+        self.img_sel = self.create(COLOR_TEXTO, angulo)
+        self.img_dis = self.create(COLOR_DISABLED, angulo)
 
         self.image = self.img_uns
         self.rect = self.image.get_rect(centerx=centerx, bottom=y)
@@ -195,14 +192,3 @@ class SystemName(BaseWidget):
     def update(self):
         self.image = self.f.render(self.get_name(), True, COLOR_TEXTO, COLOR_BOX)
         self.rect = self.image.get_rect(topleft=self._rect.topleft)
-
-
-class ClearButton(BaseButton):
-    def __init__(self, parent, x, y):
-        super().__init__(parent, x, y, 'Clear')
-
-    def on_mousebuttondown(self, event):
-        ruta = join(getcwd(), 'data', 'savedata.json')
-        if event.button == 1 and exists(ruta):
-            guardar_json(ruta, {})
-            self.parent.load_button.disable()

@@ -1,7 +1,7 @@
 from engine.backend.util import abrir_json, guardar_json
 from engine.backend.eventhandler import EventHandler
+from os.path import join, exists
 from math import exp, pow
-from os.path import join
 from os import getcwd
 from engine import q
 
@@ -167,7 +167,15 @@ class Systems:
     _systems = None
     loose_stars = None
     _flagged = []
-    save_data = {}
+    save_data = {
+        'Asteroids': {},
+        'Planets': {},
+        'Satellites': {},
+        'Stars': {},
+        'Binary Systems': {},
+        'Planetary Orbits': {},
+        'Stellar Orbits': {}
+    }
     _current_idx = None
 
     @classmethod
@@ -179,6 +187,10 @@ class Systems:
         EventHandler.register(cls.save, "SaveDataFile")
         EventHandler.register(cls.compound_save_data, "SaveData")
         EventHandler.register(cls.load_data, 'LoadData')
+
+        ruta = join(getcwd(), 'data', 'savedata.json')
+        if not exists(ruta):
+            guardar_json(ruta, cls.save_data)
 
     @classmethod
     def set_system(cls, star):
@@ -328,11 +340,11 @@ class Systems:
                 else:
                     data[key][item_id] = item_data
 
-        for id in cls._flagged:
+        for flagged_id in cls._flagged:
             for key in data:
-                for item in data[key]:
-                    if 'id' in item and item['id'] == id:
-                        data[key].remove(item)
+                for id in data[key]:
+                    if id == flagged_id:
+                        del data[key][flagged_id]
 
         guardar_json(ruta, data)
 
