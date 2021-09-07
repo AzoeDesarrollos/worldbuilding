@@ -9,6 +9,7 @@ from ..object_type import ObjectType
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
 from .common import TextButton
+from ..pie import PieChart
 
 
 class SatellitePanel(BasePanel):
@@ -22,8 +23,8 @@ class SatellitePanel(BasePanel):
     def __init__(self, parent):
         super().__init__('Satellite', parent)
         self.current = SatelliteType(self)
-        r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 32, 200])
-        self.area_satellites = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 400, 200))
+        r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 132, 200])
+        self.area_satellites = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 200))
         self.curr_x = self.area_satellites.x + 3
         self.curr_y = self.area_satellites.y + 21
         f1 = self.crear_fuente(16, underline=True)
@@ -161,8 +162,18 @@ class SatelliteType(ObjectType):
             item.rect.y += 16
             item.text_area.rect.y += 16
 
-        for i, name in enumerate(sorted(material_densities)):
-            a = ValueText(self, name.capitalize(), 3, 420 + 21 + i * 21, bg=COLOR_AREA)
+        names = sorted(material_densities.keys())
+        d = {names[0]: {'color': [155] * 3, 'value': 33, 'handle': 'black'},
+             names[1]: {'color': [155, 80, 0], 'value': 33, 'handle': 'black'},
+             names[2]: {'color': [0, 200, 255], 'value': 34, 'handle': 'black'}}
+
+        self.pie = PieChart(self, 200, 500, 70, d)
+        for obj in self.pie.chart.widgets():
+            self.properties.add(obj, layer=2)
+
+        for i, name in enumerate(sorted(d)):
+            a = ValueText(self, name.capitalize(), 3, 500 + 21 + i * 21, bg=COLOR_AREA)
+            a.text_area.value = self.pie.get_value(name)
             self.properties.add(a, layer=2)
             a.modifiable = True
 

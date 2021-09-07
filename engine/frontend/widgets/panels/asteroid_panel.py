@@ -24,9 +24,9 @@ class AsteroidPanel(BasePanel):
         self.current = AsteroidType(self)
         f1 = self.crear_fuente(16, underline=True)
         f2 = self.crear_fuente(13, underline=True)
-        r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 32, 200])
+        r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 132, 200])
         self.write('Composition', f1, COLOR_AREA, topleft=(0, 420))
-        self.area_asteroids = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 400, 200))
+        self.area_asteroids = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 200))
         self.write('Asteroids', f2, COLOR_AREA, x=self.area_asteroids.x + 3, y=self.area_asteroids.y)
         self.curr_x = self.area_asteroids.x + 3
         self.curr_y = self.area_asteroids.y + 21

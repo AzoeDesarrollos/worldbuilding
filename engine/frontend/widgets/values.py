@@ -208,6 +208,10 @@ class NumberArea(BaseArea, IncrementalValue):
     min = 0
     max = None
 
+    def __init__(self, parent, name, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
+        super().__init__(parent, name, x, y, fg, bg)
+        EventHandler.register(self.get_value, 'SetValue')
+
     def input(self, event):
         if self.enabled and not self.grandparent.locked:
             assert self.modifiable, 'This value is a derivated value. It is not directly modifiable.'
@@ -253,6 +257,10 @@ class NumberArea(BaseArea, IncrementalValue):
         elif hasattr(quantity, 'name'):
             self.value = quantity
             self.unit = None
+
+    def get_value(self, event):
+        if event.origin.capitalize() == self.parent.text:
+            self.set_value(q(event.data['value']))
 
     def on_mousebuttondown(self, event):
         self.increment = self.update_increment()
