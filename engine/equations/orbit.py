@@ -105,28 +105,15 @@ class Orbit(Ellipse):
         return 'Orbit @' + str(round(self.semi_major_axis.m, 3))
 
     def set_astrobody(self, main, astro_body):
-        body_around_star = main.celestial_type == "star" or main.celestial_type == 'system'
-        body_around_planet = main.celestial_type == "planet" or main.celestial_type == 'asteroid'
-
-        parameters = [self.semi_major_axis, self.eccentricity, self.inclination,
-                      self.longitude_of_the_ascending_node, self.argument_of_periapsis]
-
-        if body_around_star:
-            astro_body.orbit = PlanetOrbit(main, *parameters)
-            astro_body.orbit.reset_astrobody(astro_body)
-
-        elif body_around_planet:
-            astro_body.orbit = SatelliteOrbit(*parameters)
-            astro_body.orbit.reset_astrobody(astro_body)
-            astro_body.orbit.reset_period_and_speed(main)
-
-        astro_body.orbit._star = main
+        self.astrobody = astro_body
+        self._temperature = astro_body.temperature
+        self._star = main
         astro_body.parent = main
-        if astro_body.celestial_type == 'planet':
-            self._temperature = astro_body.set_temperature(main.mass.m, self._a)
 
-        if body_around_planet:
+        if main.celestial_type == "planet" or main.celestial_type == 'asteroid':
+            self.reset_period_and_speed(main)
             main = astro_body.parent.orbit.star
+
         system = Systems.get_system_by_star(main)
         system.visibility_by_albedo()
 
@@ -217,9 +204,8 @@ class Orbit(Ellipse):
     def reset_period_and_speed(self, main):
         raise NotImplementedError
 
-    def reset_astrobody(self, astro_body):
-        self.astrobody = astro_body
-        self._temperature = astro_body.temperature
+    # def reset_astrobody(self, astro_body):
+
 
 
 class PlanetOrbit(Orbit):
@@ -267,7 +253,7 @@ class SatelliteOrbit(Orbit):
 
 class BinaryStarOrbit(Orbit):
     def __init__(self, star, other, a, e):
-        super().__init__(a, e, q(0, 'degrees'))
+        super().__init__(a, e, q(0, 'degrees'), 'au')
         self.reset_period_and_speed(star.mass.m+other.mass.m)
 
     def reset_period_and_speed(self, main_body_mass):

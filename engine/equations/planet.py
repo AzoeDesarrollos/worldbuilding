@@ -144,9 +144,9 @@ class Planet(BodyInHydrostaticEquilibrium):
         return t
 
     def set_orbit(self, star, orbital_parameters):
-        orbit = PlanetOrbit(star, *orbital_parameters)
-        self.temperature = self.set_temperature(star.mass.m, orbit.semi_minor_axis.m)
-        orbit.set_astrobody(star, self)
+        self.orbit = PlanetOrbit(star, *orbital_parameters)
+        self.temperature = self.set_temperature(star.mass.m, self.orbit.semi_minor_axis.m)
+        self.orbit.set_astrobody(star, self)
         self.lagrange_points = get_lagrange_points(self.orbit.semi_major_axis.m, star.mass.m, self.mass.m)
         self.hill_sphere = self.set_hill_sphere()
         if star.celestial_type == 'Star':

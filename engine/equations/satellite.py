@@ -23,6 +23,7 @@ class Satellite:
     lagrange_points = None
     id = None
     idx = None
+    parent = None
 
     @staticmethod
     def calculate_density(ice, silicate, iron):
@@ -31,8 +32,8 @@ class Satellite:
         return density
 
     def set_orbit(self, planet, orbital_parameters):
-        orbit = SatelliteOrbit(*orbital_parameters)
-        orbit.set_astrobody(planet, self)
+        self.orbit = SatelliteOrbit(*orbital_parameters)
+        self.orbit.set_astrobody(planet, self)
 
         semi_major_axis = self.orbit.semi_major_axis.to('au').m
         planet_mass = planet.mass.to('sol_mass').m
