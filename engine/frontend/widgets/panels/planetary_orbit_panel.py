@@ -82,6 +82,8 @@ class PlanetaryOrbitPanel(BaseWidget):
             a = q(orbit_data['a'], 'earth_radius')
             e = q(orbit_data['e'])
             i = q(orbit_data['i'], 'degree')
+            loan = q(orbit_data.get('LoAN', 0), 'degree')
+            aop = q(orbit_data['AoP'], 'degree') if 'AoP' in orbit_data else 'undefined'
             system = Systems.get_system_by_id(orbit_data['star_id'])
             planet = system.get_astrobody_by(id, tag_type='id')
             if planet.id not in self.satellites:
@@ -91,8 +93,8 @@ class PlanetaryOrbitPanel(BaseWidget):
                 self._markers[planet.id] = []
             satellite = system.get_astrobody_by(orbit_data['astrobody'], tag_type='id')
             self.satellites[planet.id].append(satellite)
-            satellite.set_orbit(planet, [a, e, i])
-            self.add_existing(satellite, planet.id)
+            satellite.set_orbit(planet, [a, e, i, loan, aop])
+            self.add_existing(satellite, planet)
 
         # borrar las órbitas cargadas para evitar que se dupliquen.
         self._loaded_orbits.clear()
@@ -120,6 +122,10 @@ class PlanetaryOrbitPanel(BaseWidget):
         if hasattr(orb, 'astrobody'):
             d['astrobody'] = orb.astrobody.id
             d['star_id'] = orb.astrobody.parent.parent.id
+        if hasattr(orb, 'longitude_of_the_ascending_node'):
+            d['LoAN'] = orb.longitude_of_the_ascending_node.m
+        if hasattr(orb, 'argument_of_periapsis'):
+            d['AoP'] = orb.argument_of_periapsis.m
         return d
 
     def toggle_stellar_orbits(self):
@@ -164,15 +170,15 @@ class PlanetaryOrbitPanel(BaseWidget):
         system = Systems.get_current()
         if system is not None:
             for obj in system.satellites + system.asteroids:
-                if obj not in self.objects and obj.hill_sphere == 0:
+                if obj not in self.objects:
                     self.objects.append(obj)
                     btn = ObjectButton(self, obj, self.curr_x, self.curr_y)
-                    # if obj.orbit is not None:
-                    #     btn.update_text(obj.orbit.a)
-                    #     markers = self._markers[obj.orbit.star.id]
-                    #     marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
-                    #     marker = markers[marker_idx]
-                    #     btn.link_marker(marker)
+                    if obj.orbit is not None:
+                        btn.update_text(obj.orbit.a)
+                        markers = self._markers[obj.orbit.star.id]
+                        marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
+                        marker = markers[marker_idx]
+                        btn.link_marker(marker)
 
                     self.buttons.add(btn, layer=Systems.get_current_idx())
                     self.properties.add(btn)
@@ -305,7 +311,7 @@ class PlanetaryOrbitPanel(BaseWidget):
 
         return orbit, obj_marker
 
-    def add_existing(self, obj, pln_id):
+    def add_existing(self, obj, planet):
         if obj not in self.added:
             self.added.append(obj)
         obj_name = '{} #{}'.format(obj.cls, obj.idx)
@@ -313,7 +319,15 @@ class PlanetaryOrbitPanel(BaseWidget):
         pos = orbit.a
         obj_marker = Marker(self, obj_name, pos, color=COLOR_SELECTED, lock=False)
         obj_marker.links(orbit, obj)
-        self._markers[pln_id].append(obj_marker)
+        obj_density = obj.density.to('earth_density').m
+        roches = planet.set_roche(obj_density)
+        min_value = roches.m
+        max_value = planet.hill_sphere.m
+        if planet.habitable and obj.celestial_type != 'asteroid':
+            max_value /= 2
+        obj_marker.set_max_value(max_value)
+        obj_marker.set_min_value(min_value)
+        self._markers[planet.id].append(obj_marker)
 
     def hide_markers(self):
         for marker in self.markers:
@@ -598,7 +612,7 @@ class Marker(Meta, IncrementalValue):
         self.obj = obj
 
     def __repr__(self):
-        return self.name+' Marker'
+        return self.name + ' Marker'
 
     def show(self):
         super().show()

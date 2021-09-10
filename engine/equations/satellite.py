@@ -5,7 +5,7 @@ from engine import q, material_densities
 from engine.backend import roll
 from datetime import datetime
 from math import pi, sqrt
-from .orbit import Orbit
+from .orbit import SatelliteOrbit
 
 
 class Satellite:
@@ -31,7 +31,7 @@ class Satellite:
         return density
 
     def set_orbit(self, planet, orbital_parameters):
-        orbit = Orbit(*orbital_parameters)
+        orbit = SatelliteOrbit(*orbital_parameters)
         orbit.set_astrobody(planet, self)
 
         semi_major_axis = self.orbit.semi_major_axis.to('au').m

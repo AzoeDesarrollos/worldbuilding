@@ -4,7 +4,7 @@ from .lagrange import get_lagrange_points
 from math import sqrt, pi, pow, tan
 from datetime import datetime
 from pygame import Color
-from .orbit import Orbit
+from .orbit import PlanetOrbit
 
 
 class Planet(BodyInHydrostaticEquilibrium):
@@ -144,7 +144,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         return t
 
     def set_orbit(self, star, orbital_parameters):
-        orbit = Orbit(*orbital_parameters)
+        orbit = PlanetOrbit(star, *orbital_parameters)
         self.temperature = self.set_temperature(star.mass.m, orbit.semi_minor_axis.m)
         orbit.set_astrobody(star, self)
         self.lagrange_points = get_lagrange_points(self.orbit.semi_major_axis.m, star.mass.m, self.mass.m)

@@ -341,10 +341,9 @@ class Systems:
                     data[key][item_id] = item_data
 
         for flagged_id in cls._flagged:
-            for key in data:
-                for id in data[key]:
-                    if id == flagged_id:
-                        del data[key][flagged_id]
+            for key in read_data:
+                if flagged_id in data[key]:
+                    del data[key][flagged_id]
 
         guardar_json(ruta, data)
 

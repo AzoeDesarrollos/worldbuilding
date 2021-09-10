@@ -167,13 +167,13 @@ class SatelliteType(ObjectType):
              names[1]: {'color': [155, 80, 0], 'value': 33, 'handle': 'black'},
              names[2]: {'color': [0, 200, 255], 'value': 34, 'handle': 'black'}}
 
-        self.pie = PieChart(self, 200, 500, 70, d)
-        for obj in self.pie.chart.widgets():
-            self.properties.add(obj, layer=2)
+        # self.pie = PieChart(self, 200, 500, 70, d)
+        # for obj in self.pie.chart.widgets():
+        #     self.properties.add(obj, layer=2)
 
         for i, name in enumerate(sorted(d)):
             a = ValueText(self, name.capitalize(), 3, 500 + 21 + i * 21, bg=COLOR_AREA)
-            a.text_area.value = self.pie.get_value(name)
+            # a.text_area.value = self.pie.get_value(name)
             self.properties.add(a, layer=2)
             a.modifiable = True
 
@@ -190,11 +190,9 @@ class SatelliteType(ObjectType):
                 data['composition'][material.text.lower()] = float(text)
         for item in self.properties.get_widgets_from_layer(1):
             text = item.text_area.value
-            if type(text) is not str:
+            try:
                 data[item.text.lower()] = float(text)
-            elif text != '' and not text.isalpha():
-                data[item.text.lower()] = float(text)
-            else:
+            except ValueError:
                 data[item.text.lower()] = text
 
         if self.current is not None:

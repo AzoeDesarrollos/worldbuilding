@@ -38,45 +38,8 @@ class RawOrbit:
         self.a = quantity
         self.set_temperature()
 
-    def __mul__(self, other):
-        new_a = None
-        if type(other) not in (float, Orbit):
-            return NotImplemented()
-        elif type(other) is float:
-            new_a = q(self.semi_major_axis.m * other, self._unit)
-        elif type(other) is Orbit:
-            new_a = q(self.semi_major_axis.m * other.semi_major_axis.m, self._unit)
-
-        return new_a.m
-
-    def __truediv__(self, other):
-        new_a = None
-        if type(other) not in (float, Orbit):
-            return NotImplemented()
-        elif type(other) is float:
-            new_a = q(self.semi_major_axis.m / other, self._unit)
-        elif type(other) is Orbit:
-            new_a = q(self.semi_major_axis.m / other.semi_major_axis.m, self._unit)
-
-        return new_a.m
-
-    def __float__(self):
-        return float(self.semi_major_axis.m)
-
-    def __lt__(self, other):
-        return self.semi_major_axis.m < other
-
-    def __gt__(self, other):
-        return self.semi_major_axis.m > other
-
-    def __eq__(self, other):
-        return other.semi_major_axis.m == self.semi_major_axis.m
-
     def __repr__(self):
         return 'Orbit @' + '{:}'.format(round(float(self), 3))
-
-    def complete(self, e, i):
-        return Orbit(self.semi_major_axis.m, e, i, self._unit)
 
 
 class PseudoOrbit:
@@ -111,7 +74,7 @@ class Orbit(Ellipse):
     longitude_of_the_ascending_node = 0
     true_anomaly = q(0, 'degree')
 
-    def __init__(self, a, e, i, unit='au'):
+    def __init__(self, a, e, i, unit):
         super().__init__(a, e)
         self._unit = unit
         assert 0 <= float(i.m) <= 180, 'inclination values range from 0 to 180 degrees.'
@@ -145,12 +108,15 @@ class Orbit(Ellipse):
         body_around_star = main.celestial_type == "star" or main.celestial_type == 'system'
         body_around_planet = main.celestial_type == "planet" or main.celestial_type == 'asteroid'
 
+        parameters = [self.semi_major_axis, self.eccentricity, self.inclination,
+                      self.longitude_of_the_ascending_node, self.argument_of_periapsis]
+
         if body_around_star:
-            astro_body.orbit = PlanetOrbit(main, self.semi_major_axis, self.eccentricity, self.inclination)
+            astro_body.orbit = PlanetOrbit(main, *parameters)
             astro_body.orbit.reset_astrobody(astro_body)
 
         elif body_around_planet:
-            astro_body.orbit = SatelliteOrbit(self.semi_major_axis, self.eccentricity, self.inclination)
+            astro_body.orbit = SatelliteOrbit(*parameters)
             astro_body.orbit.reset_astrobody(astro_body)
             astro_body.orbit.reset_period_and_speed(main)
 
@@ -197,7 +163,7 @@ class Orbit(Ellipse):
         self._q = self._a * (1 - self._e)
         if self.temperature != 'N/A':
             self._temperature = self.astrobody.set_temperature(self._star.mass.m, self._a)
-        self.reset_period_and_speed(self._star.mass)
+        self.reset_period_and_speed(self._star)
 
     @property
     def semi_minor_axis(self):
@@ -259,12 +225,16 @@ class Orbit(Ellipse):
 class PlanetOrbit(Orbit):
     primary = 'Star'
 
-    def __init__(self, star, a, e, i):
+    def __init__(self, star, a, e, i, loan=None, aop=None):
         super().__init__(a, e, i, 'au')
         self.reset_period_and_speed(star)
-        orbital_properties = set_orbital_properties(self._i)
-        self.longitude_of_the_ascending_node = orbital_properties[0]
-        self.argument_of_periapsis = orbital_properties[1]
+        if loan is None and aop is None:
+            orbital_properties = set_orbital_properties(self._i)
+            self.longitude_of_the_ascending_node = orbital_properties[0]
+            self.argument_of_periapsis = orbital_properties[1]
+        else:
+            self.longitude_of_the_ascending_node = loan
+            self.argument_of_periapsis = aop
 
     def reset_period_and_speed(self, main):
         main_body_mass = main.mass.m
@@ -275,11 +245,15 @@ class PlanetOrbit(Orbit):
 class SatelliteOrbit(Orbit):
     primary = 'Planet'
 
-    def __init__(self, a, e, i):
+    def __init__(self, a, e, i, loan=None, aop=None):
         super().__init__(a, e, i, 'earth_radius')
-        orbital_properties = set_orbital_properties(self._i)
-        self.longitude_of_the_ascending_node = orbital_properties[0]
-        self.argument_of_periapsis = orbital_properties[1]
+        if loan is None and aop is None:
+            orbital_properties = set_orbital_properties(self._i)
+            self.longitude_of_the_ascending_node = orbital_properties[0]
+            self.argument_of_periapsis = orbital_properties[1]
+        else:
+            self.longitude_of_the_ascending_node = loan
+            self.argument_of_periapsis = aop
 
     def reset_period_and_speed(self, main):
         main_body_mass = main.mass.m
