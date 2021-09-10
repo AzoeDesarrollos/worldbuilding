@@ -204,15 +204,12 @@ class Orbit(Ellipse):
     def reset_period_and_speed(self, main):
         raise NotImplementedError
 
-    # def reset_astrobody(self, astro_body):
-
-
 
 class PlanetOrbit(Orbit):
     primary = 'Star'
 
-    def __init__(self, star, a, e, i, loan=None, aop=None):
-        super().__init__(a, e, i, 'au')
+    def __init__(self, star, a, e, i, unit, loan=None, aop=None):
+        super().__init__(a, e, i, unit)
         self.reset_period_and_speed(star)
         if loan is None and aop is None:
             orbital_properties = set_orbital_properties(self._i)
@@ -231,8 +228,8 @@ class PlanetOrbit(Orbit):
 class SatelliteOrbit(Orbit):
     primary = 'Planet'
 
-    def __init__(self, a, e, i, loan=None, aop=None):
-        super().__init__(a, e, i, 'earth_radius')
+    def __init__(self, a, e, i, unit, loan=None, aop=None):
+        super().__init__(a, e, i, unit)
         if loan is None and aop is None:
             orbital_properties = set_orbital_properties(self._i)
             self.longitude_of_the_ascending_node = orbital_properties[0]

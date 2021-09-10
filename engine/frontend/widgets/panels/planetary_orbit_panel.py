@@ -53,10 +53,10 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.area_modify = ModifyArea(self, ANCHO - 201, 374)
         self.show_markers_button = ToggleableButton(self, 'Satellites', self.toggle_stellar_orbits, 3, 421)
         self.show_markers_button.disable()
-        self.resonances_button = AddResonanceButton(self, ANCHO - 140, 416)
+        self.resonances_button = AddResonanceButton(self, ANCHO - 150, 416)
         self.order_f = self.crear_fuente(14)
         self.write(self.name + ' Panel', self.crear_fuente(16, underline=True), centerx=(ANCHO // 4) * 1.5, y=0)
-        self.digit_x = RatioDigit(self, 'x', self.resonances_button.rect.left - 60, self.resonances_button.rect.y)
+        self.digit_x = RatioDigit(self, 'x', self.resonances_button.rect.left - 55, self.resonances_button.rect.y)
         self.write(':', self.crear_fuente(16), topleft=[self.digit_x.rect.right + 1, self.resonances_button.rect.y - 1])
         self.digit_y = RatioDigit(self, 'y', self.digit_x.rect.right + 9, self.resonances_button.rect.y)
         self.ratios = [self.digit_x, self.digit_y]
@@ -93,7 +93,7 @@ class PlanetaryOrbitPanel(BaseWidget):
                 self._markers[planet.id] = []
             satellite = system.get_astrobody_by(orbit_data['astrobody'], tag_type='id')
             self.satellites[planet.id].append(satellite)
-            satellite.set_orbit(planet, [a, e, i, loan, aop])
+            satellite.set_orbit(planet, [a, e, i, 'earth_radius', loan, aop])
             self.add_existing(satellite, planet)
 
         # borrar las órbitas cargadas para evitar que se dupliquen.
@@ -114,7 +114,7 @@ class PlanetaryOrbitPanel(BaseWidget):
     def create_save_data(orb):
         d = {}
         if hasattr(orb, 'semi_major_axis'):
-            d['a'] = round(orb.semi_major_axis.m, 2)
+            d['a'] = orb.semi_major_axis.m
         if hasattr(orb, 'inclination'):
             d['i'] = orb.inclination.m
         if hasattr(orb, 'eccentricity'):
@@ -125,7 +125,8 @@ class PlanetaryOrbitPanel(BaseWidget):
         if hasattr(orb, 'longitude_of_the_ascending_node'):
             d['LoAN'] = orb.longitude_of_the_ascending_node.m
         if hasattr(orb, 'argument_of_periapsis'):
-            d['AoP'] = orb.argument_of_periapsis.m
+            aop = orb.argument_of_periapsis
+            d['AoP'] = aop.m if hasattr(aop, 'm') else aop
         return d
 
     def toggle_stellar_orbits(self):
@@ -635,7 +636,7 @@ class SetOrbitButton(TextButton):
 
 class AddResonanceButton(TextButton):
     def __init__(self, parent, x, y):
-        super().__init__(parent, 'Add Resonance', x, y)
+        super().__init__(parent, 'Set to Resonance', x, y)
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
