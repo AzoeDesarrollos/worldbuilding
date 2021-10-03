@@ -17,7 +17,7 @@
   "CO2":{"name":"Carbon Dioxide","weight":0.04401,"max_atm":0.005, "boiling": -78.464, "melting": -56.561, "GWP":100},
   "N2O":{"name":"Nitrous Oxide","weight":0.044013, "boiling": -88.48, "melting": -90.8, "GWP":298},
   "NO2":{"name":"Nitrogen Dioxide","weight":0.0460055,"max_atm":0.000025, "boiling": 21.15, "melting": -9.3, "GWP":null},
-  "O3":{"name":"Ozone","weight":0.048,"max_atm":0.0000001, "boiling": -111.35, "melting": -193, "GWP":null},
+  "O3":{"name":"Ozone","weight":0.048,"max_atm":0.0000001, "boiling": -111.35, "melting": -193, "GWP":0.25},
   "SO2":{"name":"Sulfur Dioxide","weight":0.064066,"max_atm":0.000005, "boiling": -10.05, "melting": -75.5, "GWP":null},
   "SO3":{"name":"Sulfur Trioxide","weight":0.080066, "boiling": 45, "melting": 16.9, "GWP":null},
   "Kr":{"name":"Krypton","weight":0.083798,"max_atm":0.46, "boiling": -153.415, "melting": -157.37, "GWP":null},

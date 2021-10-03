@@ -285,6 +285,7 @@ class OrbitPanel(BaseWidget):
                             self._loaded_orbits[astrobody_id] = d
 
         EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Stellar Orbits': self._loaded_orbits})
+        self._loaded_orbits.clear()
 
     @staticmethod
     def create_save_data(orb):
@@ -307,20 +308,23 @@ class OrbitPanel(BaseWidget):
                 self._loaded_orbits[id] = position
 
     def set_loaded_orbits(self):
+        existing_ids = [marker.orbit.id for marker in self.orbits]
         for id in self._loaded_orbits:
-            orbit_data = self._loaded_orbits[id]
-            a = q(orbit_data['a'], 'au')
-            if 'e' not in orbit_data:
-                self.add_orbit_marker(a)
-            else:
-                e = q(orbit_data['e'])
-                i = q(orbit_data['i'], 'degree')
-                system = Systems.get_system_by_id(orbit_data['star_id'])
-                planet = system.get_astrobody_by(id, tag_type='id')
-                star = system.star_system
-                planet.set_orbit(star, [a, e, i])
-                self.add_orbit_marker(planet.orbit)
-                self.planet_area.delete_objects(planet)
+            if id not in existing_ids:
+                orbit_data = self._loaded_orbits[id]
+                a = q(orbit_data['a'], 'au')
+                if 'e' not in orbit_data:
+                    self.add_orbit_marker(a)
+                else:
+                    e = q(orbit_data['e'])
+                    i = q(orbit_data['i'], 'degree')
+                    system = Systems.get_system_by_id(orbit_data['star_id'])
+                    planet = system.get_astrobody_by(id, tag_type='id')
+                    star = system.star_system
+                    planet.set_orbit(star, [a, e, i])
+                    planet.orbit.id = id
+                    self.add_orbit_marker(planet.orbit)
+                    self.planet_area.delete_objects(planet)
 
         # borrar las órbitas cargadas para evitar que se dupliquen.
         self.sort_markers()
@@ -546,8 +550,9 @@ class OrbitType(BaseWidget, Intertwined):
                 value = 'au'
             parametros.append(value)
         main = self.parent.current
-        orbit = self.linked_astrobody.set_orbit(main, parametros)
-        self.linked_marker.orbit = orbit
+        if self.linked_astrobody.orbit is None:
+            orbit = self.linked_astrobody.set_orbit(main, parametros)
+            self.linked_marker.orbit = orbit
         self.show()
         self.parent.planet_area.delete_objects(self.linked_astrobody)
         if hasattr(self.parent, 'recomendation'):

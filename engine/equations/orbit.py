@@ -74,6 +74,8 @@ class Orbit(Ellipse):
     longitude_of_the_ascending_node = 0
     true_anomaly = q(0, 'degree')
 
+    id = None
+
     def __init__(self, a, e, i, unit):
         super().__init__(a, e)
         self._unit = unit
@@ -203,6 +205,9 @@ class Orbit(Ellipse):
 
     def reset_period_and_speed(self, main):
         raise NotImplementedError
+
+    def __eq__(self, other):
+        return self.id == other.id
 
 
 class PlanetOrbit(Orbit):

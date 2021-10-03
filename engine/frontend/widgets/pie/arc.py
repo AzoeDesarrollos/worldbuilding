@@ -14,6 +14,8 @@ class Arc(BaseWidget):
     arc_lenght = 0
     _finished = False
 
+    _set = False
+
     def __init__(self, parent, name, color, a, b, radius):
         super().__init__(parent)
         self.radius = radius
@@ -68,8 +70,12 @@ class Arc(BaseWidget):
             y = 360 - a + b
             x = 0
             rotation = abs(360 - a)
+        elif x == 0 and y == 0:
+            self.arc_lenght = -1
+        elif x == y == 360:
+            self.kill()
 
-        for n in range(x, y + 1):
+        for n in range(x, y+1):
             # we add 1 here to y for the initial point in the center.
             point_sequence.append(self.point(n, rect))
 
@@ -80,8 +86,9 @@ class Arc(BaseWidget):
             # El try/catch acá es porque si la point_sequence es demasiado corta para hacer un poligono, esto puede ser
             # porque el arco se extiguió, con lo que es eliminado, o porque el arco ocupa 360°, a lo que se dibuja
             # como un círculo y no como un polígono.
-            self.arc_lenght = len(point_sequence) - 1
-            if self.arc_lenght < 360:
+            if self.arc_lenght != -1 and len(point_sequence) < 1:
+                self.arc_lenght = len(point_sequence) - 1
+            if 1 < self.arc_lenght < 360:
                 draw.polygon(image, self.color, point_sequence)
             else:
                 rotation = False
@@ -91,15 +98,16 @@ class Arc(BaseWidget):
         except ValueError:
             if self.arc_lenght < 1:
                 self.kill()
-            if self.handle_a.pressed:
-                self.handle_a.merge()
-            elif self.handle_b.pressed:
-                self.handle_b.merge()
+            # if self.handle_a.pressed:
+            #     self.handle_a.merge()
+            # elif self.handle_b.pressed:
+            #     self.handle_b.merge()
 
         if rotation:
             image = transform.rotate(image, rotation)
 
-        self.post_value()
+        if not self._set:
+            self.post_value()
         return image
 
     def displace(self, cx, cy):
@@ -107,8 +115,8 @@ class Arc(BaseWidget):
         dx = cx - self.rect.centerx
         dy = cy - self.rect.centery
         self.rect.move_ip(dx, dy)
-        self.handle_a.rect.move_ip(dx // 2, dy // 2)
-        self.handle_b.rect.move_ip(dx // 2, dy // 2)
+        # self.handle_a.rect.move_ip(dx // 2, dy // 2)
+        # self.handle_b.rect.move_ip(dx // 2, dy // 2)
 
     def adjust(self, handle):
         if handle is self.handle_a:
@@ -139,3 +147,11 @@ class Arc(BaseWidget):
         a = handle == self.handle_a
         b = handle == self.handle_b
         return a or b
+
+    def set_ab(self, a, b):
+        self.a = a
+        self.b = b
+        self._set = True
+        pos = self.rect.center
+        self.image = self.create()
+        self.rect = self.image.get_rect(center=pos)

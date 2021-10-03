@@ -9,7 +9,7 @@ from ..object_type import ObjectType
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
 from .common import TextButton
-from ..pie import PieChart
+# from ..pie import PieChart
 
 
 class SatellitePanel(BasePanel):
@@ -141,6 +141,12 @@ class SatellitePanel(BasePanel):
         for pr in self.properties.widgets():
             pr.hide()
 
+    def clear(self):
+        self.button_add.disable()
+        self.button_del.disable()
+        for button in self.satellites.widgets():
+            button.deselect()
+
     def update(self):
         idx = Systems.get_current_idx()
         if idx != self.last_idx:
@@ -157,6 +163,7 @@ class SatelliteType(ObjectType):
         abs_props = ['Density', 'Volume', 'Surface Area', 'Circumference', 'Clase']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
         self.set_modifiables('relatives', 1)
+        self.show_layers.append(3)
 
         for item in self.relatives:
             item.rect.y += 16
@@ -167,9 +174,10 @@ class SatelliteType(ObjectType):
              names[1]: {'color': [155, 80, 0], 'value': 33, 'handle': 'black'},
              names[2]: {'color': [0, 200, 255], 'value': 34, 'handle': 'black'}}
 
+        # self.default_comp = {'silicates': 33, 'iron': 33, 'water ice': 34}
         # self.pie = PieChart(self, 200, 500, 70, d)
         # for obj in self.pie.chart.widgets():
-        #     self.properties.add(obj, layer=2)
+        #     self.properties.add(obj, layer=3)
 
         for i, name in enumerate(sorted(d)):
             a = ValueText(self, name.capitalize(), 3, 500 + 21 + i * 21, bg=COLOR_AREA)
@@ -214,7 +222,8 @@ class SatelliteType(ObjectType):
         if self.current.system_id is None:
             self.current.system_id = Systems.get_current().id
 
-        self.parent.button_add.enable()
+        if self.current not in self.parent.moons:
+            self.parent.button_add.enable()
         self.fill()
 
     def show_current(self, satellite):
@@ -227,6 +236,8 @@ class SatelliteType(ObjectType):
         for vt in self.properties:
             vt.value = ''
         self.current = None
+        self.parent.clear()
+        # self.pie.set_values(self.default_comp)
 
     def clear(self, event):
         if event.data['panel'] is self.parent:
@@ -247,11 +258,14 @@ class SatelliteType(ObjectType):
         }
         super().fill(tos)
 
+        # comp = {}
         for elemento in self.properties.get_widgets_from_layer(2):
             got_attr = self.current.composition.get(elemento.text.lower(), 0)
             attr = str(round(got_attr, 3)) + ' %'
             elemento.value = attr
             elemento.text_area.show()
+            # comp[elemento.text.lower()] = got_attr
+        # self.pie.set_values(comp)
 
 
 class AddMoonButton(TextButton):

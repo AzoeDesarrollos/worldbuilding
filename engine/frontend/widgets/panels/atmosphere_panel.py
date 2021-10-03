@@ -39,6 +39,7 @@ class AtmospherePanel(BaseWidget):
         self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5, y=0)
         self.write('Composition', self.f3, centerx=65, y=35)
         self.water_state_rect = self.write('State of Water at Surface: ', f4, x=3, y=ALTO - 50)
+        self.write_water_state('unknown')
         EventHandler.register(self.clear, 'ClearData')
         self.area_info = Rect(190, 460, 195, 132 - 41)
         self.warning_rect = Rect(self.area_info.x, self.area_info.bottom, self.area_info.w, 21)
@@ -50,7 +51,7 @@ class AtmospherePanel(BaseWidget):
             c = None
             if name == 'Molecular Nitrogen':
                 c = (255, 255, 0)
-            elif name in ('Methane', 'Water vapour', 'Carbon Dioxide', 'Nitrous Oxide'):
+            elif name in ('Methane', 'Water vapour', 'Carbon Dioxide', 'Nitrous Oxide', 'Ozone'):
                 c = (0, 100, 50)
             weight = gas['weight']
             min_atm = q(gas.get('min_atm', 0), 'atm')
@@ -75,7 +76,12 @@ class AtmospherePanel(BaseWidget):
                 element.percent.value = ''
         if self.curr_planet is not None:
             self.curr_planet.atmosphere.clear()
+        self.show_pressure.clear()
+        self.curr_planet = None
+        self.planets.deselect_all()
+        self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
         self.image.fill(COLOR_BOX, [3, ALTO - 87, 190, 21])
+        self.write_water_state('unknown')
 
     def warn(self, element):
         min_atm, max_atm = element.min_atm, element.max_atm
@@ -122,8 +128,7 @@ class AtmospherePanel(BaseWidget):
         data = dict(zip([e.symbol for e in elements], [float(e.percent.get_value()) for e in elements]))
         data.update({'pressure_at_sea_level': {'value': pressure.m, 'unit': str(pressure.u)}})
         planet.set_atmosphere(data)
-        # self.planets.delete_objects(planet)
-        self.planets.show()
+        self.fill(planet.atmosphere)
 
     def fill(self, atmosphere):
         for e in self.elements.widgets():
@@ -149,9 +154,8 @@ class AtmospherePanel(BaseWidget):
         self.show_name()
         self.show_pressure.show()
 
-    def show_name(self):
+    def show_name(self, planet=None):
         self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
-        planet = self.curr_planet
         if planet is not None:
             text = 'Atmosphere of planet'
             idx = Systems.get_current().planets.index(planet)
@@ -171,12 +175,15 @@ class AtmospherePanel(BaseWidget):
         self.current = elm
         self.curr_idx = self.current.idx
 
-    def set_planet(self, planet):
-        for elm in self.elements.widgets():
-            elm.percent.clear()
+    def write_water_state(self, state):
+        self.image.fill(COLOR_BOX, [159, 580, 80, 14])
+        dx, dy = self.water_state_rect.topright
+        self.write(state, self.f5, x=dx + 1, y=dy)
 
-        self.curr_planet = planet
-        self.show_name()
+    def set_planet(self, planet):
+        if planet != self.curr_planet:
+            for elm in self.elements.widgets():
+                elm.percent.clear()
 
         state = 'liquid'
         if self.elements.get_widget(7).escaped:
@@ -186,14 +193,14 @@ class AtmospherePanel(BaseWidget):
         elif planet.temperature.m >= 100:
             state = 'gaseous'
 
-        self.image.fill(COLOR_BOX, [159, 580, 80, 14])
-        dx, dy = self.water_state_rect.topright
-        self.write(state, self.f5, x=dx + 1, y=dy)
+        self.write_water_state(state)
+        self.show_name(planet)
 
-        if len(planet.atmosphere):
+        if len(planet.atmosphere) and self.curr_planet != planet:
             self.atmograph.set_preloaded_data(planet.atmosphere)
             self.fill(planet.atmosphere)
             self.update()
+        self.curr_planet = planet
 
     def cycle(self, delta):
         for elm in self.elements.widgets():
@@ -208,13 +215,15 @@ class AtmospherePanel(BaseWidget):
         WidgetHandler.origin = self.current.percent.name
 
     def global_warming(self):
-        gases = ['CO2', 'H2O', 'CH4', 'N2O']  # Greenhouse gases
-        gas_id = [15, 7, 5, 16]
+        gases = ['CO2', 'H2O', 'CH4', 'N2O', 'O3']  # Greenhouse gases
+        gas_id = [15, 7, 5, 16, 18]
         effect = 0
         for symbol in gases:
             gas = molecular_weight[symbol]
-            percent = float(self.elements.widgets()[gas_id[gases.index(symbol)]].percent.get_value())
-            effect += (percent / 100) * gas['GWP']
+            value = self.elements.widgets()[gas_id[gases.index(symbol)]].percent.get_value()
+            if value not in ('solid', 'liquid', 'gaseous'):
+                percent = float(value)
+                effect += (percent / 100) * gas['GWP']
 
         return round(effect, 2)
 
@@ -231,6 +240,8 @@ class AtmospherePanel(BaseWidget):
         self.image.fill(COLOR_BOX, [a.rect.x, a.rect.bottom, 200, 21])
 
         self.write('Greenhouse effect: '+str(self.global_warming()), self.f2, x=3, y=ALTO - 67)
+        if self.curr_planet is not None:
+            self.set_planet(self.curr_planet)
 
 
 class Element(BaseWidget):
@@ -641,7 +652,8 @@ class AvailablePlanets(ListedArea):
 class ListedPlanet(AvailablePlanet):
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            self.parent.parent.show_pressure.clear()
+            if 'pressure_at_sea_level' not in self.object_data.atmosphere:
+                self.parent.parent.show_pressure.clear()
             self.parent.select_one(self)
             self.parent.parent.set_planet(self.object_data)
 
@@ -701,7 +713,7 @@ class ShownPressure(BaseWidget):
         self._value = ''
         self.value = q(0, 'atm')
         self.finished = False
-        self.update_text('not stablished')
+        self.update_text('Not stablished')
 
     def update_text(self, text):
         if type(text) is q:

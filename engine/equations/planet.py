@@ -143,6 +143,12 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.temperature = q(self._temperature, 'earth_temperature').to('celsius')
         return t
 
+    def get_temperature(self):
+        star = self.orbit.star
+        orbit = self.orbit.a
+        t = planet_temperature(star.mass.m, orbit.m, self.albedo, self.greenhouse.m)
+        return t
+
     def set_orbit(self, star, orbital_parameters):
         self.orbit = PlanetOrbit(star, *orbital_parameters, 'au')
         self.temperature = self.set_temperature(star.mass.m, self.orbit.semi_minor_axis.m)
@@ -335,7 +341,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.update_everything()
 
     def global_warming(self):
-        gases = ['CO2', 'H2O', 'CH4', 'N2O']  # Greenhouse gases
+        gases = ['CO2', 'H2O', 'CH4', 'N2O', 'O3']  # Greenhouse gases
         effect = 0
         for symbol in gases:
             gas = molecular_weight[symbol]
@@ -354,10 +360,10 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.set_orbit(star, [a, e, i, u])
 
     def __eq__(self, other):
-        a = (self.mass.m, self.radius.m, self.clase, self.orbit, self.unit, self.name, self.id)
+        a = (self.mass.m, self.radius.m, self.clase, self.unit, self.name, self.id)
         if not hasattr(other, 'clase') or not hasattr(other, 'unit'):
             return False
-        b = (other.mass.m, other.radius.m, other.clase, other.orbit, other.unit, other.name, other.id)
+        b = (other.mass.m, other.radius.m, other.clase, other.unit, other.name, other.id)
         return a == b
 
     def __repr__(self):

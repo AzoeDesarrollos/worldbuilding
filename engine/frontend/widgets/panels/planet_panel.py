@@ -56,6 +56,7 @@ class PlanetPanel(BasePanel):
                     }
                     data[planet.id] = planet_data
         EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": data})
+        self.current.loaded_data.clear()
 
     def add_button(self, planet):
         button = CreatedPlanet(self.current, planet, self.curr_x, self.curr_y)
@@ -187,12 +188,13 @@ class PlanetType(ObjectType):
                 planet_data['idx'] = idx
                 planet_data['id'] = id
                 planet = Planet(planet_data)
-                self.create_button(planet)
-                if planet.composition is not None:
-                    planet.sprite = PlanetSprite(self, planet, 460, 100)
-                    self.properties.add(planet.sprite, layer=3)
-            self.current = self.parent.planet_buttons.widgets()[0].object_data
-            self.loaded_data.clear()
+                if planet not in self.parent.planets:
+                    self.create_button(planet)
+                    if planet.composition is not None:
+                        planet.sprite = PlanetSprite(self, planet, 460, 100)
+                        self.properties.add(planet.sprite, layer=3)
+                    # self.current = self.parent.planet_buttons.widgets()[0].object_data
+            # self.loaded_data.clear()
 
     def set_planet(self, planet):
         if self.current is not None and self.current.sprite is not None:

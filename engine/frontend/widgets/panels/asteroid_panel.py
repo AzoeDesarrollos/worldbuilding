@@ -163,6 +163,12 @@ class AsteroidPanel(BasePanel):
         elif form == types[2]:
             return type_c + 1
 
+    def clear(self):
+        self.button_add.disable()
+        self.button_del.disable()
+        for button in self.asteroids.widgets():
+            button.deselect()
+
 
 class AsteroidType(BaseWidget):
     current = None
@@ -230,7 +236,8 @@ class AsteroidType(BaseWidget):
 
         if self.current.system_id is None:
             self.current.system_id = Systems.get_current().id
-
+        if self.current not in self.parent.moons:
+            self.parent.button_add.enable()
         self.fill()
 
     def clear(self, event):
@@ -240,6 +247,7 @@ class AsteroidType(BaseWidget):
     def erase(self):
         self.current = None
         self.has_values = False
+        self.parent.clear()
         for vt in self.properties:
             vt.value = ''
 
