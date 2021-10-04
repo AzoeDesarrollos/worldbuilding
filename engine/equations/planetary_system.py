@@ -110,11 +110,12 @@ class PlanetarySystem:
     def get_astrobody_by(self, tag_identifier, tag_type='name'):
         astrobody = None
         if tag_type == 'name':
-            astrobody = [body for body in self.astro_bodies if body.name == tag_identifier][0]
+            astrobody = [body for body in self.astro_bodies if body.name == tag_identifier]
         elif tag_type == 'id':
-            astrobody = [body for body in self.astro_bodies if body.id == tag_identifier][0]
+            astrobody = [body for body in self.astro_bodies if body.id == tag_identifier]
 
-        return astrobody
+        assert len(astrobody), 'the ID "{}" is invalid'.format(tag_identifier)
+        return astrobody[0]
 
     def is_habitable(self, planet) -> bool:
         pln_orbit = planet.orbit.semi_major_axis
@@ -300,7 +301,8 @@ class Systems:
 
     @classmethod
     def get_current_idx(cls):
-        return cls._current_idx
+        if len(cls._systems):
+            return cls._current_idx
 
     @classmethod
     def get_system_idx_by_id(cls, id_number):
@@ -316,10 +318,28 @@ class Systems:
         cls._flagged.append(star.id)
         if star in cls.loose_stars:
             cls.loose_stars.remove(star)
+            cls._flagged.extend(cls.get_associated_ids(star))
         else:
             system = cls.get_system_by_star(star)
             if system is not None:
-                cls.unset_system(system)
+                for astrobody in system.astro_bodies:
+                    cls._flagged.append(astrobody.id)
+                star = system.star_system
+                cls.unset_system(star)
+
+    @classmethod
+    def get_associated_ids(cls, obj):
+        flagged = []
+        if obj.celestial_type == 'system':
+            for star in obj:
+                cls.get_associated_ids(star)
+        elif obj.celestial_type == 'star':
+            system = cls.get_system_by_star(obj)
+            if system is not None:
+                for body in system.astro_bodies:
+                    cls.get_associated_ids(body)
+        flagged.append(obj.id)
+        return flagged
 
     @classmethod
     def flag(cls, id):

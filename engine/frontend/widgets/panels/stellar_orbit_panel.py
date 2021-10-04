@@ -285,7 +285,7 @@ class OrbitPanel(BaseWidget):
                             self._loaded_orbits[astrobody_id] = d
 
         EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Stellar Orbits': self._loaded_orbits})
-        self._loaded_orbits.clear()
+        # self._loaded_orbits.clear()
 
     @staticmethod
     def create_save_data(orb):
@@ -299,6 +299,11 @@ class OrbitPanel(BaseWidget):
         if hasattr(orb, 'astrobody'):
             d['astrobody'] = orb.astrobody.id
             d['star_id'] = orb.astrobody.orbit.star.id
+        if hasattr(orb, 'longitude_of_the_ascending_node'):
+            d['LoAN'] = orb.longitude_of_the_ascending_node.m
+        if hasattr(orb, 'argument_of_periapsis'):
+            aop = orb.argument_of_periapsis
+            d['AoP'] = aop.m if type(aop) is not str else aop
         return d
 
     def load_orbits(self, event):
@@ -318,10 +323,12 @@ class OrbitPanel(BaseWidget):
                 else:
                     e = q(orbit_data['e'])
                     i = q(orbit_data['i'], 'degree')
+                    aop = q(orbit_data['AoP'], 'degree') if orbit_data['AoP'] != 'undefined' else 'undefined'
+                    loan = q(orbit_data['LoAN'], 'degree')
                     system = Systems.get_system_by_id(orbit_data['star_id'])
                     planet = system.get_astrobody_by(id, tag_type='id')
                     star = system.star_system
-                    planet.set_orbit(star, [a, e, i])
+                    planet.set_orbit(star, [a, e, i, loan, aop])
                     planet.orbit.id = id
                     self.add_orbit_marker(planet.orbit)
                     self.planet_area.delete_objects(planet)
