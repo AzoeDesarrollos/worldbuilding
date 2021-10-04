@@ -1,8 +1,6 @@
 from .eventhandler import EventHandler
 import json
 from math import trunc, ceil, floor
-from os.path import exists, join
-from os import getcwd
 from pygame import quit
 from sys import exit
 
@@ -99,18 +97,14 @@ def collapse_factor_lists(a: list, b: list):
     return collapse(a), collapse(b)
 
 
-def guardar_json(nombre, datos, encoding='utf-8'):
-    with open(nombre, mode='w', encoding=encoding) as file:
+def guardar_json(ruta, datos, encoding='utf-8'):
+    with open(ruta, mode='w', encoding=encoding) as file:
         json.dump(datos, file, ensure_ascii=False, indent=2, separators=(',', ':'), sort_keys=True)
 
 
-def abrir_json(archivo, encoding='utf-8'):
-    with open(archivo, encoding=encoding) as file:
+def abrir_json(ruta, encoding='utf-8'):
+    with open(ruta, encoding=encoding) as file:
         return json.load(file)
-
-
-def load_from_data(body, filename):
-    return body(abrir_json(filename))
 
 
 def salir_handler(event):
@@ -120,16 +114,11 @@ def salir_handler(event):
     exit()
 
 
-route = join(getcwd(), 'data', 'savedata.json')
-if not exists(route):
-    guardar_json(route, {})
-
 EventHandler.register(salir_handler, 'salir')
 
 __all__ = [
     'guardar_json',
     'abrir_json',
-    'load_from_data',
     'decimal_round',
     'add_decimal',
     'collapse_factor_lists',

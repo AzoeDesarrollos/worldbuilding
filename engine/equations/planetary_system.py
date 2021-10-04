@@ -1,7 +1,7 @@
 from engine.backend.util import abrir_json, guardar_json
 from engine.backend.eventhandler import EventHandler
-from math import exp, sqrt, pow
-from os.path import join
+from os.path import join, exists
+from math import exp, pow
 from os import getcwd
 from engine import q
 
@@ -28,7 +28,6 @@ class PlanetarySystem:
         self.body_mass = q(16 * exp(-0.6931 * star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
 
         self.aparent_brightness = {}
-        self.average_visibility = {}
 
     def update(self):
         self.body_mass = q(16 * exp(-0.6931 * self.star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
@@ -36,43 +35,41 @@ class PlanetarySystem:
     def get_available_mass(self):
         return self.body_mass
 
+    def visibility_of_stars(self, body):
+        if body.id not in self.aparent_brightness:
+            self.aparent_brightness[body.id] = {}
+
+        for star in self.star_system:
+            if body.orbit is not None and star.id not in self.aparent_brightness[body.id]:
+                ab = star.luminosity.m / pow(body.orbit.a.m, 2)
+                self.aparent_brightness[body.id][star.id] = ab
+
     def visibility_by_albedo(self):
         luminosity = self.star_system.luminosity.to('watt').m
-        to_see = self.planets+self.satellites+self.asteroids
+        to_see = self.planets + self.satellites + self.asteroids
         for i, body in enumerate(to_see):
             if body.id not in self.aparent_brightness:
-                self.aparent_brightness[body.id] = []
-                self.average_visibility[body.id] = {}
+                self.aparent_brightness[body.id] = {}
 
             others = to_see[:i] + to_see[i + 1:]
             if body.orbit is not None:
-                for day in range(int(body.orbit.period.to('day').m)):
-                    ab_others = {}
-                    anomaly_o = day * 360 / body.orbit.period.to('day').m
-                    x1, y1 = body.orbit.get_measured_position(anomaly_o, 'm')  # position of the Oberver's planet
-                    for other in [o for o in others if o.orbit is not None]:
-                        anomaly_p = day * 360 / other.orbit.period.to('day').m
-                        x2, y2 = other.orbit.get_measured_position(anomaly_p, 'm')  # position of the observed body
+                x = body.orbit.a.to('m').m  # position of the Observer's planet
+                for other in [o for o in others if o.orbit is not None]:
+                    y = other.orbit.a.to('m').m  # position of the observed body
 
-                        distance = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))  # Euclidean distance between the two points.
-                        albedo = other.albedo.m / 100
-                        radius = other.radius.to('m').m
-                        semi_major_axis = other.orbit.semi_major_axis.to('m').m
+                    distance = y - x if y >= x else x - y  # linear distance, much quicker
+                    albedo = other.albedo.m / 100
+                    radius = other.radius.to('m').m
+                    semi_major_axis = other.orbit.semi_major_axis.to('m').m
 
-                        ab = (albedo * luminosity * pow(radius, 2)) / (pow(semi_major_axis, 2) * pow(distance, 2))
-                        ab_others[other.id] = ab
-
-                    if len(ab_others):
-                        self.aparent_brightness[body.id].append(ab_others)
+                    ab = (albedo * luminosity * pow(radius, 2)) / (pow(semi_major_axis, 2) * pow(distance, 2))
+                    if ab > 1.3e-7:
+                        visibility = 'naked'
+                    elif ab < 1.2e-9:
+                        visibility = 'telescope'
                     else:
-                        break
-
-            if len(self.aparent_brightness[body.id]):
-                brightness = self.aparent_brightness[body.id]
-                for other in others:
-                    sub = [brightness[day][other.id] for day in range(int(body.orbit.period.to('day').m))]
-
-                    self.average_visibility[body.id][other.id] = sum(sub) / len(sub)
+                        visibility = 'undetermined'
+                    self.aparent_brightness[body.id][other.id] = visibility
 
     @property
     def star(self):
@@ -98,6 +95,7 @@ class PlanetarySystem:
         plus_mass = group[group.index(astro_obj)].mass.to('jupiter_mass')
         self.body_mass += plus_mass
         group.remove(astro_obj)
+        Systems.flag(astro_obj.id)
         return True
 
     def _get_astro_group(self, astro_obj):
@@ -148,7 +146,7 @@ class PlanetarySystem:
         return unnamed
 
     def __eq__(self, other):
-        return self.star_system == other.star_system
+        return self.id == other.id
 
     def __repr__(self):
         return 'System of ' + str(self.star_system)
@@ -171,7 +169,15 @@ class Systems:
     _systems = None
     loose_stars = None
     _flagged = []
-    save_data = {}
+    save_data = {
+        'Asteroids': {},
+        'Planets': {},
+        'Satellites': {},
+        'Stars': {},
+        'Binary Systems': {},
+        'Planetary Orbits': {},
+        'Stellar Orbits': {}
+    }
     _current_idx = None
 
     @classmethod
@@ -183,6 +189,10 @@ class Systems:
         EventHandler.register(cls.save, "SaveDataFile")
         EventHandler.register(cls.compound_save_data, "SaveData")
         EventHandler.register(cls.load_data, 'LoadData')
+
+        ruta = join(getcwd(), 'data', 'savedata.json')
+        if not exists(ruta):
+            guardar_json(ruta, cls.save_data)
 
     @classmethod
     def set_system(cls, star):
@@ -203,7 +213,8 @@ class Systems:
                         cls.loose_stars.remove(s)
                     else:
                         system = cls.get_system_by_star(s)
-                        cls._systems.remove(system)
+                        if system is not None:
+                            cls._systems.remove(system)
 
     @classmethod
     def unset_system(cls, star):
@@ -223,11 +234,12 @@ class Systems:
             cls.loose_stars.append(system)
             system = cls.get_system_by_star(system)
         else:
-            for star in system.composition():
+            for star in system:
                 cls.loose_stars.append(star)
 
         if system in cls._systems:
             cls._systems.remove(system)
+            cls._flagged.append(system.id)
             cls.cycle_systems()
 
     @classmethod
@@ -244,20 +256,12 @@ class Systems:
             if star.id == id_number:
                 return star
         for system in cls._systems:
-            for star in system:
-                if star.id == id_number:
-                    return star
-
-    @classmethod
-    def load_system(cls, star):
-        cls.loose_stars.append(star)
-        cls.set_system(star)
-
-    @classmethod
-    def swap_system(cls, idx):
-        if 0 <= idx <= len(cls._systems):
-            cls._current_idx = idx
-            return cls._systems[idx]
+            if id_number == system.id:
+                return system
+            else:
+                for star in system:
+                    if star.id == id_number:
+                        return star
 
     @classmethod
     def get_system_by_star(cls, star):
@@ -291,10 +295,6 @@ class Systems:
         return cls._systems
 
     @classmethod
-    def get_star_systems(cls):
-        return [s.star_system for s in cls._systems]
-
-    @classmethod
     def get_star_idx(cls, star):
         for system in cls._systems:
             if star == system.star_system:
@@ -315,37 +315,38 @@ class Systems:
 
     @classmethod
     def remove_star(cls, star):
+        cls._flagged.append(star.id)
         if star in cls.loose_stars:
-            idx = cls.loose_stars.index(star)
             cls.loose_stars.remove(star)
-            if idx in cls._flagged:
-                cls._flagged.remove(idx)
-
-        else:  # star is part of a system
-            cls.unset_system(star)
-
-    @classmethod
-    def del_star(cls, star):
-        if star in cls.loose_stars:
-            cls._flagged.append(cls.loose_stars.index(star))
+        else:
+            system = cls.get_system_by_star(star)
+            if system is not None:
+                cls.unset_system(system)
 
     @classmethod
-    def get_flagged(cls):
-        return [star for star in cls.loose_stars if cls.loose_stars.index(star) in cls._flagged]
+    def flag(cls, id):
+        cls._flagged.append(id)
 
     @classmethod
-    def get_loose_stars(cls):
-        return [i for i in cls.loose_stars if i not in cls._flagged]
-
-    @classmethod
-    def get_stars(cls):
-        return [i.star_system for i in cls._systems]
-
-    @staticmethod
-    def save(event):
+    def save(cls, event):
         ruta = join(getcwd(), 'data', 'savedata.json')
         data = abrir_json(ruta)
-        data.update(event.data)
+        read_data = abrir_json(ruta)
+        keys = 'Asteroids', 'Planets', 'Satellites', 'Stars', 'Binary Systems', 'Planetary Orbits', 'Stellar Orbits'
+        for key in keys:
+            new_data = event.data.get(key, [])
+            for item_id in new_data:
+                item_data = new_data[item_id]
+                if item_id in read_data[key]:
+                    data[key][item_id].update(item_data)
+                else:
+                    data[key][item_id] = item_data
+
+        for flagged_id in cls._flagged:
+            for key in read_data:
+                if flagged_id in data[key]:
+                    del data[key][flagged_id]
+
         guardar_json(ruta, data)
 
     @classmethod

@@ -13,8 +13,11 @@ class ObjectType(BaseWidget):
 
     modifiable = True
 
+    show_layers = None
+
     def __init__(self, parent, relative_names, absolute_names, relative_args, absolute_args):
         super().__init__(parent)
+        self.show_layers = [1, 2]
         EventHandler.register(self.clear_selection, 'Clear')
         EventHandler.register(self.clear, 'ClearData')
 
@@ -51,10 +54,9 @@ class ObjectType(BaseWidget):
             obj.modifiable = True
 
     def show(self):
-        for p in self.properties.get_widgets_from_layer(1):
-            p.show()
-        for p in self.properties.get_widgets_from_layer(2):
-            p.show()
+        for layer in self.show_layers:
+            for p in self.properties.get_widgets_from_layer(layer):
+                p.show()
 
     def hide(self):
         for p in self.properties.widgets():

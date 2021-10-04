@@ -1,4 +1,4 @@
-from ..common import find_and_interpolate
+from ..common import find_and_interpolate, find_and_interpolate_flipped
 from pygame import image, PixelArray
 from bisect import bisect_left
 from os import getcwd, path
@@ -39,7 +39,6 @@ def atmo(vol, rect):
     pxarray = PixelArray(graph)
     p, d = 0, 0
     for j in range(0, rect.bottom - 80):
-        # noinspection PyUnresolvedReferences
         rgba = graph.unmap_rgb(pxarray[y, j])
         if rgba == (0, 217, 184, 255):
             if p == 0:
@@ -54,5 +53,9 @@ def atmo(vol, rect):
     return d, p
 
 
+def reversed_atmo(value):
+    return find_and_interpolate_flipped(value-1, nums_psi, pos_psi)
+
+
 def convert(selected_pressure):
-    return q(find_and_interpolate(selected_pressure, pos_psi, nums_psi), 'psi')
+    return q(find_and_interpolate(selected_pressure, pos_psi, nums_psi)+1, 'psi')

@@ -38,7 +38,7 @@ class PlanetPanel(BasePanel):
         EventHandler.register(self.name_current, 'NameObject')
 
     def save_planets(self, event):
-        data = self.current.loaded_data if self.current.loaded_data is not None else []
+        data = self.current.loaded_data if self.current.loaded_data is not None else {}
         for system in Systems.get_systems():
             for planet in self.planets:
                 if planet in system.planets:
@@ -51,12 +51,12 @@ class PlanetPanel(BasePanel):
                         'composition': planet.composition,
                         'clase': planet.clase,
                         'system': system.id,
-                        'id': planet.id,
                         'albedo': planet.albedo.m,
                         'tilt': planet.tilt.m
                     }
-                    data.append(planet_data)
+                    data[planet.id] = planet_data
         EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": data})
+        self.current.loaded_data.clear()
 
     def add_button(self, planet):
         button = CreatedPlanet(self.current, planet, self.curr_x, self.curr_y)
@@ -163,7 +163,7 @@ class PlanetType(ObjectType):
                      'Greenhouse effect', 'Class']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
         self.set_modifiables('relatives', 0, 1)
-        self.set_modifiables('absolutes', 4, 6, 7)
+        self.set_modifiables('absolutes', 4, 6)
         self.absolutes.widgets()[4].set_min_and_max(0, 100)
         f = self.crear_fuente(14)
         f.set_underline(True)
@@ -183,15 +183,18 @@ class PlanetType(ObjectType):
 
     def show_loaded(self):
         if self.loaded_data is not None:
-            for idx, planet_data in enumerate(self.loaded_data):
+            for idx, id in enumerate(self.loaded_data):
+                planet_data = self.loaded_data[id]
                 planet_data['idx'] = idx
+                planet_data['id'] = id
                 planet = Planet(planet_data)
-                self.create_button(planet)
-                if planet.composition is not None:
-                    planet.sprite = PlanetSprite(self, planet, 460, 100)
-                    self.properties.add(planet.sprite, layer=3)
-            self.current = self.parent.planet_buttons.widgets()[0].object_data
-            self.loaded_data.clear()
+                if planet not in self.parent.planets:
+                    self.create_button(planet)
+                    if planet.composition is not None:
+                        planet.sprite = PlanetSprite(self, planet, 460, 100)
+                        self.properties.add(planet.sprite, layer=3)
+                    # self.current = self.parent.planet_buttons.widgets()[0].object_data
+            # self.loaded_data.clear()
 
     def set_planet(self, planet):
         if self.current is not None and self.current.sprite is not None:

@@ -17,6 +17,7 @@ class BinarySystem:
     ecc_p, ecc_s = 0, 0
     letter = ''
     system_name = ''
+    has_name = False
 
     idx = None
 
@@ -33,6 +34,7 @@ class BinarySystem:
             self.name = 'NoName'
         else:
             self.name = name
+            self.has_name = True
 
         self.ecc_p = q(ep)
         self.ecc_s = q(es)

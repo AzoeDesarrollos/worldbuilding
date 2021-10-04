@@ -24,9 +24,9 @@ class AsteroidPanel(BasePanel):
         self.current = AsteroidType(self)
         f1 = self.crear_fuente(16, underline=True)
         f2 = self.crear_fuente(13, underline=True)
-        r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 32, 200])
+        r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 132, 200])
         self.write('Composition', f1, COLOR_AREA, topleft=(0, 420))
-        self.area_asteroids = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 400, 200))
+        self.area_asteroids = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 200))
         self.write('Asteroids', f2, COLOR_AREA, x=self.area_asteroids.x + 3, y=self.area_asteroids.y)
         self.curr_x = self.area_asteroids.x + 3
         self.curr_y = self.area_asteroids.y + 21
@@ -52,7 +52,9 @@ class AsteroidPanel(BasePanel):
 
     def show_loaded(self):
         if self.loaded_data is not None:
-            for satellite_data in self.loaded_data:
+            for id in self.loaded_data:
+                satellite_data = self.loaded_data[id]
+                satellite_data['id'] = id
                 moon = minor_moon_by_composition(satellite_data)
                 system = Systems.get_system_by_id(satellite_data['system'])
                 if system.add_astro_obj(moon):
@@ -61,7 +63,7 @@ class AsteroidPanel(BasePanel):
             self.loaded_data.clear()
 
     def save_satellites(self, event):
-        data = []
+        data = {}
         for moon_button in self.asteroids.widgets():
             moon = moon_button.object_data
             moon_data = {
@@ -70,11 +72,11 @@ class AsteroidPanel(BasePanel):
                 'b axis': moon.b_axis.m,
                 'c axis': moon.c_axis.m,
                 'composition': moon.composition,
-                'id': moon.id,
-                'system': moon.system_id
+                'system': moon.system_id,
+                'idx': moon.idx
             }
-            data.append(moon_data)
-            EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Asteroids": data})
+            data[moon.id] = moon_data
+            EventHandler.trigger(event.tipo + 'Data', 'Asteroid', {"Asteroids": data})
 
     def add_button(self):
         button = AsteroidButton(self.current, self.current.current, self.curr_x, self.curr_y)
@@ -149,6 +151,24 @@ class AsteroidPanel(BasePanel):
             self.show_current(idx)
             self.last_idx = idx
 
+    def next_idx(self, form):
+        types = 'Obleate', 'Tri-Axial', 'Prolate'
+        type_a = len([moon.idx for moon in self.moons if moon.cls == types[0]])
+        type_b = len([moon.idx for moon in self.moons if moon.cls == types[1]])
+        type_c = len([moon.idx for moon in self.moons if moon.cls == types[2]])
+        if form == types[0]:
+            return type_a + 1
+        elif form == types[1]:
+            return type_b + 1
+        elif form == types[2]:
+            return type_c + 1
+
+    def clear(self):
+        self.button_add.disable()
+        self.button_del.disable()
+        for button in self.asteroids.widgets():
+            button.deselect()
+
 
 class AsteroidType(BaseWidget):
     current = None
@@ -204,6 +224,7 @@ class AsteroidType(BaseWidget):
             data['system'] = self.current.system_id
 
         moon = minor_moon_by_composition(data)
+        moon.idx = self.parent.next_idx(moon.cls)
         if self.current is None:
             if Systems.get_current().add_astro_obj(moon):
                 self.current = moon
@@ -215,7 +236,8 @@ class AsteroidType(BaseWidget):
 
         if self.current.system_id is None:
             self.current.system_id = Systems.get_current().id
-
+        if self.current not in self.parent.moons:
+            self.parent.button_add.enable()
         self.fill()
 
     def clear(self, event):
@@ -225,6 +247,7 @@ class AsteroidType(BaseWidget):
     def erase(self):
         self.current = None
         self.has_values = False
+        self.parent.clear()
         for vt in self.properties:
             vt.value = ''
 
@@ -317,7 +340,7 @@ class AsteroidButton(Meta):
         if satellite.has_name:
             name = satellite.name
         else:
-            name = satellite.cls
+            name = "{} #{}".format(satellite.cls, satellite.idx)
         self.img_uns = self.f1.render(name, True, satellite.color, COLOR_AREA)
         self.img_sel = self.f2.render(name, True, satellite.color, COLOR_AREA)
         self.w = self.img_sel.get_width()

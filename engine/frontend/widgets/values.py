@@ -208,6 +208,10 @@ class NumberArea(BaseArea, IncrementalValue):
     min = 0
     max = None
 
+    def __init__(self, parent, name, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
+        super().__init__(parent, name, x, y, fg, bg)
+        EventHandler.register(self.get_value, 'SetValue')
+
     def input(self, event):
         if self.enabled and not self.grandparent.locked:
             assert self.modifiable, 'This value is a derivated value. It is not directly modifiable.'
@@ -254,21 +258,23 @@ class NumberArea(BaseArea, IncrementalValue):
             self.value = quantity
             self.unit = None
 
+    def get_value(self, event):
+        if event.origin.capitalize() == self.parent.text:
+            self.set_value(q(event.data['value']))
+
     def on_mousebuttondown(self, event):
         self.increment = self.update_increment()
-        v = self.value
         b = event.button
-        assert self.modifiable, 'This value is a derivated value. It is not directly modifiable.'
-        if not type(v) is str:
-            i = 0
-            if b == 5 and (self.max is None or v + self.increment <= self.max):  # rueda abajo
+        assert self.modifiable, 'This is a derivated value. It is not directly modifiable.'
+        if not type(self.value) is str:
+            if b == 5 and (self.max is None or float(self.value) + self.increment <= self.max):  # rueda abajo
                 self.value += self.increment
-            elif b == 4 and v - self.increment >= self.min:  # rueda arriba
+            elif b == 4 and float(self.value) - self.increment >= self.min:  # rueda arriba
                 self.value += -self.increment
 
             if event.button in (4, 5):
                 self.increment = 0
-                self.value = round(self.value + i, 4)
+                self.value = round(self.value, 4)
                 self.parent.elevate_changes(self.value, self.unit)
 
     def clear(self):
