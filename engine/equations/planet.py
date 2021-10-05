@@ -25,7 +25,7 @@ class Planet(BodyInHydrostaticEquilibrium):
     temperature = q(0, 'celsius')
 
     atmosphere = None
-    satellites = None
+
     lagrange_points = None
     hill_sphere = 0
     roches_limit = 0
@@ -371,6 +371,12 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     def __str__(self):
         return "{} #{}".format(self.clase, self.idx)
+
+    def __getitem__(self, item):
+        if type(item) is int:
+            if item == 0:
+                return self
+            raise StopIteration()
 
 
 def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):

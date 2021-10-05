@@ -41,11 +41,11 @@ class ListedArea(BaseWidget):
             listed.rect.y = i * 16 + self.rect.y + 21
 
     def select_one(self, it):
-        for listed in self.listed_objects.widgets():
-            listed.deselect()
+        self.deselect_all()
         it.select()
 
     def deselect_all(self):
+        self.image.fill(COLOR_AREA, [0, 21, self.rect.w, self.rect.h])
         for listed in self.listed_objects.widgets():
             listed.deselect()
 

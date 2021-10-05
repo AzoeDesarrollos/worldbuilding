@@ -37,6 +37,7 @@ class AvailableObjects(ListedArea):
 
     def populate(self, population):
         listed = []
+        self.listed_objects.empty()
         for i, obj in enumerate(population):
             x = self.rect.x + 3
             y = i * 16 + self.rect.y + 21

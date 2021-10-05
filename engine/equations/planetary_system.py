@@ -28,6 +28,7 @@ class PlanetarySystem:
         self.body_mass = q(16 * exp(-0.6931 * star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
 
         self.aparent_brightness = {}
+        self.age = star_system.age
 
     def update(self):
         self.body_mass = q(16 * exp(-0.6931 * self.star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
@@ -75,6 +76,9 @@ class PlanetarySystem:
     def star(self):
         return self.star_system
 
+    def astro_group(self, astro_obj):
+        return self._get_astro_group(astro_obj)
+
     def add_astro_obj(self, astro_obj):
         group = self._get_astro_group(astro_obj)
 
@@ -96,6 +100,7 @@ class PlanetarySystem:
         self.body_mass += plus_mass
         group.remove(astro_obj)
         Systems.flag(astro_obj.id)
+        self.astro_bodies.remove(astro_obj)
         return True
 
     def _get_astro_group(self, astro_obj):

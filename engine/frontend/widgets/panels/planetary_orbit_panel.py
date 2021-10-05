@@ -83,7 +83,9 @@ class PlanetaryOrbitPanel(BaseWidget):
             e = q(orbit_data['e'])
             i = q(orbit_data['i'], 'degree')
             loan = q(orbit_data.get('LoAN', 0), 'degree')
-            aop = q(orbit_data['AoP'], 'degree') if 'AoP' in orbit_data else 'undefined'
+            aop = orbit_data['AoP']
+            if aop != 'undefined':
+                aop = q(aop, 'degree')
             system = Systems.get_system_by_id(orbit_data['star_id'])
             planet = system.get_astrobody_by(id, tag_type='id')
             if planet.id not in self.satellites:
