@@ -11,6 +11,8 @@ class BodyInHydrostaticEquilibrium:
     celestial_type = ''
     parent = None
 
+    satellites = None
+
     @staticmethod
     def calculate_circumference(r):
         return 2 * pi * r

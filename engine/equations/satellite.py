@@ -33,6 +33,7 @@ class Satellite:
 
     def set_orbit(self, planet, orbital_parameters):
         self.orbit = SatelliteOrbit(*orbital_parameters)
+        planet.satellites.append(self)
         self.orbit.set_astrobody(planet, self)
 
         semi_major_axis = self.orbit.semi_major_axis.to('au').m
@@ -98,6 +99,8 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         self.title = 'Major'
         self.albedo = q(13.6)
 
+        self.satellites = []
+
         # ID values make each satellite unique, even if they have the same characteristics.
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
         self.id = data['id'] if 'id' in data else now
@@ -148,6 +151,8 @@ class Minor(Satellite):
         self.id = data['id'] if 'id' in data else now
 
         self.system_id = data.get('system', None)
+
+        self.satellites = []
 
     # noinspection PyUnusedLocal
     @staticmethod
