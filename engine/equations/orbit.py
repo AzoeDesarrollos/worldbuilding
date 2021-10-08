@@ -1,4 +1,3 @@
-from engine.backend.util import collapse_factor_lists, prime_factors
 from engine.frontend.graphs.orbital_properties import rotation_loop
 from engine.frontend.globales import Renderer
 from math import sqrt, pow, cos, sin, pi
@@ -11,6 +10,7 @@ from engine import q
 class RawOrbit:
     _unit = ''
     temperature = ''
+    resonant = False
 
     def __init__(self, star, a):
         self._unit = a.u
@@ -47,14 +47,27 @@ class PseudoOrbit:
     inclination = ''
     semi_major_axis = 0
     temperature = 0
+    _star = None
+    _period = 0
+    resonant = False
 
     def __init__(self, orbit):
         self.semi_major_axis = orbit.semi_major_axis
         self.temperature = orbit.temperature
+        self._star = orbit.star
+        self._period = q(sqrt(pow(self.semi_major_axis.m, 3) / self._star.mass.m), 'year')
+        self.resonant = orbit.resonant
 
     @property
     def a(self):
         return self.semi_major_axis
+
+    @property
+    def star(self):
+        return self._star
+
+    def get_period(self):
+        return self._period
 
 
 class Orbit(Ellipse):
@@ -299,19 +312,6 @@ def from_planetary_resonance(planet, satellite, resonance: str):
     mass = planet.mass.m + satellite.mass.m  # earth masses
     semi_major_axis = q(pow(pow(period, 2) * mass, (1 / 3)), 'au')
     return semi_major_axis.to('earth_radius')
-
-
-def to_resonance(period_primary, period_secondary):
-    # resonances = ['1:1', '5:4', '4:3', '11:8', '3:2', '5:3', '7:4',
-    #               '9:5', '11:6', '2:1', '19:9', '9:4', '7:3', '12:5',
-    #               '5:2', '8:3', '3:1', '7:2', '11:3', '11:2']
-    """It takes a pair of orbital periods and returns their mean motion
-     resonance, if it exist. Otherwise, returns False."""
-    a, b = prime_factors(period_primary), prime_factors(period_secondary)
-    x, y = collapse_factor_lists(a, b)
-    if x < period_primary and y < period_secondary:  # the MMR numbers should be small
-        return x, y
-    return False  # objects are not in mean motion resonance
 
 
 def set_orbital_properties(inclination):

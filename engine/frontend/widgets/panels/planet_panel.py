@@ -216,7 +216,7 @@ class PlanetType(ObjectType):
         self.parent.button_del.disable()
         self.has_values = False
         self.parent.image.fill(COLOR_BOX, self.hab_rect)
-        if self.current is not None:
+        if self.current is not None and self.current.sprite is not None:
             self.current.sprite.hide()
 
     def create_button(self, planet=None):

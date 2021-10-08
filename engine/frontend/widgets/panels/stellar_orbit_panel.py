@@ -1,6 +1,6 @@
 from .common import TextButton, AvailableObjects, ToggleableButton, AvailablePlanet, ModifyArea
-from engine.frontend.globales import WidgetGroup, render_textrect, WidgetHandler
 from engine.equations.orbit import RawOrbit, PseudoOrbit, from_stellar_resonance
+from engine.frontend.globales import WidgetGroup, render_textrect, WidgetHandler
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
@@ -52,7 +52,7 @@ class OrbitPanel(BaseWidget):
         self.order_f = self.crear_fuente(14)
         self.write(self.name + ' Panel', self.f, centerx=(ANCHO // 4) * 1.5, y=0)
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
-        self.recomendation = Recomendation(self, 80, ALTO // 2 - 130)
+        self.recomendation = Recomendation(self, 3, ALTO // 2 - 165)
 
         self._loaded_orbits = {}
         self.indexes = []
@@ -405,9 +405,8 @@ class OrbitPanel(BaseWidget):
             locked[0].linked_type.show()
             locked[0].linked_type.link_astrobody(astrobody)
             self.add_orbits_button.disable()
-            if astrobody.celestial_type == 'planet':
-                self.recomendation.suggest(astrobody, orbit, Systems.get_current_star())
-                self.recomendation.show_suggestion(astrobody, orbit.temperature)
+            self.recomendation.suggest(astrobody, orbit, Systems.get_current_star())
+            self.recomendation.show_suggestion(astrobody, orbit.temperature)
 
     def update(self):
         super().update()
@@ -549,12 +548,12 @@ class OrbitType(BaseWidget, Intertwined):
     def fill(self):
         parametros = []
         for elemento in self.properties.widgets():
+            value = None
             if elemento.text == 'Inclination':
                 value = q(0 if elemento.text_area.value == '' else elemento.text_area.value, 'degree')
             elif elemento.text not in ['Orbital motion', 'Temperature']:
                 value = q(elemento.text_area.value)
-            else:
-                value = 'au'
+
             parametros.append(value)
         main = self.parent.current
         if self.linked_astrobody.orbit is None:
@@ -623,7 +622,7 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
             self.color = COLOR_TEXTO
             self.text = '{:~}'.format(value)
         if is_resonance:
-            pass
+            self.orbit.resonant = True
         self.update()
         self.image = self.img_uns
         self.rect = self.image.get_rect(x=3)
@@ -868,10 +867,12 @@ class RatioDigit(BaseWidget):
 class Recomendation(BaseWidget):
     text = ''
     format = None
+    text_size = 14
+    just = 1
 
     def __init__(self, parent, x, y):
         super().__init__(parent)
-        self.image = Surface((200, 200))
+        self.image = Surface((350, 230))
         self.image.fill(COLOR_AREA)
         self.rect = self.image.get_rect(topleft=(x, y))
 
@@ -900,6 +901,29 @@ class Recomendation(BaseWidget):
                 pass
             elif e is not None and 0.001 <= e <= 0.09:
                 data.update({'e': e})
+
+        elif planet.clase == 'Dwarf Planet' or planet.celestial_type == 'asteroid':
+            gas_giants = [pln for pln in Systems.get_current().astro_bodies if
+                          pln.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant')]
+            gas_giants.sort(key=lambda g: g.orbit.a.m, reverse=True)
+            last_gas_giant = gas_giants[0]
+
+            if last_gas_giant.orbit.a.m < orbit.a.m < star.outer_boundry.m:
+                data = recomendation['texts']['tno']
+                if not orbit.resonant:
+                    data = data.format(' ')
+                    for key in ('classical', 'sednoid'):
+                        t = recomendation[key]
+                        data += '\n\nFor a {} object:\n'.format(t['n'])
+                        data += 'Eccentricity should be {}\n'.format(t['e'])
+                        data += 'Inclination should be {}.'.format(t['i'])
+                else:
+                    data = data.format(" resonant ")
+                    for key in ('sdo', 'detached', "resonant"):
+                        t = recomendation[key]
+                        data += '\n\nFor a {} object:\n'.format(t['n'])
+                        data += 'Eccentricity should be {}\n'.format(t['e'])
+                        data += 'Inclination should be {}.'.format(t['i'])
 
         self.format = data
 
@@ -946,21 +970,26 @@ class Recomendation(BaseWidget):
         return data
 
     def create_suggestion(self, planet, temperature):
-        base_text = recomendation['text']
-        if planet.habitable is True and temperature == 'habitable':
-            p = 'Habitable Planet'
+        if not type(self.format) is str:
+            base_text = recomendation['texts']['text']
+            if planet.habitable is True and temperature == 'habitable':
+                p = 'Habitable Planet'
+            else:
+                p = planet.clase
+            self.format.update({'planet_type': p})
+            return base_text.format(**self.format)
         else:
-            p = planet.clase
-        self.format.update({'planet_type': p})
-        return base_text.format(**self.format)
+            self.text_size = 11
+            self.just = 0
+            return self.format
 
     def show_suggestion(self, planet, temp):
         text = self.create_suggestion(planet, temp)
-        f = self.crear_fuente(14)
+        f = self.crear_fuente(self.text_size)
         f2 = self.crear_fuente(12, bold=True)
         title = f2.render('Suggestion', 1, COLOR_TEXTO, COLOR_AREA)
-        render = render_textrect(text, f, self.rect.w, COLOR_TEXTO, COLOR_AREA, justification=1)
-        render_rect = render.get_rect(center=[self.rect.w // 2, self.rect.h // 2])
+        render = render_textrect(text, f, self.rect.w, COLOR_TEXTO, COLOR_AREA, justification=self.just)
+        render_rect = render.get_rect(topleft=[3, 16])
         self.image.fill(COLOR_AREA)
         self.image.blit(render, render_rect)
         self.image.blit(title, (0, 0))

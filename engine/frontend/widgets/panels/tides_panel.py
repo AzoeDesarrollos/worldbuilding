@@ -103,6 +103,16 @@ class TidesPanel(BaseWidget):
             text = '{} is not tidally locked'.format(str(self.current))
 
         self.write(text, self.f3, x=3, y=rect.bottom + 12)
+        self.extra_info(astrobody)
+
+    @staticmethod
+    def extra_info(astrobody):
+        system = Systems.get_current()
+        visibility = system.aparent_brightness[astrobody.id]
+        for body_id in visibility:
+            body_visibility = visibility[body_id]
+            body = system.get_astrobody_by(body_id, tag_type='id')
+            print(body, body_visibility)
 
 
 class Astrobody(AvailablePlanet):

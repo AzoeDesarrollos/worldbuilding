@@ -173,18 +173,21 @@ class PlanetaryOrbitPanel(BaseWidget):
         system = Systems.get_current()
         if system is not None:
             for obj in system.satellites + system.asteroids:
-                if obj not in self.objects:
-                    self.objects.append(obj)
+                if obj.orbit is None:
+                    if obj not in self.objects:
+                        self.objects.append(obj)
+                        btn = ObjectButton(self, obj, self.curr_x, self.curr_y)
+                        self.buttons.add(btn, layer=Systems.get_current_idx())
+                        self.properties.add(btn)
+                elif obj.orbit is not None and obj.orbit.star.celestial_type=='planet':
+                    if obj not in self.objects:
+                        self.objects.append(obj)
                     btn = ObjectButton(self, obj, self.curr_x, self.curr_y)
-                    if obj.orbit is not None:
-                        btn.update_text(obj.orbit.a)
-                        markers = self._markers[obj.orbit.star.id]
-                        marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
-                        marker = markers[marker_idx]
-                        btn.link_marker(marker)
+                    markers = self._markers[obj.orbit.star.id]
+                    marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
+                    marker = markers[marker_idx]
+                    btn.link_marker(marker)
 
-                    self.buttons.add(btn, layer=Systems.get_current_idx())
-                    self.properties.add(btn)
             self.sort_buttons()
 
     def show(self):

@@ -5,7 +5,7 @@ from engine import q, material_densities
 from engine.backend import roll
 from datetime import datetime
 from math import pi, sqrt
-from .orbit import SatelliteOrbit
+from .orbit import SatelliteOrbit, PlanetOrbit
 
 
 class Satellite:
@@ -31,13 +31,16 @@ class Satellite:
         density = q(sum([comp[material] * material_densities[material] for material in comp]), 'g/cm^3')
         return density
 
-    def set_orbit(self, planet, orbital_parameters):
-        self.orbit = SatelliteOrbit(*orbital_parameters)
-        planet.satellites.append(self)
-        self.orbit.set_astrobody(planet, self)
+    def set_orbit(self, main, orbital_parameters):
+        if main.celestial_type == 'planet':
+            self.orbit = SatelliteOrbit(*orbital_parameters[:3], 'earth_radius')
+            main.satellites.append(self)
+        elif main.celestial_type == 'star':
+            self.orbit = PlanetOrbit(main, *orbital_parameters[:3], 'au', *orbital_parameters[3:])
+        self.orbit.set_astrobody(main, self)
 
         semi_major_axis = self.orbit.semi_major_axis.to('au').m
-        planet_mass = planet.mass.to('sol_mass').m
+        planet_mass = main.mass.to('sol_mass').m
         self.lagrange_points = get_lagrange_points(semi_major_axis, planet_mass, self.mass.to('earth_mass').m)
 
         self.hill_sphere = self.set_hill_sphere()
