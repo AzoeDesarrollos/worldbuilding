@@ -178,10 +178,6 @@ class SystemType(BaseWidget):
     def set_star(self, star):
         if str(self.primary.value) == '':
             self.primary.value = star
-        elif star.spin == self.primary.value.spin:
-            spin = 'clockwise' if star.spin == 'counter-clockwise' else 'counter-clockwise'
-            raise AssertionError('The stars must spin\nin oposite directions\nas they would collide\notherwise.\n'
-                                 f'\nSelect a star\nthat spins {spin}.')
         else:
             self.secondary.value = star
             self.parent.restore_button.enable()

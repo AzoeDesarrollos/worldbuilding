@@ -60,7 +60,9 @@ class ListedArea(BaseWidget):
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
-        self.show_current(Systems.get_current_idx())
+        idx = Systems.get_current_idx()
+        if idx is not None:
+            self.show_current(idx)
 
     def __len__(self):
         return len(self.listed_objects)

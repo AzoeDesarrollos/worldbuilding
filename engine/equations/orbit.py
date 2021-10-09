@@ -1,8 +1,8 @@
 from engine.frontend.graphs.orbital_properties import rotation_loop
 from engine.frontend.globales import Renderer
 from math import sqrt, pow, cos, sin, pi
+from .general import Ellipse, Flagable
 from .planetary_system import Systems
-from .general import Ellipse
 from pygame import draw
 from engine import q
 
@@ -70,7 +70,7 @@ class PseudoOrbit:
         return self._period
 
 
-class Orbit(Ellipse):
+class Orbit(Flagable, Ellipse):
     period = 0
     velocity = 0
     motion = ''
@@ -88,6 +88,9 @@ class Orbit(Ellipse):
     true_anomaly = q(0, 'degree')
 
     id = None
+    resonant = False
+    resonance = None
+    resonant_order = ''
 
     def __init__(self, a, e, i, unit):
         super().__init__(a, e)
@@ -217,7 +220,7 @@ class Orbit(Ellipse):
         return self._star
 
     def reset_period_and_speed(self, main):
-        raise NotImplementedError
+        return NotImplemented
 
     def __eq__(self, other):
         return self.id == other.id
@@ -226,8 +229,8 @@ class Orbit(Ellipse):
 class PlanetOrbit(Orbit):
     primary = 'Star'
 
-    def __init__(self, star, a, e, i, unit, loan=None, aop=None):
-        super().__init__(a, e, i, unit)
+    def __init__(self, star, a, e, i, loan=None, aop=None):
+        super().__init__(a, e, i, 'au')
         self.reset_period_and_speed(star)
         if loan is None and aop is None:
             orbital_properties = set_orbital_properties(self._i)
@@ -246,8 +249,8 @@ class PlanetOrbit(Orbit):
 class SatelliteOrbit(Orbit):
     primary = 'Planet'
 
-    def __init__(self, a, e, i, unit, loan=None, aop=None):
-        super().__init__(a, e, i, unit)
+    def __init__(self, a, e, i, loan=None, aop=None):
+        super().__init__(a, e, i, 'earth_radius')
         if loan is None and aop is None:
             orbital_properties = set_orbital_properties(self._i)
             self.longitude_of_the_ascending_node = orbital_properties[0]

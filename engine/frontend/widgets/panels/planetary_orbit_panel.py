@@ -95,7 +95,7 @@ class PlanetaryOrbitPanel(BaseWidget):
                 self._markers[planet.id] = []
             satellite = system.get_astrobody_by(orbit_data['astrobody'], tag_type='id')
             self.satellites[planet.id].append(satellite)
-            satellite.set_orbit(planet, [a, e, i, 'earth_radius', loan, aop])
+            satellite.set_orbit(planet, [a, e, i, loan, aop])
             self.add_existing(satellite, planet)
 
         # borrar las órbitas cargadas para evitar que se dupliquen.
@@ -172,22 +172,26 @@ class PlanetaryOrbitPanel(BaseWidget):
     def add_objects(self):
         system = Systems.get_current()
         if system is not None:
+            btn = None
             for obj in system.satellites + system.asteroids:
                 if obj.orbit is None:
                     if obj not in self.objects:
                         self.objects.append(obj)
                         btn = ObjectButton(self, obj, self.curr_x, self.curr_y)
-                        self.buttons.add(btn, layer=Systems.get_current_idx())
-                        self.properties.add(btn)
-                elif obj.orbit is not None and obj.orbit.star.celestial_type=='planet':
+
+                elif obj.orbit is not None and obj.orbit.star.celestial_type == 'planet':
                     if obj not in self.objects:
                         self.objects.append(obj)
-                    btn = ObjectButton(self, obj, self.curr_x, self.curr_y)
-                    markers = self._markers[obj.orbit.star.id]
-                    marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
-                    marker = markers[marker_idx]
-                    btn.link_marker(marker)
+                        btn = ObjectButton(self, obj, self.curr_x, self.curr_y)
+                        markers = self._markers[obj.orbit.star.id]
+                        marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
+                        marker = markers[marker_idx]
+                        btn.link_marker(marker)
+                        btn.update_text(obj.orbit.a)
 
+                if btn is not None:
+                    self.buttons.add(btn, layer=Systems.get_current_idx())
+                    self.properties.add(btn)
             self.sort_buttons()
 
     def show(self):

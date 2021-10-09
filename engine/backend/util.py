@@ -62,41 +62,6 @@ def add_decimal(text: str):
         return txt
 
 
-def prime_factors(n):
-    """Returns all the prime factors of a positive integer"""
-
-    factors = []
-    d = 2
-    while n > 1:
-        while n % d == 0:
-            factors.append(d)
-            n //= d
-        d += 1
-        if d * d > n:
-            if n > 1:
-                factors.append(n)
-            break
-    return factors
-
-
-def collapse_factor_lists(a: list, b: list):
-    """Multiplies all the common factors in the
-    two lists, and returns them as a pair of
-    integers."""
-
-    def collapse(factors):
-        n = factors[0]
-        for factor in factors[1:]:
-            n *= factor
-        return n
-
-    for i in list(set(a).intersection(b)):
-        a.remove(i)
-        b.remove(i)
-
-    return collapse(a), collapse(b)
-
-
 def guardar_json(ruta, datos, encoding='utf-8'):
     with open(ruta, mode='w', encoding=encoding) as file:
         json.dump(datos, file, ensure_ascii=False, indent=2, separators=(',', ':'), sort_keys=True)
@@ -120,7 +85,5 @@ __all__ = [
     'guardar_json',
     'abrir_json',
     'decimal_round',
-    'add_decimal',
-    'collapse_factor_lists',
-    'prime_factors'
+    'add_decimal'
 ]

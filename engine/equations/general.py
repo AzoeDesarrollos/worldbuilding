@@ -2,7 +2,14 @@ from math import pi, sqrt, asin
 from pygame import Rect
 
 
-class BodyInHydrostaticEquilibrium:
+class Flagable:
+    flagged = False
+
+    def flag(self):
+        self.flagged = True
+
+
+class BodyInHydrostaticEquilibrium(Flagable):
     circumference = 0
     surface = 0
     volume = 0
@@ -74,7 +81,7 @@ class OblateSpheroid(Ellipse, BodyInHydrostaticEquilibrium):
 
 
 class Ring:
-    def __init__(self, planet,  inner, outer, w, h):
+    def __init__(self, planet, inner, outer, w, h):
         self.inner = inner
         self.outer = outer
         self.wideness = w

@@ -43,18 +43,19 @@ class NamingPanel(BaseWidget):
             objects = system.get_unnamed()
             if len(objects):
                 for i, astrobody in enumerate(objects):
-                    if astrobody.celestial_type == 'system':
-                        name = astrobody.letter + '-Type System #{}'.format(astrobody.idx)
-                    else:  # stars and planets
-                        name = str(astrobody)
+                    if not astrobody.flagged:
+                        if astrobody.celestial_type == 'system':
+                            name = astrobody.letter + '-Type System #{}'.format(astrobody.idx)
+                        else:  # stars and planets
+                            name = str(astrobody)
 
-                    vt = ValueText(self.dummy, name, 3, 55 + i * 13 * 2, kind='letters')
-                    vt.enable()
-                    if vt not in self.unnamed:
-                        self.unnamed.add(vt, layer=idx)
-                        self.objects.append(astrobody)
-                    self.all_named_error = False
-                    self.no_system_error = False
+                        vt = ValueText(self.dummy, name, 3, 55 + i * 13 * 2, kind='letters')
+                        vt.enable()
+                        if astrobody not in self.objects:
+                            self.unnamed.add(vt, layer=idx)
+                            self.objects.append(astrobody)
+                        self.all_named_error = False
+                        self.no_system_error = False
             else:
                 self.all_named_error = True
         else:
@@ -68,13 +69,24 @@ class NamingPanel(BaseWidget):
         render = render_textrect(text, f, rect.w, (0, 0, 0), COLOR_BOX, 1)
         self.image.blit(render, rect)
 
+    def sort(self):
+        for i, listed in enumerate([i for i in self.unnamed.widgets() if i.is_visible]):
+            listed.rect.y = 55 + i * 13 * 2
+
     def show_current(self, idx):
+        flagged = [i for i in self.objects if i.flagged]
+        for obj in flagged:
+            idxs = obj.idx
+            button = self.unnamed.get_widget(idxs)
+            self.unnamed.remove(button)
+
         for button in self.unnamed.widgets():
             button.hide()
 
-        if not len(self.unnamed.get_widgets_from_layer(idx)):
-            self.add_current()
+        # if not len(self.unnamed.get_widgets_from_layer(idx)):
+        self.add_current()
 
+        self.sort()
         for button in self.unnamed.get_widgets_from_layer(idx):
             button.show()
 

@@ -132,28 +132,34 @@ class OrbitPanel(BaseWidget):
             for button in self.buttons:
                 button.toggle(toggle)
 
-    def add_orbit_marker(self, position, resonance=False):
+    def add_orbit_marker(self, position, resonance=False, res_parent=None, res_order=None):
         star = self.current if not hasattr(position, 'star') else position.star
         inner = star.inner_boundry
         outer = star.outer_boundry
         bc = False if resonance is False else True
+        bd = None if resonance is False else []
         if type(position) is q:
-            ba = True
             bb = False
-            if not resonance:
-                test = inner < position < outer
-                color = COLOR_TEXTO
-            else:
-                test = inner < position  # TNOs orbit well outside of 40AUs.
-                color = (255, 0, 0)  # color provisorio
-        else:  # type(position) is PlanetOrbit
-            ba = False
+        elif type(position) not in (RawOrbit, PseudoOrbit):
             bb = True
+        else:
+            bb = None
+
+        test = False
+        color = None
+        if type(position) not in (RawOrbit, PseudoOrbit):
             test = True  # saved orbits are valid by definition
             color = COLOR_STARORBIT
+        elif resonance is False:
+            test = inner < position < outer
+            color = COLOR_TEXTO
+        elif resonance is True:
+            bd.append(res_parent, res_order)
+            test = inner < position  # TNOs orbit well outside of 40AUs.
+            color = (255, 0, 0)  # color provisorio
 
         if test is True:
-            new = OrbitMarker(self, 'Orbit', star, position, is_orbit=ba, is_complete_orbit=bb, is_resonance=bc)
+            new = OrbitMarker(self, 'Orbit', star, position, is_complete_orbit=bb, is_resonance=bc, res=bd)
             self._markers[star.id].append(new)
             self._orbits[star.id].append(new)
             self.sort_markers()
@@ -326,12 +332,13 @@ class OrbitPanel(BaseWidget):
                     aop = q(orbit_data['AoP'], 'degree') if orbit_data['AoP'] != 'undefined' else 'undefined'
                     loan = q(orbit_data['LoAN'], 'degree')
                     system = Systems.get_system_by_id(orbit_data['star_id'])
-                    planet = system.get_astrobody_by(id, tag_type='id')
-                    star = system.star_system
-                    planet.set_orbit(star, [a, e, i, loan, aop])
-                    planet.orbit.id = id
-                    self.add_orbit_marker(planet.orbit)
-                    self.planet_area.delete_objects(planet)
+                    if system is not None:
+                        planet = system.get_astrobody_by(id, tag_type='id')
+                        star = system.star_system
+                        planet.set_orbit(star, [a, e, i, loan, aop])
+                        planet.orbit.id = id
+                        self.add_orbit_marker(planet.orbit)
+                        self.planet_area.delete_objects(planet)
 
         # borrar las órbitas cargadas para evitar que se dupliquen.
         self.sort_markers()
@@ -517,6 +524,7 @@ class OrbitType(BaseWidget, Intertwined):
     def __init__(self, parent):
         super().__init__(parent)
         self.properties = WidgetGroup()
+        self.f = self.crear_fuente(16, underline=True)
 
     def link_astrobody(self, astro):
         self.linked_astrobody = astro
@@ -530,14 +538,19 @@ class OrbitType(BaseWidget, Intertwined):
     def create(self):
         orbit = self.get_orbit()
         self.clear()
+        if hasattr(orbit, 'astrobody'):
+            astrobody = orbit.astrobody
+            self.parent.write(str(astrobody) + ': Orbital Characteristics', self.f, x=3, y=21 * 2 - 1)
         props = ['Semi-major axis', 'Semi-minor axis', 'Eccentricity', 'Inclination',
                  'Periapsis', 'Apoapsis', 'Orbital motion', 'Temperature', 'Orbital velocity', 'Orbital period',
-                 'Argument of periapsis', 'Longitude of the ascending node', 'True anomaly', 'Body']
+                 'Argument of periapsis', 'Longitude of the ascending node']
         attr = ['semi_major_axis', 'semi_minor_axis', 'eccentricity', 'inclination',
                 'periapsis', 'apoapsis', 'motion', 'temperature', 'velocity', 'period',
-                'argument_of_periapsis', 'longitude_of_the_ascending_node', 'true_anomaly', 'astrobody']
+                'argument_of_periapsis', 'longitude_of_the_ascending_node']
         modifiables = ['Semi-major axis', 'Eccentricity', 'Inclination',
                        'Argument of periapsis', 'Longitude of the ascending node']
+        if orbit.resonant:
+            props.append('In a {resonant_order} resonance with {resonance}'.format(orbit))
         for i, prop in enumerate([j for j in attr if hasattr(orbit, j)]):
             value = getattr(orbit, prop)
             vt = ValueText(self, props[attr.index(prop)], 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
@@ -554,7 +567,9 @@ class OrbitType(BaseWidget, Intertwined):
             elif elemento.text not in ['Orbital motion', 'Temperature']:
                 value = q(elemento.text_area.value)
 
-            parametros.append(value)
+            if value is not None:
+                parametros.append(value)
+
         main = self.parent.current
         if self.linked_astrobody.orbit is None:
             orbit = self.linked_astrobody.set_orbit(main, parametros)
@@ -567,6 +582,7 @@ class OrbitType(BaseWidget, Intertwined):
         self.has_values = True
 
     def clear(self):
+        self.parent.image.fill(COLOR_BOX, [0, 21 * 2 - 1, self.parent.rect.w, 21])
         for prop in self.properties.widgets():
             prop.kill()
             prop.text_area.kill()
@@ -603,26 +619,28 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
     locked = False
     orbit = None
 
-    def __init__(self, parent, name, star, value, is_orbit=False, is_complete_orbit=False, is_resonance=False):
+    def __init__(self, parent, name, star, value, is_complete_orbit=None, is_resonance=False, res=None):
         super().__init__(parent)
         self.f1 = self.crear_fuente(16)
         self.f2 = self.crear_fuente(16, bold=True)
         self.star = star
         self.name = name
         self._value = value
-        if is_orbit:
+        if is_complete_orbit is False:
             self.orbit = RawOrbit(self.parent.current, round(value, 3))
             self.text = '{:~}'.format(value)
             self.color = COLOR_SELECTED
-        elif is_complete_orbit:
+        elif is_complete_orbit is True:
             self.orbit = value
             self.text = '{:~}'.format(value.a)
             self.color = COLOR_SELECTED
-        else:
+        elif is_complete_orbit is None:
             self.color = COLOR_TEXTO
             self.text = '{:~}'.format(value)
         if is_resonance:
             self.orbit.resonant = True
+            self.orbit.resonance = res[0]
+            self.orbit.resonant_order = res[1]
         self.update()
         self.image = self.img_uns
         self.rect = self.image.get_rect(x=3)
@@ -794,8 +812,9 @@ class AddResonanceButton(TextButton):
             planet = self.parent.selected_marker.orbit.astrobody
 
             star = self.parent.current
-            position = from_stellar_resonance(star, planet, self.parent.ratios_to_string())
-            self.parent.add_orbit_marker(position, resonance=True)
+            order = self.parent.ratios_to_string()
+            position = from_stellar_resonance(star, planet, order)
+            self.parent.add_orbit_marker(position, resonance=True, res_parent=planet, res_order=order)
             self.parent.check_orbits()
             self.disable()
             self.parent.clear_ratios()

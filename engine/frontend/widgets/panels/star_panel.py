@@ -155,7 +155,8 @@ class StarType(ObjectType):
         self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right - 10, y=self.parent.rect.y + 50)
 
     def set_star(self, star_data):
-        star_data.update({'idx': len(self.parent.star_buttons)})
+        cls = Star.get_class(star_data['mass'])
+        star_data.update({'idx': len([s for s in self.parent.stars if s.cls == cls])})
         star = Star(star_data)
         self.parent.button_add.enable()
         self.current = star
@@ -242,7 +243,7 @@ class StarButton(Meta):
         self.f1 = self.crear_fuente(13)
         self.f2 = self.crear_fuente(13, bold=True)
         if not star.has_name:
-            name = star.classification + ' #{}'.format(len(self.parent.parent.star_buttons))
+            name = star.classification + ' #{}'.format(star.idx)
         else:
             name = star.name
         self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)

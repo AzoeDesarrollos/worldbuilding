@@ -1,5 +1,5 @@
 from engine.frontend.globales import COLOR_ICYMOON, COLOR_ROCKYMOON, COLOR_IRONMOON
-from .general import BodyInHydrostaticEquilibrium
+from .general import BodyInHydrostaticEquilibrium, Flagable
 from .lagrange import get_lagrange_points
 from engine import q, material_densities
 from engine.backend import roll
@@ -8,7 +8,7 @@ from math import pi, sqrt
 from .orbit import SatelliteOrbit, PlanetOrbit
 
 
-class Satellite:
+class Satellite(Flagable):
     name = None
     mass = None
     density = None
@@ -33,10 +33,10 @@ class Satellite:
 
     def set_orbit(self, main, orbital_parameters):
         if main.celestial_type == 'planet':
-            self.orbit = SatelliteOrbit(*orbital_parameters[:3], 'earth_radius')
+            self.orbit = SatelliteOrbit(*orbital_parameters)
             main.satellites.append(self)
         elif main.celestial_type == 'star':
-            self.orbit = PlanetOrbit(main, *orbital_parameters[:3], 'au', *orbital_parameters[3:])
+            self.orbit = PlanetOrbit(main, *orbital_parameters)
         self.orbit.set_astrobody(main, self)
 
         semi_major_axis = self.orbit.semi_major_axis.to('au').m

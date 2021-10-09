@@ -150,7 +150,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         return t
 
     def set_orbit(self, star, orbital_parameters):
-        self.orbit = PlanetOrbit(star, *orbital_parameters[:3], 'au', *orbital_parameters[3:])
+        self.orbit = PlanetOrbit(star, *orbital_parameters)
         self.temperature = self.set_temperature(star.mass.m, self.orbit.semi_minor_axis.m)
         self.orbit.set_astrobody(star, self)
         self.lagrange_points = get_lagrange_points(self.orbit.semi_major_axis.m, star.mass.m, self.mass.m)

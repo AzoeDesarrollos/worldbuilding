@@ -56,8 +56,9 @@ class AsteroidPanel(BasePanel):
                 satellite_data = self.loaded_data[id]
                 satellite_data['id'] = id
                 moon = minor_moon_by_composition(satellite_data)
+                moon.idx = len([i for i in Systems.get_current().planets if i.clase == moon.clase])
                 system = Systems.get_system_by_id(satellite_data['system'])
-                if system.add_astro_obj(moon):
+                if system is not None and system.add_astro_obj(moon):
                     self.current.current = moon
                     self.add_button()
             self.loaded_data.clear()
@@ -222,14 +223,19 @@ class AsteroidType(BaseWidget):
             data['c axis'] = self.current.c_axis.m
             data['id'] = self.current.id
             data['system'] = self.current.system_id
+            data['idx'] = self.current.idx
 
-        moon = minor_moon_by_composition(data)
-        moon.idx = self.parent.next_idx(moon.cls)
+        if self.current is None:
+            moon = minor_moon_by_composition(data)
+            moon.idx = moon.idx = len([i for i in Systems.get_current().asteroids if i.clase == moon.clase])
+        else:
+            moon = self.current
+
         if self.current is None:
             if Systems.get_current().add_astro_obj(moon):
                 self.current = moon
                 self.parent.button_add.enable()
-        else:
+        elif moon != self.current:
             Systems.get_current().remove_astro_obj(self.current)
             if Systems.get_current().add_astro_obj(moon):
                 self.current = moon

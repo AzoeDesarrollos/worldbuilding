@@ -74,7 +74,7 @@ class Star(BodyInHydrostaticEquilibrium):
         self.set_qs()
         assert 0.08 <= self.mass.m < 120, 'Invalid Mass: Stellar mass must be between 0.08 and 120 solar masses.'
 
-        self.classification = self.stellar_classification()
+        self.classification = self.stellar_classification(mass)
         self.cls = self.classification
         self.color = self.true_color(self.temperature)
         self.peak_light = LightWave(self.peak_lightwave_frequency(self.temperature))
@@ -131,11 +131,16 @@ class Star(BodyInHydrostaticEquilibrium):
         self.frost_line = q(self._frost_line, 'au')
         self.age = q(self._age, 'years')
 
-    def stellar_classification(self):
+    @staticmethod
+    def stellar_classification(mass):
         masses = [0.08, 0.45, 0.8, 1.04, 1.4, 2.1, 16]
         classes = ["M", "K", "G", "F", "A", "B", "O"]
-        idx = bisect_right(masses, self._mass)
+        idx = bisect_right(masses, mass)
         return classes[idx - 1:idx][0]
+
+    @classmethod
+    def get_class(cls, mass):
+        return cls.stellar_classification(mass)
 
     @staticmethod
     def true_color(temperature):
@@ -221,7 +226,7 @@ class Star(BodyInHydrostaticEquilibrium):
         self.set_qs()
         assert 0.08 <= self.mass.m < 120, 'Invalid Mass: Stellar mass must be between 0.08 and 120 solar masses.'
 
-        self.classification = self.stellar_classification()
+        self.classification = self.stellar_classification(self._mass)
         self.cls = self.classification
         self.color = self.true_color(self.temperature)
 

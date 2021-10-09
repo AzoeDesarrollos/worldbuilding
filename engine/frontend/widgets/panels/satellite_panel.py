@@ -50,11 +50,11 @@ class SatellitePanel(BasePanel):
         if self.loaded_data is not None:
             for idx, id in enumerate(self.loaded_data):
                 satellite_data = self.loaded_data[id]
-                satellite_data['idx'] = idx
                 satellite_data['id'] = id
                 moon = major_moon_by_composition(satellite_data)
+                moon.idx = len([i for i in Systems.get_current().satellites if i.cls == moon.cls])
                 system = Systems.get_system_by_id(satellite_data['system'])
-                if system.add_astro_obj(moon):
+                if system is not None and system.add_astro_obj(moon):
                     self.current.current = moon
                     self.add_button()
             self.loaded_data.clear()
@@ -207,10 +207,12 @@ class SatelliteType(ObjectType):
             data['radius'] = self.current.radius.m
             data['id'] = self.current.id
             data['system'] = self.current.system_id
+            data['idx'] = len([i for i in Systems.get_current().satellites if i.cls == self.current.cls])
 
         self.has_values = True
 
         moon = major_moon_by_composition(data)
+        moon.idx = len([i for i in Systems.get_current().satellites if i.cls == moon.cls])
         if self.current is None:
             if Systems.get_current().add_astro_obj(moon):
                 self.current = moon
@@ -299,7 +301,7 @@ class SatelliteButton(Meta):
         if satellite.has_name:
             name = satellite.name
         else:
-            name = satellite.cls
+            name = str(satellite)
         self.img_uns = self.f1.render(name, True, satellite.color, COLOR_AREA)
         self.img_sel = self.f2.render(name, True, satellite.color, COLOR_AREA)
         self.w = self.img_sel.get_width()

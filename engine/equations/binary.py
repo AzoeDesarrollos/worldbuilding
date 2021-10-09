@@ -2,9 +2,10 @@ from engine import q
 from math import sqrt
 from datetime import datetime
 from .orbit import BinaryStarOrbit
+from .general import Flagable
 
 
-class BinarySystem:
+class BinarySystem(Flagable):
     celestial_type = 'system'
 
     primary = None
@@ -126,6 +127,8 @@ class PTypeSystem(BinarySystem):
         self.outer_forbbiden_zone = q(round(self.max_sep.m * 3, 3), 'au')
 
         self.habitable_orbit = round(self.max_sep * 4, 3)
+        age = max([self.primary.age, self.secondary.age])
+        self.age = age
 
     def set_qs(self):
         self.mass = q(self._mass.m, 'sol_mass')

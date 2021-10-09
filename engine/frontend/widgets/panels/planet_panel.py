@@ -183,11 +183,11 @@ class PlanetType(ObjectType):
 
     def show_loaded(self):
         if self.loaded_data is not None:
-            for idx, id in enumerate(self.loaded_data):
+            for id in self.loaded_data:
                 planet_data = self.loaded_data[id]
-                planet_data['idx'] = idx
                 planet_data['id'] = id
                 planet = Planet(planet_data)
+                planet.idx = len([i for i in Systems.get_current().planets if i.clase == planet.clase])
                 if planet not in self.parent.planets:
                     self.create_button(planet)
                     if planet.composition is not None:
@@ -226,7 +226,7 @@ class PlanetType(ObjectType):
         else:
             system = Systems.get_system_by_id(planet.system_id)
 
-        if system.add_astro_obj(planet):
+        if system is not None and system.add_astro_obj(planet):
             for button in self.properties.get_widgets_from_layer(1):
                 button.text_area.clear()
             self.parent.button_add.disable()
@@ -271,10 +271,10 @@ class PlanetType(ObjectType):
         if len(attrs) > 1:
             unit = self.parent.unit.name.lower()
             attrs['unit'] = 'jupiter' if unit == 'gas giant' else 'earth'
-            attrs['idx'] = len(self.parent.planet_buttons.get_widgets_from_layer(Systems.get_current_idx()))
             if composition is not None:
                 attrs['composition'] = composition
             self.current = Planet(attrs)
+            self.current.idx = len([i for i in Systems.get_current().planets if i.clase == self.current.clase])
             self.toggle_habitable()
             if self.current.mass <= Systems.get_current().body_mass:
                 self.parent.button_add.enable()
