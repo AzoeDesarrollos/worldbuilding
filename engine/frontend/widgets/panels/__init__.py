@@ -7,7 +7,7 @@ from .star_system_panel import StarSystemPanel
 from .asteroid_panel import AsteroidPanel
 from .planetary_orbit_panel import PlanetaryOrbitPanel
 from .naming_panel import NamingPanel
-from .tides_panel import TidesPanel
+from .tides_panel import InformationPanel
 
 panels = [
     StarPanel,
@@ -17,7 +17,7 @@ panels = [
     AsteroidPanel,
     OrbitPanel,
     PlanetaryOrbitPanel,
-    TidesPanel,
+    InformationPanel,
     AtmospherePanel,
     NamingPanel
 ]

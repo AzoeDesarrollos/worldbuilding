@@ -154,7 +154,7 @@ class OrbitPanel(BaseWidget):
             test = inner < position < outer
             color = COLOR_TEXTO
         elif resonance is True:
-            bd.append(res_parent, res_order)
+            bd.extend([res_parent, res_order])
             test = inner < position  # TNOs orbit well outside of 40AUs.
             color = (255, 0, 0)  # color provisorio
 

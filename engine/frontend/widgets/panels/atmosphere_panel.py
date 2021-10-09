@@ -108,7 +108,7 @@ class AtmospherePanel(BaseWidget):
         t = f'{name}\nPressure at sea level: {p_pre} atm\nMinimum pressure: {min_p} atm\nMaximum pressure: {max_p} atm'
 
         self.image.fill(COLOR_BOX, self.area_info)
-        render = render_textrect(t, self.f2, self.area_info, COLOR_TEXTO, COLOR_BOX)
+        render = render_textrect(t, self.f2, self.area_info.w, COLOR_TEXTO, COLOR_BOX)
         self.image.blit(render, self.area_info)
         self.show_warning(element)
 
@@ -117,7 +117,7 @@ class AtmospherePanel(BaseWidget):
             symbol = element.symbol
             fuente = self.crear_fuente(12, bold=True)
             fg = (255, 0, 0)
-            render = render_textrect(f'Toxic concentration of {symbol}', fuente, self.warning_rect, fg, COLOR_BOX)
+            render = render_textrect(f'Toxic concentration of {symbol}', fuente, self.warning_rect.w, fg, COLOR_BOX)
             self.image.blit(render, self.warning_rect)
         else:
             self.image.fill(COLOR_BOX, self.warning_rect)
@@ -531,7 +531,7 @@ class Atmograph(BaseWidget):
             image = Surface((200, 200))
             rect = image.get_rect(centerx=self.rect.w // 2, centery=self.rect.centery)
             f = self.crear_fuente(16)
-            render = render_textrect(t, f, rect, COLOR_TEXTO, COLOR_BOX, 1)
+            render = render_textrect(t, f, rect.w, COLOR_TEXTO, COLOR_BOX, 1)
             base.blit(render, rect)
 
         return base

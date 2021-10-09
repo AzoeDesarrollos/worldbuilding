@@ -1,4 +1,5 @@
 from engine.frontend.globales import WidgetHandler, Renderer, COLOR_BOX, COLOR_TEXTO
+from engine.backend.textrect import render_textrect
 from pygame.sprite import Sprite
 from pygame import font
 
@@ -72,5 +73,10 @@ class BaseWidget(Sprite):
 
     def write(self, text, fuente, bg=COLOR_BOX, **kwargs):
         render = fuente.render(text, True, COLOR_TEXTO, bg)
+        render_rect = render.get_rect(**kwargs)
+        return self.image.blit(render, render_rect)
+
+    def write2(self, text, fuente, witdh, bg=COLOR_BOX, **kwargs):
+        render = render_textrect(text, fuente, witdh, COLOR_TEXTO, bg)
         render_rect = render.get_rect(**kwargs)
         return self.image.blit(render, render_rect)
