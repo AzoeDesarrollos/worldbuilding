@@ -148,6 +148,8 @@ class AvailablePlanets(AvailableObjects):
         if system is not None:
             bodies = [body for body in system.astro_bodies if body.orbit is not None]
             self.populate(bodies)
+        else:
+            self.parent.show_no_system_error()
         super().show()
 
     def on_mousebuttondown(self, event):

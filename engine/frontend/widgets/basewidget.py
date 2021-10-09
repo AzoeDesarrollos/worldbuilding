@@ -1,7 +1,7 @@
 from engine.frontend.globales import WidgetHandler, Renderer, COLOR_BOX, COLOR_TEXTO
 from engine.backend.textrect import render_textrect
 from pygame.sprite import Sprite
-from pygame import font
+from pygame import font, Rect
 
 
 class BaseWidget(Sprite):
@@ -80,3 +80,10 @@ class BaseWidget(Sprite):
         render = render_textrect(text, fuente, witdh, COLOR_TEXTO, bg)
         render_rect = render.get_rect(**kwargs)
         return self.image.blit(render, render_rect)
+
+    def show_no_system_error(self):
+        f = self.crear_fuente(16)
+        text = 'There is no star system set. Go back to the Star Panel and set a star first.'
+        rect = Rect(50, 100, 220, 100)
+        render = render_textrect(text, f, rect.w, (0, 0, 0), COLOR_BOX)
+        self.image.blit(render, rect)

@@ -92,13 +92,13 @@ class NamingPanel(BaseWidget):
 
     def update(self):
         idx = Systems.get_current_idx()
-        if idx != self.last_idx and idx is not None:
+        if idx != self.last_idx and idx > 0:
             self.show_current(idx)
             self.last_idx = idx
         elif self.no_system_error:
             text = "There are no more astronomical bodies to name for this system."
             self.render_text(text)
-        elif self.all_named_error:
+        elif self.all_named_error or idx == -1:
             text = 'There is no system nor there are astronomical bodies to name.'
             self.render_text(text)
 

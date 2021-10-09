@@ -418,18 +418,14 @@ class OrbitPanel(BaseWidget):
     def update(self):
         super().update()
         idx = Systems.get_current_idx()
-        if idx != self.last_idx:
+        if idx != self.last_idx and idx > 0:
             self.set_current()
             self.last_idx = idx
 
         if not self.no_star_error:
             self.image.fill(COLOR_BOX, self.area_markers)
         else:
-            f = self.crear_fuente(16)
-            text = 'There is no star system set. Go back to the Star Panel and set a star first.'
-            rect = Rect(50, 100, 200, 100)
-            render = render_textrect(text, f, rect.w, (0, 0, 0), COLOR_BOX)
-            self.image.blit(render, rect)
+            self.show_no_system_error()
 
     def __repr__(self):
         return 'Orbit Panel'
