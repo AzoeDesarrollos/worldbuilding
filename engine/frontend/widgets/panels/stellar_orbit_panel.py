@@ -111,7 +111,7 @@ class OrbitPanel(BaseWidget):
             self._markers[star.id].append(x)
             self.properties.add(x, layer=4)
 
-        if hasattr(star, 'habitable_orbit'):
+        if hasattr(star, 'inner_forbbiden_zone'):
             markers = {
                 'Inner Forbbiden Zone': star.inner_forbbiden_zone,
                 'Outer Forbbiden Zone': star.outer_forbbiden_zone
@@ -418,7 +418,7 @@ class OrbitPanel(BaseWidget):
     def update(self):
         super().update()
         idx = Systems.get_current_idx()
-        if idx != self.last_idx and idx > 0:
+        if idx != self.last_idx and idx >= 0:
             self.set_current()
             self.last_idx = idx
 

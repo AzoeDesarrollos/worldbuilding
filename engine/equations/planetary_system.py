@@ -18,6 +18,7 @@ class PlanetarySystem(Flagable):
     average_visibility = None
 
     age = 0
+    body_mass = 0
 
     def __init__(self, star_system):
         self.planets = []
@@ -26,18 +27,25 @@ class PlanetarySystem(Flagable):
         self.astro_bodies = []
         self.star_system = star_system
         self.id = star_system.id
-        self.body_mass = q(16 * exp(-0.6931 * star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
-
+        self.set_available_mass()
         self.aparent_brightness = {}
         self.relative_sizes = {}
         if star_system.letter != 'S':
             self.age = star_system.age
 
     def update(self):
-        self.body_mass = q(16 * exp(-0.6931 * self.star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
+        self.set_available_mass()
 
     def get_available_mass(self):
         return self.body_mass
+
+    def set_available_mass(self):
+        if hasattr(self.star_system, 'shared_mass'):
+            mass = self.star_system.shared_mass
+        else:
+            mass = self.star_system.mass
+
+        self.body_mass = q(16 * exp(-0.6931 * mass.m) * 0.183391347289428, 'jupiter_mass')
 
     def visibility_of_stars(self, body):
         if body.id not in self.aparent_brightness:
