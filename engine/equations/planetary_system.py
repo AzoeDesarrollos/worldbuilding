@@ -40,7 +40,7 @@ class PlanetarySystem(Flagable):
         return self.body_mass
 
     def set_available_mass(self):
-        if hasattr(self.star_system, 'shared_mass'):
+        if self.star_system.shared_mass is not None:
             mass = self.star_system.shared_mass
         else:
             mass = self.star_system.mass

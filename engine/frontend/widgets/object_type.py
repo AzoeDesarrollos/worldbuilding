@@ -36,10 +36,10 @@ class ObjectType(BaseWidget):
 
         self.absolutes = WidgetGroup()
         for i, button in enumerate(absolute_names):
-            if len(absolute_names) in [5, 6]:
+            if len(absolute_names) == 6:
                 vt = ValueText(self, button, 50, 210 + i * 15 * 2)
             else:
-                vt = ValueText(self, button, 50, 160 + i * 13 * 2)
+                vt = ValueText(self, button, 50, 195 + i * 13 * 2)
             self.absolutes.add(vt)
             self.properties.add(vt, layer=1)
 

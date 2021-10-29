@@ -105,7 +105,7 @@ class Star(BodyInHydrostaticEquilibrium):
     def set_age(self):
         if self._age == -1:
             # reseting the star's mass should not change it's age, because it is the same star that is being remodeled.
-            self._age = 4.5
+            self._age = (self._lifetime * 0.46) * 10 * 10 ** 9
             # this value may be manually set up at some point in the future.
 
     def set_derivated_characteristics(self):
@@ -122,7 +122,7 @@ class Star(BodyInHydrostaticEquilibrium):
         self.mass = q(self._mass, 'sol_mass')
         self.luminosity = q(self._luminosity, 'sol_luminosity')
         self.radius = q(self._radius, 'sol_radius')
-        self.lifetime = q(self._lifetime, 'sol_lifetime')
+        self.lifetime = q(self._lifetime, 'solar_lifetime')
         self.temperature = q(self._temperature, 'sol_temperature')
         self.volume = q(self.calculate_volume(self.radius.to('km').m), 'km^3')
         self.density = q(self.calculate_density(self.mass.to('g').m, self.radius.to('cm').m), 'g/cm^3')
@@ -141,6 +141,22 @@ class Star(BodyInHydrostaticEquilibrium):
         classes = ["M", "K", "G", "F", "A", "B", "O"]
         idx = bisect_right(masses, mass)
         return classes[idx - 1:idx][0]
+
+    def luminosity_at_age(self, age=None, is_q=False):
+        lum = self._luminosity
+        forty_six_percent = self.lifetime.to('years').m * 0.46
+        if age is None:
+            age = self._age
+
+        lum_at_age = lum * (0.25 / forty_six_percent * age + 0.75)
+        if is_q:
+            lum_at_age = q(lum_at_age, "sol_luminosity")
+
+        return lum_at_age
+
+    def set_luminosity(self, age):
+        self._luminosity = self.luminosity_at_age(age)
+        self.set_qs()
 
     @classmethod
     def get_class(cls, mass):

@@ -1,4 +1,4 @@
-from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, WidgetGroup, ANCHO, COLOR_BOX
+from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, WidgetGroup, ANCHO, COLOR_BOX, COLOR_SELECTED
 from engine.frontend.widgets.panels.common import TextButton
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.object_type import ObjectType
@@ -7,6 +7,7 @@ from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.meta import Meta
 from engine.equations.star import Star
+from pygame import Surface, mouse
 
 
 class StarPanel(BasePanel):
@@ -30,6 +31,11 @@ class StarPanel(BasePanel):
         EventHandler.register(self.save_stars, 'Save')
         EventHandler.register(self.load_stars, 'LoadData')
         EventHandler.register(self.name_current, 'NameObject')
+
+        self.age_bar = AgeBar(self, 50, 420 - 32)
+        f2 = self.crear_fuente(10)
+        self.write('start', f2, centerx=self.age_bar.rect.left, top=self.age_bar.rect.bottom + 1)
+        self.write('end', f2, centerx=self.age_bar.rect.right, top=self.age_bar.rect.bottom + 1)
 
     @property
     def star_buttons(self):
@@ -145,8 +151,8 @@ class StarType(ObjectType):
     def __init__(self, parent):
         rel_props = ['Mass', 'Luminosity', 'Radius', 'Lifetime', 'Surface temperature']
         rel_args = ['mass', 'luminosity', 'radius', 'lifetime', 'temperature']
-        abs_args = ['density', 'volume', 'circumference', 'surface', 'spin', 'classification']
-        abs_props = ['Density', 'Volume', 'Circumference', 'Surface area', 'Spin', 'Classification']
+        abs_args = ['density', 'volume', 'circumference', 'surface', 'spin', 'classification', 'age']
+        abs_props = ['Density', 'Volume', 'Circumference', 'Surface area', 'Spin', 'Classification', 'Age']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
         self.set_modifiables('relatives', 0, 1)
 
@@ -268,3 +274,65 @@ class StarButton(Meta):
         super().hide()
         if self.object_data.sprite is not None:
             self.object_data.sprite.hide()
+
+
+class AgeBar(Meta):
+    def __init__(self, parent, x, y):
+        super().__init__(parent)
+
+        self.image = Surface((400, 9))
+        self.image.fill(COLOR_BOX, [1, 0, 398, 4])
+        self.image.fill(COLOR_BOX, [1, 5, 398, 4])
+        self.rect = self.image.get_rect(topleft=[x, y])
+        forty_six_percent = round((self.rect.w-2)*0.46)
+        self.cursor = AgeCursor(self, forty_six_percent, self.rect.centery)
+
+        self.show()
+
+    def on_mousebuttonup(self, event):
+        self.cursor.pressed = False
+
+
+class AgeCursor(Meta):
+    enabled = True
+
+    pressed = False
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent)
+        self.img_uns = self.crear(1, COLOR_TEXTO)
+        self.img_sel = self.crear(3, COLOR_SELECTED)
+        self.image = self.img_uns
+        self.rect = self.image.get_rect(center=[x, y])
+        self.center = self.rect.centerx
+        self.show()
+
+    @staticmethod
+    def crear(w, color):
+        image = Surface((w, 9))
+        image.fill(color)
+        return image
+
+    def select(self):
+        super().select()
+        self.rect = self.image.get_rect(centerx=self.center)
+
+    def deselect(self):
+        super().deselect()
+        self.rect = self.image.get_rect(centerx=self.center)
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1:
+            self.pressed = True
+
+    def on_mousebuttonup(self, event):
+        if event.button == 1:
+            self.pressed = False
+
+    def update(self):
+        super().update()
+        x = mouse.get_pos()[0]
+        if self.pressed:
+            mouse.set_pos(x, self.rect.centery)
+            self.has_mouseover = True
+            self.rect.x = x if 51 <= x <= 446 else self.rect.x
