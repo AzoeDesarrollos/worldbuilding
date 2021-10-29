@@ -21,6 +21,7 @@ class BinarySystem(Flagable):
     has_name = False
 
     idx = None
+    shared_mass = None
 
     def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, id=None):
         if secondary.mass <= primary.mass:
@@ -96,7 +97,6 @@ class PTypeSystem(BinarySystem):
     outer_boundry = 0
     frost_line = 0
 
-    mass = 0
     luminosity = 0
 
     def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
@@ -131,7 +131,7 @@ class PTypeSystem(BinarySystem):
         self.age = age
 
     def set_qs(self):
-        self.mass = q(self._mass.m, 'sol_mass')
+        self.shared_mass = q(self._mass.m, 'sol_mass')
         self.luminosity = q(self._luminosity.m, 'sol_luminosity')
         self.habitable_inner = q(self._habitable_inner, 'au')
         self.habitable_outer = q(self._habitable_outer, 'au')
@@ -157,9 +157,14 @@ class STypeSystem(BinarySystem):
 
         self.max_sep = max_sep_p + max_sep_s
         self.min_sep = min_sep_p + min_sep_s
+        self.shared_mass = primary.mass + secondary.mass
 
-        self.inner_forbbiden_zone = q(self.min_sep.m / 3, 'au')
-        self.outer_forbbiden_zone = q(self.max_sep.m * 3, 'au')
+        self.inner_forbbiden_zone = q(round(self.min_sep.m / 3, 3), 'au')
+        self.outer_forbbiden_zone = q(round(self.max_sep.m * 3, 3), 'au')
+        for star in self.composition():
+            inner = self.inner_forbbiden_zone
+            outer = self.outer_forbbiden_zone
+            star.inherit(inner, outer, self.shared_mass)
 
 
 def system_type(separation):

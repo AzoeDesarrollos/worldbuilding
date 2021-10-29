@@ -3,17 +3,17 @@ from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, WidgetGroup
 from .common import AvailableObjects, AvailablePlanet
 from engine.equations.planetary_system import Systems
 from ..basewidget import BaseWidget
-from pygame import Surface
+from pygame import Surface, Rect
 from engine import q
 
 
-class TidesPanel(BaseWidget):
+class InformationPanel(BaseWidget):
     skippable = False
 
     current = None
 
     def __init__(self, parent):
-        self.name = 'Tides'
+        self.name = 'Information'
         super().__init__(parent)
         self.properties = WidgetGroup()
         self.image = Surface((ANCHO, ALTO - 32))
@@ -27,14 +27,12 @@ class TidesPanel(BaseWidget):
 
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.properties.add(self.planet_area, layer=2)
+        self.perceptions_rect = Rect(3, 250, 380, self.rect.h - 252)
 
     def show_name(self, astrobody):
         self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
         self.image.fill(COLOR_BOX, (3, 50, self.rect.w, 200))
-        text = 'Tides on ' + astrobody.clase
-        idx = Systems.get_current().astro_group(astrobody).index(astrobody)
-        text += ' #' + str(idx)
-
+        text = 'Information about ' + str(astrobody)
         self.write(text, self.f2, centerx=(ANCHO // 4) * 1.5, y=21)
 
         self.current = astrobody
@@ -89,8 +87,8 @@ class TidesPanel(BaseWidget):
         neap_low = -neap_high
 
         resolution = 4
-
-        rect = self.write('Standard high: {}'.format(round(std_high, resolution)), self.f2, x=3, y=50)
+        rect = self.write(f'Tides on {str(astrobody)}:', self.f3, x=3, y=50)
+        rect = self.write('Standard high: {}'.format(round(std_high, resolution)), self.f2, x=3, y=rect.bottom + 4)
         rect = self.write('Standard low: {}'.format(round(std_low, resolution)), self.f2, x=3, y=rect.bottom + 2)
         rect = self.write('Spring high: {}'.format(round(spring_high, resolution)), self.f2, x=3, y=rect.bottom + 12)
         rect = self.write('Spring low: {}'.format(round(spring_low, resolution)), self.f2, x=3, y=rect.bottom + 2)
@@ -107,14 +105,31 @@ class TidesPanel(BaseWidget):
         self.write(text, self.f3, x=3, y=rect.bottom + 12)
         self.extra_info(astrobody)
 
-    @staticmethod
-    def extra_info(astrobody):
+    def extra_info(self, astrobody):
+        self.image.fill(COLOR_BOX, self.perceptions_rect)
         system = Systems.get_current()
         visibility = system.aparent_brightness[astrobody.id]
-        for body_id in visibility:
+        sizes = system.relative_sizes[astrobody.id]
+        dh = 250
+        for idx, body_id in enumerate(visibility):
             body_visibility = visibility[body_id]
             body = system.get_astrobody_by(body_id, tag_type='id')
-            print(body, body_visibility)
+            relative_size = sizes[body_id]
+            if type(body_visibility) is q:
+                v = round(body_visibility.to('W/m**2'), 3)
+                text = f'The star {body} has an apparent brightness, as seen from {astrobody}, of {v:~P}'
+                text += f' and a relative size of {relative_size.m} degrees in the sky.'
+            elif body_visibility == 'naked':
+                text = f'{body} can be seen from {astrobody} with naked human eyes'
+                text += f' with a relative size of {relative_size.m} degrees in the sky.'
+            elif body_visibility == 'telescope':
+                text = f'Humans from {astrobody} would need a telescope to view {body}.'
+                text += f' It has a relative size of {relative_size.m} degrees in the sky.'
+            else:
+                text = f'It is unclear if {body} could be seen from {astrobody}.'
+
+            r = self.write2(text, self.f2, 380, x=3, y=dh)
+            dh = r.bottom + 6
 
 
 class Astrobody(AvailablePlanet):
@@ -133,6 +148,8 @@ class AvailablePlanets(AvailableObjects):
         if system is not None:
             bodies = [body for body in system.astro_bodies if body.orbit is not None]
             self.populate(bodies)
+        else:
+            self.parent.show_no_system_error()
         super().show()
 
     def on_mousebuttondown(self, event):

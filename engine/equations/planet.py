@@ -370,7 +370,10 @@ class Planet(BodyInHydrostaticEquilibrium):
         return self.clase + ' ' + str(self.mass.m)
 
     def __str__(self):
-        return "{} #{}".format(self.clase, self.idx)
+        if self.has_name:
+            return self.name
+        else:
+            return "{} #{}".format(self.clase, self.idx)
 
     def __getitem__(self, item):
         if type(item) is int:

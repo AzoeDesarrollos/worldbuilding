@@ -40,7 +40,7 @@ class AvailableObjects(ListedArea):
         self.listed_objects.empty()
         for i, obj in enumerate(population):
             x = self.rect.x + 3
-            y = i * 16 + self.rect.y + 21
+            y = i * 18 + self.rect.y + 21
             listed.append(self.listed_type(self, obj, x, y))
 
         self.listed_objects.add(*listed, layer=Systems.get_current_idx())

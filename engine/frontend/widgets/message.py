@@ -21,7 +21,7 @@ class PopUpMessage(BaseWidget):
         message = None
         while success is False:
             try:
-                message = render_textrect(text, f, self.rect.inflate(-5, -3), COLOR_TEXTO, COLOR_AREA, 1)
+                message = render_textrect(text, f, self.rect.inflate(-5, -3).w, COLOR_TEXTO, COLOR_AREA, 1)
                 success = True
             except TextRectException:
                 size -= 1

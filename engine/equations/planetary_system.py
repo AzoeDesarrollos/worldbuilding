@@ -18,6 +18,7 @@ class PlanetarySystem(Flagable):
     average_visibility = None
 
     age = 0
+    body_mass = 0
 
     def __init__(self, star_system):
         self.planets = []
@@ -26,17 +27,25 @@ class PlanetarySystem(Flagable):
         self.astro_bodies = []
         self.star_system = star_system
         self.id = star_system.id
-        self.body_mass = q(16 * exp(-0.6931 * star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
-
+        self.set_available_mass()
         self.aparent_brightness = {}
+        self.relative_sizes = {}
         if star_system.letter != 'S':
             self.age = star_system.age
 
     def update(self):
-        self.body_mass = q(16 * exp(-0.6931 * self.star_system.mass.m) * 0.183391347289428, 'jupiter_mass')
+        self.set_available_mass()
 
     def get_available_mass(self):
         return self.body_mass
+
+    def set_available_mass(self):
+        if self.star_system.shared_mass is not None:
+            mass = self.star_system.shared_mass
+        else:
+            mass = self.star_system.mass
+
+        self.body_mass = q(16 * exp(-0.6931 * mass.m) * 0.183391347289428, 'jupiter_mass')
 
     def visibility_of_stars(self, body):
         if body.id not in self.aparent_brightness:
@@ -44,8 +53,17 @@ class PlanetarySystem(Flagable):
 
         for star in self.star_system:
             if body.orbit is not None and star.id not in self.aparent_brightness[body.id]:
-                ab = star.luminosity.m / pow(body.orbit.a.m, 2)
+                ab = q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs')
                 self.aparent_brightness[body.id][star.id] = ab
+
+    @staticmethod
+    def small_angle_aproximation(body, distance):
+        d = body.radius.to('km').m * 2
+        sma = q(d / distance, 'radian').to('degree')
+        decimals = 1
+        while round(sma, decimals) == 0:
+            decimals += 1
+        return round(sma, decimals)
 
     def visibility_by_albedo(self):
         luminosity = self.star_system.luminosity.to('watt').m
@@ -53,14 +71,19 @@ class PlanetarySystem(Flagable):
         for i, body in enumerate(to_see):
             if body.id not in self.aparent_brightness:
                 self.aparent_brightness[body.id] = {}
+                self.relative_sizes[body.id] = {}
 
             others = to_see[:i] + to_see[i + 1:]
             if body.orbit is not None:
+                self.visibility_of_stars(body)
+                star = self.star_system
+                self.relative_sizes[body.id][star.id] = self.small_angle_aproximation(star, body.orbit.a.to('km').m)
                 x = body.orbit.a.to('m').m  # position of the Observer's planet
                 for other in [o for o in others if o.orbit is not None]:
                     y = other.orbit.a.to('m').m  # position of the observed body
 
-                    distance = y - x if y >= x else x - y  # linear distance, much quicker
+                    distance = abs(y - x)  # linear distance, much quicker
+                    self.relative_sizes[body.id][other.id] = self.small_angle_aproximation(other, distance)
                     albedo = other.albedo.m / 100
                     radius = other.radius.to('m').m
                     semi_major_axis = other.orbit.semi_major_axis.to('m').m
@@ -124,6 +147,9 @@ class PlanetarySystem(Flagable):
             astrobody = [body for body in self.astro_bodies if body.name == tag_identifier]
         elif tag_type == 'id':
             astrobody = [body for body in self.astro_bodies if body.id == tag_identifier]
+
+        if not (len(astrobody)):  # tag_identifier could be a star's id
+            astrobody = [star for star in self.star_system if star.id == tag_identifier]
 
         assert len(astrobody), 'the ID "{}" is invalid'.format(tag_identifier)
         return astrobody[0]

@@ -193,6 +193,8 @@ class PlanetaryOrbitPanel(BaseWidget):
                     self.buttons.add(btn, layer=Systems.get_current_idx())
                     self.properties.add(btn)
             self.sort_buttons()
+        else:
+            self.show_no_system_error()
 
     def show(self):
         super().show()

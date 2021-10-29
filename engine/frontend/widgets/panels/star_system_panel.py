@@ -262,6 +262,11 @@ class AvailableStars(AvailableObjects):
         self.populate(Systems.loose_stars)
         super().show()
 
+    def update(self):
+        self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
+        idx = Systems.get_current_idx()
+        self.show_current(idx)
+
 
 class SetupButton(TextButton):
     enabled = False
