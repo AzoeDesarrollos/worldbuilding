@@ -9,9 +9,6 @@ class Meta(BaseWidget):
 
     has_mouseover = False
 
-    def enable(self):
-        self.enabled = True
-
     def disable(self):
         self.enabled = False
         self.image = self.img_dis
