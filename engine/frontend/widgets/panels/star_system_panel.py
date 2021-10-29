@@ -148,23 +148,23 @@ class SystemType(BaseWidget):
     has_values = False
     current = None
 
+    primary = None
+    secondary = None
+    separation = None
+    ecc_p = None
+    ecc_s = None
+
     def __init__(self, parent):
         super().__init__(parent)
         self.properties = WidgetGroup()
-        self.primary = None
-        self.secondary = None
-        self.separation = None
-        self.ecc_p = None
-        self.ecc_s = None
-        self.create()
-        EventHandler.register(self.clear, 'ClearData')
-
-    def create(self):
         props = [
             'Primary Star', 'Secondary Star', 'Average Separation', 'Eccentriciy (primary)', 'Eccentricty (secondary)',
             'Barycenter', 'Maximun Separation', 'Minimun Separation', 'Forbbiden Zone Inner edge',
             'Forbbiden Zone Outer edge', 'System Type', 'System Name']
+        self.create(props)
+        EventHandler.register(self.clear, 'ClearData')
 
+    def create(self, props):
         for i, prop in enumerate([j for j in props]):
             vt = ValueText(self, prop, 3, 64 + i * 25, COLOR_TEXTO, COLOR_BOX)
             self.properties.add(vt)
