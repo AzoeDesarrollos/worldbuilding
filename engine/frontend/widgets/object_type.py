@@ -26,21 +26,13 @@ class ObjectType(BaseWidget):
 
         self.properties = WidgetGroup()
         self.relatives = WidgetGroup()
-        for i, button in enumerate(relative_names):
-            if len(relative_names) == 6:
-                vt = ValueText(self, button, 50, 55 + i * 13 * 2)
-            else:
-                vt = ValueText(self, button, 50, 45 + i * 15 * 2)
-            self.relatives.add(vt)
-            self.properties.add(vt, layer=1)
-
         self.absolutes = WidgetGroup()
-        for i, button in enumerate(absolute_names):
-            if len(absolute_names) == 6:
-                vt = ValueText(self, button, 50, 210 + i * 15 * 2)
-            else:
-                vt = ValueText(self, button, 50, 195 + i * 13 * 2)
-            self.absolutes.add(vt)
+        for i, button in enumerate(relative_names+absolute_names):
+            vt = ValueText(self, button, 50, 40 + i * 14 * 2)
+            if button in relative_names:
+                self.relatives.add(vt)
+            elif button in absolute_names:
+                self.absolutes.add(vt)
             self.properties.add(vt, layer=1)
 
     def set_modifiables(self, group: str, *indexes):

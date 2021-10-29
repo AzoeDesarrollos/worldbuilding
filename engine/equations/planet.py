@@ -151,7 +151,7 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     def set_orbit(self, star, orbital_parameters):
         self.orbit = PlanetOrbit(star, *orbital_parameters)
-        self.temperature = self.set_temperature(star.mass.m, self.orbit.semi_minor_axis.m)
+        self.temperature = self.set_temperature(star.temperature_mass, self.orbit.semi_minor_axis.m)
         self.orbit.set_astrobody(star, self)
         self.lagrange_points = get_lagrange_points(self.orbit.semi_major_axis.m, star.mass.m, self.mass.m)
         self.hill_sphere = self.set_hill_sphere()
@@ -353,11 +353,13 @@ class Planet(BodyInHydrostaticEquilibrium):
         if self.orbit is not None:
             star = self.orbit.star
             orbit = self.orbit
-            a, e, i, u = orbit.a, orbit.e, orbit.i, 'au'
+            a, e, i = orbit.a, orbit.e, orbit.i
+            loan = orbit.longitude_of_the_ascending_node
+            aop = orbit.argument_of_periapsis
 
             self.set_qs(self.unit)
             self.set_habitability()
-            self.set_orbit(star, [a, e, i, u])
+            self.set_orbit(star, [a, e, i, loan, aop])
 
     def __eq__(self, other):
         a = (self.mass.m, self.radius.m, self.clase, self.unit, self.name, self.id)

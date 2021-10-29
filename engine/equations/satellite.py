@@ -77,6 +77,9 @@ class Satellite(Flagable):
     def __eq__(self, other):
         return self.id == other.id
 
+    def update_everything(self):
+        pass
+
 
 class Major(Satellite, BodyInHydrostaticEquilibrium):
     celestial_type = 'satellite'

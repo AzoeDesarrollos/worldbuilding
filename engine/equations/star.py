@@ -47,6 +47,8 @@ class Star(BodyInHydrostaticEquilibrium):
     _age = -1
     age = 0
 
+    evolution_id = None
+
     def __init__(self, data):
         mass = data.get('mass', False)
         luminosity = data.get('luminosity', False)
@@ -69,11 +71,17 @@ class Star(BodyInHydrostaticEquilibrium):
 
         elif not luminosity and mass:
             self._luminosity = pow(mass, 3.5)
+        self.base_lum = self._luminosity
+        self.temperature_mass = self._mass
 
         self.habitable = 0.5 <= self._mass <= 1.4
-        # luminosity = exp((age-0.09)/1.8)+0.7 # (percent)
         self._spin = choice(['clockwise', 'counter-clockwise']) if 'spin' not in data else data['spin']
         self._radius = self.set_radius()
+        self._lifetime = self._mass / self._luminosity
+        if 'age' in data:
+            self._age = data['age']
+        else:
+            self.set_age()
         self.set_derivated_characteristics()
         self.set_qs()
         assert 0.08 <= self.mass.m < 120, 'Invalid Mass: Stellar mass must be between 0.08 and 120 solar masses.'
@@ -86,6 +94,7 @@ class Star(BodyInHydrostaticEquilibrium):
         # ID values make each star unique, even if they have the same mass and name.
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
         self.id = data['id'] if 'id' in data else now
+        self.evolution_id = self.id
 
     @property
     def spin(self):
@@ -94,29 +103,37 @@ class Star(BodyInHydrostaticEquilibrium):
         elif self._spin == 'counter-clockwise':
             return 'counter-clockwise'
 
-    def set_radius(self):
+    def set_radius(self, mass=None):
         radius = 1
-        if self._mass < 1:
-            radius = pow(self._mass, 0.8)
-        elif self._mass > 1:
-            radius = pow(self._mass, 0.5)
+        if mass is None:
+            mass = self._mass
+
+        if mass < 1:
+            radius = pow(mass, 0.8)
+        elif mass > 1:
+            radius = pow(mass, 0.5)
         return radius
 
-    def set_age(self):
+    def set_age(self, x=0):
         if self._age == -1:
             # reseting the star's mass should not change it's age, because it is the same star that is being remodeled.
-            self._age = (self._lifetime * 0.46) * 10 * 10 ** 9
-            # this value may be manually set up at some point in the future.
+            self._age = (self._lifetime * 0.46) * 10 ** 10
+        else:
+            age = (self._lifetime * x) * 10 ** 10
+            if age != self._age:
+                self._age = age
+                self.set_luminosity(self._age)
+                self.evolution_id = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
+            return q(age, 'years')
 
     def set_derivated_characteristics(self):
-        self._lifetime = self._mass / self._luminosity
+        mass = pow(self._luminosity, (1 / 3.5))
         self._temperature = pow((self._luminosity / pow(self._radius, 2)), (1 / 4))
         self._habitable_inner = round(sqrt(self._luminosity / 1.1), 3)
         self._habitable_outer = round(sqrt(self._luminosity / 0.53), 3)
-        self._inner_boundry = self._mass * 0.01
-        self._outer_boundry = self._mass * 40
+        self._inner_boundry = round(mass * 0.01, 3)
+        self._outer_boundry = round(mass * 40, 3)
         self._frost_line = round(4.85 * sqrt(self._luminosity), 3)
-        self.set_age()
 
     def set_qs(self):
         self.mass = q(self._mass, 'sol_mass')
@@ -142,20 +159,21 @@ class Star(BodyInHydrostaticEquilibrium):
         idx = bisect_right(masses, mass)
         return classes[idx - 1:idx][0]
 
-    def luminosity_at_age(self, age=None, is_q=False):
-        lum = self._luminosity
+    def luminosity_at_age(self, age=None):
+        lum = self.base_lum
         forty_six_percent = self.lifetime.to('years').m * 0.46
         if age is None:
             age = self._age
 
         lum_at_age = lum * (0.25 / forty_six_percent * age + 0.75)
-        if is_q:
-            lum_at_age = q(lum_at_age, "sol_luminosity")
-
         return lum_at_age
 
     def set_luminosity(self, age):
         self._luminosity = self.luminosity_at_age(age)
+        mass = pow(self._luminosity, (1 / 3.5))
+        self.temperature_mass = mass
+        self._radius = self.set_radius(mass)
+        self.set_derivated_characteristics()
         self.set_qs()
 
     @classmethod
@@ -258,9 +276,12 @@ class Star(BodyInHydrostaticEquilibrium):
             self._luminosity = self.luminosity.m
             self._mass = pow(self._luminosity, (1 / 3.5))
 
+        self.temperature_mass = self._mass
         self.habitable = 0.5 <= self._mass <= 1.4
         self._radius = self.set_radius()
         self.set_derivated_characteristics()
+        self._lifetime = self._mass / self._luminosity
+        # self.set_age()  # not sure, 'cause tweeking the mass means the same star is being remodeled. See line 119.
         self.set_qs()
         assert 0.08 <= self.mass.m < 120, 'Invalid Mass: Stellar mass must be between 0.08 and 120 solar masses.'
 
