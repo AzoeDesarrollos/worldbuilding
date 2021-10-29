@@ -23,13 +23,7 @@ class ToggleableButton(Meta):
             self.method()
 
 
-class AvailablePlanet(PlanetButton):
-    def __init__(self, parent, astro, x, y):
-        super().__init__(parent, astro, x, y)
-        self.object_data = astro
-
-    def on_mousebuttondown(self, event):
-        raise NotImplementedError()
+AvailablePlanet = PlanetButton  # just an alias
 
 
 class AvailableObjects(ListedArea):

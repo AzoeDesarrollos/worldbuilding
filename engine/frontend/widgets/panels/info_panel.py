@@ -39,8 +39,7 @@ class InformationPanel(BaseWidget):
         self.show_selected()
 
     def clear(self):
-        self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 32))
-        self.image.fill(COLOR_BOX, (3, 40, self.rect.w, 200))
+        self.image.fill(COLOR_BOX, [0, 20, self.rect.w, self.rect.h - 32])
 
     def show(self):
         super().show()
@@ -95,9 +94,9 @@ class InformationPanel(BaseWidget):
         rect = self.write('Neap high: {}'.format(round(neap_high, resolution)), self.f2, x=3, y=rect.bottom + 12)
         rect = self.write('Neap low: {}'.format(round(neap_low, resolution)), self.f2, x=3, y=rect.bottom + 2)
 
-        if is_tidally_locked(lunar_tides, system.age.m, self.current.orbit.star.mass.m):
+        if is_tidally_locked(lunar_tides, system.age.m / 10 ** 9, self.current.orbit.star.mass.m):
             text = '{} is tidally locked to its {}'.format(str(self.current), primary)
-        elif is_tidally_locked(stellar_tides, system.age.m, self.current.orbit.star.mass.m):
+        elif is_tidally_locked(stellar_tides, system.age.m / 10 ** 9, self.current.orbit.star.mass.m):
             text = '{} is tidally locked to its {}'.format(str(self.current), primary)
         else:
             text = '{} is not tidally locked'.format(str(self.current))
@@ -118,13 +117,13 @@ class InformationPanel(BaseWidget):
             if type(body_visibility) is q:
                 v = round(body_visibility.to('W/m**2'), 3)
                 text = f'The star {body} has an apparent brightness, as seen from {astrobody}, of {v:~P}'
-                text += f' and a relative size of {relative_size.m} degrees in the sky.'
+                text += f" and a relative size of {relative_size.m} degrees in it's sky."
             elif body_visibility == 'naked':
                 text = f'{body} can be seen from {astrobody} with naked human eyes'
-                text += f' with a relative size of {relative_size.m} degrees in the sky.'
+                text += f" with a relative size of {relative_size.m} degrees in it's sky."
             elif body_visibility == 'telescope':
                 text = f'Humans from {astrobody} would need a telescope to view {body}.'
-                text += f' It has a relative size of {relative_size.m} degrees in the sky.'
+                text += f" It has a relative size of {relative_size.m} degrees in it's sky."
             else:
                 text = f'It is unclear if {body} could be seen from {astrobody}.'
 

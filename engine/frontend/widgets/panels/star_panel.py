@@ -6,8 +6,8 @@ from engine.frontend.widgets.sprite_star import StarSprite
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.meta import Meta
+from pygame import Surface, mouse, draw
 from engine.equations.star import Star
-from pygame import Surface, mouse
 
 
 class StarPanel(BasePanel):
@@ -33,6 +33,7 @@ class StarPanel(BasePanel):
         EventHandler.register(self.name_current, 'NameObject')
 
         self.age_bar = AgeBar(self, 50, 420 - 32)
+        self.properties.add(self.age_bar, layer=1)
         f2 = self.crear_fuente(10)
         self.write('start', f2, centerx=self.age_bar.rect.left, top=self.age_bar.rect.bottom + 1)
         self.write('end', f2, centerx=self.age_bar.rect.right, top=self.age_bar.rect.bottom + 1)
@@ -49,7 +50,8 @@ class StarPanel(BasePanel):
             star_data = {
                 'name': star.name,
                 'mass': star.mass.m,
-                'spin': star.spin
+                'spin': star.spin,
+                'age': star.age.m
             }
             data[star.id] = star_data
         EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data})
@@ -137,6 +139,10 @@ class StarPanel(BasePanel):
                     self.curr_y -= 32
                 self.sort_buttons()
 
+    def on_mousebuttonup(self, event):
+        if event.button == 1:
+            self.age_bar.on_mousebuttonup(event)
+
     def update(self):
         self.add_on_exit = len(self.stars) == 1
 
@@ -168,6 +174,7 @@ class StarType(ObjectType):
         self.current = star
         self.fill()
         self.toggle_habitable()
+        self.parent.age_bar.cursor.set_x(star)
 
     def destroy_button(self):
         Systems.remove_star(self.current)
@@ -177,6 +184,7 @@ class StarType(ObjectType):
     def show_current(self, star):
         self.erase()
         self.current = star
+        self.parent.age_bar.cursor.set_x(star)
         self.fill()
 
     def clear(self, event):
@@ -189,6 +197,7 @@ class StarType(ObjectType):
         if self.has_values:
             self.current.sprite.kill()
             self.parent.image.fill(COLOR_BOX, self.hab_rect)
+            self.parent.age_bar.cursor.hide()
         super().erase()
 
     def toggle_habitable(self):
@@ -214,6 +223,17 @@ class StarType(ObjectType):
             self.current.sprite = StarSprite(self, self.current, 460, 100)
             self.properties.add(self.current.sprite)
         self.current.sprite.show()
+        self.parent.age_bar.enable()
+
+    def set_age(self, age_percent):
+        if self.has_values:
+            age = self.current.set_age(age_percent)
+            self.fill()
+            system = Systems.get_system_by_star(self.current)
+            if system is not None:
+                system.age = age
+                for astrobody in system.astro_bodies:
+                    astrobody.update_everything()
 
 
 class AddStarButton(TextButton):
@@ -277,39 +297,59 @@ class StarButton(Meta):
 
 
 class AgeBar(Meta):
+    cursor = None
+
     def __init__(self, parent, x, y):
         super().__init__(parent)
 
-        self.image = Surface((400, 9))
-        self.image.fill(COLOR_BOX, [1, 0, 398, 4])
-        self.image.fill(COLOR_BOX, [1, 5, 398, 4])
+        self.image = Surface((401, 7))
         self.rect = self.image.get_rect(topleft=[x, y])
-        forty_six_percent = round((self.rect.w-2)*0.46)
-        self.cursor = AgeCursor(self, forty_six_percent, self.rect.centery)
-
-        self.show()
+        self.image.fill(COLOR_BOX, [0, 0, 400, 7])
+        draw.aaline(self.image, COLOR_TEXTO, [0, 3], [self.rect.w, 3])
+        for i in range(11):
+            dx = round((i / 10) * self.rect.w)
+            draw.aaline(self.image, COLOR_TEXTO, [dx, 0], [dx, 7])
+        self.cursor = AgeCursor(self, self.rect.centery)
 
     def on_mousebuttonup(self, event):
-        self.cursor.pressed = False
+        if self.cursor is not None:
+            self.cursor.pressed = False
+
+    def on_mousemotion(self, rel):
+        x = mouse.get_pos()[0]
+        if self.cursor is not None and abs(x - self.cursor.rect.centerx) <= 3:
+            mouse.set_pos(*self.cursor.rect.center)
+
+    def enable(self):
+        self.cursor.show()
+
+    def show(self):
+        super().show()
+        if self.parent.current.has_values:
+            self.cursor.show()
+
+    def hide(self):
+        super().hide()
+        self.cursor.hide()
 
 
 class AgeCursor(Meta):
+    pressed = False
     enabled = True
 
-    pressed = False
-
-    def __init__(self, parent, x, y):
+    def __init__(self, parent, y):
         super().__init__(parent)
         self.img_uns = self.crear(1, COLOR_TEXTO)
         self.img_sel = self.crear(3, COLOR_SELECTED)
+        self.img_dis = self.crear(5, COLOR_TEXTO)
         self.image = self.img_uns
-        self.rect = self.image.get_rect(center=[x, y])
+        self.rect = self.image.get_rect(centery=y)
         self.center = self.rect.centerx
         self.show()
 
     @staticmethod
     def crear(w, color):
-        image = Surface((w, 9))
+        image = Surface((w, 13))
         image.fill(color)
         return image
 
@@ -329,10 +369,18 @@ class AgeCursor(Meta):
         if event.button == 1:
             self.pressed = False
 
+    def on_movement(self, x: int):
+        self.parent.parent.current.set_age((x - 50) / 400)
+
+    def set_x(self, star):
+        age = round(star.age.m/star.lifetime.to('years').m, 3)
+        self.rect.x = round(age*(self.parent.rect.w-1))+self.parent.rect.x
+
     def update(self):
         super().update()
         x = mouse.get_pos()[0]
         if self.pressed:
             mouse.set_pos(x, self.rect.centery)
             self.has_mouseover = True
-            self.rect.x = x if 51 <= x <= 446 else self.rect.x
+            self.rect.x = x if 50 <= x <= 450 else self.rect.x
+            self.on_movement(self.rect.x)

@@ -89,6 +89,8 @@ class OrbitPanel(BaseWidget):
         self.orbits = self._orbits[star.id]
         self.markers = self._markers[star.id]
         self.buttons = self._buttons[star.id]
+        if star.evolution_id != star.id:
+            self.depopulate()
         if not len(self.markers) or not self.markers[0].locked:
             self.populate()
         self.toggle_current_markers_and_buttons(True)
@@ -111,7 +113,7 @@ class OrbitPanel(BaseWidget):
             self._markers[star.id].append(x)
             self.properties.add(x, layer=4)
 
-        if hasattr(star, 'inner_forbbiden_zone'):
+        if star.inner_forbbiden_zone is not None:
             markers = {
                 'Inner Forbbiden Zone': star.inner_forbbiden_zone,
                 'Outer Forbbiden Zone': star.outer_forbbiden_zone
@@ -123,6 +125,18 @@ class OrbitPanel(BaseWidget):
                 self.properties.add(x, layer=4)
 
         self.sort_markers()
+
+    def depopulate(self):
+        flagged = []
+        star = self.current
+        for marker in self._markers[star.id]:
+            if marker.locked:
+                flagged.append(marker)
+
+        for each in flagged:
+            self._markers[star.id].remove(each)
+            self.properties.remove(each)
+            each.kill()
 
     def toggle_current_markers_and_buttons(self, toggle: bool):
         if self.markers is not None:

@@ -165,9 +165,9 @@ class SatelliteType(ObjectType):
         self.set_modifiables('relatives', 1)
         self.show_layers.append(3)
 
-        for item in self.relatives:
-            item.rect.y += 16
-            item.text_area.rect.y += 16
+        for item in self.relatives.widgets()+self.absolutes.widgets():
+            item.rect.y += 50
+            item.text_area.rect.y += 50
 
         names = sorted(material_densities.keys())
         d = {names[0]: {'color': [155] * 3, 'value': 33, 'handle': 'black'},
