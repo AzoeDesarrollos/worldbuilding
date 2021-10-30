@@ -38,6 +38,7 @@ class Star(BodyInHydrostaticEquilibrium):
     _outer_boundry = 0
     _frost_line = 0
 
+    _system = None
     _inner_forbidden = None
     _outer_forbidden = None
     _shared_mass = None
@@ -243,10 +244,18 @@ class Star(BodyInHydrostaticEquilibrium):
         return color
 
     # These 4 methods correspond to a star that is part of a binary system.
-    def inherit(self, inner, outer, mass):
+    def inherit(self, system, inner, outer, mass):
+        self._system = system
         self._shared_mass = mass
         self._inner_forbidden = inner
         self._outer_forbidden = outer
+
+    @property
+    def system(self):
+        if self._system is not None:
+            return self._system
+        else:
+            return self
 
     @property
     def shared_mass(self):

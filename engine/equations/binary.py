@@ -33,7 +33,7 @@ class BinarySystem(Flagable):
 
         if name is None:
             self.has_name = False
-            self.name = 'NoName'
+            self.name = str(self)
         else:
             self.name = name
             self.has_name = True
@@ -86,6 +86,14 @@ class BinarySystem(Flagable):
 
     def composition(self):
         return [self.primary, self.secondary]
+
+    @property
+    def system(self):
+        return self
+
+    @property
+    def mass(self):
+        return self.shared_mass
 
 
 class PTypeSystem(BinarySystem):
@@ -164,7 +172,7 @@ class STypeSystem(BinarySystem):
         for star in self.composition():
             inner = self.inner_forbbiden_zone
             outer = self.outer_forbbiden_zone
-            star.inherit(inner, outer, self.shared_mass)
+            star.inherit(self, inner, outer, self.shared_mass)
 
 
 def system_type(separation):

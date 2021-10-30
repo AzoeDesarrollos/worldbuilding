@@ -64,14 +64,14 @@ class StarSystemPanel(BaseWidget):
             self.system_buttons.add(button)
             self.properties.add(button)
             self.sort_buttons()
-            Systems.set_system(system_data)
+            # Systems.set_system(system_data)
             return button
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
         for bt in self.system_buttons.widgets():
             bt.move(x, y)
-            if not self.area_buttons.contains(bt.rect):
+            if not self.area_buttons.contains(bt.rect) or not self.is_visible:
                 bt.hide()
             else:
                 bt.show()
@@ -91,7 +91,7 @@ class StarSystemPanel(BaseWidget):
                 'avg_s': current.average_separation.m,
                 'ecc_p': current.ecc_p.m,
                 "ecc_s": current.ecc_s.m,
-                "name": current.name
+                "name": current.name if current.has_name else None
             }
             data[current.id] = d
 
@@ -111,6 +111,7 @@ class StarSystemPanel(BaseWidget):
             button = self.create_button(system)
             button.hide()
             Systems.set_system(system)
+        self.sort_buttons()
 
     def select_one(self, btn):
         for button in self.system_buttons.widgets():
@@ -305,10 +306,7 @@ class SystemButton(Meta):
         super().__init__(parent)
         system_data.idx = idx
         self.object_data = system_data
-        if system_data.letter is not None:
-            name = system_data.letter + '-Type #{}'.format(idx)
-        else:
-            name = str(system_data)
+        name = str(system_data)
         self.f1 = self.crear_fuente(13)
         self.f2 = self.crear_fuente(13, bold=True)
         self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)

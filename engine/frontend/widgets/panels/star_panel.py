@@ -268,10 +268,7 @@ class StarButton(Meta):
         self.object_data = star
         self.f1 = self.crear_fuente(13)
         self.f2 = self.crear_fuente(13, bold=True)
-        if not star.has_name:
-            name = star.classification + ' #{}'.format(star.idx)
-        else:
-            name = star.name
+        name = str(star)
         self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)
         self.img_sel = self.f2.render(name, True, COLOR_TEXTO, COLOR_AREA)
         self.w = self.img_sel.get_width()
