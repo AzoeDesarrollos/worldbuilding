@@ -24,7 +24,7 @@ class NamingPanel(BaseWidget):
         self.rect = self.image.get_rect()
 
         f1 = self.crear_fuente(16, underline=True)
-        self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5, y=0)
+        self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5)
 
         self.unnamed = WidgetGroup()
         self.objects = []
@@ -93,6 +93,7 @@ class NamingPanel(BaseWidget):
     def update(self):
         idx = Systems.get_current_idx()
         if idx != self.last_idx and idx >= 0:
+            self.image.fill(COLOR_BOX, [0,20,self.rect.w, self.rect.h-52])
             self.show_current(idx)
             self.last_idx = idx
         elif self.no_system_error:

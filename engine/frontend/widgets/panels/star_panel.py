@@ -61,6 +61,8 @@ class StarPanel(BasePanel):
             star_data = event.data['Stars'][id]
             star_data.update({'idx': idx, 'id': id})
             star = Star(star_data)
+            Systems.add_star(star)
+            Systems.set_system(star)
             if star not in self.stars:
                 self.stars.append(star)
                 self.add_button(star)
@@ -70,6 +72,7 @@ class StarPanel(BasePanel):
 
     def show(self):
         super().show()
+        self.sort_buttons()
         for obj in self.properties.widgets():
             obj.show()
         if self.current.has_values:

@@ -13,6 +13,7 @@ from engine.backend import roll
 from ..values import ValueText
 from itertools import cycle
 from math import sqrt, pow
+from bisect import bisect_left
 
 
 class OrbitPanel(BaseWidget):
@@ -44,11 +45,12 @@ class OrbitPanel(BaseWidget):
         self.rect = self.image.get_rect()
         self.properties = WidgetGroup()
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
-        self.area_markers = Rect(3, 58, 380, 20 * 16)
+        self.area_markers = Rect(3, 58, 380, 20 * 15)
         self.area_scroll = Rect(3, 32, 387, 388)
         self.area_modify = ModifyArea(self, ANCHO - 201, 374)
 
         self.f = self.crear_fuente(16, underline=True)
+        self.f2 = self.crear_fuente(12)
         self.order_f = self.crear_fuente(14)
         self.write(self.name + ' Panel', self.f, centerx=(ANCHO // 4) * 1.5, y=0)
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
@@ -86,18 +88,19 @@ class OrbitPanel(BaseWidget):
         star = Systems.get_current_star()
         self.current = star
         self.curr_idx = self.indexes.index(star)
-        self.orbits = self._orbits[star.id]
+        self.orbits: list = self._orbits[star.id]
         self.markers = self._markers[star.id]
         self.buttons = self._buttons[star.id]
-        if star.evolution_id != star.id:
-            self.depopulate()
-        if not len(self.markers) or not self.markers[0].locked:
-            self.populate()
-        self.toggle_current_markers_and_buttons(True)
-        self.sort_buttons()
-        self.add_orbits_button.enable()
-        self.visible_markers = False
-        self.toggle_stellar_orbits()
+        if self.is_visible:
+            if star.evolution_id != star.id:
+                self.depopulate()
+            if not len(self.markers) or not self.markers[0].locked:
+                self.populate()
+            self.toggle_current_markers_and_buttons(True)
+            self.sort_buttons()
+            self.add_orbits_button.enable()
+            self.visible_markers = False
+            self.toggle_stellar_orbits()
 
     def populate(self):
         star = self.current
@@ -161,14 +164,14 @@ class OrbitPanel(BaseWidget):
 
         test = False
         color = None
-        if type(position) not in (RawOrbit, PseudoOrbit):
+        if type(position) not in (q, RawOrbit, PseudoOrbit):
             test = True  # saved orbits are valid by definition
             color = COLOR_STARORBIT
         elif resonance is False:
             test = inner < position < outer
             color = COLOR_TEXTO
         elif resonance is True:
-            bd.extend([res_parent, res_order])
+            bd = [res_parent, res_order]
             test = inner < position  # TNOs orbit well outside of 40AUs.
             color = (255, 0, 0)  # color provisorio
 
@@ -176,9 +179,12 @@ class OrbitPanel(BaseWidget):
             new = OrbitMarker(self, 'Orbit', star, position, is_complete_orbit=bb, is_resonance=bc, res=bd)
             self._markers[star.id].append(new)
             self._orbits[star.id].append(new)
-            self.sort_markers()
+            if self.is_visible:
+                self.sort_markers()
+            self.anchor_maker(new)
             self.add_button_and_type(star, new, color)
             self.properties.add(new, layer=4)
+            return new
 
     def add_button_and_type(self, star, marker, color):
         orbit_type = OrbitType(self)
@@ -191,7 +197,7 @@ class OrbitPanel(BaseWidget):
         marker.intertwine(o=orbit_type, b=button)
 
         self.orbit_descriptions.add(orbit_type)
-        if len(self.buttons):
+        if len(self.buttons) and self.is_visible:
             self.sort_buttons()
         self.properties.add(button, layer=4)
         self.properties.add(orbit_type, layer=4)
@@ -274,7 +280,51 @@ class OrbitPanel(BaseWidget):
                 b = self.orbits[x + 1].value.m  # el posterior
                 assert p.value.m < b - 0.15, 'Orbit @' + str(p.value.m) + ' is too close to Orbit @' + str(b)
 
+    def check_artifexian(self, orbit):
+        self.orbits.sort(key=lambda o: o.value.m)
+        idx = bisect_left(self.orbits, orbit)
+        left, right = None, None
+        text1, text2 = '', ''
+        frost_line = None
+        if 0 < idx < len(self.orbits) - 1:
+            left = self.orbits[idx - 1].value.m
+            right = self.orbits[idx + 1].value.m
+        elif len(self.orbits) == 1:
+            frost_line = self.current.frost_line.m
+            left = frost_line if orbit.value.m < frost_line else None
+            right = frost_line if orbit.value.m > frost_line else None
+        elif idx == 0:
+            right = self.orbits[idx + 1].value.m
+        else:
+            left = self.orbits[idx - 1].value.m
+
+        self.image.fill(COLOR_BOX, [0, 420 - 30, self.rect.w, 30])
+        if left is not None:
+            if frost_line is None:
+                value = orbit.value.m / left
+                text1 = str(round(value, 3)) + " !" if not 1.4 <= value <= 2 else str(round(value, 3))
+            else:
+                value = abs(left - orbit.value.m)
+                text1 = str(round(value, 3)) + " !" if not 1 <= value <= 1.2 else str(round(value, 3))
+
+        if right is not None:
+            if frost_line is None:
+                value = right / orbit.value.m
+                text2 = str(round(value, 3)) + " !" if not 1.4 <= value <= 2 else str(round(value, 3))
+            else:
+                value = abs(orbit.value.m - right)
+                text2 = str(round(value, 3)) + " !" if not 1 <= value <= 1.2 else str(round(value, 3))
+
+        if left and not right:
+            self.write('top ' + text1, self.f2, top=420 - 15)
+        elif left and right:
+            self.write('top ' + text1, self.f2, bottom=420 - 15)
+            self.write('bottom ' + text2, self.f2, top=420 - 15)
+        else:  # just right
+            self.write('bottom ' + text2, self.f2, top=420 - 15)
+
     def anchor_maker(self, marker):
+        self.deselect_markers(marker)
         self.area_modify.link(marker)
         self.selected_marker = marker
 
@@ -327,16 +377,12 @@ class OrbitPanel(BaseWidget):
         return d
 
     def load_orbits(self, event):
-        for id in event.data.get('Stellar Orbits', []):
-            position = event.data['Stellar Orbits'][id]
-            if id not in self._loaded_orbits:
-                self._loaded_orbits[id] = position
-
-    def set_loaded_orbits(self):
+        self.fill_indexes()
+        self.set_current()
         existing_ids = [marker.orbit.id for marker in self.orbits]
-        for id in self._loaded_orbits:
+        for id in event.data.get('Stellar Orbits', []):
             if id not in existing_ids:
-                orbit_data = self._loaded_orbits[id]
+                orbit_data = event.data['Stellar Orbits'][id]
                 a = q(orbit_data['a'], 'au')
                 if 'e' not in orbit_data:
                     self.add_orbit_marker(a)
@@ -355,8 +401,8 @@ class OrbitPanel(BaseWidget):
                         self.planet_area.delete_objects(planet)
 
         # borrar las órbitas cargadas para evitar que se dupliquen.
-        self.sort_markers()
-        self._loaded_orbits.clear()
+        if self.is_visible:
+            self.sort_markers()
 
     def fill_indexes(self):
         assert len(Systems.get_systems())
@@ -381,8 +427,6 @@ class OrbitPanel(BaseWidget):
         for prop in self.properties.get_widgets_from_layer(2):
             prop.show()
         self.visible_markers = True
-        if len(self._loaded_orbits):
-            self.set_loaded_orbits()
         self.show_markers_button.show()
 
     def hide(self):
@@ -674,7 +718,6 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             if not self.locked:
-                self.parent.deselect_markers(self)
                 self.parent.anchor_maker(self)
 
         elif event.button == 3:
@@ -691,6 +734,7 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
                 self.value += q(self.increment, self.value.u)
                 self.increment = 0
                 self.parent.sort_markers()
+                self.parent.check_artifexian(self)
 
     def key_to_mouse(self, event):
         if event.origin == self:
@@ -707,6 +751,9 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
 
     def __repr__(self):
         return self.name + ' @' + self.text
+
+    def __lt__(self, other):
+        return self.value < other.value
 
 
 class OrbitButton(Meta, Intertwined):
@@ -753,6 +800,7 @@ class OrbitButton(Meta, Intertwined):
             # self.parent.view_button.disable()
             self.linked_type.show()
             self.lock()
+            self.parent.check_orbits()
 
     def update(self):
         if not self.locked:
@@ -824,8 +872,9 @@ class AddResonanceButton(TextButton):
             star = self.parent.current
             order = self.parent.ratios_to_string()
             position = from_stellar_resonance(star, planet, order)
-            self.parent.add_orbit_marker(position, resonance=True, res_parent=planet, res_order=order)
+            marker = self.parent.add_orbit_marker(position, resonance=True, res_parent=planet, res_order=order)
             self.parent.check_orbits()
+            self.parent.check_artifexian(marker)
             self.disable()
             self.parent.clear_ratios()
 
@@ -959,7 +1008,7 @@ class Recomendation(BaseWidget):
     @staticmethod
     def analyze_giants(planet, orbit, star):
         planets_in_system = len(Systems.get_current().planets)
-        e = round(0.584 * pow(planets_in_system, -1.2), 3) if planets_in_system > 1 else None
+
         # average eccentricity
 
         clase = planet.clase in ('Puffy Giant', 'Gas Giant')
@@ -969,7 +1018,7 @@ class Recomendation(BaseWidget):
             return recomendation['hot']
 
         clase = planet.clase == 'Super Jupiter'
-        orbita = 0.04 <= orbit.a.m <= 1.2 * star.frost_line.m
+        orbita = 0.04 <= orbit.a.m <= 1.2 + star.frost_line.m
         if all([clase, orbita]) is True:
             # this is more of a warning than a suggestion, since a super jupiter
             # can't be placed too far away from the star, and there is no special
@@ -980,10 +1029,11 @@ class Recomendation(BaseWidget):
             # needs an "undo" after this.
 
         clase = planet.clase in ('Gas Dwarf', 'Gas Giant')
-        orbita = 1.2 * star.frost_line.m <= orbit.a.m < star.outer_boundry.m
+        orbita = star.frost_line.m + 1 <= orbit.a.m <= star.frost_line.m + 1.2
         if all([clase, orbita]) is True:
             return recomendation['giant']
 
+        e = round(0.584 * pow(planets_in_system, -1.2), 3) if planets_in_system > 1 else 0
         clase = planet.clase == 'Gas Giant'
         habitable = any([i.habitable for i in Systems.get_current().planets])
         data = recomendation['giant']

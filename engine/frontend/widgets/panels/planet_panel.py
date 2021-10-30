@@ -67,8 +67,10 @@ class PlanetPanel(BasePanel):
             planet.system_id = Systems.get_current().id
         self.planet_buttons.add(button, layer=layer_number)
         self.planets.append(planet)
-        self.sort_buttons()
+        if self.is_visible:
+            self.sort_buttons()
         self.properties.add(button, layer=3)
+        return button
 
     def del_button(self, planet):
         button = [i for i in self.planet_buttons.widgets() if i.object_data == planet][0]
@@ -179,20 +181,17 @@ class PlanetType(ObjectType):
 
     def load_planet(self, event):
         if 'Planets' in event.data and len(event.data['Planets']):
-            self.loaded_data = event.data['Planets']
-
-    def show_loaded(self):
-        if self.loaded_data is not None:
-            for id in self.loaded_data:
-                planet_data = self.loaded_data[id]
+            for id in event.data['Planets']:
+                planet_data = event.data['Planets'][id]
                 planet_data['id'] = id
                 planet = Planet(planet_data)
                 planet.idx = len([i for i in Systems.get_current().planets if i.clase == planet.clase])
                 if planet not in self.parent.planets:
-                    self.create_button(planet)
+                    btn = self.create_button(planet)
                     if planet.composition is not None:
                         planet.sprite = PlanetSprite(self, planet, 460, 100)
                         self.properties.add(planet.sprite, layer=3)
+                    btn.hide()
                     # self.current = self.parent.planet_buttons.widgets()[0].object_data
             # self.loaded_data.clear()
 
@@ -203,10 +202,6 @@ class PlanetType(ObjectType):
         self.fill()
         self.toggle_habitable()
         self.parent.button_del.enable()
-
-    def show(self):
-        super().show()
-        self.show_loaded()
 
     def clear(self, event):
         if event.data['panel'] is self.parent:
@@ -230,11 +225,12 @@ class PlanetType(ObjectType):
             for button in self.properties.get_widgets_from_layer(1):
                 button.text_area.clear()
             self.parent.button_add.disable()
-            self.parent.add_button(planet)
+            btn = self.parent.add_button(planet)
             self.has_values = False
             self.parent.image.fill(COLOR_BOX, self.hab_rect)
             if self.current is not None and self.current.sprite is not None:
                 self.current.sprite.hide()
+            return btn
 
     def destroy_button(self):
         destroyed = Systems.get_system_by_id(self.current.system_id).remove_astro_obj(self.current)
