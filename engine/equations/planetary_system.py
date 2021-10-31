@@ -2,7 +2,7 @@ from engine.backend.util import abrir_json, guardar_json
 from engine.backend.eventhandler import EventHandler
 from os.path import join, exists
 from .general import Flagable
-from math import exp, pow
+from math import exp, pow, sqrt
 from os import getcwd
 from engine import q
 
@@ -30,6 +30,7 @@ class PlanetarySystem(Flagable):
         self.set_available_mass()
         self.aparent_brightness = {}
         self.relative_sizes = {}
+        self.distances = {}
         if star_system.letter != 'S':
             self.age = star_system.age
 
@@ -50,11 +51,25 @@ class PlanetarySystem(Flagable):
     def visibility_of_stars(self, body):
         if body.id not in self.aparent_brightness:
             self.aparent_brightness[body.id] = {}
+        if body.id not in self.distances:
+            self.distances[body.id] = {}
 
-        for star in self.star_system:
-            if body.orbit is not None and star.id not in self.aparent_brightness[body.id]:
-                ab = q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs')
-                self.aparent_brightness[body.id][star.id] = ab
+        for system in Systems.get_systems()+Systems.loose_stars:
+            for star in system.star_system:
+                if body.orbit is not None and star.id not in self.aparent_brightness[body.id]:
+                    if star == self.star_system:
+                        ab = round(q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs'), 3)
+                        self.distances[body.id][star.id] = body.orbit.a
+                    else:
+                        x1, y1, z1 = self.star_system.position
+                        x2, y2, z2 = star.position
+                        d = q(sqrt(pow(abs(x2 - x1), 2) + pow(abs(y2 - y1), 2) + pow(abs(z2 - z1), 2)), 'lightyears')
+                        self.distances[body.id][star.id] = round(d)
+                        ab = q(star.luminosity.m / pow(d.to('au').m, 2), 'Vs')
+                        if star not in self.relative_sizes[body.id]:
+                            value = self.small_angle_aproximation(star, d.to('km').m)
+                            self.relative_sizes[body.id][star.id] = value
+                    self.aparent_brightness[body.id][star.id] = ab
 
     @staticmethod
     def small_angle_aproximation(body, distance):
@@ -72,6 +87,7 @@ class PlanetarySystem(Flagable):
             if body.id not in self.aparent_brightness:
                 self.aparent_brightness[body.id] = {}
                 self.relative_sizes[body.id] = {}
+                self.distances[body.id] = {}
 
             others = to_see[:i] + to_see[i + 1:]
             if body.orbit is not None:
@@ -83,6 +99,7 @@ class PlanetarySystem(Flagable):
                     y = other.orbit.a.to('m').m  # position of the observed body
 
                     distance = abs(y - x)  # linear distance, much quicker
+                    self.distances[body.id][other.id] = q(distance, 'm')
                     self.relative_sizes[body.id][other.id] = self.small_angle_aproximation(other, distance)
                     albedo = other.albedo.m / 100
                     radius = other.radius.to('m').m
@@ -141,7 +158,7 @@ class PlanetarySystem(Flagable):
 
         return group
 
-    def get_astrobody_by(self, tag_identifier, tag_type='name'):
+    def get_astrobody_by(self, tag_identifier, tag_type='name', silenty=False):
         astrobody = None
         if tag_type == 'name':
             astrobody = [body for body in self.astro_bodies if body.name == tag_identifier]
@@ -151,8 +168,14 @@ class PlanetarySystem(Flagable):
         if not (len(astrobody)):  # tag_identifier could be a star's id
             astrobody = [star for star in self.star_system if star.id == tag_identifier]
 
-        assert len(astrobody), 'the ID "{}" is invalid'.format(tag_identifier)
-        return astrobody[0]
+        if not silenty:
+            assert len(astrobody), 'the ID "{}" is invalid'.format(tag_identifier)
+            return astrobody[0]
+        else:
+            if not len(astrobody):
+                return False
+            else:
+                return astrobody[0]
 
     def is_habitable(self, planet) -> bool:
         pln_orbit = planet.orbit.semi_major_axis
@@ -356,6 +379,9 @@ class Systems:
     @classmethod
     def add_star(cls, star):
         cls.loose_stars.append(star)
+        for system in cls._systems:
+            for body in system.astro_bodies:
+                system.visibility_of_stars(body)
 
     @classmethod
     def remove_star(cls, star):

@@ -85,15 +85,16 @@ class StarSystemPanel(BaseWidget):
         data = {}
         for button in self.system_buttons.widgets():
             current = button.object_data
-            d = {
-                'primary': current.primary.id,
-                'secondary': current.secondary.id,
-                'avg_s': current.average_separation.m,
-                'ecc_p': current.ecc_p.m,
-                "ecc_s": current.ecc_s.m,
-                "name": current.name
-            }
-            data[current.id] = d
+            if current.celestial_type == 'system':
+                d = {
+                    'primary': current.primary.id,
+                    'secondary': current.secondary.id,
+                    'avg_s': current.average_separation.m,
+                    'ecc_p': current.ecc_p.m,
+                    "ecc_s": current.ecc_s.m,
+                    "name": current.name
+                }
+                data[current.id] = d
 
         EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': data})
 
