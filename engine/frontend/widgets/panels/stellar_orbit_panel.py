@@ -472,8 +472,12 @@ class OrbitPanel(BaseWidget):
             self.recomendation.show_suggestion(astrobody, orbit.temperature)
 
     def update(self):
-        super().update()
-        idx = Systems.get_current().id
+        system = Systems.get_current()
+        if system is not None:
+            idx = system.id
+        else:
+            idx = self.last_idx
+
         if idx != self.last_idx:
             self.set_current()
             self.last_idx = idx

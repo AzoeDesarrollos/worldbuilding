@@ -8,6 +8,8 @@ from pygame import Surface
 class ListedArea(BaseWidget):
     name = 'Astronomical Objects'
 
+    last_idx = None
+
     def __init__(self, parent, x, y, w, h):
         super().__init__(parent)
         self.image = Surface((w, h))
@@ -64,8 +66,10 @@ class ListedArea(BaseWidget):
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
-        idx = Systems.get_current().id
-        self.show_current(idx)
+        idx = Systems.get_current_id(self)
+        if idx != self.last_idx:
+            self.show_current(idx)
+            self.last_idx = idx
 
     def __len__(self):
         return len(self.listed_objects)

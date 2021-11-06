@@ -55,7 +55,7 @@ class PlanetarySystem(Flagable):
         if body.id not in self.distances:
             self.distances[body.id] = {}
 
-        for system in Systems.get_systems()+Systems.loose_stars:
+        for system in Systems.get_systems() + Systems.loose_stars:
             for star in system.star_system:
                 if body.orbit is not None and star.id not in self.aparent_brightness[body.id]:
                     if star == self.star_system:
@@ -355,6 +355,15 @@ class Systems:
     def get_current_star(cls):
         if cls._current is not None:
             return cls._current.star_system
+
+    @classmethod
+    def get_current_id(cls, instance):
+        system = cls.get_current()
+        if system is not None:
+            idx = system.id
+        else:
+            idx = instance.last_idx
+        return idx
 
     @classmethod
     def get_systems(cls):

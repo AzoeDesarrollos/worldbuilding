@@ -147,7 +147,7 @@ class AsteroidPanel(BasePanel):
         self.parent.set_skippable('Planetary Orbit', flag)
 
     def update(self):
-        idx = Systems.get_current().id
+        idx = Systems.get_current_id(self)
         if idx != self.last_idx:
             self.show_current(idx)
             self.last_idx = idx

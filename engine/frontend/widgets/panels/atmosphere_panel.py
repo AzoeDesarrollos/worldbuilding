@@ -646,7 +646,7 @@ class AvailablePlanets(ListedArea):
         super().show()
 
     def update(self):
-        idx = Systems.get_current().id
+        idx = Systems.get_current_id(self)
         if idx != self.last_idx:
             self.show()
             self.show_current(idx)

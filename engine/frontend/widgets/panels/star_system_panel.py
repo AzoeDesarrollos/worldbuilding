@@ -272,12 +272,6 @@ class AvailableStars(AvailableObjects):
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
         self.show_current(0)
-        if not len(self.listed_objects) and not self.parent.current.has_values:
-            self.parent.skip = True
-            self.parent.kill()
-            self.parent.parent.cycle(+1)
-        else:
-            self.parent.skip = False
 
 
 class SetupButton(TextButton):
