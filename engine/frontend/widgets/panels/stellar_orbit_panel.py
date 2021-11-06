@@ -18,7 +18,6 @@ from bisect import bisect_left
 
 class OrbitPanel(BaseWidget):
     current = None  # ahora será la estrella o sistema seleccionado.
-    curr_idx = None  # ahora será el layer de self.Buttons.
     selected_marker = None
 
     last_idx = 0
@@ -87,7 +86,6 @@ class OrbitPanel(BaseWidget):
         self.toggle_current_markers_and_buttons(False)
         star = Systems.get_current_star()
         self.current = star
-        self.curr_idx = self.indexes.index(star)
         self.orbits: list = self._orbits[star.id]
         self.markers = self._markers[star.id]
         self.buttons = self._buttons[star.id]
@@ -475,8 +473,8 @@ class OrbitPanel(BaseWidget):
 
     def update(self):
         super().update()
-        idx = Systems.get_current_idx()
-        if idx != self.last_idx and idx >= 0:
+        idx = Systems.get_current().id
+        if idx != self.last_idx:
             self.set_current()
             self.last_idx = idx
 
@@ -828,7 +826,7 @@ class AvailablePlanets(AvailableObjects):
         system = Systems.get_current()
         if system is not None:
             population = [i for i in system.planets + system.asteroids if i.orbit is None]
-            if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
+            if not len(self.listed_objects.get_widgets_from_layer(system.id)):
                 self.populate(population)
         super().show()
 

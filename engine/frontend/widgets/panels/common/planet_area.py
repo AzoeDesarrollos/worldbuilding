@@ -1,6 +1,7 @@
-from engine.frontend.globales import COLOR_AREA, WidgetGroup
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
+from engine.frontend.globales import COLOR_AREA
+from .group import Group
 from pygame import Surface
 
 
@@ -12,7 +13,7 @@ class ListedArea(BaseWidget):
         self.image = Surface((w, h))
         self.image.fill(COLOR_AREA)
         self.rect = self.image.get_rect(topleft=(x, y))
-        self.listed_objects = WidgetGroup()
+        self.listed_objects = Group()
 
         self.f = self.crear_fuente(14, underline=True)
         self.write(self.name, self.f, midtop=(self.rect.w / 2, 0), bg=COLOR_AREA)
@@ -58,11 +59,13 @@ class ListedArea(BaseWidget):
         for listed in self.listed_objects.get_widgets_from_layer(idx):
             listed.show()
 
+    def remove_listed(self, listed):
+        self.listed_objects.remove(listed)
+
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
-        idx = Systems.get_current_idx()
-        if idx >= 0:
-            self.show_current(idx)
+        idx = Systems.get_current().id
+        self.show_current(idx)
 
     def __len__(self):
         return len(self.listed_objects)

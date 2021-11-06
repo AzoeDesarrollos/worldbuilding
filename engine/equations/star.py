@@ -310,7 +310,9 @@ class Star(BodyInHydrostaticEquilibrium):
             return self.name
 
     def __eq__(self, other):
-        if self.celestial_type == other.celestial_type:
+        if not hasattr(other, 'celestial_type'):
+            return False
+        elif self.celestial_type == other.celestial_type:
             return all([self.mass.m == other.mass.m, self.name == other.name, self.id == other.id])
         else:
             return False

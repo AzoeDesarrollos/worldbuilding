@@ -1,5 +1,5 @@
+from .common import AvailableObjects, AvailablePlanet, ModifyArea, TextButton, ToggleableButton, Group
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_SELECTED, COLOR_TEXTO
-from .common import AvailableObjects, AvailablePlanet, ModifyArea, TextButton, ToggleableButton
 from engine.equations.orbit import PseudoOrbit, RawOrbit, from_planetary_resonance
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.globales import WidgetHandler, WidgetGroup
@@ -36,7 +36,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
         self.properties = WidgetGroup()
-        self.buttons = WidgetGroup()
+        self.buttons = Group()
         self.orbit_descriptions = WidgetGroup()
         self._markers = {}
         self.markers = []
@@ -185,7 +185,7 @@ class PlanetaryOrbitPanel(BaseWidget):
                         btn.update_text(obj.orbit.a)
 
                 if btn is not None:
-                    self.buttons.add(btn, layer=Systems.get_current_idx())
+                    self.buttons.add(btn, layer=Systems.get_current().id)
                     self.properties.add(btn)
             self.sort_buttons()
         else:
@@ -250,7 +250,7 @@ class PlanetaryOrbitPanel(BaseWidget):
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
-        for bt in self.buttons.get_widgets_from_layer(Systems.get_current_idx()):
+        for bt in self.buttons.get_widgets_from_layer(Systems.get_current().id):
             bt.move(x, y)
             if not self.area_buttons.contains(bt.rect):
                 bt.hide()
@@ -425,7 +425,7 @@ class AvailablePlanets(AvailableObjects):
         system = Systems.get_current()
         if system is not None:
             bodies = [body for body in system.astro_bodies if body.hill_sphere != 0]
-            if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
+            if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current().id)):
                 self.populate(bodies)
         super().show()
 

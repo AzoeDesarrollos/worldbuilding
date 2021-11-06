@@ -628,20 +628,29 @@ class Atmograph(BaseWidget):
 
 
 class AvailablePlanets(ListedArea):
+    last_idx = None
+
     def populate(self, population):
         listed = []
         for i, planet in enumerate(population):
             listed.append(ListedPlanet(self, planet, self.rect.x + 3, i * 16 + self.rect.y + 21))
 
-        self.listed_objects.add(*listed, layer=Systems.get_current_idx())
+        self.listed_objects.add(*listed, layer=Systems.get_current().id)
 
     def show(self):
         system = Systems.get_current()
         if system is not None:
             pop = [planet for planet in system.planets if planet.orbit is not None]
-            if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
+            if not len(self.listed_objects.get_widgets_from_layer(system.id)):
                 self.populate(pop)
         super().show()
+
+    def update(self):
+        idx = Systems.get_current().id
+        if idx != self.last_idx:
+            self.show()
+            self.show_current(idx)
+            self.last_idx = idx
 
     def on_mousebuttondown(self, event):
         super().on_mousebuttondown(event)

@@ -3,10 +3,10 @@ from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.sprite_star import PlanetSprite
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
+from .common import PlanetButton, TextButton, Group
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.meta import Meta
-from .common import PlanetButton, TextButton
 from engine.equations.planet import Planet
 from pygame import Rect
 from engine import q
@@ -32,7 +32,7 @@ class PlanetPanel(BasePanel):
         self.button_add = AddPlanetButton(self, ANCHO - 13, 398)
         self.button_del = DelPlanetButton(self, ANCHO - 13, 416)
         self.properties.add(self.button_add, self.button_del)
-        self.planet_buttons = WidgetGroup()
+        self.planet_buttons = Group()
         self.planets = []
         EventHandler.register(self.save_planets, 'Save')
         EventHandler.register(self.name_current, 'NameObject')
@@ -61,10 +61,10 @@ class PlanetPanel(BasePanel):
     def add_button(self, planet):
         button = CreatedPlanet(self.current, planet, self.curr_x, self.curr_y)
         if planet.system_id is not None:
-            layer_number = Systems.get_system_idx_by_id(planet.system_id)
+            layer_number = planet.system_id
         else:
-            layer_number = Systems.get_current_idx()
-            planet.system_id = Systems.get_current().id
+            layer_number = Systems.get_current().id
+            planet.system_id = layer_number
         self.planet_buttons.add(button, layer=layer_number)
         self.planets.append(planet)
         if self.is_visible:
@@ -89,7 +89,7 @@ class PlanetPanel(BasePanel):
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
-        for bt in self.planet_buttons.get_widgets_from_layer(Systems.get_current_idx()):
+        for bt in self.planet_buttons.get_widgets_from_layer(Systems.get_current().id):
             bt.move(x, y)
             if not self.area_buttons.contains(bt.rect):
                 bt.hide()
@@ -140,8 +140,8 @@ class PlanetPanel(BasePanel):
             item.hide()
 
     def update(self):
-        idx = Systems.get_current_idx()
-        if idx != self.last_idx and idx >= 0:
+        idx = Systems.get_current().id
+        if idx != self.last_idx:
             self.show_current(idx)
             self.last_idx = idx
 
@@ -402,3 +402,8 @@ class CreatedPlanet(PlanetButton):
         if event.button == 1:
             self.parent.set_planet(self.object_data)
             self.parent.parent.select_one(self)
+
+    def update(self):
+        super().update()
+        if self.object_data.flagged:
+            self.kill()

@@ -188,10 +188,10 @@ class Astrobody(AvailablePlanet):
 
 class AvailablePlanets(AvailableObjects):
     listed_type = Astrobody
+    last_idx = None
 
     def show(self):
         system = Systems.get_current()
-        self.deselect_all()
         if system is not None:
             bodies = [body for body in system.astro_bodies if body.orbit is not None]
             self.populate(bodies)
@@ -202,3 +202,10 @@ class AvailablePlanets(AvailableObjects):
     def on_mousebuttondown(self, event):
         super().on_mousebuttondown(event)
         self.parent.clear()
+
+    def update(self):
+        idx = Systems.get_current().id
+        if idx != self.last_idx:
+            self.show()
+            self.show_current(idx)
+            self.last_idx = idx

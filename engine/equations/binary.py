@@ -130,6 +130,7 @@ class PTypeSystem(BinarySystem):
         self.habitable_orbit = round(self.max_sep * 4, 3)
         age = max([self.primary.age, self.secondary.age])
         self.age = age
+        self.evolution_id = self.id
         self.position = [round(roll(0, 1000)),
                          round(roll(0, 1000)),
                          round(roll(0, 1000))]

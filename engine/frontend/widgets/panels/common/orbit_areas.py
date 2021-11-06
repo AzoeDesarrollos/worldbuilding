@@ -29,12 +29,17 @@ AvailablePlanet = PlanetButton  # just an alias
 class AvailableObjects(ListedArea):
     listed_type = AvailablePlanet
 
-    def populate(self, population):
+    def populate(self, population, layer=None):
         listed = []
+        for listed_ob in self.listed_objects.widgets():
+            listed_ob.kill()
         self.listed_objects.empty()
         for i, obj in enumerate(population):
             x = self.rect.x + 3
             y = i * 18 + self.rect.y + 21
             listed.append(self.listed_type(self, obj, x, y))
 
-        self.listed_objects.add(*listed, layer=Systems.get_current_idx())
+        if layer is None:
+            layer = Systems.get_current().id
+
+        self.listed_objects.add(*listed, layer=layer)

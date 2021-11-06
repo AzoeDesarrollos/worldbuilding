@@ -1,9 +1,10 @@
-from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, WidgetGroup, render_textrect, WidgetHandler
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, render_textrect, WidgetHandler
 from engine.equations.planetary_system import Systems
 from engine.frontend.widgets.values import ValueText
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets import BaseWidget
 from pygame import Surface, Rect
+from .common import Group
 
 
 class NamingPanel(BaseWidget):
@@ -26,7 +27,7 @@ class NamingPanel(BaseWidget):
         f1 = self.crear_fuente(16, underline=True)
         self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5)
 
-        self.unnamed = WidgetGroup()
+        self.unnamed = Group()
         self.objects = []
         self.dummy = DummyType(self)
 
@@ -37,7 +38,7 @@ class NamingPanel(BaseWidget):
             item.hide()
 
     def add_current(self):
-        idx = Systems.get_current_idx()
+        idx = Systems.get_current().id
         system = Systems.get_current()
         if system is not None:
             objects = system.get_unnamed()
@@ -76,8 +77,7 @@ class NamingPanel(BaseWidget):
     def show_current(self, idx):
         flagged = [i for i in self.objects if i.flagged]
         for obj in flagged:
-            idxs = obj.idx
-            button = self.unnamed.get_widget(idxs)
+            button = self.unnamed.get_widget(obj.id)
             self.unnamed.remove(button)
 
         for button in self.unnamed.widgets():
@@ -91,9 +91,9 @@ class NamingPanel(BaseWidget):
             button.show()
 
     def update(self):
-        idx = Systems.get_current_idx()
-        if idx != self.last_idx and idx >= 0:
-            self.image.fill(COLOR_BOX, [0,20,self.rect.w, self.rect.h-52])
+        idx = Systems.get_current().id
+        if idx != self.last_idx:
+            self.image.fill(COLOR_BOX, [0, 20, self.rect.w, self.rect.h - 52])
             self.show_current(idx)
             self.last_idx = idx
         elif self.no_system_error:

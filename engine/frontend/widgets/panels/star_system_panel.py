@@ -1,5 +1,5 @@
 from engine.frontend.globales import WidgetGroup, ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_TEXTO
-from engine.frontend.widgets.panels.common import AvailableObjects, ListedBody, TextButton
+from .common import AvailableObjects, ListedBody, TextButton, Group
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
@@ -37,7 +37,7 @@ class StarSystemPanel(BaseWidget):
         self.undo_button = DissolveButton(self, 334, 416)
         self.restore_button = UndoButton(self, 234, 416)
         self.properties.add(self.setup_button, self.undo_button, self.restore_button, self.stars_area, self.current)
-        self.system_buttons = WidgetGroup()
+        self.system_buttons = Group()
         EventHandler.register(self.save_systems, 'Save')
         EventHandler.register(self.load_systems, 'LoadData')
         EventHandler.register(self.name_current, 'NameObject')
@@ -179,9 +179,11 @@ class SystemType(BaseWidget):
     def set_star(self, star):
         if str(self.primary.value) == '':
             self.primary.value = star
+            self.has_values = True
         else:
             self.secondary.value = star
             self.parent.restore_button.enable()
+            self.has_values = True
 
     def unset_stars(self):
         self.parent.stars_area.populate(Systems.loose_stars)
@@ -248,11 +250,15 @@ class ListedStar(ListedBody):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.parent.current.set_star(self.object_data)
+            self.parent.remove_listed(self)
             self.kill()
             self.parent.sort()
 
     def move(self, x, y):
         self.rect.topleft = x, y
+
+    def __repr__(self):
+        return f'Listed: {str(self.object_data)}'
 
 
 class AvailableStars(AvailableObjects):
@@ -260,13 +266,18 @@ class AvailableStars(AvailableObjects):
     listed_type = ListedStar
 
     def show(self):
-        self.populate(Systems.loose_stars)
+        self.populate(Systems.loose_stars, layer=0)
         super().show()
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
-        idx = Systems.get_current_idx()
-        self.show_current(idx)
+        self.show_current(0)
+        if not len(self.listed_objects) and not self.parent.current.has_values:
+            self.parent.skip = True
+            self.parent.kill()
+            self.parent.parent.cycle(+1)
+        else:
+            self.parent.skip = False
 
 
 class SetupButton(TextButton):
