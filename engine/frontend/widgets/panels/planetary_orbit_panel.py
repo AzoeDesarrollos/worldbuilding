@@ -1,5 +1,5 @@
+from .common import AvailableObjects, AvailablePlanet, ModifyArea, TextButton, ToggleableButton, Group
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_SELECTED, COLOR_TEXTO
-from .common import AvailableObjects, AvailablePlanet, ModifyArea, TextButton, ToggleableButton
 from engine.equations.orbit import PseudoOrbit, RawOrbit, from_planetary_resonance
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.globales import WidgetHandler, WidgetGroup
@@ -36,7 +36,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
         self.properties = WidgetGroup()
-        self.buttons = WidgetGroup()
+        self.buttons = Group()
         self.orbit_descriptions = WidgetGroup()
         self._markers = {}
         self.markers = []
@@ -55,7 +55,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.show_markers_button.disable()
         self.resonances_button = AddResonanceButton(self, ANCHO - 150, 416)
         self.order_f = self.crear_fuente(14)
-        self.write(self.name + ' Panel', self.crear_fuente(16, underline=True), centerx=(ANCHO // 4) * 1.5, y=0)
+        self.write(self.name + ' Panel', self.crear_fuente(16, underline=True), centerx=(ANCHO // 4) * 1.5)
         self.digit_x = RatioDigit(self, 'x', self.resonances_button.rect.left - 55, self.resonances_button.rect.y)
         self.write(':', self.crear_fuente(16), topleft=[self.digit_x.rect.right + 1, self.resonances_button.rect.y - 1])
         self.digit_y = RatioDigit(self, 'y', self.digit_x.rect.right + 9, self.resonances_button.rect.y)
@@ -72,13 +72,7 @@ class PlanetaryOrbitPanel(BaseWidget):
 
     def load_orbits(self, event):
         for id in event.data.get('Planetary Orbits', []):
-            position = event.data['Planetary Orbits'][id]
-            if id not in self._loaded_orbits:
-                self._loaded_orbits[id] = position
-
-    def set_loaded_orbits(self):
-        for id in self._loaded_orbits:
-            orbit_data = self._loaded_orbits[id]
+            orbit_data = event.data['Planetary Orbits'][id]
             a = q(orbit_data['a'], 'earth_radius')
             e = q(orbit_data['e'])
             i = q(orbit_data['i'], 'degree')
@@ -172,6 +166,7 @@ class PlanetaryOrbitPanel(BaseWidget):
     def add_objects(self):
         system = Systems.get_current()
         if system is not None:
+            self.image.fill(COLOR_BOX, [0, 32, self.rect.w, 380])
             btn = None
             for obj in system.satellites + system.asteroids:
                 if obj.orbit is None:
@@ -190,7 +185,7 @@ class PlanetaryOrbitPanel(BaseWidget):
                         btn.update_text(obj.orbit.a)
 
                 if btn is not None:
-                    self.buttons.add(btn, layer=Systems.get_current_idx())
+                    self.buttons.add(btn, layer=Systems.get_current().id)
                     self.properties.add(btn)
             self.sort_buttons()
         else:
@@ -200,7 +195,6 @@ class PlanetaryOrbitPanel(BaseWidget):
         super().show()
         for prop in self.properties.get_widgets_from_layer(2):
             prop.show()
-        self.set_loaded_orbits()
         self.add_objects()
 
     def hide(self):
@@ -232,6 +226,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         button.select()
 
     def anchor_maker(self, marker):
+        self.deselect_markers(marker)
         self.area_modify.link(marker)
         self.area_modify.visible_markers = True
         self.add_orbits_button.link(marker)
@@ -255,7 +250,7 @@ class PlanetaryOrbitPanel(BaseWidget):
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
-        for bt in self.buttons.get_widgets_from_layer(Systems.get_current_idx()):
+        for bt in self.buttons.get_widgets_from_layer(Systems.get_current().id):
             bt.move(x, y)
             if not self.area_buttons.contains(bt.rect):
                 bt.hide()
@@ -430,7 +425,7 @@ class AvailablePlanets(AvailableObjects):
         system = Systems.get_current()
         if system is not None:
             bodies = [body for body in system.astro_bodies if body.hill_sphere != 0]
-            if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current_idx())):
+            if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current().id)):
                 self.populate(bodies)
         super().show()
 
@@ -577,7 +572,6 @@ class Marker(Meta, IncrementalValue):
 
     def force_selection(self):
         if not self.locked:
-            self.parent.deselect_markers(self)
             self.parent.anchor_maker(self)
 
     def on_mousebuttondown(self, event):

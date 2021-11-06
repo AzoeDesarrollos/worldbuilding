@@ -76,10 +76,15 @@ class BaseWidget(Sprite):
         render_rect = render.get_rect(**kwargs)
         return self.image.blit(render, render_rect)
 
-    def write2(self, text, fuente, witdh, bg=COLOR_BOX, **kwargs):
-        render = render_textrect(text, fuente, witdh, COLOR_TEXTO, bg)
+    def write2(self, text, fuente, width, bg=COLOR_BOX, **kwargs):
+        render = render_textrect(text, fuente, width, COLOR_TEXTO, bg)
         render_rect = render.get_rect(**kwargs)
         return self.image.blit(render, render_rect)
+
+    @staticmethod
+    def write3(text, fuente, width, bg=COLOR_BOX):
+        render = render_textrect(text, fuente, width, COLOR_TEXTO, bg)
+        return render
 
     def show_no_system_error(self):
         f = self.crear_fuente(16)

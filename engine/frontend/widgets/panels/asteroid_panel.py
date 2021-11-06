@@ -4,11 +4,11 @@ from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.meta import Meta
+from .common import TextButton, Group
 from engine import material_densities, q
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
 from ..values import ValueText
-from .common import TextButton
 
 
 class AsteroidPanel(BasePanel):
@@ -34,7 +34,7 @@ class AsteroidPanel(BasePanel):
         self.button_add = AddAsteroidButton(self, ANCHO - 13, 398)
         self.button_del = DelAsteroidButton(self, ANCHO - 13, 416)
         self.properties.add(self.button_add, self.button_del)
-        self.asteroids = WidgetGroup()
+        self.asteroids = Group()
         self.moons = []
         EventHandler.register(self.load_satellites, 'LoadData')
         EventHandler.register(self.save_satellites, 'Save')
@@ -82,10 +82,10 @@ class AsteroidPanel(BasePanel):
     def add_button(self):
         button = AsteroidButton(self.current, self.current.current, self.curr_x, self.curr_y)
         if self.current.current.system_id is not None:
-            layer_number = Systems.get_system_idx_by_id(self.current.current.system_id)
+            layer_number = self.current.current.system_id
         else:
-            layer_number = Systems.get_current_idx()
-            self.current.current.system_id = Systems.get_current().id
+            layer_number = Systems.get_current().id
+            self.current.current.system_id = layer_number
         self.moons.append(self.current.current)
         self.asteroids.add(button, layer=layer_number)
         self.properties.add(button)
@@ -115,7 +115,7 @@ class AsteroidPanel(BasePanel):
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
-        for bt in self.asteroids.get_widgets_from_layer(Systems.get_current_idx()):
+        for bt in self.asteroids.get_widgets_from_layer(Systems.get_current().id):
             bt.move(x, y)
             if not self.area_asteroids.contains(bt.rect):
                 bt.hide()
@@ -147,8 +147,8 @@ class AsteroidPanel(BasePanel):
         self.parent.set_skippable('Planetary Orbit', flag)
 
     def update(self):
-        idx = Systems.get_current_idx()
-        if idx != self.last_idx and idx >= 0:
+        idx = Systems.get_current().id
+        if idx != self.last_idx:
             self.show_current(idx)
             self.last_idx = idx
 

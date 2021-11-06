@@ -1,3 +1,4 @@
+from engine.backend.randomness import roll
 from engine import q
 from math import sqrt
 from datetime import datetime
@@ -137,6 +138,10 @@ class PTypeSystem(BinarySystem):
         self.habitable_orbit = round(self.max_sep * 4, 3)
         age = max([self.primary.age, self.secondary.age])
         self.age = age
+        self.evolution_id = self.id
+        self.position = [round(roll(0, 1000)),
+                         round(roll(0, 1000)),
+                         round(roll(0, 1000))]
 
     def set_qs(self):
         self.shared_mass = q(self._mass.m, 'sol_mass')

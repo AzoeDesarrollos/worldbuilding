@@ -4,11 +4,11 @@ from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.values import ValueText
 from engine.frontend.widgets.meta import Meta
+from .common import TextButton, Group
 from engine import material_densities
 from ..object_type import ObjectType
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
-from .common import TextButton
 # from ..pie import PieChart
 
 
@@ -36,7 +36,7 @@ class SatellitePanel(BasePanel):
         self.button_add = AddMoonButton(self, ANCHO - 13, 398)
         self.button_del = DelMoonButton(self, ANCHO - 13, 416)
         self.properties.add(self.button_add, self.button_del)
-        self.satellites = WidgetGroup()
+        self.satellites = Group()
         self.moons = []
         EventHandler.register(self.load_satellites, 'LoadData')
         EventHandler.register(self.save_satellites, 'Save')
@@ -74,7 +74,7 @@ class SatellitePanel(BasePanel):
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
-        for bt in self.satellites.get_widgets_from_layer(Systems.get_current_idx()):
+        for bt in self.satellites.get_widgets_from_layer(Systems.get_current().id):
             bt.move(x, y)
             if not self.area_satellites.contains(bt.rect):
                 bt.hide()
@@ -96,10 +96,10 @@ class SatellitePanel(BasePanel):
     def add_button(self):
         button = SatelliteButton(self.current, self.current.current, self.curr_x, self.curr_y)
         if self.current.current.system_id is not None:
-            layer_number = Systems.get_system_idx_by_id(self.current.current.system_id)
+            layer_number = self.current.current.system_id
         else:
-            layer_number = Systems.get_current_idx()
-            self.current.current.system_id = Systems.get_current().id
+            layer_number = Systems.get_current().id
+            self.current.current.system_id = layer_number
 
         self.moons.append(self.current.current)
         self.satellites.add(button, layer=layer_number)
@@ -148,8 +148,8 @@ class SatellitePanel(BasePanel):
             button.deselect()
 
     def update(self):
-        idx = Systems.get_current_idx()
-        if idx != self.last_idx and idx >= 0:
+        idx = Systems.get_current().id
+        if idx != self.last_idx:
             self.show_current(idx)
             self.last_idx = idx
 

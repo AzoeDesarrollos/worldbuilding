@@ -12,6 +12,11 @@ class InformationPanel(BaseWidget):
 
     current = None
 
+    render = None
+    render_rect = None
+
+    selection = None
+
     def __init__(self, parent):
         self.name = 'Information'
         super().__init__(parent)
@@ -20,14 +25,22 @@ class InformationPanel(BaseWidget):
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
 
-        f1 = self.crear_fuente(16, underline=True)
+        self.f1 = self.crear_fuente(16, underline=True)
         self.f2 = self.crear_fuente(14)
         self.f3 = self.crear_fuente(16)
-        self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5, y=0)
+        self.write(self.name + ' Panel', self.f1, centerx=(ANCHO // 4) * 1.5, y=0)
 
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.properties.add(self.planet_area, layer=2)
         self.perceptions_rect = Rect(3, 250, 380, self.rect.h - 252)
+
+    def on_mousebuttondown(self, event):
+        if event.button == 4:
+            if self.render_rect.top + 12 <= 250:
+                self.render_rect.move_ip(0, +12)
+        elif event.button == 5:
+            if self.render_rect.bottom - 12 >= 589:
+                self.render_rect.move_ip(0, -12)
 
     def show_name(self, astrobody):
         self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
@@ -36,10 +49,12 @@ class InformationPanel(BaseWidget):
         self.write(text, self.f2, centerx=(ANCHO // 4) * 1.5, y=21)
 
         self.current = astrobody
+        if self.selection is None:
+            self.render = None
         self.show_selected()
 
     def clear(self):
-        self.image.fill(COLOR_BOX, [0, 20, self.rect.w, self.rect.h - 32])
+        self.image.fill(COLOR_BOX)
 
     def show(self):
         super().show()
@@ -55,6 +70,7 @@ class InformationPanel(BaseWidget):
     def show_selected(self):
         system = Systems.get_current()
         astrobody = self.current
+        self.selection = astrobody
         diameter = astrobody.radius.to('earth_radius').m * 2
 
         if system.star_system.letter == 'S':
@@ -102,21 +118,41 @@ class InformationPanel(BaseWidget):
             text = '{} is not tidally locked'.format(str(self.current))
 
         self.write(text, self.f3, x=3, y=rect.bottom + 12)
-        self.extra_info(astrobody)
+
+        if self.render is None:
+            self.extra_info(astrobody)
 
     def extra_info(self, astrobody):
         self.image.fill(COLOR_BOX, self.perceptions_rect)
         system = Systems.get_current()
         visibility = system.aparent_brightness[astrobody.id]
         sizes = system.relative_sizes[astrobody.id]
-        dh = 250
+        distances = system.distances[astrobody.id]
+        text_lines = []
+        analyzed = []
         for idx, body_id in enumerate(visibility):
             body_visibility = visibility[body_id]
-            body = system.get_astrobody_by(body_id, tag_type='id')
+            body = system.get_astrobody_by(body_id, tag_type='id', silenty=True)
+            if body is False:
+                for sys in Systems.get_systems():
+                    if sys != system and body_id not in analyzed:
+                        body = sys.get_astrobody_by(body_id, tag_type='id', silenty=True)
+                        if body is not False:
+                            break
+
+            analyzed.append(body.id)
             relative_size = sizes[body_id]
+            distance = distances[body_id]
             if type(body_visibility) is q:
-                v = round(body_visibility.to('W/m**2'), 3)
-                text = f'The star {body} has an apparent brightness, as seen from {astrobody}, of {v:~P}'
+                v = body_visibility.to('W/m^2')
+                if 'e' in str(v.m):
+                    valor = f"{v.m:.2e} "
+                    unidad = f"{v.u:P~}"
+                    formato = valor + unidad
+                else:
+                    formato = f'of {v:~P}'
+                text = f'The star {body}, at a distance of {distance:~P} '
+                text += f'has an apparent brightness, as seen from {astrobody}, ' + formato
                 text += f" and a relative size of {relative_size.m} degrees in it's sky."
             elif body_visibility == 'naked':
                 text = f'{body} can be seen from {astrobody} with naked human eyes'
@@ -127,23 +163,35 @@ class InformationPanel(BaseWidget):
             else:
                 text = f'It is unclear if {body} could be seen from {astrobody}.'
 
-            r = self.write2(text, self.f2, 380, x=3, y=dh)
-            dh = r.bottom + 6
+            text_lines.append(text)
+
+        self.render = self.write3('\n'.join(text_lines), self.f2, 380)
+        self.render_rect = self.render.get_rect(topleft=[3, 250])
+
+    def update(self):
+        self.clear()
+        if self.render is not None:
+            self.image.blit(self.render, self.render_rect)
+        self.image.fill(COLOR_BOX, [0, 0, ANCHO, 64])
+        self.write(self.name + ' Panel', self.f1, centerx=(ANCHO // 4) * 1.5, y=0)
+        if self.selection is not None:
+            self.show_name(self.selection)
 
 
 class Astrobody(AvailablePlanet):
 
     def on_mousebuttondown(self, event):
         self.parent.select_one(self)
+        self.parent.parent.selection = None
         self.parent.parent.show_name(self.object_data)
 
 
 class AvailablePlanets(AvailableObjects):
     listed_type = Astrobody
+    last_idx = None
 
     def show(self):
         system = Systems.get_current()
-        self.deselect_all()
         if system is not None:
             bodies = [body for body in system.astro_bodies if body.orbit is not None]
             self.populate(bodies)
@@ -154,3 +202,10 @@ class AvailablePlanets(AvailableObjects):
     def on_mousebuttondown(self, event):
         super().on_mousebuttondown(event)
         self.parent.clear()
+
+    def update(self):
+        idx = Systems.get_current().id
+        if idx != self.last_idx:
+            self.show()
+            self.show_current(idx)
+            self.last_idx = idx

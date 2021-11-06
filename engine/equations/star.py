@@ -1,5 +1,6 @@
 from .general import BodyInHydrostaticEquilibrium
 from engine.backend.util import decimal_round
+from engine.backend.randomness import roll
 from bisect import bisect_right
 from datetime import datetime
 from math import sqrt, pow
@@ -96,6 +97,9 @@ class Star(BodyInHydrostaticEquilibrium):
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
         self.id = data['id'] if 'id' in data else now
         self.evolution_id = self.id
+        self.position = [round(roll(0, 1000)),
+                         round(roll(0, 1000)),
+                         round(roll(0, 1000))]
 
     @property
     def spin(self):
@@ -269,6 +273,10 @@ class Star(BodyInHydrostaticEquilibrium):
     def outer_forbbiden_zone(self):
         return self._outer_forbidden
 
+    @property
+    def star_system(self):
+        return self
+
     @staticmethod
     def peak_lightwave_frequency(temperature):
         return 0.0028977729 / (temperature * 5778) * 1000000000
@@ -311,7 +319,9 @@ class Star(BodyInHydrostaticEquilibrium):
             return self.name
 
     def __eq__(self, other):
-        if self.celestial_type == other.celestial_type:
+        if not hasattr(other, 'celestial_type'):
+            return False
+        elif self.celestial_type == other.celestial_type:
             return all([self.mass.m == other.mass.m, self.name == other.name, self.id == other.id])
         else:
             return False
