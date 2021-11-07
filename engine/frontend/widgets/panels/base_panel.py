@@ -37,7 +37,7 @@ class BasePanel(BaseWidget):
         self.image.blit(rt2, rt2_rect)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.button == 1 and self.enabled:
             if self.relative_text_area.collidepoint(event.pos):
                 self.image.fill(COLOR_BOX, self.relative_text_area)
                 if self.relative_mode:

@@ -55,12 +55,16 @@ class PlanetarySystem(Flagable):
         if body.id not in self.distances:
             self.distances[body.id] = {}
 
-        for system in Systems.get_systems()+Systems.loose_stars:
+        for system in Systems.get_systems() + Systems.loose_stars:
             for star in system.star_system:
                 if body.orbit is not None and star.id not in self.aparent_brightness[body.id]:
                     if star == self.star_system:
-                        ab = round(q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs'), 3)
-                        self.distances[body.id][star.id] = body.orbit.a
+                        if body.parent == star:
+                            ab = round(q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs'), 3)
+                            self.distances[body.id][star.id] = body.orbit.a
+                        else:
+                            ab = round(q(star.luminosity.m / pow(body.parent.orbit.a.m, 2), 'Vs'), 3)
+                            self.distances[body.id][star.id] = body.parent.orbit.a
                     else:
                         x1, y1, z1 = self.star_system.position
                         x2, y2, z2 = star.position
@@ -94,7 +98,11 @@ class PlanetarySystem(Flagable):
             if body.orbit is not None:
                 self.visibility_of_stars(body)
                 star = self.star_system
-                self.relative_sizes[body.id][star.id] = self.small_angle_aproximation(star, body.orbit.a.to('km').m)
+                if body.parent.celestial_type in ('star', 'system'):
+                    relative_distance = body.orbit.a.to('km').m
+                else:
+                    relative_distance = body.parent.orbit.a.to('km').m
+                self.relative_sizes[body.id][star.id] = self.small_angle_aproximation(star, relative_distance)
                 x = body.orbit.a.to('m').m  # position of the Observer's planet
                 for other in [o for o in others if o.orbit is not None]:
                     y = other.orbit.a.to('m').m  # position of the observed body
@@ -343,8 +351,9 @@ class Systems:
 
     @classmethod
     def cycle_systems(cls):
-        system = next(cls._system_cycler)
-        cls._current = system
+        if len(cls._systems):
+            system = next(cls._system_cycler)
+            cls._current = system
 
     @classmethod
     def get_current(cls):
@@ -355,6 +364,15 @@ class Systems:
     def get_current_star(cls):
         if cls._current is not None:
             return cls._current.star_system
+
+    @classmethod
+    def get_current_id(cls, instance):
+        system = cls.get_current()
+        if system is not None:
+            idx = system.id
+        else:
+            idx = instance.last_idx
+        return idx
 
     @classmethod
     def get_systems(cls):

@@ -64,7 +64,8 @@ class StarSystemPanel(BaseWidget):
             self.system_buttons.add(button)
             self.properties.add(button)
             self.sort_buttons()
-            # Systems.set_system(system_data)
+            Systems.set_system(system_data)
+            self.current.enable()
             return button
 
     def sort_buttons(self):
@@ -92,7 +93,8 @@ class StarSystemPanel(BaseWidget):
                     'avg_s': current.average_separation.m,
                     'ecc_p': current.ecc_p.m,
                     "ecc_s": current.ecc_s.m,
-                    "name": current.name
+                    "name": current.name,
+                    'pos': dict(zip(['x', 'y', 'z'], current.position))
                 }
                 data[current.id] = d
 
@@ -107,8 +109,9 @@ class StarSystemPanel(BaseWidget):
             prim = Systems.get_star_by_id(system_data['primary'])
             scnd = Systems.get_star_by_id(system_data['secondary'])
             name = system_data['name']
+            pos = event.data['pos']
 
-            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
+            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, pos, id=id, name=name)
             button = self.create_button(system)
             button.hide()
             Systems.set_system(system)
@@ -237,6 +240,11 @@ class SystemType(BaseWidget):
         for prop in self.properties.widgets():
             prop.hide()
 
+    def enable(self):
+        super().enable()
+        for arg in self.properties.widgets():
+            arg.enable()
+
 
 class ListedStar(ListedBody):
     enabled = True
@@ -273,12 +281,6 @@ class AvailableStars(AvailableObjects):
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
         self.show_current(0)
-        if not len(self.listed_objects) and not self.parent.current.has_values:
-            self.parent.skip = True
-            self.parent.kill()
-            self.parent.parent.cycle(+1)
-        else:
-            self.parent.skip = False
 
 
 class SetupButton(TextButton):

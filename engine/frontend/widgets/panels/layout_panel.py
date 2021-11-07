@@ -160,6 +160,7 @@ class SwapSystem(Meta):
         self.f2 = self.crear_fuente(13)
         self.img_sel = self.f1.render('System: ', True, COLOR_TEXTO, COLOR_BOX)
         self.img_uns = self.f2.render('System: ', True, COLOR_TEXTO, COLOR_BOX)
+        self.img_dis = self.f1.render('System: ', True, COLOR_DISABLED, COLOR_BOX)
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))
         self.system_image = SystemName(self, left=self.rect.right+6, y=2)
@@ -169,8 +170,17 @@ class SwapSystem(Meta):
         if event.button == 1:
             Systems.cycle_systems()
 
+    def update(self):
+        super().update()
+        if not len(Systems.get_systems()):
+            self.disable()
+        elif not self.enabled:
+            self.enable()
+
 
 class SystemName(BaseWidget):
+    color = COLOR_DISABLED
+
     def __init__(self, parent, **kwargs):
         super().__init__(parent)
         self.f = self.crear_fuente(13)
@@ -180,15 +190,19 @@ class SystemName(BaseWidget):
         self.rect = self._rect.copy()
         self.show()
 
-    @staticmethod
-    def get_name():
+    def get_name(self):
         star = Systems.get_current_star()
         if star is not None and star.has_name:
             name = star.name
         else:
             name = str(star)
+
+        if name == 'None':
+            self.color = COLOR_DISABLED
+        else:
+            self.color = COLOR_TEXTO
         return name
 
     def update(self):
-        self.image = self.f.render(self.get_name(), True, COLOR_TEXTO, COLOR_BOX)
+        self.image = self.f.render(self.get_name(), True, self.color, COLOR_BOX)
         self.rect = self.image.get_rect(topleft=self._rect.topleft)

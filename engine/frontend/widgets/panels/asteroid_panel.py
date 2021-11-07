@@ -1,21 +1,23 @@
-from engine.frontend.globales import COLOR_AREA, WidgetGroup, COLOR_TEXTO, COLOR_BOX, ANCHO
+from engine.frontend.widgets.panels.satellite_panel import CopyCompositionButton
+from engine.frontend.globales import COLOR_AREA, ANCHO, COLOR_TEXTO, COLOR_BOX
 from engine.equations.satellite import minor_moon_by_composition
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
+from engine.frontend.globales import WidgetGroup
 from engine.frontend.widgets.meta import Meta
 from .common import TextButton, Group
 from engine import material_densities, q
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
 from ..values import ValueText
+from ..pie import PieChart
 
 
 class AsteroidPanel(BasePanel):
     curr_x = 0
     curr_y = 0
     mass_number = None
-    loaded_data = None
     last_idx = None
 
     def __init__(self, parent):
@@ -25,7 +27,7 @@ class AsteroidPanel(BasePanel):
         f1 = self.crear_fuente(16, underline=True)
         f2 = self.crear_fuente(13, underline=True)
         r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 132, 200])
-        self.write('Composition', f1, COLOR_AREA, topleft=(0, 420))
+        ro = self.write('Composition', f1, COLOR_AREA, topleft=(18, 420))
         self.area_asteroids = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 200))
         self.write('Asteroids', f2, COLOR_AREA, x=self.area_asteroids.x + 3, y=self.area_asteroids.y)
         self.curr_x = self.area_asteroids.x + 3
@@ -33,7 +35,11 @@ class AsteroidPanel(BasePanel):
         self.properties.add(self.current)
         self.button_add = AddAsteroidButton(self, ANCHO - 13, 398)
         self.button_del = DelAsteroidButton(self, ANCHO - 13, 416)
-        self.properties.add(self.button_add, self.button_del)
+        self.copy_button = CopyCompositionButton(self, ro.centerx,  ro.bottom + 6)
+        txt = 'Copy the values from a random planet'
+        self.f3 = self.crear_fuente(11)
+        self.txt_a = self.write2(txt, self.f3, 130, COLOR_AREA, centerx=ro.centerx, y=self.area_asteroids.y + 50, j=1)
+        self.properties.add(self.button_add, self.button_del, self.copy_button)
         self.asteroids = Group()
         self.moons = []
         EventHandler.register(self.load_satellites, 'LoadData')
@@ -48,12 +54,9 @@ class AsteroidPanel(BasePanel):
 
     def load_satellites(self, event):
         if 'Asteroids' in event.data and len(event.data['Asteroids']):
-            self.loaded_data = event.data['Asteroids']
-
-    def show_loaded(self):
-        if self.loaded_data is not None:
-            for id in self.loaded_data:
-                satellite_data = self.loaded_data[id]
+            self.enable()
+            for id in event.data['Satellites']:
+                satellite_data = event.data['Satellites'][id]
                 satellite_data['id'] = id
                 moon = minor_moon_by_composition(satellite_data)
                 moon.idx = len([i for i in Systems.get_current().planets if i.clase == moon.clase])
@@ -61,7 +64,6 @@ class AsteroidPanel(BasePanel):
                 if system is not None and system.add_astro_obj(moon):
                     self.current.current = moon
                     self.add_button()
-            self.loaded_data.clear()
 
     def save_satellites(self, event):
         data = {}
@@ -89,7 +91,8 @@ class AsteroidPanel(BasePanel):
         self.moons.append(self.current.current)
         self.asteroids.add(button, layer=layer_number)
         self.properties.add(button)
-        self.sort_buttons()
+        if self.is_visible:
+            self.sort_buttons()
         self.current.erase()
         self.button_add.disable()
 
@@ -127,9 +130,12 @@ class AsteroidPanel(BasePanel):
                 x = 3
                 y += 32
 
+    def enable(self):
+        super().enable()
+        self.current.enable()
+
     def show(self):
         super().show()
-        self.show_loaded()
         self.is_visible = True
         if self.mass_number is None:
             self.properties.add(ShownMass(self))
@@ -147,7 +153,7 @@ class AsteroidPanel(BasePanel):
         self.parent.set_skippable('Planetary Orbit', flag)
 
     def update(self):
-        idx = Systems.get_current().id
+        idx = Systems.get_current_id(self)
         if idx != self.last_idx:
             self.show_current(idx)
             self.last_idx = idx
@@ -170,6 +176,11 @@ class AsteroidPanel(BasePanel):
         for button in self.asteroids.widgets():
             button.deselect()
 
+    def write_name(self, planet):
+        self.image.fill(COLOR_AREA, [0, 498, 130, 14])
+        text = f'[{str(planet)}]'
+        self.write(text, self.f3, COLOR_AREA, top=self.txt_a.bottom, centerx=self.txt_a.centerx)
+
 
 class AsteroidType(BaseWidget):
     current = None
@@ -179,9 +190,19 @@ class AsteroidType(BaseWidget):
     def __init__(self, parent):
         super().__init__(parent)
         self.properties = WidgetGroup()
-        self.create()
+
         EventHandler.register(self.clear, 'ClearData')
         self.relative_args = ['density', 'mass', 'volume']
+
+        names = sorted(material_densities.keys())
+        d = {names[0]: {'value': 33, 'handle': 'black'},
+             names[1]: {'value': 33, 'handle': 'black'},
+             names[2]: {'value': 34, 'handle': 'black'}}
+        self.default_comp = {'iron': 33, 'silicates': 33, 'water ice': 34}
+        self.pie = PieChart(self, 200, 500, 65, d)
+        for obj in self.pie.chart.widgets():
+            self.properties.add(obj, layer=7)
+        self.create()
 
     def create(self):
         for i, prop in enumerate(["Density", "Mass", "Volume"]):
@@ -194,7 +215,8 @@ class AsteroidType(BaseWidget):
             vt.modifiable = True
 
         for i, name in enumerate(sorted(material_densities)):
-            a = ValueText(self, name.capitalize(), 3, 420 + 21 + i * 21, bg=COLOR_AREA)
+            a = ValueText(self, name.capitalize(), 3, 500 + 30 + i * 21, bg=COLOR_AREA)
+            a.text_area.value = self.pie.get_value(name)
             self.properties.add(a, layer=4)
             a.modifiable = True
 
@@ -215,7 +237,7 @@ class AsteroidType(BaseWidget):
 
         for material in self.properties.get_widgets_from_layer(4):
             if material.text_area.value:  # not empty
-                data['composition'][material.text.lower()] = float(material.text_area.value)
+                data['composition'][material.text.lower()] = float(material.text_area.value.strip(' %'))
 
         if self.current is not None:
             data['a axis'] = self.current.a_axis.m
@@ -250,12 +272,21 @@ class AsteroidType(BaseWidget):
         if event.data['panel'] is self.parent:
             self.erase()
 
-    def erase(self):
+    def erase(self, replace=False):
         self.current = None
         self.has_values = False
         self.parent.clear()
         for vt in self.properties:
             vt.value = ''
+        if not replace:
+            self.pie.set_values(self.default_comp)
+
+    def enable(self):
+        for arg in self.properties.widgets():
+            arg.enable()
+        for obj in self.pie.chart.widgets():
+            obj.enable()
+        super().enable()
 
     def destroy_button(self):
         destroyed = Systems.get_current().remove_astro_obj(self.current)
@@ -264,7 +295,7 @@ class AsteroidType(BaseWidget):
             self.erase()
 
     def show_current(self, asteroid):
-        self.erase()
+        self.erase(replace=True)
         self.current = asteroid
         self.calculate()
 
@@ -298,13 +329,23 @@ class AsteroidType(BaseWidget):
             elemento.value = attr
             elemento.text_area.show()
 
+        comp = {}
         for elemento in self.properties.get_widgets_from_layer(4):
             got_attr = self.current.composition.get(elemento.text.lower(), 0)
             attr = str(round(got_attr, 3)) + ' %'
             elemento.value = attr
             elemento.text_area.show()
+            comp[elemento.text.lower()] = got_attr
+        self.pie.set_values(comp)
 
         self.has_values = True
+
+    def paste_composition(self, new):
+        for elemento in self.properties.get_widgets_from_layer(4):
+            elemento.value = str(round(new[elemento.text.lower()], 2)) + ' %'
+            elemento.text_area.show()
+        self.has_values = True
+        self.pie.set_values(new)
 
     def show(self):
         for p in self.properties.widgets():

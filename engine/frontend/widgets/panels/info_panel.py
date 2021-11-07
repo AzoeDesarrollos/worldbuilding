@@ -55,6 +55,8 @@ class InformationPanel(BaseWidget):
 
     def clear(self):
         self.image.fill(COLOR_BOX)
+        self.render = None
+        self.selection = None
 
     def show(self):
         super().show()
@@ -151,17 +153,17 @@ class InformationPanel(BaseWidget):
                     formato = valor + unidad
                 else:
                     formato = f'of {v:~P}'
-                text = f'The star {body}, at a distance of {distance:~P} '
+                text = f'* The star {body}, at a distance of {distance:~P} '
                 text += f'has an apparent brightness, as seen from {astrobody}, ' + formato
                 text += f" and a relative size of {relative_size.m} degrees in it's sky."
             elif body_visibility == 'naked':
-                text = f'{body} can be seen from {astrobody} with naked human eyes'
+                text = f'* {body} can be seen from {astrobody} with naked human eyes'
                 text += f" with a relative size of {relative_size.m} degrees in it's sky."
             elif body_visibility == 'telescope':
-                text = f'Humans from {astrobody} would need a telescope to view {body}.'
+                text = f'* Humans from {astrobody} would need a telescope to view {body}.'
                 text += f" It has a relative size of {relative_size.m} degrees in it's sky."
             else:
-                text = f'It is unclear if {body} could be seen from {astrobody}.'
+                text = f'* It is unclear if {body} could be seen from {astrobody}.'
 
             text_lines.append(text)
 
@@ -169,7 +171,7 @@ class InformationPanel(BaseWidget):
         self.render_rect = self.render.get_rect(topleft=[3, 250])
 
     def update(self):
-        self.clear()
+        self.image.fill(COLOR_BOX)
         if self.render is not None:
             self.image.blit(self.render, self.render_rect)
         self.image.fill(COLOR_BOX, [0, 0, ANCHO, 64])
@@ -204,8 +206,9 @@ class AvailablePlanets(AvailableObjects):
         self.parent.clear()
 
     def update(self):
-        idx = Systems.get_current().id
+        idx = Systems.get_current_id(self)
         if idx != self.last_idx:
+            self.parent.clear()
             self.show()
             self.show_current(idx)
             self.last_idx = idx

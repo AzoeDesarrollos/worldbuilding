@@ -51,7 +51,8 @@ class StarPanel(BasePanel):
                 'name': star.name,
                 'mass': star.mass.m,
                 'spin': star.spin,
-                'age': star.age.m
+                'age': star.age.m,
+                'pos': dict(zip(['x', 'y', 'z'], star.position))
             }
             data[star.id] = star_data
         EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data})
@@ -69,6 +70,7 @@ class StarPanel(BasePanel):
 
         if len(self.star_buttons):
             self.current.current = self.star_buttons[0].object_data
+            self.current.enable()
 
     def show(self):
         super().show()
@@ -164,6 +166,7 @@ class StarType(ObjectType):
         abs_props = ['Density', 'Volume', 'Circumference', 'Surface area', 'Spin', 'Classification', 'Age']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
         self.set_modifiables('relatives', 0, 1)
+        self.relatives.widgets()[0].enable()
 
         f = self.crear_fuente(16, bold=True)
         self.habitable = f.render('Habitable', True, (0, 255, 0), COLOR_BOX)
@@ -196,6 +199,11 @@ class StarType(ObjectType):
             self.parent.button_del.disable()
             self.parent.button_add.disable()
 
+    def enable(self):
+        super().enable()
+        for arg in self.properties:
+            arg.enable()
+
     def erase(self):
         if self.has_values:
             self.current.sprite.kill()
@@ -227,6 +235,7 @@ class StarType(ObjectType):
             self.properties.add(self.current.sprite)
         self.current.sprite.show()
         self.parent.age_bar.enable()
+        self.parent.enable()
 
     def set_age(self, age_percent):
         if self.has_values:
@@ -345,7 +354,6 @@ class AgeCursor(Meta):
         self.image = self.img_uns
         self.rect = self.image.get_rect(centery=y)
         self.center = self.rect.centerx
-        self.show()
 
     @staticmethod
     def crear(w, color):
@@ -373,8 +381,8 @@ class AgeCursor(Meta):
         self.parent.parent.current.set_age((x - 50) / 400)
 
     def set_x(self, star):
-        age = round(star.age.m/star.lifetime.to('years').m, 3)
-        self.rect.x = round(age*(self.parent.rect.w-1))+self.parent.rect.x
+        age = round(star.age.m / star.lifetime.to('years').m, 3)
+        self.rect.x = round(age * (self.parent.rect.w - 1)) + self.parent.rect.x
 
     def update(self):
         super().update()

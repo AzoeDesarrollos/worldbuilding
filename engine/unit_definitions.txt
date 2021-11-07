@@ -27,7 +27,7 @@ sol_temperature = 5778 kelvin = Ts
 sol_lifetime = 4.6e+12 earth_years = LTs
 sol_aparent_brightness = 1.379 watt / meter ** 2 = Vs
 
-solar_lifetime = 10*10**9 years
+solar_lifetime = 10*10**9 years = Tms
 
 # Saturn's Ring
 ring_mass = 1.54e+19 kg = SRm

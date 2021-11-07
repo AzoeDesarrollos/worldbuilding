@@ -403,7 +403,7 @@ class OrbitPanel(BaseWidget):
             self.sort_markers()
 
     def fill_indexes(self):
-        assert len(Systems.get_systems())
+        assert len(Systems.get_systems()), "There is no data to load"
         for system in Systems.get_systems():
             star = system.star_system
             if star.id not in self._markers:
@@ -472,8 +472,12 @@ class OrbitPanel(BaseWidget):
             self.recomendation.show_suggestion(astrobody, orbit.temperature)
 
     def update(self):
-        super().update()
-        idx = Systems.get_current().id
+        system = Systems.get_current()
+        if system is not None:
+            idx = system.id
+        else:
+            idx = self.last_idx
+
         if idx != self.last_idx:
             self.set_current()
             self.last_idx = idx

@@ -91,7 +91,7 @@ class NamingPanel(BaseWidget):
             button.show()
 
     def update(self):
-        idx = Systems.get_current().id
+        idx = Systems.get_current_id(self)
         if idx != self.last_idx:
             self.image.fill(COLOR_BOX, [0, 20, self.rect.w, self.rect.h - 52])
             self.show_current(idx)

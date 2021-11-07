@@ -139,8 +139,17 @@ class PlanetPanel(BasePanel):
         for item in self.properties.widgets():
             item.hide()
 
+    def enable(self):
+        super().enable()
+        self.current.enable()
+
+    def disable(self):
+        super().disable()
+        self.current.disable()
+
     def update(self):
-        idx = Systems.get_current().id
+        idx = Systems.get_current_id(self)
+
         if idx != self.last_idx:
             self.show_current(idx)
             self.last_idx = idx
@@ -179,6 +188,11 @@ class PlanetType(ObjectType):
 
         EventHandler.register(self.load_planet, 'LoadData')
 
+    def enable(self):
+        for arg in self.properties:
+            arg.enable()
+        super().enable()
+
     def load_planet(self, event):
         if 'Planets' in event.data and len(event.data['Planets']):
             for id in event.data['Planets']:
@@ -192,8 +206,6 @@ class PlanetType(ObjectType):
                         planet.sprite = PlanetSprite(self, planet, 460, 100)
                         self.properties.add(planet.sprite, layer=3)
                     btn.hide()
-                    # self.current = self.parent.planet_buttons.widgets()[0].object_data
-            # self.loaded_data.clear()
 
     def set_planet(self, planet):
         if self.current is not None and self.current.sprite is not None:
@@ -364,6 +376,7 @@ class ShownMass(BaseWidget):
     def show_mass(self):
         try:
             mass = Systems.get_current().get_available_mass()
+            self.parent.enable()
         except AttributeError:
             mass = q(0, 'jupiter_mass')
         if not self.show_jovian_mass:
