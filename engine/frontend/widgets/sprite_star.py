@@ -87,7 +87,7 @@ class PlanetSprite(BaseWidget):
 
         last_radius = 0
         for element, color in components.items():
-            if self.composition[element] > 0:
+            if element in self.composition and self.composition[element] > 0:
                 last_radius += ceil(self.radius * (self.composition[element] / 100))
                 blob = Surface((last_radius * 2, last_radius * 2), SRCALPHA)
                 blobrect = blob.get_rect()

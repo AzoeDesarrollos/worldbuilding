@@ -96,9 +96,9 @@ class Star(BodyInHydrostaticEquilibrium):
         now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
         self.id = data['id'] if 'id' in data else now
         self.evolution_id = self.id
-        self.position = [round(roll(0, 1000)),
-                         round(roll(0, 1000)),
-                         round(roll(0, 1000))]
+        self.position = [round(roll(0, 1000)) if 'x' not in data['pos'] else data['pos']['x'],
+                         round(roll(0, 1000)) if 'y' not in data['pos'] else data['pos']['y'],
+                         round(roll(0, 1000)) if 'z' not in data['pos'] else data['pos']['z']]
 
     @property
     def spin(self):

@@ -1,3 +1,5 @@
+from engine.frontend.globales import COLOR_IRON_DIS, COLOR_SILICATES_DIS, COLOR_WATER_ICE_DIS
+from engine.frontend.globales import COLOR_IRON, COLOR_SILICATES, COLOR_WATER_ICE
 from engine.frontend.globales.group import WidgetGroup
 from engine.frontend.globales import WidgetHandler
 from ..basewidget import BaseWidget
@@ -7,7 +9,8 @@ from pygame import Rect
 
 class PieChart(BaseWidget):
     chart = None
-    colors = None
+    colors_a = [COLOR_IRON, COLOR_SILICATES, COLOR_WATER_ICE]
+    colors_b = [COLOR_IRON_DIS, COLOR_SILICATES_DIS, COLOR_WATER_ICE_DIS]
 
     def __init__(self, parent, cx, cy, radius, values):
         super().__init__(parent)
@@ -15,20 +18,18 @@ class PieChart(BaseWidget):
         self.radius = radius
         self.rect = Rect(0, 0, radius, radius)
         self.rect.center = cx, cy
-        self.colors = {}
         WidgetHandler.add_widget(self)
 
         a, b = 0, 0
         arcs, handles = [], []
-        for name in values:
-            color = values[name]['color']
+        for i, name in enumerate(values):
             value = values[name]['value']
-            self.colors[name] = color
             # handle_color = values[name]['handle']
 
             b += round((value / 100) * 360)
 
-            arc = Arc(self, name, color, a, b, radius)
+            arc = Arc(self, name, self.colors_a[i], self.colors_b[i], a, b, radius)
+            arc.default_value = value
             # handle = Handle(self, b, arc.handle_pos, handle_color)
 
             self.chart.add(arc, layer=1)
@@ -45,21 +46,30 @@ class PieChart(BaseWidget):
         arcs[1].displace(cx, cy)
         arcs[2].displace(cx, cy)
 
-    def set_values(self, values: dict):
+    def set_values(self, values: dict = None):
         names = 'iron', 'water ice', 'silicates'
         a, b = 0, 0
-        for name in names:
-            value = values[name]
+        for i, name in enumerate(sorted(names)):
             arc = self.get_arc(name)
+            value = values[name] if values is not None else arc.default_value
             b += round((value / 100) * 360)
+
+            if not self.parent.parent.enabled:
+                arc.disable()
+            else:
+                arc.enable()
+
+            if value == 0:
+                arc.hide()
+            elif not arc.is_visible and self.parent.parent.is_visible:
+                arc.show()
 
             if arc is not None:
                 arc.set_ab(a, b)
             else:
-                arc = Arc(self, name, self.colors[name], a, b, self.radius)
+                arc = Arc(self, name, self.colors_a[i], self.colors_b[i], a, b, self.radius)
                 self.chart.add(arc, layer=1)
                 arc.displace(*self.rect.center)
-            print(arc.arc_lenght)
             a = b
 
     def on_mousebuttonup(self, event):
@@ -91,3 +101,13 @@ class PieChart(BaseWidget):
     def get_value(self, name):
         arc = self.get_arc(name)
         return arc.get_value()
+
+    def update(self):
+        if not self.parent.parent.enabled:
+            for arc in self.chart.get_widgets_from_layer(1):
+                if arc.enabled:
+                    arc.disable()
+        elif not self.enabled:
+            for arc in self.chart.get_widgets_from_layer(1):
+                if not arc.enabled:
+                    arc.enable()

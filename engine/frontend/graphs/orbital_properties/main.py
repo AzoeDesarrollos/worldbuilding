@@ -3,6 +3,7 @@ from pygame import QUIT, KEYDOWN, KEYUP, K_ESCAPE, K_UP, K_DOWN, K_SPACE
 from math import sin, cos, sqrt, radians, pow
 from engine import q
 from sys import exit
+import os
 
 init()
 
@@ -79,6 +80,7 @@ def draw_ellipse(rot_angle):
 
 def rotation_loop():
     display.quit()
+    os.environ['SDL_VIDEO_CENTERED'] = "{!s},{!s}".format(0, 0)
     fps = time.Clock()
     rect_a = rect_top
     rect_b = rect_mid

@@ -1,4 +1,4 @@
-from engine.frontend.globales import WidgetGroup, COLOR_AREA, ANCHO
+from engine.frontend.globales import WidgetGroup, COLOR_AREA, ANCHO, COLOR_TEXTO, COLOR_DISABLED, COLOR_SELECTED
 from engine.equations.satellite import major_moon_by_composition
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
@@ -9,7 +9,9 @@ from engine import material_densities
 from ..object_type import ObjectType
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
-# from ..pie import PieChart
+from ..pie import PieChart
+from pygame import Surface, Color
+from random import choice
 
 
 class SatellitePanel(BasePanel):
@@ -28,13 +30,17 @@ class SatellitePanel(BasePanel):
         self.curr_y = self.area_satellites.y + 21
         f1 = self.crear_fuente(16, underline=True)
         f2 = self.crear_fuente(13, underline=True)
-        self.write('Composition', f1, COLOR_AREA, topleft=(0, 420))
+        r = self.write('Composition', f1, COLOR_AREA, topleft=(18, 420))
         self.write('Satellites', f2, COLOR_AREA, x=self.area_satellites.x + 3, y=self.area_satellites.y)
         self.properties = WidgetGroup()
 
         self.button_add = AddMoonButton(self, ANCHO - 13, 398)
         self.button_del = DelMoonButton(self, ANCHO - 13, 416)
-        self.properties.add(self.button_add, self.button_del)
+        self.copy_button = CopyCompositionButton(self, r.centerx, r.bottom + 6)
+        txt = 'Copy the values from a random planet'
+        self.f3 = self.crear_fuente(11)
+        self.txt_a = self.write2(txt, self.f3, 130, COLOR_AREA, centerx=r.centerx, y=self.area_satellites.y + 50, j=1)
+        self.properties.add(self.button_add, self.button_del, self.copy_button)
         self.satellites = Group()
         self.moons = []
         EventHandler.register(self.load_satellites, 'LoadData')
@@ -43,6 +49,7 @@ class SatellitePanel(BasePanel):
 
     def load_satellites(self, event):
         if 'Satellites' in event.data and len(event.data['Satellites']):
+            self.enable()
             for idx, id in enumerate(event.data['Satellites']):
                 satellite_data = event.data['Satellites'][id]
                 satellite_data['id'] = id
@@ -124,8 +131,6 @@ class SatellitePanel(BasePanel):
 
     def show(self):
         super().show()
-        # self.show_loaded()
-        self.is_visible = True
         if self.mass_number is None:
             self.properties.add(ShownMass(self))
         for pr in self.properties.widgets():
@@ -149,6 +154,11 @@ class SatellitePanel(BasePanel):
             self.show_current(idx)
             self.last_idx = idx
 
+    def write_name(self, planet):
+        self.image.fill(COLOR_AREA, [0, 498, 130, 14])
+        text = f'[{str(planet)}]'
+        self.write(text, self.f3, COLOR_AREA, top=self.txt_a.bottom, centerx=self.txt_a.centerx)
+
 
 class SatelliteType(ObjectType):
 
@@ -161,23 +171,23 @@ class SatelliteType(ObjectType):
         self.set_modifiables('relatives', 1)
         self.show_layers.append(3)
 
-        for item in self.relatives.widgets()+self.absolutes.widgets():
+        for item in self.relatives.widgets() + self.absolutes.widgets():
             item.rect.y += 50
             item.text_area.rect.y += 50
 
         names = sorted(material_densities.keys())
-        d = {names[0]: {'color': [155] * 3, 'value': 33, 'handle': 'black'},
-             names[1]: {'color': [155, 80, 0], 'value': 33, 'handle': 'black'},
-             names[2]: {'color': [0, 200, 255], 'value': 34, 'handle': 'black'}}
+        d = {names[0]: {'color': Color([155] * 3), 'value': 33, 'handle': 'black'},
+             names[1]: {'color': Color([155, 80, 0]), 'value': 33, 'handle': 'black'},
+             names[2]: {'color': Color([0, 200, 255]), 'value': 34, 'handle': 'black'}}
 
-        # self.default_comp = {'silicates': 33, 'iron': 33, 'water ice': 34}
-        # self.pie = PieChart(self, 200, 500, 70, d)
-        # for obj in self.pie.chart.widgets():
-        #     self.properties.add(obj, layer=3)
+        # self.default_comp = {'iron': 33, 'silicates': 33, 'water ice': 34}
+        self.pie = PieChart(self, 200, 500, 65, d)
+        for obj in self.pie.chart.widgets():
+            self.properties.add(obj, layer=3)
 
         for i, name in enumerate(sorted(d)):
-            a = ValueText(self, name.capitalize(), 3, 500 + 21 + i * 21, bg=COLOR_AREA)
-            # a.text_area.value = self.pie.get_value(name)
+            a = ValueText(self, name.capitalize(), 3, 500 + 30 + i * 21, bg=COLOR_AREA)
+            a.text_area.value = self.pie.get_value(name)
             self.properties.add(a, layer=2)
             a.modifiable = True
 
@@ -225,17 +235,18 @@ class SatelliteType(ObjectType):
         self.fill()
 
     def show_current(self, satellite):
-        self.erase()
+        self.erase(replace=True)
         self.current = satellite
         self.calculate()
 
-    def erase(self):
+    def erase(self, replace=False):
         super().erase()
         for vt in self.properties:
             vt.value = ''
         self.current = None
         self.parent.clear()
-        # self.pie.set_values(self.default_comp)
+        if not replace:
+            self.pie.set_values()
 
     def clear(self, event):
         if event.data['panel'] is self.parent:
@@ -256,14 +267,21 @@ class SatelliteType(ObjectType):
         }
         super().fill(tos)
 
-        # comp = {}
+        comp = {}
         for elemento in self.properties.get_widgets_from_layer(2):
             got_attr = self.current.composition.get(elemento.text.lower(), 0)
             attr = str(round(got_attr, 3)) + ' %'
             elemento.value = attr
             elemento.text_area.show()
-            # comp[elemento.text.lower()] = got_attr
-        # self.pie.set_values(comp)
+            comp[elemento.text.lower()] = got_attr
+        self.pie.set_values(comp)
+
+    def paste_composition(self, new):
+        for elemento in self.properties.get_widgets_from_layer(2):
+            elemento.value = str(round(new[elemento.text.lower()], 2)) + ' %'
+            elemento.text_area.show()
+        self.has_values = True
+        self.pie.set_values(new)
 
 
 class AddMoonButton(TextButton):
@@ -312,3 +330,58 @@ class SatelliteButton(Meta):
 
     def move(self, x, y):
         self.rect.topleft = x, y
+
+
+class CopyCompositionButton(Meta):
+    enabled = True
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent)
+        self.f1 = self.crear_fuente(12)
+        self.f2 = self.crear_fuente(12, bold=True)
+        self.img_uns = self.crear(self.f1, COLOR_TEXTO)
+        self.img_sel = self.crear(self.f2, COLOR_SELECTED)
+        self.img_dis = self.crear(self.f1, COLOR_DISABLED)
+        self.image = self.img_uns
+        self.rect = self.image.get_rect(y=y)
+        self.rect.centerx = x
+
+    @staticmethod
+    def crear(fuente, fg):
+        render = fuente.render('Copy', True, fg, COLOR_AREA)
+        rect = render.get_rect()
+        canvas = Surface(rect.inflate(+6, +6).size)
+        canvas.fill(fg)
+        canvas_rect = canvas.get_rect()
+        canvas.fill(COLOR_AREA, [1, 1, canvas_rect.w - 2, canvas_rect.h - 2])
+        rect.center = canvas_rect.center
+        canvas.blit(render, rect)
+        return canvas
+
+    def select(self):
+        super().select()
+        self.rect = self.image.get_rect(center=self.rect.center)
+
+    def deselect(self):
+        super().deselect()
+        self.rect = self.image.get_rect(center=self.rect.center)
+
+    def enable(self):
+        super().enable()
+        self.rect = self.image.get_rect(center=self.rect.center)
+
+    def disable(self):
+        super().disable()
+        self.rect = self.image.get_rect(center=self.rect.center)
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1:
+            d = {'water ice': 0, 'silicates': 0, 'iron': 0}
+            system = Systems.get_current()
+            if system is not None:
+                rocky_planets = [p for p in system.planets if p.planet_type == 'rocky']
+                planet = choice(rocky_planets)
+                for element in d:
+                    d[element] = planet.composition[element]
+                self.parent.current.paste_composition(d)
+                self.parent.write_name(planet)

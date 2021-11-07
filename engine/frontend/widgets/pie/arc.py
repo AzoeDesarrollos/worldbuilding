@@ -1,4 +1,4 @@
-from pygame import draw, Color, Surface, SRCALPHA, transform
+from pygame import draw, Surface, SRCALPHA, transform
 from engine.backend.eventhandler import EventHandler
 from ..basewidget import BaseWidget
 from math import sin, cos, pi
@@ -16,11 +16,16 @@ class Arc(BaseWidget):
 
     _set = False
 
-    def __init__(self, parent, name, color, a, b, radius):
+    selected_color = None
+    default_value = None
+
+    def __init__(self, parent, name, color_a, color_b, a, b, radius):
         super().__init__(parent)
         self.radius = radius
-        self.color = Color(color)
+        self.color = color_a
+        self.color_dis = color_b
         self.name = name
+        self.selected_color = self.color_dis
         self.a, self.b = a, b
         self.image = self.create()
         self.rect = self.image.get_rect()
@@ -32,6 +37,15 @@ class Arc(BaseWidget):
     def hide(self):
         self.parent.hide()
         super().hide()
+
+    def disable(self):
+        super().disable()
+        self.selected_color = self.color_dis
+
+    def enable(self):
+        super().enable()
+        self.selected_color = self.color
+        self.image = self.create()
 
     def point(self, n, rect):
         x = rect.w // 2 + int(self.radius * cos(n * pi / 180))
@@ -73,9 +87,9 @@ class Arc(BaseWidget):
         elif x == 0 and y == 0:
             self.arc_lenght = -1
         elif x == y == 360:
-            self.kill()
+            self.hide()
 
-        for n in range(x, y+1):
+        for n in range(x, y + 1):
             # we add 1 here to y for the initial point in the center.
             point_sequence.append(self.point(n, rect))
 
@@ -86,18 +100,18 @@ class Arc(BaseWidget):
             # El try/catch acá es porque si la point_sequence es demasiado corta para hacer un poligono, esto puede ser
             # porque el arco se extiguió, con lo que es eliminado, o porque el arco ocupa 360°, a lo que se dibuja
             # como un círculo y no como un polígono.
-            if self.arc_lenght != -1 and len(point_sequence) < 1:
+            if self.arc_lenght != -1 and len(point_sequence) > 1:
                 self.arc_lenght = len(point_sequence) - 1
             if 1 < self.arc_lenght < 360:
-                draw.polygon(image, self.color, point_sequence)
+                draw.polygon(image, self.selected_color, point_sequence)
             else:
                 rotation = False
                 self._finished = True
-                draw.circle(image, self.color, [self.radius, self.radius], self.radius)
+                draw.circle(image, self.selected_color, [self.radius, self.radius], self.radius)
 
         except ValueError:
             if self.arc_lenght < 1:
-                self.kill()
+                self.hide()
             # if self.handle_a.pressed:
             #     self.handle_a.merge()
             # elif self.handle_b.pressed:
@@ -111,27 +125,27 @@ class Arc(BaseWidget):
         return image
 
     def displace(self, cx, cy):
-        """Ajusta la posición del arco y de sus handles según el centro dado"""
+        """Ajusta la posición del arco según el centro dado"""
         dx = cx - self.rect.centerx
         dy = cy - self.rect.centery
         self.rect.move_ip(dx, dy)
         # self.handle_a.rect.move_ip(dx // 2, dy // 2)
         # self.handle_b.rect.move_ip(dx // 2, dy // 2)
 
-    def adjust(self, handle):
-        if handle is self.handle_a:
-            self.a = handle.angle
-        if handle is self.handle_b:
-            self.b = handle.angle
-
-        if not self._finished:
-            pos = self.rect.center
-            self.image = self.create()
-            self.rect = self.image.get_rect(center=pos)
-        else:
-            # there's no point of having a handle if the "arc" is a circle,
-            # so the handle commits suicide.
-            handle.kill()
+    # def adjust(self, handle):
+    #     if handle is self.handle_a:
+    #         self.a = handle.angle
+    #     if handle is self.handle_b:
+    #         self.b = handle.angle
+    #
+    #     if not self._finished:
+    #         pos = self.rect.center
+    #         self.image = self.create()
+    #         self.rect = self.image.get_rect(center=pos)
+    #     else:
+    #         # there's no point of having a handle if the "arc" is a circle,
+    #         # so the handle commits suicide.
+    #         handle.kill()
 
     def __repr__(self):
         return 'Arc ' + self.name

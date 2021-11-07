@@ -1,5 +1,5 @@
 from engine.frontend.graphs import dwarfgraph_loop, gasgraph_loop, graph_loop
-from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX
+from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_DISABLED
 from engine.frontend.graphs.axial_tilt import axial_loop
 from engine.equations.planet import GasDwarf, Terrestial
 from engine.equations.planetary_system import Systems
@@ -13,8 +13,6 @@ from engine import q
 
 
 class ValueText(BaseWidget):
-    selected = False
-    active = False
     do_round = True
     editable = False
 
@@ -27,6 +25,7 @@ class ValueText(BaseWidget):
 
         self.img_uns = f1.render(text + ':', True, fg, bg)
         self.img_sel = f2.render(text + ':', True, fg, bg)
+        self.img_dis = f1.render(text + ':', True, COLOR_DISABLED, bg)
 
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))
@@ -52,6 +51,7 @@ class ValueText(BaseWidget):
 
     @value.setter
     def value(self, quantity):
+        self.enable()
         self.text_area.set_value(quantity)
 
     def elevate_changes(self, new_value, unit):
@@ -80,7 +80,7 @@ class ValueText(BaseWidget):
         not_enough_mass = 'There is not enough mass in the system to create new bodies of this type.'
         if event.button == 1:
             p = self.parent
-            if p.parent.name == 'Planet':
+            if p.parent.name == 'Planet' and p.parent.enabled:
                 data = None
                 system = Systems.get_current()
                 self.active = True
@@ -170,8 +170,10 @@ class ValueText(BaseWidget):
             self.text_area.disable()
 
     def update(self):
-        if self.selected:
+        if self.selected and self.enabled:
             self.image = self.img_sel
+        elif not self.enabled:
+            self.image = self.img_dis
         else:
             self.image = self.img_uns
 

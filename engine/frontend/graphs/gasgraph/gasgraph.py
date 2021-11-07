@@ -24,7 +24,7 @@ fuente2 = font.SysFont('Verdana', 13)
 mass_imgs = [fuente.render(str(mass_keys[i]), True, COLOR_TEXTO, COLOR_BOX) for i in range(len(mass_keys))]
 radius_imgs = [fuente.render(str(radius_keys[i]), True, COLOR_TEXTO, COLOR_BOX) for i in range(len(radius_keys))]
 
-exes, yes = [], []
+
 if path.exists(path.join(getcwd(), "lib")):
     ruta = path.join(getcwd(), 'lib', 'engine', 'frontend', 'graphs', 'gasgraph', 'gasgraph.png')
 else:
@@ -51,7 +51,7 @@ def gasgraph_loop(limit_mass):
 
     fondo = display.set_mode((ANCHO, ALTO), SCALED)
     fondo.fill(COLOR_BOX)
-
+    exes, yes = [], []
     numbers = WidgetGroup()
     for i in [i for i in range(len(radius_keys[:4]))]:
         n = Number(radius_imgs[i], x=i * 28 + 30, y=3)

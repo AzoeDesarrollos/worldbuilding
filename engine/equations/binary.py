@@ -100,7 +100,7 @@ class PTypeSystem(BinarySystem):
 
     luminosity = 0
 
-    def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
+    def __init__(self, primary, secondary, avgsep, ep=0, es=0, pos=None, id=None, name=None):
         super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
 
         assert 0.4 <= ep <= 0.7, 'Primary eccentricity must be between 0.4 and 0.7'
@@ -131,9 +131,9 @@ class PTypeSystem(BinarySystem):
         age = max([self.primary.age, self.secondary.age])
         self.age = age
         self.evolution_id = self.id
-        self.position = [round(roll(0, 1000)),
-                         round(roll(0, 1000)),
-                         round(roll(0, 1000))]
+        self.position = [round(roll(0, 1000)) if pos is None else pos['x'],
+                         round(roll(0, 1000)) if pos is None else pos['y'],
+                         round(roll(0, 1000)) if pos is None else pos['z']]
 
     def set_qs(self):
         self.shared_mass = q(self._mass.m, 'sol_mass')

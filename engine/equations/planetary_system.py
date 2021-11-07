@@ -351,8 +351,9 @@ class Systems:
 
     @classmethod
     def cycle_systems(cls):
-        system = next(cls._system_cycler)
-        cls._current = system
+        if len(cls._systems):
+            system = next(cls._system_cycler)
+            cls._current = system
 
     @classmethod
     def get_current(cls):

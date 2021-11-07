@@ -65,6 +65,7 @@ class StarSystemPanel(BaseWidget):
             self.properties.add(button)
             self.sort_buttons()
             Systems.set_system(system_data)
+            self.current.enable()
             return button
 
     def sort_buttons(self):
@@ -92,7 +93,8 @@ class StarSystemPanel(BaseWidget):
                     'avg_s': current.average_separation.m,
                     'ecc_p': current.ecc_p.m,
                     "ecc_s": current.ecc_s.m,
-                    "name": current.name
+                    "name": current.name,
+                    'pos': dict(zip(['x', 'y', 'z'], current.position))
                 }
                 data[current.id] = d
 
@@ -107,8 +109,9 @@ class StarSystemPanel(BaseWidget):
             prim = Systems.get_star_by_id(system_data['primary'])
             scnd = Systems.get_star_by_id(system_data['secondary'])
             name = system_data['name']
+            pos = event.data['pos']
 
-            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
+            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, pos, id=id, name=name)
             button = self.create_button(system)
             button.hide()
             Systems.set_system(system)
@@ -235,6 +238,11 @@ class SystemType(BaseWidget):
     def hide(self):
         for prop in self.properties.widgets():
             prop.hide()
+
+    def enable(self):
+        super().enable()
+        for arg in self.properties.widgets():
+            arg.enable()
 
 
 class ListedStar(ListedBody):

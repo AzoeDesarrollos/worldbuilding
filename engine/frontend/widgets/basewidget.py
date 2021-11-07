@@ -77,7 +77,8 @@ class BaseWidget(Sprite):
         return self.image.blit(render, render_rect)
 
     def write2(self, text, fuente, width, bg=COLOR_BOX, **kwargs):
-        render = render_textrect(text, fuente, width, COLOR_TEXTO, bg)
+        j = kwargs.pop('j') if 'j' in kwargs else 0
+        render = render_textrect(text, fuente, width, COLOR_TEXTO, bg, justification=j)
         render_rect = render.get_rect(**kwargs)
         return self.image.blit(render, render_rect)
 

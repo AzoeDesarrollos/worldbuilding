@@ -10,15 +10,13 @@ class Renderer:
     @classmethod
     def init(cls):
         init()
-        os.environ['SDL_VIDEO_CENTERED'] = "{!s},{!s}".format(0, 0)
-        display.set_icon(image.load(os.path.join(os.getcwd(), 'data', 'favicon.png')))
-        display.set_caption("WorldBuilding")
-        display.set_mode((ANCHO, ALTO), SCALED)
-
+        cls.reset()
         cls.contents = LayeredUpdates()
 
     @classmethod
     def reset(cls):
+        display.quit()
+        os.environ['SDL_VIDEO_CENTERED'] = "{!s},{!s}".format(0, 0)
         display.set_icon(image.load(os.path.join(os.getcwd(), 'data', 'favicon.png')))
         display.set_caption("WorldBuilding")
         display.set_mode((ANCHO, ALTO), SCALED)
