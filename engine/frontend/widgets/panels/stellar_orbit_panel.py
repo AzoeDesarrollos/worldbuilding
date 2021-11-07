@@ -403,7 +403,7 @@ class OrbitPanel(BaseWidget):
             self.sort_markers()
 
     def fill_indexes(self):
-        assert len(Systems.get_systems())
+        assert len(Systems.get_systems()), "There is no data to load"
         for system in Systems.get_systems():
             star = system.star_system
             if star.id not in self._markers:
