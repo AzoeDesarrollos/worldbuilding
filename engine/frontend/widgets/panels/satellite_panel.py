@@ -17,7 +17,6 @@ class SatellitePanel(BasePanel):
     curr_y = 0
 
     mass_number = None
-    loaded_data = None
     last_idx = None
 
     def __init__(self, parent):
@@ -44,12 +43,8 @@ class SatellitePanel(BasePanel):
 
     def load_satellites(self, event):
         if 'Satellites' in event.data and len(event.data['Satellites']):
-            self.loaded_data = event.data['Satellites']
-
-    def show_loaded(self):
-        if self.loaded_data is not None:
-            for idx, id in enumerate(self.loaded_data):
-                satellite_data = self.loaded_data[id]
+            for idx, id in enumerate(event.data['Satellites']):
+                satellite_data = event.data['Satellites'][id]
                 satellite_data['id'] = id
                 moon = major_moon_by_composition(satellite_data)
                 moon.idx = len([i for i in Systems.get_current().satellites if i.cls == moon.cls])
@@ -57,7 +52,6 @@ class SatellitePanel(BasePanel):
                 if system is not None and system.add_astro_obj(moon):
                     self.current.current = moon
                     self.add_button()
-            self.loaded_data.clear()
 
     def save_satellites(self, event):
         data = {}
@@ -104,7 +98,8 @@ class SatellitePanel(BasePanel):
         self.moons.append(self.current.current)
         self.satellites.add(button, layer=layer_number)
         self.properties.add(button)
-        self.sort_buttons()
+        if self.is_visible:
+            self.sort_buttons()
         self.current.erase()
         self.button_add.disable()
 
@@ -129,7 +124,7 @@ class SatellitePanel(BasePanel):
 
     def show(self):
         super().show()
-        self.show_loaded()
+        # self.show_loaded()
         self.is_visible = True
         if self.mass_number is None:
             self.properties.add(ShownMass(self))
