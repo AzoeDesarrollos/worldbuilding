@@ -167,7 +167,7 @@ class InformationPanel(BaseWidget):
 
             text_lines.append(text)
 
-        self.render = self.write3('\n'.join(text_lines), self.f2, 380)
+        self.render = self.write3('\n\n'.join(text_lines), self.f2, 380)
         self.render_rect = self.render.get_rect(topleft=[3, 250])
 
     def update(self):

@@ -115,8 +115,8 @@ class ValueText(BaseWidget):
                     available_mass = round(available_mass.to('earth_mass').m, 4)
                     assert available_mass > 0.0001, not_enough_mass
                     data = dwarfgraph_loop(available_mass if available_mass < 0.1 else None)
-
-                Renderer.reset()
+                if not p.has_values:
+                    Renderer.reset()
                 if data is not None:
                     for elemento in self.parent.properties.get_sprites_from_layer(1):
                         attr = ''
@@ -262,7 +262,7 @@ class NumberArea(BaseArea, IncrementalValue):
 
     def get_value(self, event):
         if event.origin.capitalize() == self.parent.text:
-            self.set_value(q(event.data['value']))
+            self.set_value(event.data['value'])
 
     def on_mousebuttondown(self, event):
         self.increment = self.update_increment()

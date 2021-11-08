@@ -195,16 +195,11 @@ class AsteroidType(BaseWidget):
         self.relative_args = ['density', 'mass', 'volume']
 
         names = sorted(material_densities.keys())
-        d = {names[0]: {'value': 33, 'handle': 'black'},
-             names[1]: {'value': 33, 'handle': 'black'},
-             names[2]: {'value': 34, 'handle': 'black'}}
-        self.default_comp = {'iron': 33, 'silicates': 33, 'water ice': 34}
+        d = {names[0]: 33, names[1]: 33, names[2]: 34}
         self.pie = PieChart(self, 200, 500, 65, d)
         for obj in self.pie.chart.widgets():
-            self.properties.add(obj, layer=7)
-        self.create()
+            self.properties.add(obj, layer=5)
 
-    def create(self):
         for i, prop in enumerate(["Density", "Mass", "Volume"]):
             vt = ValueText(self, prop, 50, 64 + i * 48, COLOR_TEXTO, COLOR_BOX)
             self.properties.add(vt, layer=2)
@@ -227,13 +222,8 @@ class AsteroidType(BaseWidget):
         else:
             data['composition'] = self.current.composition
 
-        for item in self.properties.get_widgets_from_layer(2):
-            if item.text_area.value:
-                data[item.text.lower()] = float(item.text_area.value)
-
-        for item in self.properties.get_widgets_from_layer(3):
-            if item.text_area.value:
-                data[item.text.lower()] = float(item.text_area.value)
+        for item in self.properties.get_widgets_from_layer(2)+self.properties.get_widgets_from_layer(3):
+            data[item.text.lower()] = float(item.text_area.value)
 
         for material in self.properties.get_widgets_from_layer(4):
             if material.text_area.value:  # not empty
@@ -279,7 +269,7 @@ class AsteroidType(BaseWidget):
         for vt in self.properties:
             vt.value = ''
         if not replace:
-            self.pie.set_values(self.default_comp)
+            self.pie.set_values()
 
     def enable(self):
         for arg in self.properties.widgets():
@@ -301,19 +291,21 @@ class AsteroidType(BaseWidget):
 
     def fill(self):
         tos = {
-            'Mass': 'Me',
-            'Density': 'De',
-            'Volume': 'Ve'
+            1: {
+                'Mass': 'Me',
+                'Density': 'De',
+                'Volume': 'Ve'
+            }
         }
 
         for elemento in self.properties.get_widgets_from_layer(2):
             idx = self.properties.widgets().index(elemento)
             attr = self.relative_args[idx]
 
-            if not self.parent.relative_mode:
+            if not self.parent.mode == 0:
                 got_attr = getattr(self.current, attr)
             else:
-                got_attr = getattr(self.current, attr).to(tos[elemento.text.capitalize()])
+                got_attr = getattr(self.current, attr).to(tos[self.parent.mode][elemento.text.capitalize()])
             attr = q(str(got_attr.m), got_attr.u) if type(got_attr) is not str else got_attr
             elemento.value = attr
             if elemento.text_area.unit == 'earth_mass':

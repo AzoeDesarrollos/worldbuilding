@@ -54,7 +54,7 @@ class Arc(BaseWidget):
 
     def get_value(self):
         value = self.arc_lenght - 1
-        return round(value * 100 / 360)
+        return str(round(value * 100 / 360)) + ' %'
 
     def post_value(self):
         EventHandler.trigger('SetValue', self.name, {'value': self.get_value()})
@@ -120,8 +120,7 @@ class Arc(BaseWidget):
         if rotation:
             image = transform.rotate(image, rotation)
 
-        if not self._set:
-            self.post_value()
+        self.post_value()
         return image
 
     def displace(self, cx, cy):
@@ -150,17 +149,17 @@ class Arc(BaseWidget):
     def __repr__(self):
         return 'Arc ' + self.name
 
-    def links(self, handle_a, handle_b):
-        self.handle_a = handle_a
-        self.handle_b = handle_b
+    # def links(self, handle_a, handle_b):
+    #     self.handle_a = handle_a
+    #     self.handle_b = handle_b
+    #
+    #     self.handle_a.link(self)
+    #     self.handle_b.link(self)
 
-        self.handle_a.link(self)
-        self.handle_b.link(self)
-
-    def is_handle(self, handle):
-        a = handle == self.handle_a
-        b = handle == self.handle_b
-        return a or b
+    # def is_handle(self, handle):
+    #     a = handle == self.handle_a
+    #     b = handle == self.handle_b
+    #     return a or b
 
     def set_ab(self, a, b):
         self.a = a

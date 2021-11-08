@@ -9,8 +9,8 @@ from engine import material_densities
 from ..object_type import ObjectType
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
+from pygame import Surface
 from ..pie import PieChart
-from pygame import Surface, Color
 from random import choice
 
 
@@ -22,7 +22,7 @@ class SatellitePanel(BasePanel):
     last_idx = None
 
     def __init__(self, parent):
-        super().__init__('Satellite', parent)
+        super().__init__('Satellite', parent, modes=3)
         self.current = SatelliteType(self)
         r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 132, 200])
         self.area_satellites = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 200))
@@ -107,7 +107,7 @@ class SatellitePanel(BasePanel):
         self.properties.add(button)
         if self.is_visible:
             self.sort_buttons()
-        self.current.erase()
+            self.current.erase()
         self.button_add.disable()
 
     def del_button(self, satellite):
@@ -140,6 +140,10 @@ class SatellitePanel(BasePanel):
         super().hide()
         for pr in self.properties.widgets():
             pr.hide()
+
+    def enable(self):
+        super().enable()
+        self.current.enable()
 
     def clear(self):
         self.button_add.disable()
@@ -176,18 +180,14 @@ class SatelliteType(ObjectType):
             item.text_area.rect.y += 50
 
         names = sorted(material_densities.keys())
-        d = {names[0]: {'color': Color([155] * 3), 'value': 33, 'handle': 'black'},
-             names[1]: {'color': Color([155, 80, 0]), 'value': 33, 'handle': 'black'},
-             names[2]: {'color': Color([0, 200, 255]), 'value': 34, 'handle': 'black'}}
-
-        # self.default_comp = {'iron': 33, 'silicates': 33, 'water ice': 34}
+        d = {names[0]: 33, names[1]: 33, names[2]: 34}
         self.pie = PieChart(self, 200, 500, 65, d)
         for obj in self.pie.chart.widgets():
             self.properties.add(obj, layer=3)
 
         for i, name in enumerate(sorted(d)):
             a = ValueText(self, name.capitalize(), 3, 500 + 30 + i * 21, bg=COLOR_AREA)
-            a.text_area.value = self.pie.get_value(name)
+            a.text_area.value = str(self.pie.get_value(name))
             self.properties.add(a, layer=2)
             a.modifiable = True
 
@@ -245,8 +245,8 @@ class SatelliteType(ObjectType):
             vt.value = ''
         self.current = None
         self.parent.clear()
-        if not replace:
-            self.pie.set_values()
+        # if not replace:
+        self.pie.set_values()
 
     def clear(self, event):
         if event.data['panel'] is self.parent:
@@ -260,10 +260,18 @@ class SatelliteType(ObjectType):
 
     def fill(self, tos=None):
         tos = {
-            'mass': 'kg',
-            'radius': 'km',
-            'gravity': 'm/s**2',
-            'escape_velocity': 'km/s'
+            1: {
+                'mass': 'kg',
+                'radius': 'km',
+                'gravity': 'm/s**2',
+                'escape_velocity': 'km/s'
+            },
+            2: {
+                'mass': 'Mm',
+                'radius': 'Rm',
+                'gravity': 'Gm',
+                'escape_velocity': 'EVm'
+            }
         }
         super().fill(tos)
 
@@ -375,7 +383,7 @@ class CopyCompositionButton(Meta):
         self.rect = self.image.get_rect(center=self.rect.center)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.button == 1 and self.enabled:
             d = {'water ice': 0, 'silicates': 0, 'iron': 0}
             system = Systems.get_current()
             if system is not None:
@@ -385,3 +393,15 @@ class CopyCompositionButton(Meta):
                     d[element] = planet.composition[element]
                 self.parent.current.paste_composition(d)
                 self.parent.write_name(planet)
+
+    def update(self):
+        super().update()
+        system = Systems.get_current()
+        if system is not None:
+            rocky_planets = [p for p in system.planets if p.planet_type == 'rocky']
+            if len(rocky_planets):
+                if not self.enabled:
+                    self.enable()
+            else:
+                if self.enabled:
+                    self.disable()

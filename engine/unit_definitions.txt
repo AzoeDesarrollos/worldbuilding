@@ -31,3 +31,9 @@ solar_lifetime = 10*10**9 years = Tms
 
 # Saturn's Ring
 ring_mass = 1.54e+19 kg = SRm
+
+# Moon Units
+moon_mass = 7.342e+22 kg = Mm
+moon_radius = 1738.1 km = Rm
+moon_escape_velocity = 2.38 km/s = EVm
+moon_gravity = 1.62092 m/s ** 2 = Gm

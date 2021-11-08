@@ -23,7 +23,7 @@ class PieChart(BaseWidget):
         a, b = 0, 0
         arcs, handles = [], []
         for i, name in enumerate(values):
-            value = values[name]['value']
+            value = values[name]
             # handle_color = values[name]['handle']
 
             b += round((value / 100) * 360)
@@ -54,9 +54,9 @@ class PieChart(BaseWidget):
             value = values[name] if values is not None else arc.default_value
             b += round((value / 100) * 360)
 
-            if not self.parent.parent.enabled:
+            if not self.parent.parent.enabled and arc.enabled:
                 arc.disable()
-            else:
+            elif not arc.enabled:
                 arc.enable()
 
             if value == 0:

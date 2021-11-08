@@ -1,16 +1,17 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_TEXTO, COLOR_BOX
 from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface, transform
+from itertools import cycle
 
 
 class BasePanel(BaseWidget):
     current = None
-    relative_mode = True
+    mode = None
     name = None
     skip = False
     skippable = False
 
-    def __init__(self, name, parent):
+    def __init__(self, name, parent, modes=2):
         super().__init__(parent)
         self.name = name
         self.image = Surface((ANCHO, ALTO-32))
@@ -24,6 +25,8 @@ class BasePanel(BaseWidget):
         rt1_rect = self.rt1_uns.get_rect(x=12, y=70)
         self.relative_text = self.rt1_uns
         self.relative_text_area = rt1_rect.inflate(10, 10)
+        self.modes = cycle(list(range(modes)))
+        self.mode = next(self.modes)
 
         rt2 = transform.rotate(f2.render('Absolute Values', True, COLOR_TEXTO, COLOR_BOX), 90)
         rt2_rect = rt2.get_rect(x=6, y=220)
@@ -40,12 +43,11 @@ class BasePanel(BaseWidget):
         if event.button == 1 and self.enabled:
             if self.relative_text_area.collidepoint(event.pos):
                 self.image.fill(COLOR_BOX, self.relative_text_area)
-                if self.relative_mode:
+                self.mode = next(self.modes)
+                if self.mode == 1:
                     self.relative_text = self.rt1_sel
-                    self.relative_mode = False
                 else:
                     self.relative_text = self.rt1_uns
-                    self.relative_mode = True
 
                 if self.current.has_values:
                     self.current.fill()
