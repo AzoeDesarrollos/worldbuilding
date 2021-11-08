@@ -11,7 +11,7 @@ from .planet_panel import ShownMass
 from .base_panel import BasePanel
 from pygame import Surface
 from ..pie import PieChart
-from random import choice
+from itertools import cycle
 
 
 class SatellitePanel(BasePanel):
@@ -342,6 +342,7 @@ class SatelliteButton(Meta):
 
 class CopyCompositionButton(Meta):
     enabled = True
+    current = None
 
     def __init__(self, parent, x, y):
         super().__init__(parent)
@@ -353,6 +354,17 @@ class CopyCompositionButton(Meta):
         self.image = self.img_uns
         self.rect = self.image.get_rect(y=y)
         self.rect.centerx = x
+        self.rocky_planets = []
+        self.rocky_cycler = cycle(self.rocky_planets)
+        EventHandler.register(self.manage_rocky_planets, 'RockyPlanet')
+
+    def manage_rocky_planets(self, event):
+        if event.data['operation'] == 'add':
+            self.rocky_planets.append(event.data['planet'])
+            if len(self.rocky_planets) == 1:
+                self.current = next(self.rocky_cycler)
+        elif event.data['operation'] == 'remove':
+            self.rocky_planets.remove(event.data['planet'])
 
     @staticmethod
     def crear(fuente, fg):
@@ -385,23 +397,16 @@ class CopyCompositionButton(Meta):
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
             d = {'water ice': 0, 'silicates': 0, 'iron': 0}
-            system = Systems.get_current()
-            if system is not None:
-                rocky_planets = [p for p in system.planets if p.planet_type == 'rocky']
-                planet = choice(rocky_planets)
-                for element in d:
-                    d[element] = planet.composition[element]
-                self.parent.current.paste_composition(d)
-                self.parent.write_name(planet)
+            for element in d:
+                d[element] = self.current.composition[element]
+            self.parent.current.paste_composition(d)
+            self.parent.write_name(self.current)
+            self.current = next(self.rocky_cycler)
 
     def update(self):
         super().update()
-        system = Systems.get_current()
-        if system is not None:
-            rocky_planets = [p for p in system.planets if p.planet_type == 'rocky']
-            if len(rocky_planets):
-                if not self.enabled:
-                    self.enable()
-            else:
-                if self.enabled:
-                    self.disable()
+        if len(self.rocky_planets):
+            if not self.enabled:
+                self.enable()
+        elif self.enabled:
+            self.disable()

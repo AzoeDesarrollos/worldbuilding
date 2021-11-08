@@ -1,8 +1,12 @@
 from engine.frontend.globales import WidgetHandler, Renderer
 from engine.frontend.widgets.message import PopUpMessage
 from engine.backend.eventhandler import EventHandler
+from pygame import time
+
+fps = time.Clock()
 
 while True:
+    fps.tick(1)
     try:
         EventHandler.process()
         WidgetHandler.update()
