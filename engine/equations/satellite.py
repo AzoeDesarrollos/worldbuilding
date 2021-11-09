@@ -4,7 +4,6 @@ from engine.backend.util import roll, generate_id
 from .orbit import SatelliteOrbit, PlanetOrbit
 from .lagrange import get_lagrange_points
 from engine import q, material_densities
-from datetime import datetime
 from math import pi, sqrt
 
 
@@ -152,8 +151,7 @@ class Minor(Satellite):
         self.albedo = q(4.76)
 
         # ID values make each satellite unique, even if they have the same characteristics.
-        now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
-        self.id = data['id'] if 'id' in data else now
+        self.id = data['id'] if 'id' in data else generate_id()
 
         self.system_id = data.get('system', None)
 
