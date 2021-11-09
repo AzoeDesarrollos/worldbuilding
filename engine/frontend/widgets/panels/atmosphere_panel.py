@@ -4,7 +4,7 @@ from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
-from engine.backend.textrect import render_textrect
+from engine.frontend.globales import render_textrect
 from pygame import Surface, draw, SRCALPHA, Rect
 from .common import ListedArea, AvailablePlanet
 from engine import molecular_weight, q

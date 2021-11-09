@@ -1,5 +1,4 @@
-from engine.frontend.globales import WidgetHandler, Renderer, COLOR_BOX, COLOR_TEXTO
-from engine.backend.textrect import render_textrect
+from engine.frontend.globales import WidgetHandler, Renderer, COLOR_BOX, COLOR_TEXTO, render_textrect
 from pygame.sprite import Sprite
 from pygame import font, Rect
 

@@ -1,8 +1,8 @@
 from .general import BodyInHydrostaticEquilibrium, Ring
 from engine import molecular_weight, q, albedos
+from engine.backend.util import generate_id
 from .lagrange import get_lagrange_points
 from math import sqrt, pi, pow, tan
-from datetime import datetime
 from pygame import Color
 from .orbit import PlanetOrbit
 
@@ -102,8 +102,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.satellites = []
 
         # ID values make each planet unique, even if they have the same characteristics.
-        now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
-        self.id = data['id'] if 'id' in data else now
+        self.id = data['id'] if 'id' in data else generate_id()
 
         self.system_id = data.get('system', None)
 

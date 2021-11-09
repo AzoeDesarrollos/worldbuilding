@@ -1,8 +1,6 @@
+from engine.backend.util import decimal_round, roll, generate_id
 from .general import BodyInHydrostaticEquilibrium
-from engine.backend.util import decimal_round
-from engine.backend.randomness import roll
 from bisect import bisect_right
-from datetime import datetime
 from math import sqrt, pow
 from random import choice
 from pygame import Color
@@ -94,8 +92,7 @@ class Star(BodyInHydrostaticEquilibrium):
         self.peak_light = LightWave(self.peak_lightwave_frequency(self.temperature))
 
         # ID values make each star unique, even if they have the same mass and name.
-        now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
-        self.id = data['id'] if 'id' in data else now
+        self.id = data['id'] if 'id' in data else generate_id()
         self.evolution_id = self.id
         self.position = [round(roll(0, 1000)) if 'x' not in data.get('pos', {}) else data['pos']['x'],
                          round(roll(0, 1000)) if 'y' not in data.get('pos', {}) else data['pos']['y'],
@@ -128,7 +125,7 @@ class Star(BodyInHydrostaticEquilibrium):
             if age != self._age:
                 self._age = age
                 self.set_luminosity(self._age)
-                self.evolution_id = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
+                self.evolution_id = generate_id()
             return q(age, 'years')
 
     def set_derivated_characteristics(self):

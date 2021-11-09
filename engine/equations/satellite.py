@@ -1,11 +1,10 @@
 from engine.frontend.globales import COLOR_ICYMOON, COLOR_ROCKYMOON, COLOR_IRONMOON
 from .general import BodyInHydrostaticEquilibrium, Flagable
+from engine.backend.util import roll, generate_id
+from .orbit import SatelliteOrbit, PlanetOrbit
 from .lagrange import get_lagrange_points
 from engine import q, material_densities
-from engine.backend import roll
-from datetime import datetime
 from math import pi, sqrt
-from .orbit import SatelliteOrbit, PlanetOrbit
 
 
 class Satellite(Flagable):
@@ -108,8 +107,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         self.satellites = []
 
         # ID values make each satellite unique, even if they have the same characteristics.
-        now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
-        self.id = data['id'] if 'id' in data else now
+        self.id = data['id'] if 'id' in data else generate_id()
 
         self.system_id = data.get('system', None)
 
@@ -153,8 +151,7 @@ class Minor(Satellite):
         self.albedo = q(4.76)
 
         # ID values make each satellite unique, even if they have the same characteristics.
-        now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
-        self.id = data['id'] if 'id' in data else now
+        self.id = data['id'] if 'id' in data else generate_id()
 
         self.system_id = data.get('system', None)
 
