@@ -1,6 +1,5 @@
+from engine.backend.util import decimal_round, roll
 from .general import BodyInHydrostaticEquilibrium
-from engine.backend.util import decimal_round
-from engine.backend.randomness import roll
 from bisect import bisect_right
 from datetime import datetime
 from math import sqrt, pow

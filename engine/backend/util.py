@@ -1,8 +1,17 @@
 from .eventhandler import EventHandler
-import json
 from math import trunc, ceil, floor
+from random import random, uniform
 from pygame import quit
 from sys import exit
+import json
+
+
+def roll(a: float = 0.0, b: float = 0.0):
+    """Base function to generate random float values"""
+    if a != 0.0 or b != 0.0:
+        return uniform(a, b)
+    else:
+        return random()
 
 
 def decimal_round(number: float):
@@ -56,7 +65,7 @@ def add_decimal(text: str):
                 decimal.append(txt[i:count + i])
 
         decimal.reverse()
-        return ','.join(decimal) if negative is False else '-'+','.join(decimal)
+        return ','.join(decimal) if negative is False else '-' + ','.join(decimal)
 
     else:
         return txt
@@ -82,6 +91,7 @@ def salir_handler(event):
 EventHandler.register(salir_handler, 'salir')
 
 __all__ = [
+    'roll',
     'guardar_json',
     'abrir_json',
     'decimal_round',

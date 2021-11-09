@@ -4,7 +4,7 @@ from pygame import display, event, font, transform, image
 from ..common import Linea, Punto, find_and_interpolate
 from engine.frontend.globales import WidgetGroup
 from pygame import init, quit, Rect, Surface
-from engine.backend.randomness import roll
+from engine.backend.util import roll
 from pygame.sprite import Sprite
 from os import getcwd, path
 from math import pi, pow

@@ -1,4 +1,4 @@
-from engine.backend.randomness import roll
+from engine.backend.util import roll
 from engine import q
 from math import sqrt
 from datetime import datetime
