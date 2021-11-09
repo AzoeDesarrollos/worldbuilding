@@ -57,8 +57,7 @@ class SatellitePanel(BasePanel):
                 moon.idx = len([i for i in Systems.get_current().satellites if i.cls == moon.cls])
                 system = Systems.get_system_by_id(satellite_data['system'])
                 if system is not None and system.add_astro_obj(moon):
-                    self.current.current = moon
-                    self.add_button()
+                    self.add_button(moon)
 
     def save_satellites(self, event):
         data = {}
@@ -94,15 +93,15 @@ class SatellitePanel(BasePanel):
             button.show()
         self.sort_buttons()
 
-    def add_button(self):
-        button = SatelliteButton(self.current, self.current.current, self.curr_x, self.curr_y)
-        if self.current.current.system_id is not None:
-            layer_number = self.current.current.system_id
+    def add_button(self, moon):
+        button = SatelliteButton(self.current, moon, self.curr_x, self.curr_y)
+        if moon.system_id is not None:
+            layer_number = moon.system_id
         else:
             layer_number = Systems.get_current().id
-            self.current.current.system_id = layer_number
+            moon.system_id = layer_number
 
-        self.moons.append(self.current.current)
+        self.moons.append(moon)
         self.satellites.add(button, layer=layer_number)
         self.properties.add(button)
         if self.is_visible:
@@ -313,7 +312,7 @@ class AddMoonButton(TextButton):
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
-            self.parent.add_button()
+            self.parent.add_button(self.parent.current.current)
 
 
 class DelMoonButton(TextButton):
