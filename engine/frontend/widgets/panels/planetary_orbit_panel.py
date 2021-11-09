@@ -51,7 +51,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.add_orbits_button = SetOrbitButton(self, ANCHO - 94, 394)
         self.area_modify = ModifyArea(self, ANCHO - 201, 374)
-        self.show_markers_button = ToggleableButton(self, 'Satellites', self.toggle_stellar_orbits, 3, 421)
+        self.show_markers_button = ToggleSatellitesButton(self, 'Satellites', self.toggle_stellar_orbits, 3, 421)
         self.show_markers_button.disable()
         self.resonances_button = AddResonanceButton(self, ANCHO - 150, 416)
         self.order_f = self.crear_fuente(14)
@@ -202,8 +202,10 @@ class PlanetaryOrbitPanel(BaseWidget):
         for prop in self.properties.widgets():
             prop.hide()
 
-    def select_planet(self, planet):
-        if planet is not self.current:
+    def select_planet(self, planet, force=False):
+        if planet is not self.current or force:
+            if force:
+                self.planet_area.select_by_data(planet)
             self.hide_everything()
             self.current = planet
             self.populate()
@@ -348,6 +350,7 @@ class PlanetaryOrbitPanel(BaseWidget):
             marker.hide()
         self.visible_markers = False
         self.show_markers_button.disable()
+        self.hide_orbit_types()
 
     def is_added(self, obj):
         return obj in self.added
@@ -435,6 +438,11 @@ class AvailablePlanets(AvailableObjects):
             self.parent.hide_markers()
         self.parent.current = None
 
+    def select_by_data(self, data):
+        for obj in self.listed_objects.widgets():
+            if obj.object_data == data:
+                self.select_one(obj)
+
 
 class ObjectButton(Meta):
     info = None
@@ -491,8 +499,10 @@ class ObjectButton(Meta):
                     self.parent.toggle_stellar_orbits()
                 else:
                     self.parent.hide_everything()
-                if self.parent.current is not None:
-                    self.parent.show_markers_button.enable()
+                if self.parent.current is None:
+                    self.parent.current = self.object_data.parent
+                    self.parent.planet_area.select_by_data(self.object_data.parent)
+                self.parent.show_markers_button.enable()
                 self.info.link_marker(self.linked_marker)
                 self.info.show()
 
@@ -668,3 +678,10 @@ class AddResonanceButton(TextButton):
     def enable(self):
         super().enable()
         self.parent.image.fill(COLOR_BOX, [325, 396, 63, 18])
+
+
+class ToggleSatellitesButton(ToggleableButton):
+    def on_mousebuttondown(self, event):
+        if self.parent.current is not None:
+            self.parent.select_planet(self.parent.current, force=True)
+        super().on_mousebuttondown(event)
