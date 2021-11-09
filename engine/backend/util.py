@@ -1,6 +1,7 @@
 from .eventhandler import EventHandler
 from math import trunc, ceil, floor
 from random import random, uniform
+from datetime import datetime
 from pygame import quit
 from sys import exit
 import json
@@ -88,9 +89,15 @@ def salir_handler(event):
     exit()
 
 
+def generate_id():
+    now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
+    return now
+
+
 EventHandler.register(salir_handler, 'salir')
 
 __all__ = [
+    'generate_id',
     'roll',
     'guardar_json',
     'abrir_json',

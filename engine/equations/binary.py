@@ -1,9 +1,8 @@
-from engine.backend.util import roll
-from engine import q
-from math import sqrt
-from datetime import datetime
+from engine.backend.util import roll, generate_id
 from .orbit import BinaryStarOrbit
 from .general import Flagable
+from math import sqrt
+from engine import q
 
 
 class BinarySystem(Flagable):
@@ -52,8 +51,7 @@ class BinarySystem(Flagable):
         self.system_name = self.__repr__()
 
         # ID values make each system unique, even if they have the same stars and separation.
-        now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
-        self.id = id if id is not None else now
+        self.id = id if id is not None else generate_id()
 
     @staticmethod
     def calculate_distances(e, ref):
