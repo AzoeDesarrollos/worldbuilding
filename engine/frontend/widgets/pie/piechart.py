@@ -65,7 +65,8 @@ class PieChart(BaseWidget):
                 arc.show()
 
             if arc is not None:
-                arc.set_ab(a, b)
+                if arc.is_visible:
+                    arc.set_ab(a, b)
             else:
                 arc = Arc(self, name, self.colors_a[i], self.colors_b[i], a, b, self.radius)
                 self.chart.add(arc, layer=1)
@@ -98,16 +99,20 @@ class PieChart(BaseWidget):
             arc = None
         return arc
 
-    def get_value(self, name):
-        arc = self.get_arc(name)
-        return arc.get_value()
+    # def get_value(self, name):
+    #     arc = self.get_arc(name)
+    #     return arc.get_value()
 
-    def update(self):
-        if not self.parent.parent.enabled:
-            for arc in self.chart.get_widgets_from_layer(1):
-                if arc.enabled:
-                    arc.disable()
-        elif not self.enabled:
-            for arc in self.chart.get_widgets_from_layer(1):
-                if not arc.enabled:
-                    arc.enable()
+    def get_default_value(self, name):
+        arc = self.get_arc(name)
+        return str(arc.default_value) + ' %'
+
+    # def update(self):
+    #     if not self.parent.parent.enabled:
+    #         for arc in self.chart.get_widgets_from_layer(1):
+    #             if arc.enabled:
+    #                 arc.disable()
+    #     elif not self.enabled:
+    #         for arc in self.chart.get_widgets_from_layer(1):
+    #             if not arc.enabled:
+    #                 arc.enable()

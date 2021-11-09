@@ -37,7 +37,7 @@ class SatellitePanel(BasePanel):
         self.button_add = AddMoonButton(self, ANCHO - 13, 398)
         self.button_del = DelMoonButton(self, ANCHO - 13, 416)
         self.copy_button = CopyCompositionButton(self, r.centerx, r.bottom + 6)
-        txt = 'Copy the values from a random planet'
+        txt = 'Copy the values from a selected planet'
         self.f3 = self.crear_fuente(11)
         self.txt_a = self.write2(txt, self.f3, 130, COLOR_AREA, centerx=r.centerx, y=self.area_satellites.y + 50, j=1)
         self.properties.add(self.button_add, self.button_del, self.copy_button)
@@ -146,6 +146,7 @@ class SatellitePanel(BasePanel):
         self.current.enable()
 
     def clear(self):
+        self.image.fill(COLOR_AREA, [0, 498, 130, 14])
         self.button_add.disable()
         self.button_del.disable()
         for button in self.satellites.widgets():
@@ -187,7 +188,7 @@ class SatelliteType(ObjectType):
 
         for i, name in enumerate(sorted(d)):
             a = ValueText(self, name.capitalize(), 3, 500 + 30 + i * 21, bg=COLOR_AREA)
-            a.text_area.value = str(self.pie.get_value(name))
+            a.text_area.value = str(d[name]) + ' %'
             self.properties.add(a, layer=2)
             a.modifiable = True
 
@@ -198,10 +199,12 @@ class SatelliteType(ObjectType):
         else:
             data['composition'] = self.current.composition
 
-        for material in self.properties.get_sprites_from_layer(2):
-            if material.text_area.value:  # not empty
-                text = material.text_area.value.strip(' %')
-                data['composition'][material.text.lower()] = float(text)
+        if not len(data['composition']):
+            for material in self.properties.get_sprites_from_layer(2):
+                if material.text_area.value:  # not empty
+                    text = material.text_area.value.strip(' %')
+                    data['composition'][material.text.lower()] = float(text)
+
         for item in self.properties.get_widgets_from_layer(1):
             text = item.text_area.value
             try:
@@ -239,14 +242,25 @@ class SatelliteType(ObjectType):
         self.current = satellite
         self.calculate()
 
+    def enable(self):
+        for arg in self.properties.widgets():
+            arg.enable()
+        for obj in self.pie.chart.widgets():
+            obj.enable()
+        super().enable()
+
     def erase(self, replace=False):
         super().erase()
-        for vt in self.properties:
-            vt.value = ''
         self.current = None
         self.parent.clear()
-        # if not replace:
-        self.pie.set_values()
+        self.has_values = False
+        for vt in self.properties.get_widgets_from_layer(1):
+            vt.value = ''
+        for vt in self.properties.get_widgets_from_layer(2):
+            vt.value = self.pie.get_default_value(vt.text.lower())
+
+        if not replace:
+            self.pie.set_values()
 
     def clear(self, event):
         if event.data['panel'] is self.parent:
@@ -405,7 +419,7 @@ class CopyCompositionButton(Meta):
 
     def update(self):
         super().update()
-        if len(self.rocky_planets):
+        if len(self.rocky_planets) and self.parent.enabled:
             if not self.enabled:
                 self.enable()
         elif self.enabled:

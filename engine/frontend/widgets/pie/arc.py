@@ -14,7 +14,7 @@ class Arc(BaseWidget):
     arc_lenght = 0
     _finished = False
 
-    _set = False
+    _set = True
 
     selected_color = None
     default_value = None
@@ -53,11 +53,12 @@ class Arc(BaseWidget):
         return x, y
 
     def get_value(self):
-        value = self.arc_lenght - 1
-        return str(round(value * 100 / 360)) + ' %'
+        value = self.arc_lenght - 1 if self.arc_lenght != 0 else self.arc_lenght
+        return str(round(value * 100 / 360, 2)) + ' %'
 
     def post_value(self):
         EventHandler.trigger('SetValue', self.name, {'value': self.get_value()})
+        self._set = False
 
     def create(self):
         """Crea la imagen del sector"""
@@ -120,7 +121,8 @@ class Arc(BaseWidget):
         if rotation:
             image = transform.rotate(image, rotation)
 
-        self.post_value()
+        if not self._set:
+            self.post_value()
         return image
 
     def displace(self, cx, cy):
