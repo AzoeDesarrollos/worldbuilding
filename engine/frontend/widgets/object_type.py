@@ -82,10 +82,10 @@ class ObjectType(BaseWidget):
     def fill(self, tos):
         for i, elemento in enumerate(self.relatives.widgets()):
             arg = self.relative_args[i]
-            if self.parent.relative_mode:
+            if self.parent.mode == 0:
                 got_attr = getattr(self.current, arg)
             else:
-                got_attr = getattr(self.current, arg).to(tos[arg])
+                got_attr = getattr(self.current, arg).to(tos[self.parent.mode][arg])
             attr = q(str(round(got_attr.m, 5)), got_attr.u) if type(got_attr) is not str else got_attr
             elemento.value = attr
             elemento.text_area.show()

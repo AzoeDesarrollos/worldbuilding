@@ -36,7 +36,7 @@ class AsteroidPanel(BasePanel):
         self.button_add = AddAsteroidButton(self, ANCHO - 13, 398)
         self.button_del = DelAsteroidButton(self, ANCHO - 13, 416)
         self.copy_button = CopyCompositionButton(self, ro.centerx,  ro.bottom + 6)
-        txt = 'Copy the values from a random planet'
+        txt = 'Copy the values from a selected planet'
         self.f3 = self.crear_fuente(11)
         self.txt_a = self.write2(txt, self.f3, 130, COLOR_AREA, centerx=ro.centerx, y=self.area_asteroids.y + 50, j=1)
         self.properties.add(self.button_add, self.button_del, self.copy_button)
@@ -136,7 +136,6 @@ class AsteroidPanel(BasePanel):
 
     def show(self):
         super().show()
-        self.is_visible = True
         if self.mass_number is None:
             self.properties.add(ShownMass(self))
         for pr in self.properties.widgets():
@@ -171,6 +170,7 @@ class AsteroidPanel(BasePanel):
             return type_c + 1
 
     def clear(self):
+        self.image.fill(COLOR_AREA, [0, 498, 130, 14])
         self.button_add.disable()
         self.button_del.disable()
         for button in self.asteroids.widgets():
@@ -195,16 +195,11 @@ class AsteroidType(BaseWidget):
         self.relative_args = ['density', 'mass', 'volume']
 
         names = sorted(material_densities.keys())
-        d = {names[0]: {'value': 33, 'handle': 'black'},
-             names[1]: {'value': 33, 'handle': 'black'},
-             names[2]: {'value': 34, 'handle': 'black'}}
-        self.default_comp = {'iron': 33, 'silicates': 33, 'water ice': 34}
+        d = {names[0]: 33, names[1]: 33, names[2]: 34}
         self.pie = PieChart(self, 200, 500, 65, d)
         for obj in self.pie.chart.widgets():
-            self.properties.add(obj, layer=7)
-        self.create()
+            self.properties.add(obj, layer=5)
 
-    def create(self):
         for i, prop in enumerate(["Density", "Mass", "Volume"]):
             vt = ValueText(self, prop, 50, 64 + i * 48, COLOR_TEXTO, COLOR_BOX)
             self.properties.add(vt, layer=2)
@@ -216,7 +211,7 @@ class AsteroidType(BaseWidget):
 
         for i, name in enumerate(sorted(material_densities)):
             a = ValueText(self, name.capitalize(), 3, 500 + 30 + i * 21, bg=COLOR_AREA)
-            a.text_area.value = self.pie.get_value(name)
+            a.text_area.value = str(d[name]) + ' %'
             self.properties.add(a, layer=4)
             a.modifiable = True
 
@@ -227,17 +222,14 @@ class AsteroidType(BaseWidget):
         else:
             data['composition'] = self.current.composition
 
-        for item in self.properties.get_widgets_from_layer(2):
-            if item.text_area.value:
-                data[item.text.lower()] = float(item.text_area.value)
-
         for item in self.properties.get_widgets_from_layer(3):
             if item.text_area.value:
                 data[item.text.lower()] = float(item.text_area.value)
 
-        for material in self.properties.get_widgets_from_layer(4):
-            if material.text_area.value:  # not empty
-                data['composition'][material.text.lower()] = float(material.text_area.value.strip(' %'))
+        if not len(data['composition']):
+            for material in self.properties.get_widgets_from_layer(4):
+                if material.text_area.value:  # not empty
+                    data['composition'][material.text.lower()] = float(material.text_area.value.strip(' %'))
 
         if self.current is not None:
             data['a axis'] = self.current.a_axis.m
@@ -276,10 +268,12 @@ class AsteroidType(BaseWidget):
         self.current = None
         self.has_values = False
         self.parent.clear()
-        for vt in self.properties:
+        for vt in self.properties.get_widgets_from_layer(2)+self.properties.get_widgets_from_layer(3):
             vt.value = ''
+        for vt in self.properties.get_widgets_from_layer(4):
+            vt.value = self.pie.get_default_value(vt.text.lower())
         if not replace:
-            self.pie.set_values(self.default_comp)
+            self.pie.set_values()
 
     def enable(self):
         for arg in self.properties.widgets():
@@ -301,19 +295,21 @@ class AsteroidType(BaseWidget):
 
     def fill(self):
         tos = {
-            'Mass': 'Me',
-            'Density': 'De',
-            'Volume': 'Ve'
+            1: {
+                'Mass': 'Me',
+                'Density': 'De',
+                'Volume': 'Ve'
+            }
         }
 
         for elemento in self.properties.get_widgets_from_layer(2):
             idx = self.properties.widgets().index(elemento)
             attr = self.relative_args[idx]
 
-            if not self.parent.relative_mode:
+            if self.parent.mode == 0:
                 got_attr = getattr(self.current, attr)
             else:
-                got_attr = getattr(self.current, attr).to(tos[elemento.text.capitalize()])
+                got_attr = getattr(self.current, attr).to(tos[self.parent.mode][elemento.text.capitalize()])
             attr = q(str(got_attr.m), got_attr.u) if type(got_attr) is not str else got_attr
             elemento.value = attr
             if elemento.text_area.unit == 'earth_mass':

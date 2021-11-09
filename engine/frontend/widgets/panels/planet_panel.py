@@ -95,8 +95,8 @@ class PlanetPanel(BasePanel):
                 bt.hide()
             else:
                 bt.show()
-            if x + bt.rect.w + 10 < self.rect.w - bt.rect.w + 10:
-                x += bt.rect.w + 10
+            if x + bt.rect.w + 15 < self.rect.w - bt.rect.w + 15:
+                x += bt.rect.w + 15
             else:
                 x = 3
                 y += 32
@@ -300,10 +300,11 @@ class PlanetType(ObjectType):
 
     def fill(self, tos=None):
         tos = {
-            'mass': 'kg',
-            'radius': 'km',
-            'gravity': 'm/s**2',
-            'escape_velocity': 'km/s'
+            1: {
+                'mass': 'kg',
+                'radius': 'km',
+                'gravity': 'm/s**2',
+                'escape_velocity': 'km/s'}
         }
         super().fill(tos)
 
@@ -376,7 +377,8 @@ class ShownMass(BaseWidget):
     def show_mass(self):
         try:
             mass = Systems.get_current().get_available_mass()
-            self.parent.enable()
+            if not self.parent.enabled:
+                self.parent.enable()
         except AttributeError:
             mass = q(0, 'jupiter_mass')
         if not self.show_jovian_mass:

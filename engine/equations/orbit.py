@@ -169,6 +169,11 @@ class Orbit(Flagable, Ellipse):
         if self.temperature != 'N/A':
             self._temperature = self.astrobody.set_temperature(self._star.mass.m, self._a)
         self.reset_period_and_speed(self._star)
+        if self._star.celestial_type in ('star', 'system'):
+            system = Systems.get_system_by_star(self._star)
+        else:
+            system = Systems.get_system_by_star(self._star.parent)
+        system.visibility_by_albedo()
 
     @property
     def semi_minor_axis(self):

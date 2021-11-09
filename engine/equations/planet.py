@@ -68,11 +68,11 @@ class Planet(BodyInHydrostaticEquilibrium):
         if not self._mass:
             self._mass = gravity * pow(radius, 2)
 
-        gaseous = {'hydrogen', 'helium'}
+        rocky = {'silicates', 'iron', 'water ice'}
 
         self.set_qs(unit)
         if 'composition' in data and data['composition'] is not None:
-            if not len(data['composition'].keys() & gaseous):
+            if len(data['composition'].keys() & rocky):
                 self.composition = {
                     'water ice': data['composition'].get('water ice', 0),
                     'silicates': data['composition'].get('silicates', 0),

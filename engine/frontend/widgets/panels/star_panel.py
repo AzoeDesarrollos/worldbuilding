@@ -219,11 +219,13 @@ class StarType(ObjectType):
 
     def fill(self, tos=None):
         tos = {
-            'mass': 'kg',
-            'radius': 'km',
-            'luminosity': 'W',
-            'lifetime': 'year',
-            'temperature': 'kelvin'
+            1: {
+                'mass': 'kg',
+                'radius': 'km',
+                'luminosity': 'W',
+                'lifetime': 'year',
+                'temperature': 'kelvin'
+            }
         }
         super().fill(tos)
         system = Systems.get_current()

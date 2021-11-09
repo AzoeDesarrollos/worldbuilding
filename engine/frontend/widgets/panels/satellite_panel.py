@@ -9,9 +9,9 @@ from engine import material_densities
 from ..object_type import ObjectType
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
+from pygame import Surface
 from ..pie import PieChart
-from pygame import Surface, Color
-from random import choice
+from itertools import cycle
 
 
 class SatellitePanel(BasePanel):
@@ -22,7 +22,7 @@ class SatellitePanel(BasePanel):
     last_idx = None
 
     def __init__(self, parent):
-        super().__init__('Satellite', parent)
+        super().__init__('Satellite', parent, modes=3)
         self.current = SatelliteType(self)
         r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 132, 200])
         self.area_satellites = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 200))
@@ -37,7 +37,7 @@ class SatellitePanel(BasePanel):
         self.button_add = AddMoonButton(self, ANCHO - 13, 398)
         self.button_del = DelMoonButton(self, ANCHO - 13, 416)
         self.copy_button = CopyCompositionButton(self, r.centerx, r.bottom + 6)
-        txt = 'Copy the values from a random planet'
+        txt = 'Copy the values from a selected planet'
         self.f3 = self.crear_fuente(11)
         self.txt_a = self.write2(txt, self.f3, 130, COLOR_AREA, centerx=r.centerx, y=self.area_satellites.y + 50, j=1)
         self.properties.add(self.button_add, self.button_del, self.copy_button)
@@ -107,7 +107,7 @@ class SatellitePanel(BasePanel):
         self.properties.add(button)
         if self.is_visible:
             self.sort_buttons()
-        self.current.erase()
+            self.current.erase()
         self.button_add.disable()
 
     def del_button(self, satellite):
@@ -141,7 +141,12 @@ class SatellitePanel(BasePanel):
         for pr in self.properties.widgets():
             pr.hide()
 
+    def enable(self):
+        super().enable()
+        self.current.enable()
+
     def clear(self):
+        self.image.fill(COLOR_AREA, [0, 498, 130, 14])
         self.button_add.disable()
         self.button_del.disable()
         for button in self.satellites.widgets():
@@ -176,18 +181,14 @@ class SatelliteType(ObjectType):
             item.text_area.rect.y += 50
 
         names = sorted(material_densities.keys())
-        d = {names[0]: {'color': Color([155] * 3), 'value': 33, 'handle': 'black'},
-             names[1]: {'color': Color([155, 80, 0]), 'value': 33, 'handle': 'black'},
-             names[2]: {'color': Color([0, 200, 255]), 'value': 34, 'handle': 'black'}}
-
-        # self.default_comp = {'iron': 33, 'silicates': 33, 'water ice': 34}
+        d = {names[0]: 33, names[1]: 33, names[2]: 34}
         self.pie = PieChart(self, 200, 500, 65, d)
         for obj in self.pie.chart.widgets():
             self.properties.add(obj, layer=3)
 
         for i, name in enumerate(sorted(d)):
             a = ValueText(self, name.capitalize(), 3, 500 + 30 + i * 21, bg=COLOR_AREA)
-            a.text_area.value = self.pie.get_value(name)
+            a.text_area.value = str(d[name]) + ' %'
             self.properties.add(a, layer=2)
             a.modifiable = True
 
@@ -198,10 +199,12 @@ class SatelliteType(ObjectType):
         else:
             data['composition'] = self.current.composition
 
-        for material in self.properties.get_sprites_from_layer(2):
-            if material.text_area.value:  # not empty
-                text = material.text_area.value.strip(' %')
-                data['composition'][material.text.lower()] = float(text)
+        if not len(data['composition']):
+            for material in self.properties.get_sprites_from_layer(2):
+                if material.text_area.value:  # not empty
+                    text = material.text_area.value.strip(' %')
+                    data['composition'][material.text.lower()] = float(text)
+
         for item in self.properties.get_widgets_from_layer(1):
             text = item.text_area.value
             try:
@@ -239,12 +242,23 @@ class SatelliteType(ObjectType):
         self.current = satellite
         self.calculate()
 
+    def enable(self):
+        for arg in self.properties.widgets():
+            arg.enable()
+        for obj in self.pie.chart.widgets():
+            obj.enable()
+        super().enable()
+
     def erase(self, replace=False):
         super().erase()
-        for vt in self.properties:
-            vt.value = ''
         self.current = None
         self.parent.clear()
+        self.has_values = False
+        for vt in self.properties.get_widgets_from_layer(1):
+            vt.value = ''
+        for vt in self.properties.get_widgets_from_layer(2):
+            vt.value = self.pie.get_default_value(vt.text.lower())
+
         if not replace:
             self.pie.set_values()
 
@@ -260,10 +274,18 @@ class SatelliteType(ObjectType):
 
     def fill(self, tos=None):
         tos = {
-            'mass': 'kg',
-            'radius': 'km',
-            'gravity': 'm/s**2',
-            'escape_velocity': 'km/s'
+            1: {
+                'mass': 'kg',
+                'radius': 'km',
+                'gravity': 'm/s**2',
+                'escape_velocity': 'km/s'
+            },
+            2: {
+                'mass': 'Mm',
+                'radius': 'Rm',
+                'gravity': 'Gm',
+                'escape_velocity': 'EVm'
+            }
         }
         super().fill(tos)
 
@@ -334,6 +356,7 @@ class SatelliteButton(Meta):
 
 class CopyCompositionButton(Meta):
     enabled = True
+    current = None
 
     def __init__(self, parent, x, y):
         super().__init__(parent)
@@ -345,6 +368,17 @@ class CopyCompositionButton(Meta):
         self.image = self.img_uns
         self.rect = self.image.get_rect(y=y)
         self.rect.centerx = x
+        self.rocky_planets = []
+        self.rocky_cycler = cycle(self.rocky_planets)
+        EventHandler.register(self.manage_rocky_planets, 'RockyPlanet')
+
+    def manage_rocky_planets(self, event):
+        if event.data['operation'] == 'add':
+            self.rocky_planets.append(event.data['planet'])
+            if len(self.rocky_planets) == 1:
+                self.current = next(self.rocky_cycler)
+        elif event.data['operation'] == 'remove':
+            self.rocky_planets.remove(event.data['planet'])
 
     @staticmethod
     def crear(fuente, fg):
@@ -375,13 +409,18 @@ class CopyCompositionButton(Meta):
         self.rect = self.image.get_rect(center=self.rect.center)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.button == 1 and self.enabled:
             d = {'water ice': 0, 'silicates': 0, 'iron': 0}
-            system = Systems.get_current()
-            if system is not None:
-                rocky_planets = [p for p in system.planets if p.planet_type == 'rocky']
-                planet = choice(rocky_planets)
-                for element in d:
-                    d[element] = planet.composition[element]
-                self.parent.current.paste_composition(d)
-                self.parent.write_name(planet)
+            for element in d:
+                d[element] = self.current.composition[element]
+            self.parent.current.paste_composition(d)
+            self.parent.write_name(self.current)
+            self.current = next(self.rocky_cycler)
+
+    def update(self):
+        super().update()
+        if len(self.rocky_planets) and self.parent.enabled:
+            if not self.enabled:
+                self.enable()
+        elif self.enabled:
+            self.disable()

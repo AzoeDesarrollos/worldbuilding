@@ -141,6 +141,8 @@ class PlanetarySystem(Flagable):
             self.body_mass -= minus_mass
             group.append(astro_obj)
             self.astro_bodies.append(astro_obj)
+            if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
+                EventHandler.trigger('RockyPlanet', self, {'planet': astro_obj, 'operation': 'add'})
             return True
 
         return False
@@ -152,6 +154,8 @@ class PlanetarySystem(Flagable):
         group.remove(astro_obj)
         astro_obj.flag()
         self.astro_bodies.remove(astro_obj)
+        if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
+            EventHandler.trigger('RockyPlanet', self, {'planet': astro_obj, 'operation': 'remove'})
         return True
 
     def _get_astro_group(self, astro_obj):
