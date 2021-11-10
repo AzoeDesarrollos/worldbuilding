@@ -164,7 +164,11 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.orbit = PlanetOrbit(star, *orbital_parameters)
         self.temperature = self.set_temperature(star.temperature_mass, self.orbit.semi_minor_axis.m)
         self.orbit.set_astrobody(star, self)
-        self.lagrange_points = get_lagrange_points(self.orbit.semi_major_axis.m, star.mass.m, self.mass.m)
+        if star.letter is None:
+            self.lagrange_points = get_lagrange_points(self.orbit.semi_major_axis.m, star.mass.m, self.mass.m)
+        elif star.letter == 'P':
+            self.lagrange_points = get_lagrange_points(self.orbit.semi_major_axis.m, star.shared_mass.m, self.mass.m)
+
         self.hill_sphere = self.set_hill_sphere()
         if star.celestial_type == 'Star':
             self.sky_color = self.set_sky_color(star)
@@ -173,7 +177,12 @@ class Planet(BodyInHydrostaticEquilibrium):
     def set_hill_sphere(self):
         a = self.orbit.semi_major_axis.to('au').magnitude
         mp = self.mass.to('earth_mass').magnitude
-        ms = self.orbit.star.mass.to('sol_mass').magnitude
+        star = self.orbit.star
+        ms = 1
+        if star.letter is None:
+            ms = star.mass.to('sol_mass').magnitude
+        elif star.letter == 'P':
+            ms = star.shared_mass.to('sol_mass').m
         return q(round((a * pow(mp / ms, 1 / 3)), 3), 'earth_hill_sphere').to('earth_radius')
 
     def set_roche(self, obj_density):

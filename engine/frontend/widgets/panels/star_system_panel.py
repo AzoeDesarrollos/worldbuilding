@@ -1,5 +1,5 @@
 from engine.frontend.globales import WidgetGroup, ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_TEXTO
-from .common import AvailableObjects, ListedBody, TextButton, Group
+from .common import ListedArea, ColoredBody, TextButton, Group
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
@@ -58,7 +58,7 @@ class StarSystemPanel(BaseWidget):
 
     def create_button(self, system_data):
         if system_data not in self.systems:
-            idx = len(self.systems)
+            idx = len([s for s in self.systems if system_data.compare(s) is True])
             button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
             self.systems.append(system_data)
             self.system_buttons.add(button)
@@ -109,7 +109,7 @@ class StarSystemPanel(BaseWidget):
             prim = Systems.get_star_by_id(system_data['primary'])
             scnd = Systems.get_star_by_id(system_data['secondary'])
             name = system_data['name']
-            pos = event.data['pos']
+            pos = system_data['pos']
 
             system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, pos, id=id, name=name)
             button = self.create_button(system)
@@ -245,15 +245,8 @@ class SystemType(BaseWidget):
             arg.enable()
 
 
-class ListedStar(ListedBody):
+class ListedStar(ColoredBody):
     enabled = True
-
-    def __init__(self, parent, star, x, y):
-        if not star.has_name:
-            name = star.classification + ' #{}'.format(star.idx)
-        else:
-            name = star.name
-        super().__init__(parent, star, name, x, y)
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -269,7 +262,7 @@ class ListedStar(ListedBody):
         return f'Listed: {str(self.object_data)}'
 
 
-class AvailableStars(AvailableObjects):
+class AvailableStars(ListedArea):
     name = 'Stars'
     listed_type = ListedStar
 

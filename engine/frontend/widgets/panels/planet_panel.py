@@ -3,7 +3,7 @@ from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.sprite_star import PlanetSprite
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
-from .common import PlanetButton, TextButton, Group
+from .common import ColoredBody, TextButton, Group
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.meta import Meta
@@ -59,7 +59,7 @@ class PlanetPanel(BasePanel):
         self.current.loaded_data = None
 
     def add_button(self, planet):
-        button = CreatedPlanet(self.current, planet, self.curr_x, self.curr_y)
+        button = CreatedPlanet(self.current, planet, str(planet), self.curr_x, self.curr_y)
         if planet.system_id is not None:
             layer_number = planet.system_id
         else:
@@ -412,7 +412,7 @@ class DelPlanetButton(TextButton):
             self.parent.current.destroy_button()
 
 
-class CreatedPlanet(PlanetButton):
+class CreatedPlanet(ColoredBody):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.set_planet(self.object_data)

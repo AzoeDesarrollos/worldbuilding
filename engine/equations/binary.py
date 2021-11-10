@@ -86,6 +86,12 @@ class BinarySystem(Flagable):
     def composition(self):
         return [self.primary, self.secondary]
 
+    def compare(self, other):
+        if hasattr(other, 'letter'):
+            return self.letter == other.letter
+        else:
+            return False
+
 
 class PTypeSystem(BinarySystem):
     letter = 'P'
@@ -113,6 +119,7 @@ class PTypeSystem(BinarySystem):
 
         self._mass = primary.mass + secondary.mass
         self._luminosity = primary.luminosity + secondary.luminosity
+        self.temperature_mass = self._mass.m
 
         self._habitable_inner = round(sqrt(self._luminosity.m / 1.1), 3)
         self._habitable_outer = round(sqrt(self._luminosity.m / 0.53), 3)

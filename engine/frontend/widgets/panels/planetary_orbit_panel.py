@@ -1,5 +1,5 @@
-from .common import AvailableObjects, AvailablePlanet, ModifyArea, TextButton, ToggleableButton, Group
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_SELECTED, COLOR_TEXTO
+from .common import ColoredBody, ListedArea, ModifyArea, TextButton, ToggleableButton, Group
 from engine.equations.orbit import PseudoOrbit, RawOrbit, from_planetary_resonance
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.globales import WidgetHandler, WidgetGroup
@@ -414,14 +414,14 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.digit_y.clear()
 
 
-class OrbitableObject(AvailablePlanet):
+class OrbitableObject(ColoredBody):
     def on_mousebuttondown(self, event):
         self.parent.parent.hide_orbit_types()
         self.parent.select_one(self)
         self.parent.parent.select_planet(self.object_data)
 
 
-class AvailablePlanets(AvailableObjects):
+class AvailablePlanets(ListedArea):
     listed_type = OrbitableObject
 
     def show(self):

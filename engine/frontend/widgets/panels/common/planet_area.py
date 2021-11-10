@@ -10,6 +10,8 @@ class ListedArea(BaseWidget):
 
     last_idx = None
 
+    listed_type = None
+
     def __init__(self, parent, x, y, w, h):
         super().__init__(parent)
         self.image = Surface((w, h))
@@ -20,8 +22,20 @@ class ListedArea(BaseWidget):
         self.f = self.crear_fuente(14, underline=True)
         self.write(self.name, self.f, midtop=(self.rect.w / 2, 0), bg=COLOR_AREA)
 
-    def populate(self, objects):
-        return NotImplemented
+    def populate(self, population, layer=None):
+        listed = []
+        for listed_ob in self.listed_objects.widgets():
+            listed_ob.kill()
+        self.listed_objects.empty()
+        for i, obj in enumerate(population):
+            x = self.rect.x + 3
+            y = i * 18 + self.rect.y + 21
+            listed.append(self.listed_type(self, obj, str(obj), x, y))
+
+        if layer is None:
+            layer = Systems.get_current().id
+
+        self.listed_objects.add(*listed, layer=layer)
 
     def hide(self):
         for listed in self.listed_objects.widgets():
@@ -68,8 +82,8 @@ class ListedArea(BaseWidget):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
         idx = Systems.get_current_id(self)
         if idx != self.last_idx:
-            self.show_current(idx)
             self.last_idx = idx
+        self.show_current(idx)
 
     def __len__(self):
         return len(self.listed_objects)

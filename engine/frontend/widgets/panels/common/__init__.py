@@ -1,7 +1,7 @@
-from .planet_button import PlanetButton
+from .planet_button import ColoredBody
 from .planet_area import ListedArea
 from .text_button import TextButton
 from .listed_body import ListedBody
-from .orbit_areas import AvailablePlanet, AvailableObjects, ToggleableButton
+from .orbit_areas import ToggleableButton
 from .modify_area import ModifyArea
 from .group import Group

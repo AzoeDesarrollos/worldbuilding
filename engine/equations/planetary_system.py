@@ -57,6 +57,8 @@ class PlanetarySystem(Flagable):
 
         for system in Systems.get_systems() + Systems.loose_stars:
             for star in system.star_system:
+                # acá parece haber un problema con los P-Type Systems, porque la distancia debería ser hacia el punto
+                # que las estrellas orbitan.
                 if body.orbit is not None and star.id not in self.aparent_brightness[body.id]:
                     if star == self.star_system:
                         if body.parent == star:
@@ -97,12 +99,13 @@ class PlanetarySystem(Flagable):
             others = to_see[:i] + to_see[i + 1:]
             if body.orbit is not None:
                 self.visibility_of_stars(body)
-                star = self.star_system
-                if body.parent.celestial_type in ('star', 'system'):
-                    relative_distance = body.orbit.a.to('km').m
-                else:
-                    relative_distance = body.parent.orbit.a.to('km').m
-                self.relative_sizes[body.id][star.id] = self.small_angle_aproximation(star, relative_distance)
+                for star in self.star_system:
+                    if body.parent.celestial_type in ('star', 'system'):
+                        relative_distance = body.orbit.a.to('km').m
+                    else:
+                        relative_distance = body.parent.orbit.a.to('km').m
+                    self.relative_sizes[body.id][star.id] = self.small_angle_aproximation(star, relative_distance)
+
                 x = body.orbit.a.to('m').m  # position of the Observer's planet
                 for other in [o for o in others if o.orbit is not None]:
                     y = other.orbit.a.to('m').m  # position of the observed body

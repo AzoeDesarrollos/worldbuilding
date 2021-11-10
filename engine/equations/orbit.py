@@ -55,7 +55,10 @@ class PseudoOrbit:
         self.semi_major_axis = orbit.semi_major_axis
         self.temperature = orbit.temperature
         self._star = orbit.star
-        self._period = q(sqrt(pow(self.semi_major_axis.m, 3) / self._star.mass.m), 'year')
+        if self._star.letter is None:
+            self._period = q(sqrt(pow(self.semi_major_axis.m, 3) / self._star.mass.m), 'year')
+        elif self._star.letter == 'P':
+            self._period = q(sqrt(pow(self.semi_major_axis.m, 3) / self._star.shared_mass.m), 'year')
         self.resonant = orbit.resonant
 
     @property
@@ -246,7 +249,10 @@ class PlanetOrbit(Orbit):
             self.argument_of_periapsis = aop
 
     def reset_period_and_speed(self, main):
-        main_body_mass = main.mass.m
+        if main.letter is None:
+            main_body_mass = main.mass.m
+        else:
+            main_body_mass = main.shared_mass.m
         self.period = q(sqrt(pow(self._a, 3) / main_body_mass), 'year')
         self.velocity = q(sqrt(main_body_mass / self._a), 'earth_orbital_velocity').to('kilometer per second')
 

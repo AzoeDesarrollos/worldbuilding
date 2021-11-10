@@ -1,6 +1,6 @@
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, WidgetGroup, COLOR_AREA
 from engine.equations.tides import major_tides, minor_tides, is_tidally_locked
-from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, WidgetGroup
-from .common import AvailableObjects, AvailablePlanet
+from .common import ListedArea, ColoredBody
 from engine.equations.planetary_system import Systems
 from ..basewidget import BaseWidget
 from pygame import Surface, Rect
@@ -112,12 +112,18 @@ class InformationPanel(BaseWidget):
         rect = self.write('Neap high: {}'.format(round(neap_high, resolution)), self.f2, x=3, y=rect.bottom + 12)
         rect = self.write('Neap low: {}'.format(round(neap_low, resolution)), self.f2, x=3, y=rect.bottom + 2)
 
-        if is_tidally_locked(lunar_tides, system.age.m / 10 ** 9, self.current.orbit.star.mass.m):
-            text = '{} is tidally locked to its {}'.format(str(self.current), primary)
-        elif is_tidally_locked(stellar_tides, system.age.m / 10 ** 9, self.current.orbit.star.mass.m):
-            text = '{} is tidally locked to its {}'.format(str(self.current), primary)
+        star = self.current.orbit.star
+        if star.letter is None:
+            mass = star.mass.m
         else:
-            text = '{} is not tidally locked'.format(str(self.current))
+            mass = star.shared_mass.m
+
+        if is_tidally_locked(lunar_tides, system.age.m / 10 ** 9, mass):
+            text = f'{str(self.current)} is tidally locked to its {primary}.'
+        elif is_tidally_locked(stellar_tides, system.age.m / 10 ** 9, mass):
+            text = f'{str(self.current)} is tidally locked to its {primary}.'
+        else:
+            text = f'{str(self.current)} is not tidally locked.'
 
         self.write(text, self.f3, x=3, y=rect.bottom + 12)
 
@@ -180,7 +186,7 @@ class InformationPanel(BaseWidget):
             self.show_name(self.selection)
 
 
-class Astrobody(AvailablePlanet):
+class Astrobody(ColoredBody):
 
     def on_mousebuttondown(self, event):
         self.parent.select_one(self)
@@ -188,9 +194,8 @@ class Astrobody(AvailablePlanet):
         self.parent.parent.show_name(self.object_data)
 
 
-class AvailablePlanets(AvailableObjects):
+class AvailablePlanets(ListedArea):
     listed_type = Astrobody
-    last_idx = None
 
     def show(self):
         system = Systems.get_current()
@@ -206,9 +211,10 @@ class AvailablePlanets(AvailableObjects):
         self.parent.clear()
 
     def update(self):
+        self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
         idx = Systems.get_current_id(self)
         if idx != self.last_idx:
             self.parent.clear()
             self.show()
-            self.show_current(idx)
             self.last_idx = idx
+        self.show_current(idx)
