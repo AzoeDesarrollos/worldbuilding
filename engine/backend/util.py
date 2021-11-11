@@ -91,6 +91,7 @@ def salir_handler(event):
 
 def generate_id():
     now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
+    now = now[0:-5]+'-'+now[-5:]
     return now
 
 

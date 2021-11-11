@@ -159,7 +159,7 @@ class PlanetarySystem(Flagable):
 
     def remove_astro_obj(self, astro_obj):
         group = self._get_astro_group(astro_obj)
-        plus_mass = group[group.index(astro_obj)].mass.to('jupiter_mass')
+        plus_mass = astro_obj.mass.to('jupiter_mass')
         self.body_mass += plus_mass
         group.remove(astro_obj)
         astro_obj.flag()
@@ -351,7 +351,7 @@ class Systems:
                 return star
         for system in cls._systems:
             if id_number == system.id:
-                return system
+                return system.star_system
             else:
                 for star in system:
                     if star.id == id_number:
@@ -359,12 +359,20 @@ class Systems:
 
     @classmethod
     def get_system_by_star(cls, star):
+        star = cls.find_parent(star)
         for system in cls._systems:
             if hasattr(system, 'letter'):
                 if any([body == star for body in system.star_system.composition()]):
                     return system
             elif system.star_system == star:
                 return system
+
+    @classmethod
+    def find_parent(cls, body):
+        if body.parent is None:
+            return body
+        else:
+            return cls.find_parent(body.parent)
 
     @classmethod
     def cycle_systems(cls):
@@ -429,6 +437,22 @@ class Systems:
                     data[key][item_id].update(item_data)
                 else:
                     data[key][item_id] = item_data
+
+        copy_data = data.copy()
+        for key in keys:
+            for idx in copy_data[key]:
+                datos = copy_data[key][idx]
+                if 'system' in datos:
+                    system = cls.get_system_by_id(datos['system'])
+                elif 'star_id' in copy_data[key][idx]:
+                    star = cls.get_star_by_id(datos['star_id'])
+                    system = cls.get_system_by_star(star)
+                else:
+                    star = cls.get_star_by_id(idx)
+                    system = cls.get_system_by_star(star)
+                body = system.get_astrobody_by(idx, tag_type='id')
+                if body.flagged:
+                    del data[key][idx]
 
         guardar_json(ruta, data)
 

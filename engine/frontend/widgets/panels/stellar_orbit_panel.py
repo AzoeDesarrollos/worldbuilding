@@ -238,6 +238,8 @@ class OrbitPanel(BaseWidget):
             del self.markers[idx]
             self._orbits[marker.orbit.star.id].remove(marker)
             self.buttons.remove(marker.linked_button)
+            marker.orbit.astrobody.unset_orbit()
+            self.planet_area.show()
             self.sort_markers()
             self.sort_buttons()
 
@@ -621,7 +623,7 @@ class OrbitType(BaseWidget, Intertwined):
             if elemento.text == 'Inclination':
                 value = q(0 if elemento.text_area.value == '' else elemento.text_area.value, 'degree')
             elif elemento.text not in ['Orbital motion', 'Temperature']:
-                value = q(elemento.text_area.value)
+                value = q(elemento.text_area.value, elemento.text_area.unit)
 
             if value is not None:
                 parametros.append(value)
@@ -830,8 +832,7 @@ class AvailablePlanets(ListedArea):
         system = Systems.get_current()
         if system is not None:
             population = [i for i in system.planets + system.asteroids if i.orbit is None]
-            if not len(self.listed_objects.get_widgets_from_layer(system.id)):
-                self.populate(population)
+            self.populate(population)
         super().show()
 
 

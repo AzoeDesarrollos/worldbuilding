@@ -84,10 +84,14 @@ class InformationPanel(BaseWidget):
 
         if astrobody.celestial_type == 'planet':
             lunar_tides = 0
-            primary = 'moon'
-            for satellite in astrobody.satellites:
-                if satellite.celestial_type == 'satellite':
-                    lunar_tides += major_tides(diameter, satellite.mass.m, satellite.orbit.a.to('earth_diameter').m)
+            if astrobody.parent.celestial_type == 'star':
+                primary = 'moon'
+                for satellite in astrobody.satellites:
+                    if satellite.celestial_type == 'satellite':
+                        lunar_tides += major_tides(diameter, satellite.mass.m, satellite.orbit.a.to('earth_diameter').m)
+            else:
+                primary = 'planet'
+                lunar_tides += major_tides(diameter, astrobody.parent.mass.m, astrobody.orbit.a.to('earth_diameter').m)
         else:
             primary = 'planet'
             lunar_tides = major_tides(diameter, astrobody.orbit.star.mass.m, astrobody.orbit.a.to('earth_diameter').m)

@@ -55,8 +55,8 @@ class AsteroidPanel(BasePanel):
     def load_satellites(self, event):
         if 'Asteroids' in event.data and len(event.data['Asteroids']):
             self.enable()
-            for id in event.data['Satellites']:
-                satellite_data = event.data['Satellites'][id]
+            for id in event.data['Asteroids']:
+                satellite_data = event.data['Asteroids'][id]
                 satellite_data['id'] = id
                 moon = minor_moon_by_composition(satellite_data)
                 moon.idx = len([i for i in Systems.get_current().planets if i.clase == moon.clase])
@@ -67,7 +67,7 @@ class AsteroidPanel(BasePanel):
 
     def save_satellites(self, event):
         data = {}
-        for moon_button in self.asteroids.widgets():
+        for moon_button in [i for i in self.asteroids.widgets() if not i.object_data.flagged]:
             moon = moon_button.object_data
             moon_data = {
                 'name': moon.name,

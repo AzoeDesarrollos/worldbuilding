@@ -17,6 +17,7 @@ class ListedBody(Meta):
             self.img_uns = self.f1.render(name, True, fg_color, COLOR_AREA)
             self.img_sel = self.f2.render(name, True, fg_color, COLOR_AREA)
         self.w = self.img_sel.get_width()
+        self.color = fg_color
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))
 

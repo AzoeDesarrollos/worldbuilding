@@ -23,6 +23,7 @@ class Satellite(Flagable):
     id = None
     idx = None
     parent = None
+    satellites = None
 
     @staticmethod
     def calculate_density(ice, silicate, iron):
@@ -31,10 +32,10 @@ class Satellite(Flagable):
         return density
 
     def set_orbit(self, main, orbital_parameters):
-        if main.celestial_type == 'planet':
+        if main.celestial_type != 'star':
             self.orbit = SatelliteOrbit(*orbital_parameters)
             main.satellites.append(self)
-        elif main.celestial_type == 'star':
+        else:
             self.orbit = PlanetOrbit(main, *orbital_parameters)
         self.orbit.set_astrobody(main, self)
 
@@ -51,6 +52,15 @@ class Satellite(Flagable):
         ms = self.orbit.star.mass.to('sol_mass').magnitude
         # "star" is actually the planet in this case
         return q(round((a * pow(mp / ms, 1 / 3)), 3), 'earth_hill_sphere').to('earth_radius')
+
+    def unset_orbit(self):
+        del self.orbit
+        self.orbit = None
+        self.temperature = 'N/A'
+        self.hill_sphere = 0
+        self.lagrange_points = None
+        for satellite in self.satellites:
+            satellite.unset_orbit()
 
     def set_roche(self, obj_density):
         density = self.density.to('earth_density').m
