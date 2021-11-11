@@ -126,10 +126,13 @@ class InformationPanel(BaseWidget):
             rect = self.write(f'{name}: {formato}', self.f2, x=3, y=rect.bottom + dy)
 
         star = self.current.orbit.star
-        if star.letter is None:
-            mass = star.mass.m
+        if star.celestial_type == 'star':
+            if star.letter is None:
+                mass = star.mass.m
+            else:
+                mass = star.shared_mass.m
         else:
-            mass = star.shared_mass.m
+            mass = star.mass.m
 
         if is_tidally_locked(lunar_tides, system.age.m / 10 ** 9, mass):
             text = f'{str(self.current)} is tidally locked to its {primary}.'
