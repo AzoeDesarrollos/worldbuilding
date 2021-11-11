@@ -35,6 +35,7 @@ hsla[1] = 20
 hsla[2] = 70
 COLOR_IRON_DIS.hsla = hsla
 
+# Colores para las PieCharts
 color = [155, 80, 0]  # silicates
 COLOR_SILICATES = Color(color)
 COLOR_SILICATES_DIS = Color(color)
@@ -51,4 +52,42 @@ hsla[1] = 20
 hsla[2] = 70
 COLOR_WATER_ICE_DIS.hsla = hsla
 
-del color, hsla, Color
+__all__ = [
+    # Tamaño de la ventana
+    'ALTO',
+    'ANCHO',
+
+    # Colores de fondo
+    'COLOR_BOX',
+    'COLOR_AREA',
+    'COLOR_FONDO',
+
+    # Colores de texto
+    'COLOR_TEXTO',
+    'COLOR_SELECTED',
+    'COLOR_DISABLED',
+
+    # Colores para los botones de planetas
+    'COLOR_DWARFPLANET',
+    'COLOR_TERRESTIAL',
+    'COLOR_GASGIANT',
+    'COLOR_PUFFYGIANT',
+    'COLOR_GASDWARF',
+    'COLOR_HABITABLE',
+
+    # Colores para los botones de los satélites
+    'COLOR_ICYMOON',
+    'COLOR_ROCKYMOON',
+    'COLOR_IRONMOON',
+
+    # Color de las órbitas cargadas
+    'COLOR_STARORBIT',
+
+    # Colores de las PieCharts
+    'COLOR_IRON',
+    'COLOR_IRON_DIS',
+    'COLOR_SILICATES',
+    'COLOR_SILICATES_DIS',
+    'COLOR_WATER_ICE',
+    'COLOR_WATER_ICE_DIS'
+]

@@ -39,6 +39,7 @@ def atmo(vol, rect):
     pxarray = PixelArray(graph)
     p, d = 0, 0
     for j in range(0, rect.bottom - 80):
+        # noinspection PyUnresolvedReferences
         rgba = graph.unmap_rgb(pxarray[y, j])
         if rgba == (0, 217, 184, 255):
             if p == 0:

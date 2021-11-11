@@ -58,10 +58,11 @@ class StarPanel(BasePanel):
         EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data})
 
     def load_stars(self, event):
-        for idx, id in enumerate(event.data['Stars']):
+        for id in event.data['Stars']:
             star_data = event.data['Stars'][id]
-            star_data.update({'idx': idx, 'id': id})
+            star_data.update({'id': id})
             star = Star(star_data)
+            star.idx = len([i for i in self.stars if i.cls == star.cls])
             Systems.add_star(star)
             Systems.set_system(star)
             if star not in self.stars:
@@ -174,8 +175,8 @@ class StarType(ObjectType):
 
     def set_star(self, star_data):
         cls = Star.get_class(star_data['mass'])
-        star_data.update({'idx': len([s for s in self.parent.stars if s.cls == cls])})
         star = Star(star_data)
+        star.idx = len([s for s in self.parent.stars if s.cls == cls])
         self.parent.button_add.enable()
         self.current = star
         self.fill()

@@ -52,13 +52,18 @@ class LayoutPanel(BaseWidget):
         self.load_button = d
 
     def cycle(self, delta):
-        if 0 <= self.curr_idx + delta < len(self.panels):
-            self.current.hide()
+        if self.curr_idx + delta < 0:
+            self.curr_idx = len(self.panels)-1
+        elif self.curr_idx + delta > len(self.panels)-1:
+            self.curr_idx = 0
+        else:
             self.curr_idx += delta
-            self.current = self.panels[self.curr_idx]
-            if self.current.skippable is True and self.current.skip is True:
-                self.cycle(delta)
-                return  # si se saltea un panel, no hay que mostrar el panel siguiente 2 veces.
+
+        self.current.hide()
+        self.current = self.panels[self.curr_idx]
+        if self.current.skippable is True and self.current.skip is True:
+            self.cycle(delta)
+            return  # si se saltea un panel, no hay que mostrar el panel siguiente 2 veces.
         self.current.show()
 
     def set_skippable(self, name, value):

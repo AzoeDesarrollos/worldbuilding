@@ -1,7 +1,5 @@
 from engine.frontend.globales import COLOR_AREA, COLOR_DISABLED, COLOR_TEXTO
-from engine.equations.planetary_system import Systems
 from engine.frontend.widgets.meta import Meta
-from . import ListedArea, PlanetButton
 
 
 class ToggleableButton(Meta):
@@ -21,25 +19,3 @@ class ToggleableButton(Meta):
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
             self.method()
-
-
-AvailablePlanet = PlanetButton  # just an alias
-
-
-class AvailableObjects(ListedArea):
-    listed_type = AvailablePlanet
-
-    def populate(self, population, layer=None):
-        listed = []
-        for listed_ob in self.listed_objects.widgets():
-            listed_ob.kill()
-        self.listed_objects.empty()
-        for i, obj in enumerate(population):
-            x = self.rect.x + 3
-            y = i * 18 + self.rect.y + 21
-            listed.append(self.listed_type(self, obj, x, y))
-
-        if layer is None:
-            layer = Systems.get_current().id
-
-        self.listed_objects.add(*listed, layer=layer)

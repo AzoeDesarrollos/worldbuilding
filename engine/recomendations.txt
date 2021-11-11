@@ -34,3 +34,8 @@ e = 0.584 * pow(n,-1.2) where n is the number of planets in the system
 0 < i < 3
 
 """
+
+
+Volcanic Moons
+If moon.parent.clase == Gas Giant and moon.orbit.resonant and moon.orbit.e > 0:
+    moon.volcanic = True  # Like Io.

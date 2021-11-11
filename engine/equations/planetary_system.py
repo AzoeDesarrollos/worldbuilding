@@ -56,7 +56,12 @@ class PlanetarySystem(Flagable):
             self.distances[body.id] = {}
 
         for system in Systems.get_systems() + Systems.loose_stars:
-            for star in system.star_system:
+            if system.star_system.letter == 'P':
+                stars = [system.star_system]
+            else:
+                stars = [s for s in system.star_system]
+
+            for star in stars:
                 if body.orbit is not None and star.id not in self.aparent_brightness[body.id]:
                     if star == self.star_system:
                         if body.parent == star:
@@ -71,9 +76,11 @@ class PlanetarySystem(Flagable):
                         d = q(sqrt(pow(abs(x2 - x1), 2) + pow(abs(y2 - y1), 2) + pow(abs(z2 - z1), 2)), 'lightyears')
                         self.distances[body.id][star.id] = round(d)
                         ab = q(star.luminosity.m / pow(d.to('au').m, 2), 'Vs')
-                        if star not in self.relative_sizes[body.id]:
-                            value = self.small_angle_aproximation(star, d.to('km').m)
-                            self.relative_sizes[body.id][star.id] = value
+
+                    if star not in self.relative_sizes[body.id]:
+                        d = self.distances[body.id][star.id]
+                        value = self.small_angle_aproximation(star, d.to('km').m)
+                        self.relative_sizes[body.id][star.id] = value
                     self.aparent_brightness[body.id][star.id] = ab
 
     @staticmethod
@@ -91,18 +98,21 @@ class PlanetarySystem(Flagable):
         for i, body in enumerate(to_see):
             if body.id not in self.aparent_brightness:
                 self.aparent_brightness[body.id] = {}
+            if body.id not in self.relative_sizes:
                 self.relative_sizes[body.id] = {}
+            if body.id not in self.distances:
                 self.distances[body.id] = {}
 
             others = to_see[:i] + to_see[i + 1:]
             if body.orbit is not None:
                 self.visibility_of_stars(body)
-                star = self.star_system
-                if body.parent.celestial_type in ('star', 'system'):
-                    relative_distance = body.orbit.a.to('km').m
-                else:
-                    relative_distance = body.parent.orbit.a.to('km').m
-                self.relative_sizes[body.id][star.id] = self.small_angle_aproximation(star, relative_distance)
+                for star in self.star_system:
+                    if body.parent.celestial_type in ('star', 'system'):
+                        relative_distance = body.orbit.a.to('km').m
+                    else:
+                        relative_distance = body.parent.orbit.a.to('km').m
+                    self.relative_sizes[body.id][star.id] = self.small_angle_aproximation(star, relative_distance)
+
                 x = body.orbit.a.to('m').m  # position of the Observer's planet
                 for other in [o for o in others if o.orbit is not None]:
                     y = other.orbit.a.to('m').m  # position of the observed body
@@ -149,7 +159,7 @@ class PlanetarySystem(Flagable):
 
     def remove_astro_obj(self, astro_obj):
         group = self._get_astro_group(astro_obj)
-        plus_mass = group[group.index(astro_obj)].mass.to('jupiter_mass')
+        plus_mass = astro_obj.mass.to('jupiter_mass')
         self.body_mass += plus_mass
         group.remove(astro_obj)
         astro_obj.flag()
@@ -176,8 +186,11 @@ class PlanetarySystem(Flagable):
         elif tag_type == 'id':
             astrobody = [body for body in self.astro_bodies if body.id == tag_identifier]
 
-        if not (len(astrobody)):  # tag_identifier could be a star's id
-            astrobody = [star for star in self.star_system if star.id == tag_identifier]
+        if not len(astrobody):
+            if self.star_system.letter == 'P':
+                astrobody = [self.star_system] if self.star_system.id == tag_identifier else []
+            else:  # tag_identifier could be a star's id
+                astrobody = [star for star in self.star_system if star.id == tag_identifier]
 
         if not silenty:
             assert len(astrobody), 'the ID "{}" is invalid'.format(tag_identifier)
@@ -338,7 +351,7 @@ class Systems:
                 return star
         for system in cls._systems:
             if id_number == system.id:
-                return system
+                return system.star_system
             else:
                 for star in system:
                     if star.id == id_number:
@@ -346,12 +359,20 @@ class Systems:
 
     @classmethod
     def get_system_by_star(cls, star):
+        star = cls.find_parent(star)
         for system in cls._systems:
             if hasattr(system, 'letter'):
                 if any([body == star for body in system.star_system.composition()]):
                     return system
             elif system.star_system == star:
                 return system
+
+    @classmethod
+    def find_parent(cls, body):
+        if body.parent is None:
+            return body
+        else:
+            return cls.find_parent(body.parent)
 
     @classmethod
     def cycle_systems(cls):
@@ -416,6 +437,22 @@ class Systems:
                     data[key][item_id].update(item_data)
                 else:
                     data[key][item_id] = item_data
+
+        copy_data = data.copy()
+        for key in keys:
+            for idx in copy_data[key]:
+                datos = copy_data[key][idx]
+                if 'system' in datos:
+                    system = cls.get_system_by_id(datos['system'])
+                elif 'star_id' in copy_data[key][idx]:
+                    star = cls.get_star_by_id(datos['star_id'])
+                    system = cls.get_system_by_star(star)
+                else:
+                    star = cls.get_star_by_id(idx)
+                    system = cls.get_system_by_star(star)
+                body = system.get_astrobody_by(idx, tag_type='id')
+                if body.flagged:
+                    del data[key][idx]
 
         guardar_json(ruta, data)
 

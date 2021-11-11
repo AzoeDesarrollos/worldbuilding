@@ -1,10 +1,10 @@
 from .general import BodyInHydrostaticEquilibrium, Ring
 from engine import molecular_weight, q, albedos
+from .orbit import PlanetOrbit, SatelliteOrbit
 from engine.backend.util import generate_id
 from .lagrange import get_lagrange_points
 from math import sqrt, pi, pow, tan
 from pygame import Color
-from .orbit import PlanetOrbit
 
 
 class Planet(BodyInHydrostaticEquilibrium):
@@ -28,7 +28,7 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     lagrange_points = None
     hill_sphere = 0
-    roches_limit = 0
+    roches_limit: q = 0
 
     _tilt = 'Not set'
     spin = 'N/A'
@@ -97,6 +97,7 @@ class Planet(BodyInHydrostaticEquilibrium):
             self._greenhouse = 1
         self.albedo = q(data['albedo'])
         self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)
+        self.relative_size = 'Dwarf' if 'Dwarf' in self.clase else 'Giant' if 'Giant' in self.clase else 'Medium'
         self.tilt = data['tilt'] if 'tilt' in data else 0
 
         self.satellites = []
@@ -161,20 +162,45 @@ class Planet(BodyInHydrostaticEquilibrium):
         return t
 
     def set_orbit(self, star, orbital_parameters):
-        self.orbit = PlanetOrbit(star, *orbital_parameters)
-        self.temperature = self.set_temperature(star.temperature_mass, self.orbit.semi_minor_axis.m)
+        if star.celestial_type in ('star', 'system'):
+            self.orbit = PlanetOrbit(star, *orbital_parameters)
+            temp = star.temperature_mass
+        else:
+            self.orbit = SatelliteOrbit(*orbital_parameters)
+            temp = star.parent.temperature_mass
+
+        self.temperature = self.set_temperature(temp, self.orbit.semi_minor_axis.m)
         self.orbit.set_astrobody(star, self)
-        self.lagrange_points = get_lagrange_points(self.orbit.semi_major_axis.m, star.mass.m, self.mass.m)
+        if hasattr(star, 'letter') and star.letter == 'P':
+            self.lagrange_points = get_lagrange_points(self.orbit.a.m, star.shared_mass.m, self.mass.m)
+        else:
+            self.lagrange_points = get_lagrange_points(self.orbit.a.m, star.mass.m, self.mass.m)
+
         self.hill_sphere = self.set_hill_sphere()
-        if star.celestial_type == 'Star':
+        if star.celestial_type == 'star':
             self.sky_color = self.set_sky_color(star)
         return self.orbit
 
     def set_hill_sphere(self):
         a = self.orbit.semi_major_axis.to('au').magnitude
         mp = self.mass.to('earth_mass').magnitude
-        ms = self.orbit.star.mass.to('sol_mass').magnitude
+        star = self.orbit.star
+        if hasattr(star, 'letter') and star.letter == 'P':
+            ms = star.shared_mass.to('sol_mass').m
+        else:
+            ms = star.mass.to('sol_mass').magnitude
         return q(round((a * pow(mp / ms, 1 / 3)), 3), 'earth_hill_sphere').to('earth_radius')
+
+    def unset_orbit(self):
+        del self.orbit
+        self.orbit = None
+        self.temperature = q(0, 'celsius')
+        self.hill_sphere = 0
+        self.roches_limit = 0
+        self.sky_color = None
+        self.lagrange_points = None
+        for satellite in self.satellites:
+            satellite.unset_orbit()
 
     def set_roche(self, obj_density):
         density = self.density.to('earth_density').m

@@ -6,7 +6,7 @@ from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.globales import render_textrect
 from pygame import Surface, draw, SRCALPHA, Rect
-from .common import ListedArea, AvailablePlanet
+from .common import ListedArea, ColoredBody
 from engine import molecular_weight, q
 from math import sqrt
 
@@ -239,7 +239,7 @@ class AtmospherePanel(BaseWidget):
         a = self.atmograph
         self.image.fill(COLOR_BOX, [a.rect.x, a.rect.bottom, 200, 21])
 
-        self.write('Greenhouse effect: '+str(self.global_warming()), self.f2, x=3, y=ALTO - 67)
+        self.write('Greenhouse effect: ' + str(self.global_warming()), self.f2, x=3, y=ALTO - 67)
         if self.curr_planet is not None:
             self.set_planet(self.curr_planet)
 
@@ -627,15 +627,17 @@ class Atmograph(BaseWidget):
                 self.image.blit(self.canvas, (0, 0))
 
 
+class ListedPlanet(ColoredBody):
+    def on_mousebuttondown(self, event):
+        if event.button == 1:
+            if 'pressure_at_sea_level' not in self.object_data.atmosphere:
+                self.parent.parent.show_pressure.clear()
+            self.parent.select_one(self)
+            self.parent.parent.set_planet(self.object_data)
+
+
 class AvailablePlanets(ListedArea):
-    last_idx = None
-
-    def populate(self, population):
-        listed = []
-        for i, planet in enumerate(population):
-            listed.append(ListedPlanet(self, planet, self.rect.x + 3, i * 16 + self.rect.y + 21))
-
-        self.listed_objects.add(*listed, layer=Systems.get_current().id)
+    listed_type = ListedPlanet
 
     def show(self):
         system = Systems.get_current()
@@ -645,26 +647,10 @@ class AvailablePlanets(ListedArea):
                 self.populate(pop)
         super().show()
 
-    def update(self):
-        idx = Systems.get_current_id(self)
-        if idx != self.last_idx:
-            self.show()
-            self.show_current(idx)
-            self.last_idx = idx
-
     def on_mousebuttondown(self, event):
         super().on_mousebuttondown(event)
         self.parent.curr_planet = None
         self.parent.show_name()
-
-
-class ListedPlanet(AvailablePlanet):
-    def on_mousebuttondown(self, event):
-        if event.button == 1:
-            if 'pressure_at_sea_level' not in self.object_data.atmosphere:
-                self.parent.parent.show_pressure.clear()
-            self.parent.select_one(self)
-            self.parent.parent.set_planet(self.object_data)
 
 
 class ShownPressure(BaseWidget):

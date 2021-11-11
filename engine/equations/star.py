@@ -59,8 +59,6 @@ class Star(BodyInHydrostaticEquilibrium):
             self.name = name
             self.has_name = True
 
-        self.idx = data.get('idx', 0)
-
         if mass:
             self._mass = mass
         elif luminosity:
@@ -302,6 +300,12 @@ class Star(BodyInHydrostaticEquilibrium):
         self.classification = self.stellar_classification(self._mass)
         self.cls = self.classification
         self.color = self.true_color(self.temperature)
+
+    def compare(self, other):
+        if hasattr(other, 'cls'):
+            return self.cls == other.cls
+        else:
+            return False
 
     def __str__(self):
         if self.has_name:

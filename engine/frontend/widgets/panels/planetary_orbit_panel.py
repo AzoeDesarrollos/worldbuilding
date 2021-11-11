@@ -1,5 +1,5 @@
-from .common import AvailableObjects, AvailablePlanet, ModifyArea, TextButton, ToggleableButton, Group
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_SELECTED, COLOR_TEXTO
+from .common import ColoredBody, ListedArea, ModifyArea, TextButton, ToggleableButton, Group
 from engine.equations.orbit import PseudoOrbit, RawOrbit, from_planetary_resonance
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.globales import WidgetHandler, WidgetGroup
@@ -43,7 +43,6 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.added = []
         self.objects = []
         self.satellites = {}
-        self._loaded_orbits = {}
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.area_markers = Rect(3, 58, 380, 20 * 16)
         self.curr_x = self.area_buttons.x + 3
@@ -71,32 +70,37 @@ class PlanetaryOrbitPanel(BaseWidget):
         EventHandler.register(self.load_orbits, 'LoadData')
 
     def load_orbits(self, event):
-        for id in event.data.get('Planetary Orbits', []):
-            orbit_data = event.data['Planetary Orbits'][id]
-            a = q(orbit_data['a'], 'earth_radius')
-            e = q(orbit_data['e'])
-            i = q(orbit_data['i'], 'degree')
-            loan = q(orbit_data.get('LoAN', 0), 'degree')
-            aop = orbit_data['AoP']
-            if aop != 'undefined':
-                aop = q(aop, 'degree')
-            system = Systems.get_system_by_id(orbit_data['star_id'])
-            planet = system.get_astrobody_by(id, tag_type='id')
-            if planet.id not in self.satellites:
-                self.satellites[planet.id] = []
+        idxs = list(event.data['Planetary Orbits'].keys())
+        bodies = [Systems.get_current().get_astrobody_by(idx, tag_type='id') for idx in idxs]
+        bodies.sort(key=lambda b: b.mass, reverse=True)
+        # sorting by mass may not be the best way to sort, but it is unlikely that a body orbits another body if the
+        # parent body is less massive than the child one.
+        for body in bodies:
+            if body.id in event.data['Planetary Orbits']:
+                id = body.id
+                orbit_data = event.data['Planetary Orbits'][id]
+                a = q(orbit_data['a'], 'earth_radius')
+                e = q(orbit_data['e'])
+                i = q(orbit_data['i'], 'degree')
+                loan = q(orbit_data.get('LoAN', 0), 'degree')
+                aop = orbit_data['AoP']
+                if aop != 'undefined':
+                    aop = q(aop, 'degree')
+                system = Systems.get_system_by_id(orbit_data['star_id'])
+                if system is not None:
+                    planet = system.get_astrobody_by(id, tag_type='id')
+                    if planet.id not in self.satellites:
+                        self.satellites[planet.id] = []
 
-            if planet.id not in self._markers:
-                self._markers[planet.id] = []
-            satellite = system.get_astrobody_by(orbit_data['astrobody'], tag_type='id')
-            self.satellites[planet.id].append(satellite)
-            satellite.set_orbit(planet, [a, e, i, loan, aop])
-            self.add_existing(satellite, planet)
-
-        # borrar las órbitas cargadas para evitar que se dupliquen.
-        self._loaded_orbits.clear()
+                    if planet.id not in self._markers:
+                        self._markers[planet.id] = []
+                    satellite = system.get_astrobody_by(orbit_data['astrobody'], tag_type='id')
+                    self.satellites[planet.id].append(satellite)
+                    satellite.set_orbit(planet, [a, e, i, loan, aop])
+                    self.add_existing(satellite, planet)
 
     def save_orbits(self, event):
-        orbits = self._loaded_orbits
+        orbits = {}
         for planet_obj in self.planet_area.listed_objects.widgets():
             planet = planet_obj.object_data
             for marker in self._markers.get(planet.id, []):
@@ -117,7 +121,7 @@ class PlanetaryOrbitPanel(BaseWidget):
             d['e'] = orb.eccentricity.m
         if hasattr(orb, 'astrobody'):
             d['astrobody'] = orb.astrobody.id
-            d['star_id'] = orb.astrobody.parent.parent.id
+            d['star_id'] = Systems.find_parent(orb.astrobody).id
         if hasattr(orb, 'longitude_of_the_ascending_node'):
             d['LoAN'] = orb.longitude_of_the_ascending_node.m
         if hasattr(orb, 'argument_of_periapsis'):
@@ -168,7 +172,8 @@ class PlanetaryOrbitPanel(BaseWidget):
         if system is not None:
             self.image.fill(COLOR_BOX, [0, 32, self.rect.w, 380])
             btn = None
-            for obj in system.satellites + system.asteroids:
+            planets = [p for p in system.planets if p.relative_size != 'Giant']
+            for obj in system.satellites + system.asteroids + planets:
                 if obj.orbit is None:
                     if obj not in self.objects:
                         self.objects.append(obj)
@@ -291,7 +296,11 @@ class PlanetaryOrbitPanel(BaseWidget):
     def add_new(self, obj):
         if obj not in self.added:
             self.added.append(obj)
-        obj_name = '{} #{}'.format(obj.cls, obj.idx)
+        if hasattr(obj, 'cls'):
+            cls = obj.cls
+        else:
+            cls = obj.clase
+        obj_name = '{} #{}'.format(cls, obj.idx)
         pln_habitable = Systems.get_current().is_habitable(self.current)
         pln_hill = self.current.hill_sphere.m
         obj_type = obj.celestial_type
@@ -323,7 +332,11 @@ class PlanetaryOrbitPanel(BaseWidget):
     def add_existing(self, obj, planet):
         if obj not in self.added:
             self.added.append(obj)
-        obj_name = '{} #{}'.format(obj.cls, obj.idx)
+        if hasattr(obj, 'cls'):
+            cls = obj.cls
+        else:
+            cls = obj.clase
+        obj_name = '{} #{}'.format(cls, obj.idx)
         orbit = obj.orbit
         pos = orbit.a
         obj_marker = Marker(self, obj_name, pos, color=COLOR_SELECTED, lock=False)
@@ -332,7 +345,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         roches = planet.set_roche(obj_density)
         min_value = roches.m
         max_value = planet.hill_sphere.m
-        if planet.habitable and obj.celestial_type != 'asteroid':
+        if hasattr(planet, 'habitable') and planet.habitable and obj.celestial_type != 'asteroid':
             max_value /= 2
         obj_marker.set_max_value(max_value)
         obj_marker.set_min_value(min_value)
@@ -414,23 +427,26 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.digit_y.clear()
 
 
-class OrbitableObject(AvailablePlanet):
+class OrbitableObject(ColoredBody):
     def on_mousebuttondown(self, event):
         self.parent.parent.hide_orbit_types()
         self.parent.select_one(self)
         self.parent.parent.select_planet(self.object_data)
 
 
-class AvailablePlanets(AvailableObjects):
+class AvailablePlanets(ListedArea):
     listed_type = OrbitableObject
 
     def show(self):
         system = Systems.get_current()
         if system is not None:
             bodies = [body for body in system.astro_bodies if body.hill_sphere != 0]
-            if not len(self.listed_objects.get_widgets_from_layer(Systems.get_current().id)):
-                self.populate(bodies)
+            self.populate(bodies)
         super().show()
+
+    def delete_objects(self, astronomical_object):
+        super().delete_objects(astronomical_object)
+        self.show()
 
     def on_mousebuttondown(self, event):
         super().on_mousebuttondown(event)
@@ -444,28 +460,23 @@ class AvailablePlanets(AvailableObjects):
                 self.select_one(obj)
 
 
-class ObjectButton(Meta):
+class ObjectButton(ColoredBody):
     info = None
     linked_marker = None
     completed = False
 
     def __init__(self, parent, obj, x, y):
-        super().__init__(parent)
-        self.object_data = obj
         self.orbit_data = None
-        self.f1 = self.crear_fuente(13)
-        self.f2 = self.crear_fuente(13, bold=True)
-        self.color = obj.color
         if obj.has_name:
             name = obj.name
         else:
-            name = '{} #{}'.format(obj.cls, obj.idx)
-        self.img_uns = self.f1.render(name, True, self.color, COLOR_AREA)
-        self.img_sel = self.f2.render(name, True, self.color, COLOR_AREA)
+            if hasattr(obj, 'cls'):
+                cls = obj.cls
+            else:
+                cls = obj.clase
+            name = '{} #{}'.format(cls, obj.idx)
+        super().__init__(parent, obj, name, x, y)
         self.img_dis = self.img_uns
-        self.w = self.img_sel.get_width()
-        self.image = self.img_uns
-        self.rect = self.image.get_rect(topleft=(x, y))
 
     def update_text(self, orbit):
         self.completed = True
@@ -473,7 +484,7 @@ class ObjectButton(Meta):
         if self.object_data.has_name:
             name = self.object_data.name
         else:
-            name = self.object_data.title
+            name = str(self.object_data)
         obj: str = name + ' @{:~}'.format(orbit)
         self.img_uns = self.f1.render(obj, True, self.color, COLOR_AREA)
         self.img_sel = self.f2.render(obj, True, self.color, COLOR_AREA)

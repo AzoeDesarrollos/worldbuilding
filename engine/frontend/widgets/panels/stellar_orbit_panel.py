@@ -1,4 +1,4 @@
-from .common import TextButton, AvailableObjects, ToggleableButton, AvailablePlanet, ModifyArea
+from .common import TextButton, ListedArea, ToggleableButton, ColoredBody, ModifyArea
 from engine.equations.orbit import RawOrbit, PseudoOrbit, from_stellar_resonance
 from engine.frontend.globales import WidgetGroup, render_textrect, WidgetHandler
 from engine.frontend.widgets.incremental_value import IncrementalValue
@@ -238,6 +238,8 @@ class OrbitPanel(BaseWidget):
             del self.markers[idx]
             self._orbits[marker.orbit.star.id].remove(marker)
             self.buttons.remove(marker.linked_button)
+            marker.orbit.astrobody.unset_orbit()
+            self.planet_area.show()
             self.sort_markers()
             self.sort_buttons()
 
@@ -621,7 +623,7 @@ class OrbitType(BaseWidget, Intertwined):
             if elemento.text == 'Inclination':
                 value = q(0 if elemento.text_area.value == '' else elemento.text_area.value, 'degree')
             elif elemento.text not in ['Orbital motion', 'Temperature']:
-                value = q(elemento.text_area.value)
+                value = q(elemento.text_area.value, elemento.text_area.unit)
 
             if value is not None:
                 parametros.append(value)
@@ -814,7 +816,7 @@ class OrbitButton(Meta, Intertwined):
         return 'B.Orbit @' + str(self.get_value())
 
 
-class RoguePlanet(AvailablePlanet):
+class RoguePlanet(ColoredBody):
     # "rogue" because it doesn't have an orbit yet
     def on_mousebuttondown(self, event):
         if not self.parent.parent.visible_markers:
@@ -822,7 +824,7 @@ class RoguePlanet(AvailablePlanet):
             self.parent.parent.link_astrobody_to_stellar_orbit(self.object_data)
 
 
-class AvailablePlanets(AvailableObjects):
+class AvailablePlanets(ListedArea):
     listed_type = RoguePlanet
     name = 'Planets'
 
@@ -830,8 +832,7 @@ class AvailablePlanets(AvailableObjects):
         system = Systems.get_current()
         if system is not None:
             population = [i for i in system.planets + system.asteroids if i.orbit is None]
-            if not len(self.listed_objects.get_widgets_from_layer(system.id)):
-                self.populate(population)
+            self.populate(population)
         super().show()
 
 
@@ -986,9 +987,13 @@ class Recomendation(BaseWidget):
             gas_giants = [pln for pln in Systems.get_current().astro_bodies if
                           pln.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant')]
             gas_giants.sort(key=lambda g: g.orbit.a.m, reverse=True)
-            last_gas_giant = gas_giants[0]
+            if len(gas_giants):
+                last_gas_giant = gas_giants[0]
+                lim_min = last_gas_giant.orbit.a.m
+            else:
+                lim_min = 0
 
-            if last_gas_giant.orbit.a.m < orbit.a.m < star.outer_boundry.m:
+            if lim_min < orbit.a.m < star.outer_boundry.m:
                 data = recomendation['texts']['tno']
                 if not orbit.resonant:
                     data = data.format(' ')
