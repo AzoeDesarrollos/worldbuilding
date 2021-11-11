@@ -56,9 +56,12 @@ class PlanetarySystem(Flagable):
             self.distances[body.id] = {}
 
         for system in Systems.get_systems() + Systems.loose_stars:
-            for star in system.star_system:
-                # acá parece haber un problema con los P-Type Systems, porque la distancia debería ser hacia el punto
-                # que las estrellas orbitan.
+            if system.star_system.letter == 'P':
+                stars = [system.star_system]
+            else:
+                stars = [s for s in system.star_system]
+
+            for star in stars:
                 if body.orbit is not None and star.id not in self.aparent_brightness[body.id]:
                     if star == self.star_system:
                         if body.parent == star:
@@ -73,9 +76,11 @@ class PlanetarySystem(Flagable):
                         d = q(sqrt(pow(abs(x2 - x1), 2) + pow(abs(y2 - y1), 2) + pow(abs(z2 - z1), 2)), 'lightyears')
                         self.distances[body.id][star.id] = round(d)
                         ab = q(star.luminosity.m / pow(d.to('au').m, 2), 'Vs')
-                        if star not in self.relative_sizes[body.id]:
-                            value = self.small_angle_aproximation(star, d.to('km').m)
-                            self.relative_sizes[body.id][star.id] = value
+
+                    if star not in self.relative_sizes[body.id]:
+                        d = self.distances[body.id][star.id]
+                        value = self.small_angle_aproximation(star, d.to('km').m)
+                        self.relative_sizes[body.id][star.id] = value
                     self.aparent_brightness[body.id][star.id] = ab
 
     @staticmethod
@@ -93,7 +98,9 @@ class PlanetarySystem(Flagable):
         for i, body in enumerate(to_see):
             if body.id not in self.aparent_brightness:
                 self.aparent_brightness[body.id] = {}
+            if body.id not in self.relative_sizes:
                 self.relative_sizes[body.id] = {}
+            if body.id not in self.distances:
                 self.distances[body.id] = {}
 
             others = to_see[:i] + to_see[i + 1:]
@@ -179,8 +186,11 @@ class PlanetarySystem(Flagable):
         elif tag_type == 'id':
             astrobody = [body for body in self.astro_bodies if body.id == tag_identifier]
 
-        if not (len(astrobody)):  # tag_identifier could be a star's id
-            astrobody = [star for star in self.star_system if star.id == tag_identifier]
+        if not len(astrobody):
+            if self.star_system.letter == 'P':
+                astrobody = [self.star_system] if self.star_system.id == tag_identifier else []
+            else:  # tag_identifier could be a star's id
+                astrobody = [star for star in self.star_system if star.id == tag_identifier]
 
         if not silenty:
             assert len(astrobody), 'the ID "{}" is invalid'.format(tag_identifier)

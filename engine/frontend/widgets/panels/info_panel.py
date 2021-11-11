@@ -94,23 +94,36 @@ class InformationPanel(BaseWidget):
 
         if stellar_tides > lunar_tides:
             primary = 'star'
-        std_high = q(lunar_tides * 0.54, 'm')
-        std_low = -std_high
+        std_high = abs(q(lunar_tides * 0.54, 'm'))
+        std_low = -std_high if std_high.m != 0 else abs(std_high)
 
-        spring_high = q((lunar_tides + stellar_tides) * 0.54, 'm')  # meters
-        spring_low = -spring_high
+        spring_high = abs(q((lunar_tides + stellar_tides) * 0.54, 'm'))  # meters
+        spring_low = -spring_high if spring_high.m != 0 else abs(spring_high)
 
-        neap_high = q((lunar_tides - stellar_tides) * 0.54, 'm')  # meters
-        neap_low = -neap_high
+        neap_high = abs(q((lunar_tides - stellar_tides) * 0.54, 'm'))  # meters
+        neap_low = -neap_high if neap_high.m != 0 else abs(neap_high)
 
-        resolution = 4
         rect = self.write(f'Tides on {str(astrobody)}:', self.f3, x=3, y=50)
-        rect = self.write('Standard high: {}'.format(round(std_high, resolution)), self.f2, x=3, y=rect.bottom + 4)
-        rect = self.write('Standard low: {}'.format(round(std_low, resolution)), self.f2, x=3, y=rect.bottom + 2)
-        rect = self.write('Spring high: {}'.format(round(spring_high, resolution)), self.f2, x=3, y=rect.bottom + 12)
-        rect = self.write('Spring low: {}'.format(round(spring_low, resolution)), self.f2, x=3, y=rect.bottom + 2)
-        rect = self.write('Neap high: {}'.format(round(neap_high, resolution)), self.f2, x=3, y=rect.bottom + 12)
-        rect = self.write('Neap low: {}'.format(round(neap_low, resolution)), self.f2, x=3, y=rect.bottom + 2)
+        tides = [
+            {'name': 'Standard high', 'value': std_high, 'dy': 4},
+            {'name': 'Standard low', 'value': std_low, 'dy': 2},
+            {'name': 'Spring high', 'value': spring_high, 'dy': 12},
+            {'name': 'Spring low', 'value': spring_low, 'dy': 2},
+            {'name': 'Neap high', 'value': neap_high, 'dy': 12},
+            {'name': 'Neap low', 'value': neap_low, 'dy': 2}
+        ]
+        for tide in tides:
+            name = tide['name']
+            v = tide['value']
+            dy = tide['dy']
+            if 'e' in str(v.m):
+                valor = f"{v.m:.2e} "
+                unidad = f"{v.u:P~}"
+                formato = valor + unidad
+            else:
+                formato = f'{v:.2~P}'
+
+            rect = self.write(f'{name}: {formato}', self.f2, x=3, y=rect.bottom + dy)
 
         star = self.current.orbit.star
         if star.letter is None:
@@ -150,24 +163,30 @@ class InformationPanel(BaseWidget):
 
             analyzed.append(body.id)
             relative_size = sizes[body_id]
+            if 'e' in str(relative_size.m):
+                valor = f"{relative_size.m:.2e}"
+            else:
+                valor = str(relative_size.m)
+            formato1 = f'of {valor}°'
+
             distance = distances[body_id]
             if type(body_visibility) is q:
                 v = body_visibility.to('W/m^2')
                 if 'e' in str(v.m):
                     valor = f"{v.m:.2e} "
                     unidad = f"{v.u:P~}"
-                    formato = valor + unidad
+                    formato2 = f'of {valor + unidad}'
                 else:
-                    formato = f'of {v:~P}'
-                text = f'* The star {body}, at a distance of {distance:~P} '
-                text += f'has an apparent brightness, as seen from {astrobody}, ' + formato
-                text += f" and a relative size of {relative_size.m} degrees in it's sky."
+                    formato2 = f'of {v:~P}'
+                text = f'* The {body.celestial_type} {body}, at a distance of {distance:~P} '
+                text += f'has an apparent brightness, as seen from {astrobody}, ' + formato2
+                text += f" and a relative size {formato1} in it's sky."
             elif body_visibility == 'naked':
                 text = f'* {body} can be seen from {astrobody} with naked human eyes'
-                text += f" with a relative size of {relative_size.m} degrees in it's sky."
+                text += f" with a relative size {formato1} in it's sky."
             elif body_visibility == 'telescope':
                 text = f'* Humans from {astrobody} would need a telescope to view {body}.'
-                text += f" It has a relative size of {relative_size.m} degrees in it's sky."
+                text += f" It has a relative size {formato1} in it's sky."
             else:
                 text = f'* It is unclear if {body} could be seen from {astrobody}.'
 

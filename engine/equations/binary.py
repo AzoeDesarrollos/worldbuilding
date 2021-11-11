@@ -19,6 +19,7 @@ class BinarySystem(Flagable):
     letter = ''
     system_name = ''
     has_name = False
+    name = None
 
     idx = None
     shared_mass = None
@@ -33,7 +34,6 @@ class BinarySystem(Flagable):
 
         if name is None:
             self.has_name = False
-            self.name = 'NoName'
         else:
             self.name = name
             self.has_name = True
@@ -103,6 +103,7 @@ class PTypeSystem(BinarySystem):
     frost_line = 0
 
     luminosity = 0
+    radius = 0
 
     def __init__(self, primary, secondary, avgsep, ep=0, es=0, pos=None, id=None, name=None):
         super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
@@ -118,6 +119,7 @@ class PTypeSystem(BinarySystem):
         assert self.min_sep.m > 0.1, "Stars will merge at {:~} minimum distance".format(self.min_sep)
 
         self._mass = primary.mass + secondary.mass
+        self._radius = max([primary.radius, secondary.radius]).m
         self._luminosity = primary.luminosity + secondary.luminosity
         self.temperature_mass = self._mass.m
 
@@ -142,6 +144,7 @@ class PTypeSystem(BinarySystem):
 
     def set_qs(self):
         self.shared_mass = q(self._mass.m, 'sol_mass')
+        self.radius = q(self._radius, 'sol_radius')
         self.luminosity = q(self._luminosity.m, 'sol_luminosity')
         self.habitable_inner = q(self._habitable_inner, 'au')
         self.habitable_outer = q(self._habitable_outer, 'au')
@@ -178,7 +181,7 @@ class STypeSystem(BinarySystem):
 
 
 def system_type(separation):
-    if 0.15 <= float(separation) < 6:
+    if 0.15 <= float(separation) <= 6:
         system = PTypeSystem
     elif 120 <= float(separation) <= 600:
         system = STypeSystem
