@@ -24,6 +24,8 @@ class BinarySystem(Flagable):
     idx = None
     shared_mass = None
 
+    parent = None
+
     def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, id=None):
         if secondary.mass <= primary.mass:
             self.primary = primary
@@ -179,6 +181,10 @@ class STypeSystem(BinarySystem):
         self.max_sep = max_sep_p + max_sep_s
         self.min_sep = min_sep_p + min_sep_s
         self.shared_mass = primary.mass + secondary.mass
+        self.primary.position[0] = self.primary_distance
+        self.secondary.position[0] = -self.secondary_distance
+
+        print(self.primary.position, self.secondary.position)
 
         self.inner_forbbiden_zone = q(round(self.min_sep.m / 3, 3), 'au')
         self.outer_forbbiden_zone = q(round(self.max_sep.m * 3, 3), 'au')
@@ -189,9 +195,9 @@ class STypeSystem(BinarySystem):
 
 
 def system_type(separation):
-    if 0.15 <= float(separation) <= 6:
+    if 0.15 <= float(separation) <= 6:  # or 1.5 <= float(separation) <= 60?
         system = PTypeSystem
-    elif 120 <= float(separation) <= 600:
+    elif (120 <= float(separation) <= 600) or (1200 <= float(separation) <= 60000):
         system = STypeSystem
     else:
         raise AssertionError('The Average Separation is incompatible with\n'

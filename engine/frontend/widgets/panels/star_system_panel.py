@@ -159,13 +159,18 @@ class SystemType(BaseWidget):
     ecc_p = None
     ecc_s = None
 
-    def __init__(self, parent):
+    def __init__(self, parent, props=None):
         super().__init__(parent)
         self.properties = WidgetGroup()
-        props = [
-            'Primary Star', 'Secondary Star', 'Average Separation', 'Eccentriciy (primary)', 'Eccentricty (secondary)',
-            'Barycenter', 'Maximun Separation', 'Minimun Separation', 'Forbbiden Zone Inner edge',
-            'Forbbiden Zone Outer edge', 'System Type', 'System Name']
+
+        if props is None:
+            props = [
+                'Primary Star', 'Secondary Star', 'Average Separation',
+                'Eccentriciy (primary)', 'Eccentricty (secondary)',
+                'Barycenter', 'Maximun Separation', 'Minimun Separation',
+                'Forbbiden Zone Inner edge', 'Forbbiden Zone Outer edge',
+                'System Type', 'System Name']
+
         self.create(props)
         EventHandler.register(self.clear, 'ClearData')
 

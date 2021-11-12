@@ -1,8 +1,10 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, WidgetGroup
-from engine.frontend.widgets.panels.common import AvailableObjects, ListedBody
+from engine.frontend.widgets.panels.common import ListedBody, ListedArea
 from engine.equations.planetary_system import Systems
 from .star_system_panel import SystemType, UndoButton
-from engine.backend.eventhandler import EventHandler
+# from engine.backend.eventhandler import EventHandler
+from engine.equations.binary import system_type
+from engine.equations.star import Star
 from ..basewidget import BaseWidget
 from pygame import Surface
 
@@ -42,26 +44,37 @@ class MultipleStarsPanel(BaseWidget):
 
 
 class SystemsType(SystemType):
+    virtual_primary = None
+    virtual_secondary = None
+
     def __init__(self, parent):
-        super().__init__(parent)
-        self.properties = WidgetGroup()
         props = [
             'Primary System', 'Secondary System', 'Average Separation',
             'Eccentriciy (primary)', 'Eccentricty (secondary)', 'Barycenter',
             'Maximun Separation', 'Minimun Separation', 'System Name']
-        self.create(props)
-        EventHandler.register(self.clear, 'ClearData')
+        super().__init__(parent, props)
+        # avg_sep = 1200 and 60000 au
+        # ecc = between 0.4 and 0.7
+
+    def set_star(self, star):
+        if str(self.primary.value) == '':
+            self.primary.value = star
+            self.has_values = True
+            self.virtual_primary = Star({'mass': star.mass if hasattr(star, 'mass') else star.shared_mass})
+        else:
+            self.secondary.value = star
+            self.parent.restore_button.enable()
+            self.has_values = True
+            self.virtual_secondary = Star({'mass': star.mass if hasattr(star, 'mass') else star.shared_mass})
 
     def unset_stars(self):
         pass
 
+    def fill(self):
+        super().fill()
+
 
 class ListedSystem(ListedBody):
-    enabled = True
-
-    def __init__(self, parent, system_or_star, x, y):
-        name = str(system_or_star)
-        super().__init__(parent, system_or_star, name, x, y)
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -70,7 +83,7 @@ class ListedSystem(ListedBody):
             self.parent.sort()
 
 
-class AvailableSystems(AvailableObjects):
+class AvailableSystems(ListedArea):
     name = 'Systems'
     listed_type = ListedSystem
 
@@ -79,7 +92,8 @@ class AvailableSystems(AvailableObjects):
         for system_or_star in Systems.get_systems():
             if system_or_star.star_system.system not in population:
                 population.append(system_or_star.star_system.system)
-        self.populate(sorted(population, key=lambda s: s.mass, reverse=True))
+        population.sort(key=lambda s: s.mass, reverse=True)
+        self.populate(population)
         super().show()
 
     # def update(self):
