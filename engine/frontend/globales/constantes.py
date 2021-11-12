@@ -9,6 +9,7 @@ COLOR_FONDO = Color(10, 10, 10)
 COLOR_TEXTO = Color(0, 0, 0)
 COLOR_BOX = Color(125, 125, 125)
 COLOR_AREA = Color(200, 200, 200)
+COLOR_DARK_AREA = Color([160]*3)
 COLOR_DISABLED = Color(150, 150, 150)
 COLOR_SELECTED = Color(255, 255, 255)
 
@@ -61,6 +62,7 @@ __all__ = [
     'COLOR_BOX',
     'COLOR_AREA',
     'COLOR_FONDO',
+    'COLOR_DARK_AREA',
 
     # Colores de texto
     'COLOR_TEXTO',

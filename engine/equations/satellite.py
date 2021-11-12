@@ -25,6 +25,8 @@ class Satellite(Flagable):
     parent = None
     satellites = None
 
+    planet_type = 'satellite'
+
     @staticmethod
     def calculate_density(ice, silicate, iron):
         comp = {'water ice': ice / 100, 'silicates': silicate / 100, 'iron': iron / 100}

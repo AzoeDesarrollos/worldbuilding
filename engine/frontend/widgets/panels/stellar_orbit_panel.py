@@ -44,8 +44,7 @@ class OrbitPanel(BaseWidget):
         self.rect = self.image.get_rect()
         self.properties = WidgetGroup()
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
-        self.area_markers = Rect(3, 58, 380, 20 * 15)
-        self.area_scroll = Rect(3, 32, 387, 388)
+        self.area_markers = Rect(3, 32, 380, 20 * 10)
         self.area_modify = ModifyArea(self, ANCHO - 201, 374)
 
         self.f = self.crear_fuente(16, underline=True)
@@ -53,7 +52,11 @@ class OrbitPanel(BaseWidget):
         self.order_f = self.crear_fuente(14)
         self.write(self.name + ' Panel', self.f, centerx=(ANCHO // 4) * 1.5, y=0)
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
-        self.recomendation = Recomendation(self, 3, ALTO // 2 - 165)
+
+        self.area_recomendation = Rect(3, 0, 380, 185)
+        self.area_recomendation.top = self.area_markers.bottom
+        self.image.fill(COLOR_DARK_AREA, self.area_recomendation)
+        self.recomendation = Recomendation(self)
 
         self._loaded_orbits = {}
         self.indexes = []
@@ -65,7 +68,7 @@ class OrbitPanel(BaseWidget):
         self.orbit_descriptions = WidgetGroup()
         self.show_markers_button = ToggleableButton(self, 'Stellar Orbits', self.toggle_stellar_orbits, 3, 421)
         self.show_markers_button.disable()
-        self.add_orbits_button = AddOrbitButton(self, ANCHO - 94, 394)
+        self.add_orbits_button = SetOrbitButton(self, ANCHO - 94, 394)
         self.resonances_button = AddResonanceButton(self, ANCHO - 140, 416)
 
         self.digit_x = RatioDigit(self, 'x', self.resonances_button.rect.left - 60, self.resonances_button.rect.y)
@@ -77,7 +80,7 @@ class OrbitPanel(BaseWidget):
 
         self.properties.add([self.area_modify, self.planet_area, self.show_markers_button,
                              self.add_orbits_button, self.resonances_button, self.digit_x,
-                             self.digit_y], layer=2)
+                             self.digit_y, self.recomendation], layer=2)
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
@@ -147,7 +150,7 @@ class OrbitPanel(BaseWidget):
             for button in self.buttons:
                 button.toggle(toggle)
 
-    def add_orbit_marker(self, position, resonance=False, res_parent=None, res_order=None):
+    def add_orbit_marker(self, position, resonance=False, res_parent=None, res_order=None, obj=None):
         star = self.current if not hasattr(position, 'star') else position.star
         inner = star.inner_boundry
         outer = star.outer_boundry
@@ -162,7 +165,7 @@ class OrbitPanel(BaseWidget):
 
         test = False
         color = None
-        if type(position) not in (q, RawOrbit, PseudoOrbit):
+        if type(position) not in (RawOrbit, PseudoOrbit):
             test = True  # saved orbits are valid by definition
             color = COLOR_STARORBIT
         elif resonance is False:
@@ -174,7 +177,7 @@ class OrbitPanel(BaseWidget):
             color = (255, 0, 0)  # color provisorio
 
         if test is True:
-            new = OrbitMarker(self, 'Orbit', star, position, is_complete_orbit=bb, is_resonance=bc, res=bd)
+            new = OrbitMarker(self, obj, star, position, is_complete_orbit=bb, is_resonance=bc, res=bd)
             self._markers[star.id].append(new)
             self._orbits[star.id].append(new)
             if self.is_visible:
@@ -238,14 +241,15 @@ class OrbitPanel(BaseWidget):
             del self.markers[idx]
             self._orbits[marker.orbit.star.id].remove(marker)
             self.buttons.remove(marker.linked_button)
-            marker.orbit.astrobody.unset_orbit()
+            if hasattr(marker.orbit, 'astrobody'):
+                marker.orbit.astrobody.unset_orbit()
             self.planet_area.show()
             self.sort_markers()
             self.sort_buttons()
 
     def on_mousebuttondown(self, event):
 
-        if self.area_scroll.collidepoint(event.pos):
+        if self.area_markers.collidepoint(event.pos):
             last_is_hidden = not self.markers[-1].is_visible
             if len(self.markers) > 16 and event.button in (4, 5):
                 if event.button == 4 and self.offset < 0:
@@ -265,6 +269,9 @@ class OrbitPanel(BaseWidget):
                 self.curr_y -= 32
             self.sort_buttons()
 
+        elif self.area_recomendation.collidepoint(event.pos):
+            pass
+
         elif event.button == 1 and self.markers is not None:
             for marker in self.markers:
                 marker.deselect()
@@ -280,39 +287,40 @@ class OrbitPanel(BaseWidget):
                 b = self.orbits[x + 1].value.m  # el posterior
                 assert p.value.m < b - 0.15, 'Orbit @' + str(p.value.m) + ' is too close to Orbit @' + str(b)
 
-    def check_artifexian(self, orbit):
+    def check_artifexian(self, marker):
         self.orbits.sort(key=lambda o: o.value.m)
-        idx = bisect_left(self.orbits, orbit)
+        idx = bisect_left(self.orbits, marker)
         left, right = None, None
         text1, text2 = '', ''
         frost_line = None
         if 0 < idx < len(self.orbits) - 1:
             left = self.orbits[idx - 1].value.m
             right = self.orbits[idx + 1].value.m
-        elif len(self.orbits) == 1:
+        elif marker.linked_astrobody.planet_type == 'Giant':
             frost_line = self.current.frost_line.m
-            left = frost_line if orbit.value.m < frost_line else None
-            right = frost_line if orbit.value.m > frost_line else None
-        elif idx == 0:
+            left = frost_line if marker.value.m < frost_line else None
+            right = frost_line if marker.value.m > frost_line else None
+        elif idx == 0 and len(self.orbits) > 1:
             right = self.orbits[idx + 1].value.m
-        else:
+        elif len(self.orbits) > 1:
             left = self.orbits[idx - 1].value.m
 
-        self.image.fill(COLOR_BOX, [0, 420 - 30, self.rect.w, 30])
+        if left or right:
+            self.image.fill(COLOR_BOX, [0, 420 - 30, self.rect.w, 30])
         if left is not None:
             if frost_line is None:
-                value = orbit.value.m / left
+                value = marker.value.m / left
                 text1 = str(round(value, 3)) + " !" if not 1.4 <= value <= 2 else str(round(value, 3))
             else:
-                value = abs(left - orbit.value.m)
+                value = abs(left - marker.value.m)
                 text1 = str(round(value, 3)) + " !" if not 1 <= value <= 1.2 else str(round(value, 3))
 
         if right is not None:
             if frost_line is None:
-                value = right / orbit.value.m
+                value = right / marker.value.m
                 text2 = str(round(value, 3)) + " !" if not 1.4 <= value <= 2 else str(round(value, 3))
             else:
-                value = abs(orbit.value.m - right)
+                value = abs(marker.value.m - right)
                 text2 = str(round(value, 3)) + " !" if not 1 <= value <= 1.2 else str(round(value, 3))
 
         if left and not right:
@@ -320,7 +328,7 @@ class OrbitPanel(BaseWidget):
         elif left and right:
             self.write('top ' + text1, self.f2, bottom=420 - 15)
             self.write('bottom ' + text2, self.f2, top=420 - 15)
-        else:  # just right
+        elif right:
             self.write('bottom ' + text2, self.f2, top=420 - 15)
 
     def anchor_maker(self, marker):
@@ -463,15 +471,16 @@ class OrbitPanel(BaseWidget):
         m.select()
 
     def link_astrobody_to_stellar_orbit(self, astrobody):
-        locked = [i for i in self.buttons if i.locked]
-        if len(locked):
-            orbit = PseudoOrbit(locked[0].linked_marker.orbit)
-            locked[0].linked_marker.orbit = orbit
-            locked[0].linked_type.show()
-            locked[0].linked_type.link_astrobody(astrobody)
-            self.add_orbits_button.disable()
-            self.recomendation.suggest(astrobody, orbit, Systems.get_current_star())
-            self.recomendation.show_suggestion(astrobody, orbit.temperature)
+        system = Systems.get_current()
+        star = system.star_system
+        pos = q(roll(star.inner_boundry, star.outer_boundry), 'au')
+        marker = self.add_orbit_marker(pos, obj=astrobody)
+        self.add_orbits_button.link(marker)
+
+    def develop_orbit(self, marker):
+        self.toggle_stellar_orbits()
+        marker.orbit = PseudoOrbit(marker.orbit)
+        marker.linked_type.link_astrobody(marker.linked_astrobody)
 
     def update(self):
         system = Systems.get_current()
@@ -486,6 +495,7 @@ class OrbitPanel(BaseWidget):
 
         if not self.no_star_error:
             self.image.fill(COLOR_BOX, self.area_markers)
+            self.image.fill(COLOR_AREA, self.area_buttons)
         else:
             self.show_no_system_error()
 
@@ -587,6 +597,7 @@ class OrbitType(BaseWidget, Intertwined):
     def link_astrobody(self, astro):
         self.linked_astrobody = astro
         self.locked = False
+        self.show()
 
     def get_orbit(self):
         orbit = self.linked_marker.orbit
@@ -677,12 +688,13 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
     locked = False
     orbit = None
 
-    def __init__(self, parent, name, star, value, is_complete_orbit=None, is_resonance=False, res=None):
+    def __init__(self, parent, astro, star, value, is_complete_orbit=None, is_resonance=False, res=None):
         super().__init__(parent)
         self.f1 = self.crear_fuente(16)
         self.f2 = self.crear_fuente(16, bold=True)
         self.star = star
-        self.name = name
+        self.name = str(astro)
+        self.linked_astrobody = astro
         self._value = value
         if is_complete_orbit is False:
             self.orbit = RawOrbit(self.parent.current, round(value, 3))
@@ -738,6 +750,8 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
                 self.value += q(self.increment, self.value.u)
                 self.increment = 0
                 self.parent.sort_markers()
+                self.parent.recomendation.suggest(self.linked_astrobody, self.orbit, Systems.get_current_star())
+                self.parent.recomendation.show_suggestion(self.linked_astrobody, self.orbit.temperature)
                 self.parent.check_artifexian(self)
 
     def key_to_mouse(self, event):
@@ -819,7 +833,7 @@ class OrbitButton(Meta, Intertwined):
 class RoguePlanet(ColoredBody):
     # "rogue" because it doesn't have an orbit yet
     def on_mousebuttondown(self, event):
-        if not self.parent.parent.visible_markers:
+        if self.parent.parent.visible_markers:
             self.enabled = False
             self.parent.parent.link_astrobody_to_stellar_orbit(self.object_data)
 
@@ -836,27 +850,27 @@ class AvailablePlanets(ListedArea):
         super().show()
 
 
-class AddOrbitButton(TextButton):
+class SetOrbitButton(TextButton):
     anchor = None
     locked = False
+    linked_marker = None
 
     def __init__(self, parent, x, y):
-        super().__init__(parent, 'Add Orbit', x, y)
+        super().__init__(parent, 'Set Orbit', x, y)
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled and not self.locked:
-            star = self.parent.current
-            inner = star.inner_boundry
-            outer = star.outer_boundry
-            position = roll(inner, outer)
-            self.parent.add_orbit_marker(position)
-            self.parent.check_orbits()
+            self.parent.develop_orbit(self.linked_marker)
+            # self.parent.check_orbits()
 
     def lock(self):
         self.locked = True
 
     def unlock(self):
         self.locked = False
+
+    def link(self, marker):
+        self.linked_marker = marker
 
     def unlink(self):
         self.lock()
@@ -951,11 +965,20 @@ class Recomendation(BaseWidget):
     text_size = 14
     just = 1
 
-    def __init__(self, parent, x, y):
+    rendered_text = None
+    rendered_rect = None
+
+    def __init__(self, parent):
         super().__init__(parent)
-        self.image = Surface((350, 230))
-        self.image.fill(COLOR_AREA)
-        self.rect = self.image.get_rect(topleft=(x, y))
+        self.image = Surface(self.parent.area_recomendation.size)
+        self.rect = self.parent.area_recomendation
+
+        f1 = self.crear_fuente(13, bold=True)
+        self.f2 = self.crear_fuente(12)
+        self.title = f1.render('Suggestion', 1, COLOR_TEXTO, COLOR_DARK_AREA)
+        self.title_rect = self.title.get_rect()
+        self.rendered_rect = Rect(3, 0, 0, 0)
+        self.rendered_rect.top = self.title_rect.bottom
 
     def suggest(self, planet, orbit, star):
         data = None
@@ -999,9 +1022,9 @@ class Recomendation(BaseWidget):
                     data = data.format(' ')
                     for key in ('classical', 'sednoid'):
                         t = recomendation[key]
-                        data += '\n\nFor a {} object:\n'.format(t['n'])
-                        data += 'Eccentricity should be {}\n'.format(t['e'])
-                        data += 'Inclination should be {}.'.format(t['i'])
+                        data += f'\n\nFor a {t["n"]} object:\n'
+                        data += f'Eccentricity should be {t["e"]}\n'
+                        data += f'Inclination should be {t["i"]}.'
                 else:
                     data = data.format(" resonant ")
                     for key in ('sdo', 'detached', "resonant"):
@@ -1048,7 +1071,7 @@ class Recomendation(BaseWidget):
         error = f'An eccentric Jupiter must have an orbital eccentricity of 0.1 or greater, up to 0.2 if there is a '
         error += f'habitable world in the system. However, there are {planets_in_system} planets in this system, so '
         error += f'the eccentricity should be {e} which falls ouside of those parameters.'
-        assert all([habitable, planets_in_system not in (3, 4), e > 0.1]), error
+        # assert all([habitable, planets_in_system not in (3, 4), e > 0.1]), error
         if all([clase, habitable]) is True:
             data.update(recomendation['eccentric_2'])
         elif not habitable:
@@ -1071,12 +1094,21 @@ class Recomendation(BaseWidget):
 
     def show_suggestion(self, planet, temp):
         text = self.create_suggestion(planet, temp)
-        f = self.crear_fuente(self.text_size)
-        f2 = self.crear_fuente(12, bold=True)
-        title = f2.render('Suggestion', 1, COLOR_TEXTO, COLOR_AREA)
-        render = render_textrect(text, f, self.rect.w, COLOR_TEXTO, COLOR_AREA, justification=self.just)
-        render_rect = render.get_rect(topleft=[3, 16])
-        self.image.fill(COLOR_AREA)
-        self.image.blit(render, render_rect)
-        self.image.blit(title, (0, 0))
-        self.show()
+        self.rendered_text = render_textrect(text, self.f2, self.rect.w, COLOR_TEXTO, COLOR_DARK_AREA)
+        self.rendered_rect.size = self.rendered_text.get_rect().size
+
+    def on_mousebuttondown(self, event):
+        if event.button == 4:
+            if self.rendered_rect.top + 3 <= 17:
+                self.rendered_rect.move_ip(0, +3)
+        elif event.button == 5:
+            if self.rendered_rect.bottom - 3 >= self.rect.bottom:
+                self.rendered_rect.move_ip(0, -3)
+
+    def update(self):
+        if self.rendered_text is not None:
+            self.image.fill(COLOR_DARK_AREA)
+            self.image.blit(self.title, self.title_rect)
+            self.image.blit(self.rendered_text, (0, self.rendered_rect.y))
+        else:
+            self.image.fill(COLOR_BOX)
