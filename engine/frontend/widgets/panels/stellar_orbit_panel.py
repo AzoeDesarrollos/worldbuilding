@@ -55,7 +55,6 @@ class OrbitPanel(BaseWidget):
 
         self.area_recomendation = Rect(3, 0, 380, 185)
         self.area_recomendation.top = self.area_markers.bottom
-        self.image.fill(COLOR_DARK_AREA, self.area_recomendation)
         self.recomendation = Recomendation(self)
 
         self._loaded_orbits = {}
@@ -453,7 +452,7 @@ class OrbitPanel(BaseWidget):
                 marker.show()
             self.hide_orbit_types()
             self.show_markers_button.disable()
-            self.add_orbits_button.enable()
+            # self.add_orbits_button.enable()
             self.area_modify.color_standby()
         self.visible_markers = not self.visible_markers
         self.area_modify.visible_markers = self.visible_markers
@@ -475,6 +474,7 @@ class OrbitPanel(BaseWidget):
         star = system.star_system
         pos = q(roll(star.inner_boundry, star.outer_boundry), 'au')
         marker = self.add_orbit_marker(pos, obj=astrobody)
+        self.add_orbits_button.enable()
         self.add_orbits_button.link(marker)
 
     def develop_orbit(self, marker):
@@ -494,7 +494,7 @@ class OrbitPanel(BaseWidget):
             self.last_idx = idx
 
         if not self.no_star_error:
-            self.image.fill(COLOR_BOX, self.area_markers)
+            # self.image.fill(COLOR_BOX, self.area_markers)
             self.image.fill(COLOR_AREA, self.area_buttons)
         else:
             self.show_no_system_error()
@@ -752,6 +752,7 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
                 self.parent.sort_markers()
                 self.parent.recomendation.suggest(self.linked_astrobody, self.orbit, Systems.get_current_star())
                 self.parent.recomendation.show_suggestion(self.linked_astrobody, self.orbit.temperature)
+                self.parent.recomendation.show()
                 self.parent.check_artifexian(self)
 
     def key_to_mouse(self, event):
@@ -854,6 +855,7 @@ class SetOrbitButton(TextButton):
     anchor = None
     locked = False
     linked_marker = None
+    enabled = False
 
     def __init__(self, parent, x, y):
         super().__init__(parent, 'Set Orbit', x, y)
@@ -961,12 +963,14 @@ class RatioDigit(BaseWidget):
 
 class Recomendation(BaseWidget):
     text = ''
-    format = None
+    format: dict = None
     text_size = 14
     just = 1
 
     rendered_text = None
     rendered_rect = None
+
+    recomendation = None
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -981,28 +985,31 @@ class Recomendation(BaseWidget):
         self.rendered_rect.top = self.title_rect.bottom
 
     def suggest(self, planet, orbit, star):
+        self.recomendation = recomendation.copy()
+        if self.format is not None:
+            self.format.clear()
         data = None
         planets_in_system = len(Systems.get_current().planets)
         e = round(0.584 * pow(planets_in_system, -1.2), 3) if planets_in_system > 1 else None
         if planet.habitable and orbit.temperature == 'habitable':
-            data = recomendation['habitable']
+            data = self.recomendation['habitable'].copy()
             if hasattr(star, 'habitable_orbit'):
                 # though this may never come into play.
                 if orbit.a.m <= star.habitable_orbit:
-                    data = recomendation['inner']
+                    data = self.recomendation['inner'].copy()
             if e is not None and e <= 0.2:
                 data.update({'e': e})
 
         elif planet.clase == 'Terrestial Planet':
-            data = recomendation['inner']
+            data = self.recomendation['inner'].copy()
             if e is not None and e <= 0.2:
                 data.update({'e': e})
 
         elif planet.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant', 'Gas Dwarf'):
-            data = recomendation['giant']
-            data.update(self.analyze_giants(planet, orbit, star))
+            data = self.recomendation['giant'].copy()
+            data.update(**self.analyze_giants(planet, orbit, star))
             if data.get('eccentric', False):
-                pass
+                pass  # this is intentional
             elif e is not None and 0.001 <= e <= 0.09:
                 data.update({'e': e})
 
@@ -1017,35 +1024,32 @@ class Recomendation(BaseWidget):
                 lim_min = 0
 
             if lim_min < orbit.a.m < star.outer_boundry.m:
-                data = recomendation['texts']['tno']
+                data = self.recomendation['texts']['tno']
                 if not orbit.resonant:
                     data = data.format(' ')
                     for key in ('classical', 'sednoid'):
-                        t = recomendation[key]
+                        t = self.recomendation[key].copy()
                         data += f'\n\nFor a {t["n"]} object:\n'
                         data += f'Eccentricity should be {t["e"]}\n'
                         data += f'Inclination should be {t["i"]}.'
                 else:
                     data = data.format(" resonant ")
                     for key in ('sdo', 'detached', "resonant"):
-                        t = recomendation[key]
-                        data += '\n\nFor a {} object:\n'.format(t['n'])
-                        data += 'Eccentricity should be {}\n'.format(t['e'])
-                        data += 'Inclination should be {}.'.format(t['i'])
+                        t = self.recomendation[key].copy()
+                        data += f'\n\nFor a {t["n"]} object:\n'
+                        data += f'Eccentricity should be {t["e"]}\n'
+                        data += f'Inclination should be {t["i"]}.'
 
         self.format = data
 
-    @staticmethod
-    def analyze_giants(planet, orbit, star):
-        planets_in_system = len(Systems.get_current().planets)
-
-        # average eccentricity
-
+    def analyze_giants(self, planet, orbit, star):
         clase = planet.clase in ('Puffy Giant', 'Gas Giant')
         orbita = 0.04 <= orbit.a.m <= 0.5
         period = q(sqrt(pow(orbit.a.m, 3) / star.mass.m), 'year').to('day').m >= 3
         if all([clase, orbita, period]) is True:
-            return recomendation['hot']
+            data = self.recomendation['hot'].copy()
+            data.update({'planet_type': 'Puffy Giant'})
+            return data
 
         clase = planet.clase == 'Super Jupiter'
         orbita = 0.04 <= orbit.a.m <= 1.2 + star.frost_line.m
@@ -1053,39 +1057,38 @@ class Recomendation(BaseWidget):
             # this is more of a warning than a suggestion, since a super jupiter
             # can't be placed too far away from the star, and there is no special
             # consideration about it's eccentricity or inclination.
-            return recomendation['giant']
-        elif clase:  # Is the planet still a Super Jupiter?
-            raise AssertionError("A super jupiter can't orbit so far away from it's star.")
-            # needs an "undo" after this.
+            return self.recomendation['giant'].copy()
+        # elif clase:  # Is the planet still a Super Jupiter?
+        #     raise AssertionError("A super jupiter can't orbit so far away from it's star.")
+        #     # needs an "undo" after this.
 
         clase = planet.clase in ('Gas Dwarf', 'Gas Giant')
         orbita = star.frost_line.m + 1 <= orbit.a.m <= star.frost_line.m + 1.2
         if all([clase, orbita]) is True:
-            return recomendation['giant']
-
-        e = round(0.584 * pow(planets_in_system, -1.2), 3) if planets_in_system > 1 else 0
-        clase = planet.clase == 'Gas Giant'
-        habitable = any([i.habitable for i in Systems.get_current().planets])
-        data = recomendation['giant']
-        data.update({'eccentric': True})
-        error = f'An eccentric Jupiter must have an orbital eccentricity of 0.1 or greater, up to 0.2 if there is a '
-        error += f'habitable world in the system. However, there are {planets_in_system} planets in this system, so '
-        error += f'the eccentricity should be {e} which falls ouside of those parameters.'
-        # assert all([habitable, planets_in_system not in (3, 4), e > 0.1]), error
-        if all([clase, habitable]) is True:
-            data.update(recomendation['eccentric_2'])
-        elif not habitable:
-            data.update(recomendation['eccentric_1'])
+            data = self.recomendation['giant'].copy()
+            data.update({'planet_type': planet.clase})
+            return data
+        else:
+            clase = planet.clase == 'Gas Giant'
+            habitable = any([i.habitable for i in Systems.get_current().planets])
+            data = self.recomendation['giant'].copy()
+            data.update({'eccentric': True, 'planet_type': 'Eccentric Jupiter'})
+            if all([clase, habitable]) is True:
+                data.update(**self.recomendation['eccentric_2'].copy())
+            elif not habitable:
+                data.update(**self.recomendation['eccentric_1'].copy())
         return data
 
     def create_suggestion(self, planet, temperature):
         if not type(self.format) is str:
-            base_text = recomendation['texts']['text']
+            base_text = self.recomendation['texts']['text']
             if planet.habitable is True and temperature == 'habitable':
                 p = 'Habitable Planet'
             else:
                 p = planet.clase
-            self.format.update({'planet_type': p})
+            if 'planet_type' not in self.format:
+                self.format.update({'planet_type': p})
+
             return base_text.format(**self.format)
         else:
             self.text_size = 11
@@ -1106,7 +1109,7 @@ class Recomendation(BaseWidget):
                 self.rendered_rect.move_ip(0, -3)
 
     def update(self):
-        if self.rendered_text is not None:
+        if self.rendered_text is not None and self.parent.visible_markers:
             self.image.fill(COLOR_DARK_AREA)
             self.image.blit(self.title, self.title_rect)
             self.image.blit(self.rendered_text, (0, self.rendered_rect.y))
