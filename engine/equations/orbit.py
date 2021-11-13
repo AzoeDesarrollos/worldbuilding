@@ -11,6 +11,7 @@ class RawOrbit:
     _unit = ''
     temperature = ''
     resonant = False
+    id = None
 
     def __init__(self, star, a):
         self._unit = a.u
@@ -40,6 +41,24 @@ class RawOrbit:
 
     def __repr__(self):
         return 'Orbit @' + '{:}'.format(round(float(self), 3))
+
+    def __eq__(self, other):
+        return self.id == other.id
+
+    def __int__(self):
+        return round(self.a.m)
+
+    def __index__(self):
+        return round(self.a.m)
+
+    def __float__(self):
+        return float(self.semi_major_axis.m)
+
+    def __lt__(self, other):
+        return self.semi_major_axis.m < other
+
+    def __gt__(self, other):
+        return self.semi_major_axis.m > other
 
 
 class PseudoOrbit:
