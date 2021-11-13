@@ -1,5 +1,5 @@
+from engine.equations.orbit import RawOrbit, PseudoOrbit, from_stellar_resonance, in_resonance
 from .common import TextButton, ListedArea, ToggleableButton, ColoredBody, ModifyArea
-from engine.equations.orbit import RawOrbit, PseudoOrbit, from_stellar_resonance
 from engine.frontend.globales import WidgetGroup, render_textrect, WidgetHandler
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.basewidget import BaseWidget
@@ -289,8 +289,8 @@ class OrbitPanel(BaseWidget):
     def check_orbits2(self, marker):
         self.orbits.sort(key=lambda o: o.value.m)
         x = self.orbits.index(marker)
-        a = self.orbits[x - 1] if x-1 > 0 and len(self.orbits) else self.orbits[0]  # el anterior
-        b = self.orbits[x + 1] if x+1 <= len(self.orbits)-1 else self.orbits[-1]  # el posterior
+        a = self.orbits[x - 1] if x - 1 > 0 and len(self.orbits) else self.orbits[0]  # el anterior
+        b = self.orbits[x + 1] if x + 1 <= len(self.orbits) - 1 else self.orbits[-1]  # el posterior
 
         valid_a = a.orbit.a.m + 0.15 < marker.orbit.a.m if a != marker else None
         valid_b = marker.orbit.a.m < b.orbit.a.m - 0.15 if b != marker else None
@@ -300,28 +300,44 @@ class OrbitPanel(BaseWidget):
     def check_artifexian(self, marker):
         self.orbits.sort(key=lambda o: o.value.m)
         idx = bisect_left(self.orbits, marker)
-        left, right = None, None
+        left: OrbitMarker = None
+        right: OrbitMarker = None
         frost_line = False
         if 0 < idx < len(self.orbits) - 1:
-            left = self.orbits[idx - 1].value.m
-            right = self.orbits[idx + 1].value.m
-        elif marker.linked_astrobody.relative_size == 'Giant':
+            left = self.orbits[idx - 1]
+            right = self.orbits[idx + 1]
+        elif marker.linked_astrobody.relative_size == 'Giant' and len(self.orbits) == 1:
             frost_line = self.current.frost_line.m
             left = frost_line if marker.value.m < frost_line else None
             right = frost_line if marker.value.m > frost_line else None
         elif idx == 0 and len(self.orbits) > 1:
-            right = self.orbits[idx + 1].value.m
+            right = self.orbits[idx + 1]
         elif len(self.orbits) > 1:
-            left = self.orbits[idx - 1].value.m
+            left = self.orbits[idx - 1]
+
+        self.check_resonances(marker, left)
+        self.check_resonances(marker, right)
 
         if not frost_line:
-            left_value = round(marker.value.m / left, 3) if left is not None else False
-            right_value = round(right / marker.value.m, 3) if right is not None else False
+            left_value = round(marker.value.m / left.value.m, 3) if left is not None else False
+            right_value = round(right.value.m / marker.value.m, 3) if right is not None else False
         else:
             right_value = abs(marker.value.m - right) if right is not None else False
             left_value = abs(marker.value.m - left) if left is not None else False
 
         return left_value, right_value
+
+    @staticmethod
+    def check_resonances(marker, other):
+        resonant_result = in_resonance(marker.orbit, other.orbit)
+        if resonant_result is not False:
+            marker.orbit.resonant = True
+            marker.orbit.resonance = other.linked_astrobody
+            marker.orbit.resonant_order = resonant_result
+
+            other.orbit.resonant = True
+            other.orbit.resonance = marker.linked_astrobody
+            other.orbit.resonant_order = resonant_result
 
     def anchor_maker(self, marker):
         self.deselect_markers(marker)
@@ -612,14 +628,24 @@ class OrbitType(BaseWidget, Intertwined):
                 'argument_of_periapsis', 'longitude_of_the_ascending_node']
         modifiables = ['Semi-major axis', 'Eccentricity', 'Inclination',
                        'Argument of periapsis', 'Longitude of the ascending node']
-        if orbit.resonant:
-            props.append('In a {resonant_order} resonance with {resonance}'.format(orbit))
+        i = 0
         for i, prop in enumerate([j for j in attr if hasattr(orbit, j)]):
             value = getattr(orbit, prop)
             vt = ValueText(self, props[attr.index(prop)], 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
             vt.value = value
             vt.modifiable = props[attr.index(prop)] in modifiables
             self.properties.add(vt)
+
+        if orbit.resonant and hasattr(orbit, 'resonant_order'):
+            i += 1
+            f1 = self.crear_fuente(16)
+            order = orbit.resonant_order
+            resonance = orbit.resonance
+            extra = f'In a {order} resonance with {resonance}'
+            sprite = BaseWidget(self.parent)
+            sprite.image = self.parent.write3(extra, f1, self.parent.rect.w)
+            sprite.rect = sprite.image.get_rect(x=3, y=64 + i * 21)
+            self.properties.add(sprite)
 
     def fill(self):
         parametros = []
@@ -648,7 +674,6 @@ class OrbitType(BaseWidget, Intertwined):
         self.parent.image.fill(COLOR_BOX, [0, 21 * 2 - 1, self.parent.rect.w, 21])
         for prop in self.properties.widgets():
             prop.kill()
-            prop.text_area.kill()
 
     def show(self):
         self.create()
@@ -1021,14 +1046,6 @@ class Recomendation(BaseWidget):
             if e is not None and e <= 0.2:
                 data.update({'e': e})
 
-        elif planet.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant', 'Gas Dwarf'):
-            data = self.recomendation['giant'].copy()
-            data.update(**self.analyze_giants(planet, orbit, star))
-            if data.get('eccentric', False):
-                data['orbit'] = ' Eccentric Jupiters can orbit anywhere in the system.'
-            elif e is not None and 0.001 <= e <= 0.09:
-                data.update({'e': e})
-
         elif planet.clase == 'Dwarf Planet' or planet.celestial_type == 'asteroid':
             gas_giants = [pln for pln in Systems.get_current().astro_bodies if
                           pln.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant')]
@@ -1056,8 +1073,16 @@ class Recomendation(BaseWidget):
                         data += f'Eccentricity should be {t["e"]}\n'
                         data += f'Inclination should be {t["i"]}.'
 
+        elif planet.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant', 'Gas Dwarf'):
+            data = self.recomendation['giant'].copy()
+            data.update(**self.analyze_giants(planet, orbit, star))
+            if data.get('eccentric', False):
+                data['orbit'] = ' Eccentric Jupiters can orbit anywhere in the system.'
+            elif e is not None and 0.001 <= e <= 0.09:
+                data.update({'e': e})
+
         self.format = data
-        if 'extra' not in data:
+        if 'extra' not in data and type(data) is dict:
             self.format['extra'] = ''
 
     def analyze_giants(self, planet, orbit, star):

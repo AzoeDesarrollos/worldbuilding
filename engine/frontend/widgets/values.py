@@ -37,6 +37,10 @@ class ValueText(BaseWidget):
         elif kind == 'letters':
             self.text_area = TextArea(self, text, self.rect.right + 3, self.rect.y, fg, bg)
 
+    def kill(self) -> None:
+        super().kill()
+        self.text_area.kill()
+
     @property
     def modifiable(self):
         return self.text_area.modifiable
