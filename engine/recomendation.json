@@ -1,7 +1,8 @@
 {
   "texts":{
-    "text": "You seem to be building a{n} {planet_type}.{orbit}{extra}\n\nIts orbital eccentricity value should be {e}.\n\nIts orbital inclination should be {i}.",
-    "tno": "You seem to be building a{extra}Kupier Belt object.{orbit}"
+    "text": "You {verb} a{n} {planet_type}.{orbit}\n\nIts orbital eccentricity value should be {e}.\n\nIts orbital inclination should be {i}.",
+    "tno": "You {verb} a{extra}Kupier Belt object.{orbit}",
+    "belt": "You {verb} a Small Solar System Body. {orbit}"
     },
  "classical":{
    "n": "Classical",

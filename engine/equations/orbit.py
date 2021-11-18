@@ -363,16 +363,20 @@ def set_orbital_properties(inclination):
         return values
 
 
-def in_resonance(orbit_a: Orbit, orbit_b: Orbit):
-    if hasattr(orbit_a, 'period'):
-        period_a = orbit_a.period.to('years').m
+def in_resonance(marker_a, marker_b):
+    if type(marker_a) is float:
+        period_a = sqrt(pow(marker_a, 3) / marker_a.star.mass.m)
+    elif hasattr(marker_a.orbit, 'period'):
+        period_a = marker_a.orbit.orbit.period.to('years').m
     else:
-        period_a = sqrt(pow(orbit_a.a.m, 3) / orbit_a.star.mass.m)
+        period_a = sqrt(pow(marker_a.orbit.a.m, 3) / marker_a.star.mass.m)
 
-    if hasattr(orbit_b, 'period'):
-        period_b = orbit_b.period.to('years').m
+    if type(marker_b) is float:
+        period_b = sqrt(pow(marker_b, 3) / marker_a.star.mass.m)
+    elif hasattr(marker_b.orbit, 'period'):
+        period_b = marker_b.orbit.period.to('years').m
     else:
-        period_b = sqrt(pow(orbit_b.a.m, 3) / orbit_b.star.mass.m)
+        period_b = sqrt(pow(marker_b.orbit.a.m, 3) / marker_b.star.mass.m)
     r = period_a / period_b if period_a < period_b else period_b / period_a
     ratio = Decimal(r)
     x, y = ratio.as_integer_ratio()

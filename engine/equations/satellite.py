@@ -27,6 +27,8 @@ class Satellite(Flagable):
 
     planet_type = 'satellite'
 
+    relative_size = 'Small'
+
     @staticmethod
     def calculate_density(ice, silicate, iron):
         comp = {'water ice': ice / 100, 'silicates': silicate / 100, 'iron': iron / 100}

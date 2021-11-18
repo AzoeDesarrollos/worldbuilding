@@ -207,7 +207,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         radius = self.radius.to('earth_radius').m
 
         roches = q(round(2.44 * radius * pow(density / obj_density, 1 / 3), 3), 'earth_radius')
-        if self.roches_limit == 0 or roches < self.roches_limit:
+        if self.roches_limit is None or roches < self.roches_limit:
             self.roches_limit = roches
         return self.roches_limit
 

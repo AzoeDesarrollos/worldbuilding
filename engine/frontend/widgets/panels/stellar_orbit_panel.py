@@ -98,7 +98,6 @@ class OrbitPanel(BaseWidget):
                 self.populate()
             self.toggle_current_markers_and_buttons(True)
             self.sort_buttons()
-            self.add_orbits_button.enable()
             self.visible_markers = False
             self.toggle_stellar_orbits()
 
@@ -269,12 +268,15 @@ class OrbitPanel(BaseWidget):
             self.sort_buttons()
 
         elif self.area_recomendation.collidepoint(event.pos):
-            pass
+            if event.button == 4:
+                pass
+            elif event.button == 5:
+                pass
 
-        elif event.button == 1 and self.markers is not None:
-            for marker in self.markers:
-                marker.deselect()
-                marker.enable()
+        # elif event.button == 1 and self.markers is not None:
+        #     for marker in self.markers:
+        #         marker.deselect()
+        #         marker.enable()
 
     def check_orbits(self):
         self.orbits.sort(key=lambda o: o.value.m)
@@ -331,7 +333,10 @@ class OrbitPanel(BaseWidget):
         if right is not None:
             self.check_resonances(marker, right)
 
-        if not frost_line:
+        if len(self.orbits) == 1 and marker.linked_astrobody.relative_size != 'Giant':
+            left_value = 1.5
+            right_value = 1.5
+        elif not frost_line:
             left_value = round(marker.value.m / left.value.m, 3) if left is not None else False
             right_value = round(right.value.m / marker.value.m, 3) if right is not None else False
         else:
@@ -342,7 +347,7 @@ class OrbitPanel(BaseWidget):
 
     @staticmethod
     def check_resonances(marker, other):
-        resonant_result = in_resonance(marker.orbit, other.orbit)
+        resonant_result = in_resonance(marker, other)
         if resonant_result is not False:
             marker.orbit.resonant = True
             marker.orbit.resonance = other.linked_astrobody
@@ -496,7 +501,6 @@ class OrbitPanel(BaseWidget):
         star = system.star_system
         pos = q(roll(star.inner_boundry.m, star.outer_boundry.m), 'au')
         marker = self.add_orbit_marker(pos, obj=astrobody)
-        self.add_orbits_button.enable()
         self.add_orbits_button.link(marker)
         self.recomendation.update_suggestion(marker, astrobody, marker.orbit)
 
@@ -767,6 +771,7 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
         if event.button == 1:
             if not self.locked:
                 self.parent.anchor_maker(self)
+                # self.parent.recomendation.update_suggestion(self, self.linked_astrobody, self.orbit)
 
         elif event.button == 3:
             self.parent.delete_marker(self)
@@ -886,19 +891,25 @@ class SetOrbitButton(TextButton):
     linked_marker = None
     enabled = False
 
+    overwritten = False
+
     def __init__(self, parent, x, y):
         super().__init__(parent, 'Set Orbit', x, y)
+        self.disable()
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled and not self.locked:
             if self.linked_marker.orbit.stable:
+                self.parent.recomendation.notify()
                 self.parent.develop_orbit(self.linked_marker)
 
     def lock(self):
         self.locked = True
+        self.overwritten = False
 
     def unlock(self):
         self.locked = False
+        self.overwritten = True
 
     def link(self, marker):
         self.linked_marker = marker
@@ -908,7 +919,7 @@ class SetOrbitButton(TextButton):
         self.disable()
 
     def update(self):
-        if self.linked_marker is not None:
+        if self.linked_marker is not None and not self.overwritten:
             if self.linked_marker.orbit.stable:
                 self.enable()
             else:
@@ -1008,6 +1019,14 @@ class Recomendation(BaseWidget):
 
     recomendation = None
 
+    tense = 'seem to be building'
+
+    _marker = None
+    _astro = None
+    _orbit = None
+
+    notified = False
+
     def __init__(self, parent):
         super().__init__(parent)
         self.image = Surface(self.parent.area_recomendation.size)
@@ -1050,8 +1069,9 @@ class Recomendation(BaseWidget):
         message = f'{adverb}his is a{txt}stable orbit.'
         if type(self.format) is dict and 'orbit' not in self.format:
             self.format['orbit'] = message
+            self.format['verb'] = self.tense
         elif type(self.format) is str:
-            self.format = self.format.format(orbit=message)
+            self.format = self.format.format(verb=self.tense, orbit=message, extra='{extra}')
 
     def suggest(self, planet, orbit, star):
         self.recomendation = recomendation.copy()
@@ -1086,34 +1106,10 @@ class Recomendation(BaseWidget):
                 last_gas_giant = gas_giants[0]
                 lim_min = last_gas_giant.orbit.a.m
 
-            data = self.recomendation['texts']['tno']
-            data += '{categories}'
-
-            txt = ' It may fit into one of the following categories, '
-            txt += 'provided it has the appropiate values for ecentricity and inclination.'
             if lim_min <= orbit.a.m < star.outer_boundry.m:
-                if orbit.stable:
-                    if not orbit.resonant:
-                        data = data.format(extra=' ', orbit='{orbit}', categories='{categories}')
-                        for key in ('classical', 'sednoid'):
-                            t = self.recomendation[key].copy()
-                            txt += f'\n\nFor a {t["n"]} object:\n'
-                            txt += f'Eccentricity should be {t["e"]}\n'
-                            txt += f'Inclination should be {t["i"]}.'
-                    else:
-                        data = data.format(extra=" resonant ", orbit='{orbit}', categories='{categories}')
-                        for key in ('sdo', 'detached', "resonant"):
-                            t = self.recomendation[key].copy()
-                            txt += f'\n\nFor a {t["n"]} object:\n'
-                            txt += f'Eccentricity should be {t["e"]}\n'
-                            txt += f'Inclination should be {t["i"]}.'
-                else:
-                    data = data.format(extra=' ', orbit='{orbit}', categories='')
-
-            if orbit.stable:
-                data = data.format(orbit='{orbit}', categories=txt)
+                data = self.recomendation['texts']['tno']
             else:
-                data = data.format(orbit=' However, this is an unstable orbit.', categories='')
+                pass
 
         elif planet.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant', 'Gas Dwarf'):
             data = self.recomendation['giant'].copy()
@@ -1124,8 +1120,38 @@ class Recomendation(BaseWidget):
                 data.update({'e': e})
 
         self.format = data
-        if 'extra' not in data and type(data) is dict:
-            self.format['extra'] = ''
+
+    def append_subclases(self, orbit, star):
+        gas_giants = [pln for pln in Systems.get_current().astro_bodies if
+                      pln.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant')]
+        gas_giants.sort(key=lambda g: g.orbit.a.m, reverse=True)
+        lim_min = 0
+        if len(gas_giants):
+            last_gas_giant = gas_giants[0]
+            lim_min = last_gas_giant.orbit.a.m
+        txt = ''
+        if lim_min <= orbit.a.m < star.outer_boundry.m:
+            if orbit.stable:
+                txt = ' It may fit into one of the following categories, '
+                txt += 'provided it has the appropiate values for ecentricity and inclination.'
+                if not orbit.resonant:
+                    for key in ('classical', 'sednoid'):
+                        t = self.recomendation[key].copy()
+                        txt += f'\n\nFor a {t["n"]} object:\n'
+                        txt += f'Eccentricity should be {t["e"]}\n'
+                        txt += f'Inclination should be {t["i"]}.'
+                else:
+                    self.format.format(extra=" resonant ")
+                    for key in ('sdo', 'detached', "resonant"):
+                        t = self.recomendation[key].copy()
+                        txt += f'\n\nFor a {t["n"]} object:\n'
+                        txt += f'Eccentricity should be {t["e"]}\n'
+                        txt += f'Inclination should be {t["i"]}.'
+
+        if '{extra}' in self.format:
+            self.format = self.format.format(extra=' ')
+
+        self.format += txt
 
     def analyze_giants(self, planet, orbit, star):
         clase = planet.clase in ('Puffy Giant', 'Gas Giant')
@@ -1207,13 +1233,26 @@ class Recomendation(BaseWidget):
                 self.rendered_rect.move_ip(0, -3)
 
     def update_suggestion(self, marker, astro_body, astro_orbit):
+        if not self.notified:
+            self.tense = 'seem to be building'
+        self._marker = marker
+        self._astro = astro_body
+        self._orbit = astro_orbit
         self.suggest(astro_body, astro_orbit, Systems.get_current_star())
         self.analyze_orbits(marker)
+        if astro_body.clase == 'Dwarf Planet' or astro_body.celestial_type == 'asteroid':
+            self.append_subclases(astro_orbit, Systems.get_current_star())
         self.show_suggestion(astro_body, astro_orbit.temperature)
         self.show()
 
+    def notify(self):
+        self.notified = True
+        self.tense = 'decided to build'
+        self.update_suggestion(self._marker, self._astro, self._orbit)
+        self.notified = False
+
     def update(self):
-        if self.rendered_text is not None and self.parent.visible_markers:
+        if self.rendered_text is not None:
             self.image.fill(COLOR_DARK_AREA)
             self.image.blit(self.title, self.title_rect)
             self.image.blit(self.rendered_text, (0, self.rendered_rect.y))

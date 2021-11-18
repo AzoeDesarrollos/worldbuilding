@@ -1,5 +1,5 @@
 from engine.frontend.widgets.basewidget import BaseWidget
-from pygame import Surface
+from pygame import Surface, mouse
 
 
 class ModifyArea(BaseWidget):
@@ -13,6 +13,8 @@ class ModifyArea(BaseWidget):
         self.rect = self.image.get_rect(topleft=(x, y))
 
     def on_mousebuttondown(self, event):
+        if event.button in (4, 5):
+            mouse.set_pos(self.rect.center)
         delta = 0
         if event.button == 4:
             delta = -1
