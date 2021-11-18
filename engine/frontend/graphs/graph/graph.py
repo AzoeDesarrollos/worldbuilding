@@ -87,6 +87,7 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
 
     done = False
     composition_text_comp = None
+    invalid = False
     while not done:
         for e in event.get():
             if e.type == QUIT:
@@ -103,12 +104,14 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                             locky = True
 
                         elif not punto.disabled:
+                            invalid = False
                             data['mass'] = round(mass_value, 3)
                             data['radius'] = round(radius_value, 3)
                             data['gravity'] = round(mass_value / (radius_value ** 2), 3)
                             data['density'] = round(mass_value / (radius_value ** 3), 3)
                             done = True
                         else:
+                            invalid = True
                             data = {}
                             done = True
 
@@ -221,12 +224,13 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
                 composition_text_comp = ', '.join(compo)
                 data['composition'] = dict(zip(keys, values))
 
-                if hydrogen or helium:
-                    data['clase'] = 'Gas Dwarf'
-                    data['albedo'] = 30
-                else:
-                    data['clase'] = 'Terrestial Planet'
-                    data['albedo'] = 25
+                if not invalid:
+                    if hydrogen or helium:
+                        data['clase'] = 'Gas Dwarf'
+                        data['albedo'] = 30
+                    else:
+                        data['clase'] = 'Terrestial Planet'
+                        data['albedo'] = 25
             else:
                 data = {}
 

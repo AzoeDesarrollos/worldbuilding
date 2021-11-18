@@ -109,7 +109,7 @@ def dwarfgraph_loop(limit_mass=None):
                     punto.move_x(x)
 
                 dx, dy = punto.rect.center
-                if bg_rect.collidepoint(dx, dy):
+                if bg_rect.collidepoint(dx, dy) and not lim_rect.collidepoint(dx, dy):
                     mass = round(find_and_interpolate(linea_h.rect.y - 26, yes, mass_keys), 5)
                     radius = round(find_and_interpolate(linea_v.rect.x, exes, radius_keys), 3)
 
