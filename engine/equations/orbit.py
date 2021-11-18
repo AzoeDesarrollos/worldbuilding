@@ -14,6 +14,8 @@ class RawOrbit:
     resonant = False
     id = None
 
+    stable = True
+
     def __init__(self, star, a):
         self._unit = a.u
         self.a = a
@@ -71,6 +73,8 @@ class PseudoOrbit:
     _period = 0
     resonant = False
 
+    stable = True
+
     def __init__(self, orbit):
         self.semi_major_axis = orbit.semi_major_axis
         self.temperature = orbit.temperature
@@ -94,7 +98,7 @@ class PseudoOrbit:
 
 
 class Orbit(Flagable, Ellipse):
-    period = 0
+    period: q = None
     velocity = 0
     motion = ''
 
@@ -114,6 +118,8 @@ class Orbit(Flagable, Ellipse):
     resonant = False
     resonance = None
     resonant_order = ''
+
+    stable = True
 
     def __init__(self, a, e, i, unit):
         super().__init__(a, e)
@@ -367,7 +373,7 @@ def in_resonance(orbit_a: Orbit, orbit_b: Orbit):
         period_b = orbit_b.period.to('years').m
     else:
         period_b = sqrt(pow(orbit_b.a.m, 3) / orbit_b.star.mass.m)
-    r = period_a/period_b if period_a < period_b else period_b/period_a
+    r = period_a / period_b if period_a < period_b else period_b / period_a
     ratio = Decimal(r)
     x, y = ratio.as_integer_ratio()
     if len(str(x)) <= 3 and len(str(y)) <= 3:

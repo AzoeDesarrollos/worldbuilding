@@ -24,6 +24,8 @@ class BinarySystem(Flagable):
     idx = None
     shared_mass = None
 
+    parent = None
+
     def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, id=None):
         if secondary.mass <= primary.mass:
             self.primary = primary

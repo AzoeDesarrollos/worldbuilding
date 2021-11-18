@@ -1,7 +1,7 @@
 {
   "texts":{
     "text": "You seem to be building a{n} {planet_type}.{orbit}{extra}\n\nIts orbital eccentricity value should be {e}.\n\nIts orbital inclination should be {i}.",
-    "tno": "You seem to be building a{}Kupier Belt object. It may fit into one of the following categories, provided it has the appropiate values for ecentricity and inclination."
+    "tno": "You seem to be building a{extra}Kupier Belt object.{orbit}"
     },
  "classical":{
    "n": "Classical",

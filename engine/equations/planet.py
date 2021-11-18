@@ -28,7 +28,7 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     lagrange_points = None
     hill_sphere = 0
-    roches_limit: q = 0
+    roches_limit = None
 
     _tilt = 'Not set'
     spin = 'N/A'
@@ -196,7 +196,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.orbit = None
         self.temperature = q(0, 'celsius')
         self.hill_sphere = 0
-        self.roches_limit = 0
+        self.roches_limit = None
         self.sky_color = None
         self.lagrange_points = None
         for satellite in self.satellites:

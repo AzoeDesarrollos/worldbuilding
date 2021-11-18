@@ -289,11 +289,22 @@ class OrbitPanel(BaseWidget):
     def check_orbits2(self, marker):
         self.orbits.sort(key=lambda o: o.value.m)
         x = self.orbits.index(marker)
-        a = self.orbits[x - 1] if x - 1 > 0 and len(self.orbits) else self.orbits[0]  # el anterior
-        b = self.orbits[x + 1] if x + 1 <= len(self.orbits) - 1 else self.orbits[-1]  # el posterior
+        a: OrbitMarker = self.orbits[x - 1] if x - 1 > 0 and len(self.orbits) else self.orbits[0]  # el anterior
+        b: OrbitMarker = self.orbits[x + 1] if x + 1 <= len(self.orbits) - 1 else self.orbits[-1]  # el posterior
 
         valid_a = a.orbit.a.m + 0.15 < marker.orbit.a.m if a != marker else None
         valid_b = marker.orbit.a.m < b.orbit.a.m - 0.15 if b != marker else None
+
+        # Dwarf Planets, like Pluto, can orbit in crowded orbits. Same with the asteroids in the Asteroid Belt.
+        main_body = marker.linked_astrobody
+        body_a = a.linked_astrobody
+        body_b = b.linked_astrobody
+        
+        if main_body.clase == 'Dwarf Planet' or main_body.celestial_type == 'asteroid':
+            if body_a.clase == 'Dwarf Planet' or body_a.celestial_type == 'asteroid':
+                valid_a = True
+            if body_b.clase == 'Dwarf Planet' or body_b.celestial_type == 'asteroid':
+                valid_b = True
 
         return valid_a, valid_b
 
@@ -315,8 +326,10 @@ class OrbitPanel(BaseWidget):
         elif len(self.orbits) > 1:
             left = self.orbits[idx - 1]
 
-        self.check_resonances(marker, left)
-        self.check_resonances(marker, right)
+        if left is not None:
+            self.check_resonances(marker, left)
+        if right is not None:
+            self.check_resonances(marker, right)
 
         if not frost_line:
             left_value = round(marker.value.m / left.value.m, 3) if left is not None else False
@@ -413,7 +426,7 @@ class OrbitPanel(BaseWidget):
                         star = system.star_system
                         planet.set_orbit(star, [a, e, i, loan, aop])
                         planet.orbit.id = id
-                        self.add_orbit_marker(planet.orbit)
+                        self.add_orbit_marker(planet.orbit, obj=planet)
                         self.planet_area.delete_objects(planet)
 
         # borrar las órbitas cargadas para evitar que se dupliquen.
@@ -481,7 +494,7 @@ class OrbitPanel(BaseWidget):
     def link_astrobody_to_stellar_orbit(self, astrobody):
         system = Systems.get_current()
         star = system.star_system
-        pos = q(roll(star.inner_boundry, star.outer_boundry), 'au')
+        pos = q(roll(star.inner_boundry.m, star.outer_boundry.m), 'au')
         marker = self.add_orbit_marker(pos, obj=astrobody)
         self.add_orbits_button.enable()
         self.add_orbits_button.link(marker)
@@ -716,7 +729,7 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
         self.linked_astrobody = astro
         self._value = value
         if is_complete_orbit is False:
-            self.orbit = RawOrbit(self.parent.current, round(value, 3))
+            self.orbit = RawOrbit(star, round(value, 3))
             self.text = '{:~}'.format(value)
             self.color = COLOR_SELECTED
         elif is_complete_orbit is True:
@@ -878,8 +891,8 @@ class SetOrbitButton(TextButton):
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled and not self.locked:
-            self.parent.develop_orbit(self.linked_marker)
-            # self.parent.check_orbits()
+            if self.linked_marker.orbit.stable:
+                self.parent.develop_orbit(self.linked_marker)
 
     def lock(self):
         self.locked = True
@@ -893,6 +906,15 @@ class SetOrbitButton(TextButton):
     def unlink(self):
         self.lock()
         self.disable()
+
+    def update(self):
+        if self.linked_marker is not None:
+            if self.linked_marker.orbit.stable:
+                self.enable()
+            else:
+                self.disable()
+
+        super().update()
 
 
 class AddResonanceButton(TextButton):
@@ -979,7 +1001,7 @@ class RatioDigit(BaseWidget):
 
 class Recomendation(BaseWidget):
     text = ''
-    format: dict = None
+    format = None
 
     rendered_text = None
     rendered_rect = None
@@ -1021,14 +1043,23 @@ class Recomendation(BaseWidget):
         adverb = ' T'
         if len(txt) > 1:
             adverb = ' However, t'
+            marker.orbit.stable = False
+        else:
+            marker.orbit.stable = True
 
-        if 'orbit' not in self.format:
-            self.format['orbit'] = f'{adverb}his is a{txt}stable orbit.'
+        message = f'{adverb}his is a{txt}stable orbit.'
+        if type(self.format) is dict and 'orbit' not in self.format:
+            self.format['orbit'] = message
+        elif type(self.format) is str:
+            self.format = self.format.format(orbit=message)
 
     def suggest(self, planet, orbit, star):
         self.recomendation = recomendation.copy()
-        if self.format is not None:
+        if type(self.format) is dict:
             self.format.clear()
+        else:
+            self.format = None
+
         data = None
         planets_in_system = len(Systems.get_current().planets)
         e = round(0.584 * pow(planets_in_system, -1.2), 3) if planets_in_system > 1 else None
@@ -1050,28 +1081,39 @@ class Recomendation(BaseWidget):
             gas_giants = [pln for pln in Systems.get_current().astro_bodies if
                           pln.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant')]
             gas_giants.sort(key=lambda g: g.orbit.a.m, reverse=True)
+            lim_min = 0
             if len(gas_giants):
                 last_gas_giant = gas_giants[0]
                 lim_min = last_gas_giant.orbit.a.m
-            else:
-                lim_min = 0
 
-            if lim_min < orbit.a.m < star.outer_boundry.m:
-                data = self.recomendation['texts']['tno']
-                if not orbit.resonant:
-                    data = data.format(' ')
-                    for key in ('classical', 'sednoid'):
-                        t = self.recomendation[key].copy()
-                        data += f'\n\nFor a {t["n"]} object:\n'
-                        data += f'Eccentricity should be {t["e"]}\n'
-                        data += f'Inclination should be {t["i"]}.'
+            data = self.recomendation['texts']['tno']
+            data += '{categories}'
+
+            txt = ' It may fit into one of the following categories, '
+            txt += 'provided it has the appropiate values for ecentricity and inclination.'
+            if lim_min <= orbit.a.m < star.outer_boundry.m:
+                if orbit.stable:
+                    if not orbit.resonant:
+                        data = data.format(extra=' ', orbit='{orbit}', categories='{categories}')
+                        for key in ('classical', 'sednoid'):
+                            t = self.recomendation[key].copy()
+                            txt += f'\n\nFor a {t["n"]} object:\n'
+                            txt += f'Eccentricity should be {t["e"]}\n'
+                            txt += f'Inclination should be {t["i"]}.'
+                    else:
+                        data = data.format(extra=" resonant ", orbit='{orbit}', categories='{categories}')
+                        for key in ('sdo', 'detached', "resonant"):
+                            t = self.recomendation[key].copy()
+                            txt += f'\n\nFor a {t["n"]} object:\n'
+                            txt += f'Eccentricity should be {t["e"]}\n'
+                            txt += f'Inclination should be {t["i"]}.'
                 else:
-                    data = data.format(" resonant ")
-                    for key in ('sdo', 'detached', "resonant"):
-                        t = self.recomendation[key].copy()
-                        data += f'\n\nFor a {t["n"]} object:\n'
-                        data += f'Eccentricity should be {t["e"]}\n'
-                        data += f'Inclination should be {t["i"]}.'
+                    data = data.format(extra=' ', orbit='{orbit}', categories='')
+
+            if orbit.stable:
+                data = data.format(orbit='{orbit}', categories=txt)
+            else:
+                data = data.format(orbit=' However, this is an unstable orbit.', categories='')
 
         elif planet.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant', 'Gas Dwarf'):
             data = self.recomendation['giant'].copy()

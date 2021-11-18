@@ -1,4 +1,4 @@
-from ..globales.group import WidgetGroup
+from ..globales import WidgetGroup, Renderer
 from engine.backend import EventHandler
 from .basewidget import BaseWidget
 from .values import ValueText
@@ -34,6 +34,7 @@ class ObjectType(BaseWidget):
             elif button in absolute_names:
                 self.absolutes.add(vt)
             self.properties.add(vt, layer=1)
+            Renderer.update()
 
     def set_modifiables(self, group: str, *indexes):
         if group == 'relatives':
@@ -89,6 +90,7 @@ class ObjectType(BaseWidget):
             attr = q(str(round(got_attr.m, 5)), got_attr.u) if type(got_attr) is not str else got_attr
             elemento.value = attr
             elemento.text_area.show()
+            Renderer.update()
 
         for i, elemento in enumerate(self.absolutes.widgets()):
             arg = self.absolute_args[i]
@@ -96,6 +98,7 @@ class ObjectType(BaseWidget):
             attr = q(str(round(got_attr.m, 3)), got_attr.u) if type(got_attr) is not str else got_attr
             elemento.value = attr
             elemento.text_area.show()
+            Renderer.update()
         self.has_values = True
 
     def erase(self):
