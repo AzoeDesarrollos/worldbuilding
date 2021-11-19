@@ -31,7 +31,7 @@
  },
  "giant":{
    "e": "between 0.001 and 0.09",
-   "i": "between 0° and 90° (but don't go crazy)"
+   "i": "between 0° and 90° (but don't go wild)"
  },
  "hot":{
    "i":"between 10° of the reference plane"

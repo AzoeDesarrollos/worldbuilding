@@ -471,7 +471,6 @@ class OrbitPanel(BaseWidget):
     def toggle_stellar_orbits(self):
         if self.visible_markers:
             self.area_modify.color_alert()
-            # self.add_orbits_button.disable()
             for marker in self.markers:
                 marker.hide()
         else:
@@ -479,7 +478,6 @@ class OrbitPanel(BaseWidget):
                 marker.show()
             self.hide_orbit_types()
             self.show_markers_button.disable()
-            # self.add_orbits_button.enable()
             self.area_modify.color_standby()
         self.visible_markers = not self.visible_markers
         self.area_modify.visible_markers = self.visible_markers
@@ -688,6 +686,8 @@ class OrbitType(BaseWidget, Intertwined):
         self.linked_marker.orbit = orbit
         self.show()
         self.parent.planet_area.delete_objects(self.linked_astrobody)
+        self.linked_button.select()
+        self.parent.show_markers_button.enable()
         if hasattr(self.parent, 'recomendation'):
             self.parent.recomendation.hide()
         self.locked = True
@@ -1069,7 +1069,9 @@ class Recomendation(BaseWidget):
         adverb = ' T'
         if len(txt) > 1:
             adverb = ' However, t'
-            marker.orbit.stable = False
+            if not self.format.get('eccentric', False):
+                # Eccentric Jupiters can orbit anywhere in the system, so their orbits are valid by definition.
+                marker.orbit.stable = False
         else:
             marker.orbit.stable = True
 
