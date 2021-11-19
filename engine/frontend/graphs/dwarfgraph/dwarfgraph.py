@@ -89,6 +89,8 @@ def dwarfgraph_loop(limit_mass=None):
         lim_rect = Rect(54, lim_y + 26, bg_rect.w, bg_rect.h - lim_y - 26 + bg_rect.y)
         lim_img = Surface(lim_rect.size)
         lim_img.set_alpha(150)
+    else:
+        lim_rect = Rect(0, -100, 1, 1)
 
     move_x, move_y = True, True
     while not done:

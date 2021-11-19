@@ -777,10 +777,13 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
         if event.button == 1:
             if not self.locked:
                 self.parent.anchor_maker(self)
-                # self.parent.recomendation.update_suggestion(self, self.linked_astrobody, self.orbit)
+                self.parent.recomendation.update_suggestion(self, self.linked_astrobody, self.orbit)
 
         elif event.button == 3:
             self.parent.delete_marker(self)
+
+        elif event.button in (4, 5):
+            self.parent.on_mousebuttondown(event)
 
         return self
 
@@ -795,6 +798,7 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
                 self.parent.sort_markers()
                 self.parent.recomendation.update_suggestion(self, self.linked_astrobody, self.orbit)
                 self.parent.add_orbits_button.link(self)
+                self.parent.sort_buttons()
 
     def key_to_mouse(self, event):
         if event.origin == self:
@@ -875,7 +879,7 @@ class OrbitButton(Meta, Intertwined):
 class RoguePlanet(ColoredBody):
     # "rogue" because it doesn't have an orbit yet
     def on_mousebuttondown(self, event):
-        if self.parent.parent.visible_markers:
+        if event.button == 1 and self.parent.parent.visible_markers:
             self.enabled = False
             self.parent.parent.link_astrobody_to_stellar_orbit(self.object_data)
 
@@ -1069,9 +1073,10 @@ class Recomendation(BaseWidget):
         adverb = ' T'
         if len(txt) > 1:
             adverb = ' However, t'
-            if not self.format.get('eccentric', False):
-                # Eccentric Jupiters can orbit anywhere in the system, so their orbits are valid by definition.
-                marker.orbit.stable = False
+            if type(self.format) is dict:
+                if not self.format.get('eccentric', False):
+                    # Eccentric Jupiters can orbit anywhere in the system, so their orbits are valid by definition.
+                    marker.orbit.stable = False
         else:
             marker.orbit.stable = True
 

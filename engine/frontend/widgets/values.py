@@ -94,7 +94,7 @@ class ValueText(BaseWidget):
                     m_low, m_high, r_low, r_high = Terrestial
                     if available_mass < m_high:
                         m_high = available_mass
-                    assert m_high >= 3.5, not_enough_mass
+                    assert available_mass > 0.1, not_enough_mass
                     data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
                                       radius_lower_limit=r_low, radius_upper_limit=r_high)
                 elif p.parent.unit.name == 'Terrestial' and not p.has_values:

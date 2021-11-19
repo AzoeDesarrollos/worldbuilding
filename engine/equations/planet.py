@@ -446,7 +446,7 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
 
 
 # Terrestial Graph parameters
-Terrestial = [0.0, 3.5, 0.0, 1.5]
+Terrestial = [0.1, 3.5, 0.0, 1.5]
 GasDwarf = [1, 20.5, 2, 0]
 
 
