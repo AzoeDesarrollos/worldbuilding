@@ -53,3 +53,6 @@ class Group:
         self._d.clear()
         self._list.clear()
         self._leght = 0
+
+    def __repr__(self):
+        return str(self._list)

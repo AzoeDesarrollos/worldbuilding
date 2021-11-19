@@ -398,6 +398,13 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.set_habitability()
             self.set_orbit(star, [a, e, i, loan, aop])
 
+    @staticmethod
+    def find_topmost_parent(this):
+        if this.parent.relative_size == 'Giant':
+            return this.parent
+        else:
+            return this.find_topmost_parent(this.parent)
+
     def __eq__(self, other):
         a = (self.mass.m, self.radius.m, self.clase, self.unit, self.name, self.id)
         if not hasattr(other, 'clase') or not hasattr(other, 'unit'):

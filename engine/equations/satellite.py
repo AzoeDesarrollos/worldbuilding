@@ -93,6 +93,13 @@ class Satellite(Flagable):
     def update_everything(self):
         pass
 
+    @staticmethod
+    def find_topmost_parent(this):
+        if this.parent.relative_size == 'Giant':
+            return this.parent
+        else:
+            return this.find_topmost_parent(this.parent)
+
 
 class Major(Satellite, BodyInHydrostaticEquilibrium):
     celestial_type = 'satellite'

@@ -23,9 +23,6 @@ class PlanetaryOrbitPanel(BaseWidget):
     curr_digit = 0
     selected_marker = None
 
-    curr_x = 0
-    curr_y = 0
-
     added = None
     visible_markers = True
 
@@ -177,22 +174,21 @@ class PlanetaryOrbitPanel(BaseWidget):
                 if obj.orbit is None:
                     if obj not in self.objects:
                         self.objects.append(obj)
-                        btn = ObjectButton(self, obj, self.curr_x, self.curr_y)
+                        btn = ObjectButton(self, obj)
 
-                elif obj.orbit is not None and obj.orbit.star.celestial_type == 'planet':
-                    if obj not in self.objects:
-                        self.objects.append(obj)
-                        btn = ObjectButton(self, obj, self.curr_x, self.curr_y)
-                        markers = self._markers[obj.orbit.star.id]
-                        marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
-                        marker = markers[marker_idx]
-                        btn.link_marker(marker)
-                        btn.update_text(obj.orbit.a)
+                elif obj not in self.objects:
+                    self.objects.append(obj)
+                    btn = ObjectButton(self, obj)
+                    markers = self._markers[obj.orbit.star.id]
+                    marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
+                    marker = markers[marker_idx]
+                    btn.link_marker(marker)
+                    btn.update_text(obj.orbit.a)
 
                 if btn is not None:
-                    self.buttons.add(btn, layer=Systems.get_current().id)
+                    self.buttons.add(btn, layer=obj.parent.id)
                     self.properties.add(btn)
-            self.sort_buttons()
+
         else:
             self.show_no_system_error()
 
@@ -226,6 +222,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         if len(densest):
             self.create_roches_marker(densest[0])
         self.sort_markers()
+        self.sort_buttons(planet.id)
 
     def select_one(self, button):
         for bttn in self.buttons.widgets():
@@ -255,19 +252,23 @@ class PlanetaryOrbitPanel(BaseWidget):
             else:
                 marker.show()
 
-    def sort_buttons(self):
-        x, y = self.curr_x, self.curr_y
-        for bt in self.buttons.get_widgets_from_layer(Systems.get_current().id):
+    def sort_buttons(self, planet_id):
+        x, y = 3, 441
+        self.image.fill(COLOR_AREA, self.area_buttons)
+        for button in self.buttons.widgets():
+            button.hide()
+
+        for bt in self.buttons.get_widgets_from_layer(planet_id):
             bt.move(x, y)
-            if not self.area_buttons.contains(bt.rect):
-                bt.hide()
-            else:
-                bt.show()
             if x + bt.rect.w + 10 < self.rect.w - bt.rect.w + 10:
                 x += bt.rect.w + 10
             else:
                 x = 3
                 y += 32
+            if not self.area_buttons.contains(bt.rect):
+                bt.hide()
+            else:
+                bt.show()
 
     def create_roches_marker(self, obj):
         obj_density = obj.density.to('earth_density').m
@@ -354,7 +355,9 @@ class PlanetaryOrbitPanel(BaseWidget):
     def hide_markers(self):
         for marker in self.markers:
             marker.hide()
-        self.show_markers_button.enable()
+
+        if len(self.markers):
+            self.show_markers_button.enable()
 
     def hide_everything(self):
         for marker in self.markers:
@@ -449,10 +452,7 @@ class AvailablePlanets(ListedArea):
         self.show()
 
     def on_mousebuttondown(self, event):
-        super().on_mousebuttondown(event)
-        if self.parent.visible_markers:
-            self.parent.hide_markers()
-        self.parent.current = None
+        pass
 
     def select_by_data(self, data):
         for obj in self.listed_objects.widgets():
@@ -465,7 +465,7 @@ class ObjectButton(ColoredBody):
     linked_marker = None
     completed = False
 
-    def __init__(self, parent, obj, x, y):
+    def __init__(self, parent, obj):
         self.orbit_data = None
         if obj.has_name:
             name = obj.name
@@ -475,7 +475,7 @@ class ObjectButton(ColoredBody):
             else:
                 cls = obj.clase
             name = '{} #{}'.format(cls, obj.idx)
-        super().__init__(parent, obj, name, x, y)
+        super().__init__(parent, obj, name, 0, 0)
         self.img_dis = self.img_uns
 
     def update_text(self, orbit):
@@ -496,7 +496,7 @@ class ObjectButton(ColoredBody):
             self.info = OrbitType(self.parent)
             self.info.link_astrobody(self.object_data)
             self.parent.orbit_descriptions.add(self.info)
-        self.parent.sort_buttons()
+        # self.parent.sort_buttons()
 
     def on_mousebuttondown(self, event):
         if self.enabled:

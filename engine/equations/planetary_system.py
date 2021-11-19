@@ -68,8 +68,9 @@ class PlanetarySystem(Flagable):
                             ab = round(q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs'), 3)
                             self.distances[body.id][star.id] = body.orbit.a
                         else:
-                            ab = round(q(star.luminosity.m / pow(body.parent.orbit.a.m, 2), 'Vs'), 3)
-                            self.distances[body.id][star.id] = body.parent.orbit.a
+                            parent = body.find_topmost_parent(body)
+                            ab = round(q(star.luminosity.m / pow(parent.orbit.a.m, 2), 'Vs'), 3)
+                            self.distances[body.id][star.id] = parent.orbit.a
                     else:
                         x1, y1, z1 = self.star_system.position
                         x2, y2, z2 = star.position

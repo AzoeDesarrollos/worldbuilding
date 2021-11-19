@@ -627,9 +627,10 @@ class OrbitType(BaseWidget, Intertwined):
         self.show()
 
     def get_orbit(self):
-        orbit = self.linked_marker.orbit
-        orbit = orbit if not hasattr(orbit, 'astrobody') else orbit.astrobody.orbit
-        return orbit
+        if self.linked_marker is not None:
+            orbit = self.linked_marker.orbit
+            orbit = orbit if not hasattr(orbit, 'astrobody') else orbit.astrobody.orbit
+            return orbit
 
     def create(self):
         orbit = self.get_orbit()
@@ -653,7 +654,7 @@ class OrbitType(BaseWidget, Intertwined):
             vt.modifiable = props[attr.index(prop)] in modifiables
             self.properties.add(vt)
 
-        if orbit.resonant and hasattr(orbit, 'resonant_order'):
+        if hasattr(orbit, 'resonant_order') and orbit.resonant:
             i += 1
             f1 = self.crear_fuente(16)
             order = orbit.resonant_order
