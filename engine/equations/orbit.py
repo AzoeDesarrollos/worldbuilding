@@ -85,6 +85,12 @@ class PseudoOrbit:
             self._period = q(sqrt(pow(self.semi_major_axis.m, 3) / self._star.shared_mass.m), 'year')
         self.resonant = orbit.resonant
 
+        if hasattr(orbit, 'e'):
+            self.eccentricity = orbit.e
+
+        if hasattr(orbit, 'i'):
+            self.inclination = orbit.i
+
     @property
     def a(self):
         return self.semi_major_axis
@@ -271,8 +277,10 @@ class PlanetOrbit(Orbit):
             self.longitude_of_the_ascending_node = orbital_properties[0]
             self.argument_of_periapsis = orbital_properties[1]
         else:
+            if type(loan) is int or type(loan) is float:
+                loan = q(loan, 'degree')
             self.longitude_of_the_ascending_node = loan
-            self.argument_of_periapsis = aop
+            self.argument_of_periapsis = aop if type(aop) is str else q(aop, 'degree')
 
     def reset_period_and_speed(self, main):
         if main.letter is None:
@@ -367,7 +375,7 @@ def in_resonance(marker_a, marker_b):
     if type(marker_a) is float:
         period_a = sqrt(pow(marker_a, 3) / marker_a.star.mass.m)
     elif hasattr(marker_a.orbit, 'period'):
-        period_a = marker_a.orbit.orbit.period.to('years').m
+        period_a = marker_a.orbit.period.to('years').m
     else:
         period_a = sqrt(pow(marker_a.orbit.a.m, 3) / marker_a.star.mass.m)
 

@@ -508,6 +508,7 @@ class OrbitPanel(BaseWidget):
         self.toggle_stellar_orbits()
         marker.orbit = PseudoOrbit(marker.orbit)
         marker.linked_type.link_astrobody(marker.linked_astrobody)
+        self.add_orbits_button.unlink()
 
     def update(self):
         system = Systems.get_current()
@@ -678,9 +679,13 @@ class OrbitType(BaseWidget, Intertwined):
                 parametros.append(value)
 
         main = self.parent.current
-        if self.linked_astrobody.orbit is None:
-            orbit = self.linked_astrobody.set_orbit(main, parametros)
-            self.linked_marker.orbit = orbit
+        if hasattr(self.linked_astrobody.orbit, 'longitude_of_the_ascending_node'):
+            parametros.append(self.linked_astrobody.orbit.longitude_of_the_ascending_node.m)
+            aop = self.linked_astrobody.orbit.argument_of_periapsis
+            parametros.append(aop.m if type(aop) is q else aop)
+
+        orbit = self.linked_astrobody.set_orbit(main, parametros)
+        self.linked_marker.orbit = orbit
         self.show()
         self.parent.planet_area.delete_objects(self.linked_astrobody)
         if hasattr(self.parent, 'recomendation'):
@@ -789,6 +794,7 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
                 self.increment = 0
                 self.parent.sort_markers()
                 self.parent.recomendation.update_suggestion(self, self.linked_astrobody, self.orbit)
+                self.parent.add_orbits_button.link(self)
 
     def key_to_mouse(self, event):
         if event.origin == self:
@@ -906,7 +912,7 @@ class SetOrbitButton(TextButton):
 
     def lock(self):
         self.locked = True
-        self.overwritten = False
+        self.overwritten = True
 
     def unlock(self):
         self.locked = False
@@ -1068,11 +1074,12 @@ class Recomendation(BaseWidget):
             marker.orbit.stable = True
 
         message = f'{adverb}his is a{txt}stable orbit.'
-        if type(self.format) is dict and 'orbit' not in self.format:
-            self.format['orbit'] = message
-            self.format['verb'] = self.tense
-        elif type(self.format) is str:
+        if type(self.format) is str:
             self.format = self.format.format(verb=self.tense, orbit=message, extra='{extra}')
+        elif type(self.format) is dict:
+            self.format['verb'] = self.tense
+            if 'orbit' not in self.format:
+                self.format['orbit'] = message
 
     def suggest(self, planet, orbit, star):
         self.recomendation = recomendation.copy()

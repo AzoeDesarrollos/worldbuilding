@@ -1,5 +1,5 @@
 from engine.frontend.globales import COLOR_ICYMOON, COLOR_ROCKYMOON, COLOR_IRONMOON
-from .general import BodyInHydrostaticEquilibrium, Flagable
+from .general import BodyInHydrostaticEquilibrium, Flagable, StarSystemBody
 from engine.backend.util import roll, generate_id
 from .orbit import SatelliteOrbit, PlanetOrbit
 from .lagrange import get_lagrange_points
@@ -7,7 +7,7 @@ from engine import q, material_densities
 from math import pi, sqrt
 
 
-class Satellite(Flagable):
+class Satellite(StarSystemBody, Flagable):
     name = None
     mass = None
     density = None
@@ -93,13 +93,6 @@ class Satellite(Flagable):
     def update_everything(self):
         pass
 
-    @staticmethod
-    def find_topmost_parent(this):
-        if this.parent.relative_size == 'Giant':
-            return this.parent
-        else:
-            return this.find_topmost_parent(this.parent)
-
 
 class Major(Satellite, BodyInHydrostaticEquilibrium):
     celestial_type = 'satellite'
@@ -138,7 +131,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         return NotImplemented
 
 
-class Minor(Satellite):
+class Minor(Satellite, StarSystemBody):
     celestial_type = 'asteroid'
     habitable = False
 
