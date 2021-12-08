@@ -179,15 +179,17 @@ class PlanetaryOrbitPanel(BaseWidget):
                 elif obj not in self.objects:
                     self.objects.append(obj)
                     btn = ObjectButton(self, obj)
-                    markers = self._markers[obj.orbit.star.id]
-                    marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
-                    marker = markers[marker_idx]
-                    btn.link_marker(marker)
-                    btn.update_text(obj.orbit.a)
+                    # markers = self._markers[obj.orbit.star.id]
+                    # marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
+                    # marker = markers[marker_idx]
+                    # btn.link_marker(marker)
+                    # btn.update_text(obj.orbit.a)
 
                 if btn is not None:
-                    self.buttons.add(btn, layer=obj.parent.id)
-                    self.properties.add(btn)
+                    id = obj.parent.id if obj.parent is not None else -1
+                    self.buttons.add(btn, layer=id)
+                    self.properties.add(btn, layer=4)
+                    self.sort_buttons(id)
 
         else:
             self.show_no_system_error()
@@ -467,15 +469,7 @@ class ObjectButton(ColoredBody):
 
     def __init__(self, parent, obj):
         self.orbit_data = None
-        if obj.has_name:
-            name = obj.name
-        else:
-            if hasattr(obj, 'cls'):
-                cls = obj.cls
-            else:
-                cls = obj.clase
-            name = '{} #{}'.format(cls, obj.idx)
-        super().__init__(parent, obj, name, 0, 0)
+        super().__init__(parent, obj, str(obj), 0, 0)
         self.img_dis = self.img_uns
 
     def update_text(self, orbit):
@@ -496,13 +490,14 @@ class ObjectButton(ColoredBody):
             self.info = OrbitType(self.parent)
             self.info.link_astrobody(self.object_data)
             self.parent.orbit_descriptions.add(self.info)
-        # self.parent.sort_buttons()
+        # self.parent.sort_buttons(self.object_data.id)
 
     def on_mousebuttondown(self, event):
         if self.enabled:
             self.parent.select_one(self)
             if not self.parent.is_added(self.object_data) and self.parent.current is not None:
                 orbit, marker = self.parent.add_new(self.object_data)
+                self.parent.buttons.change_layer(self, self.parent.current.id)
                 self.create_type(orbit)
                 self.link_marker(marker)
             else:

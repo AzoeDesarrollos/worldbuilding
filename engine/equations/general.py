@@ -13,6 +13,9 @@ class StarSystemBody(Flagable):
     parent = None
     celestial_type = ''
 
+    def set_parent(self, parent):
+        self.parent = parent
+
     def is_orbiting_a_star(self):
         return self.parent.parent is None
 

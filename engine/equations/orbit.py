@@ -161,7 +161,7 @@ class Orbit(Flagable, Ellipse):
         self.astrobody = astro_body
         self._temperature = astro_body.temperature
         self._star = main
-        astro_body.parent = main
+        astro_body.set_parent(main)
 
         if main.celestial_type == "planet" or main.celestial_type == 'asteroid':
             self.reset_period_and_speed(main)

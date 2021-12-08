@@ -11,7 +11,6 @@ class Satellite(StarSystemBody, Flagable):
     name = None
     mass = None
     density = None
-    celestial_type = ''
     has_name = False
     cls = None
     orbit = None
@@ -22,7 +21,6 @@ class Satellite(StarSystemBody, Flagable):
     lagrange_points = None
     id = None
     idx = None
-    parent = None
     satellites = None
 
     planet_type = 'satellite'
@@ -99,6 +97,8 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
 
     def __init__(self, data):
         name = data.get('name', None)
+        if 'parent' in data:
+            self.set_parent(data['parent'])
         if name:
             self.name = name
             self.has_name = True
@@ -118,7 +118,8 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         self.title = 'Major'
         self.albedo = q(13.6)
 
-        self.satellites = []
+        self.satellites = [] if 'satellites' not in data else [i for i in data['satellites']]
+        self.orbit = None if 'orbit' not in data else data['orbit']
 
         # ID values make each satellite unique, even if they have the same characteristics.
         self.id = data['id'] if 'id' in data else generate_id()
@@ -136,6 +137,8 @@ class Minor(Satellite, StarSystemBody):
     habitable = False
 
     def __init__(self, data):
+        if 'parent' in data:
+            self.set_parent(data['parent'])
         name = data.get('name', None)
         if name:
             self.name = name
@@ -169,7 +172,8 @@ class Minor(Satellite, StarSystemBody):
 
         self.system_id = data.get('system', None)
 
-        self.satellites = []
+        self.satellites = [] if 'satellites' not in data else [i for i in data['satellites']]
+        self.orbit = None if 'orbit' not in data else data['orbit']
 
     # noinspection PyUnusedLocal
     @staticmethod
