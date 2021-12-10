@@ -89,6 +89,8 @@ def dwarfgraph_loop(limit_mass=None):
         lim_rect = Rect(54, lim_y + 26, bg_rect.w, bg_rect.h - lim_y - 26 + bg_rect.y)
         lim_img = Surface(lim_rect.size)
         lim_img.set_alpha(150)
+    else:
+        lim_rect = Rect(0, -100, 1, 1)
 
     move_x, move_y = True, True
     while not done:
@@ -109,7 +111,7 @@ def dwarfgraph_loop(limit_mass=None):
                     punto.move_x(x)
 
                 dx, dy = punto.rect.center
-                if bg_rect.collidepoint(dx, dy):
+                if bg_rect.collidepoint(dx, dy) and not lim_rect.collidepoint(dx, dy):
                     mass = round(find_and_interpolate(linea_h.rect.y - 26, yes, mass_keys), 5)
                     radius = round(find_and_interpolate(linea_v.rect.x, exes, radius_keys), 3)
 

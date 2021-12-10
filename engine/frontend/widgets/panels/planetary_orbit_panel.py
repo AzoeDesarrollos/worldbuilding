@@ -23,9 +23,6 @@ class PlanetaryOrbitPanel(BaseWidget):
     curr_digit = 0
     selected_marker = None
 
-    curr_x = 0
-    curr_y = 0
-
     added = None
     visible_markers = True
 
@@ -171,28 +168,25 @@ class PlanetaryOrbitPanel(BaseWidget):
         system = Systems.get_current()
         if system is not None:
             self.image.fill(COLOR_BOX, [0, 32, self.rect.w, 380])
-            btn = None
             planets = [p for p in system.planets if p.relative_size != 'Giant']
             for obj in system.satellites + system.asteroids + planets:
-                if obj.orbit is None:
-                    if obj not in self.objects:
-                        self.objects.append(obj)
-                        btn = ObjectButton(self, obj, self.curr_x, self.curr_y)
+                btn = ObjectButton(self, obj)
+                if obj not in self.objects:
+                    self.objects.append(obj)
 
-                elif obj.orbit is not None and obj.orbit.star.celestial_type == 'planet':
-                    if obj not in self.objects:
-                        self.objects.append(obj)
-                        btn = ObjectButton(self, obj, self.curr_x, self.curr_y)
-                        markers = self._markers[obj.orbit.star.id]
-                        marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
-                        marker = markers[marker_idx]
-                        btn.link_marker(marker)
-                        btn.update_text(obj.orbit.a)
+                if obj.orbit is not None and obj.orbit.star.celestial_type == 'planet':
+                    markers = self._markers[obj.orbit.star.id]
+                    marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
+                    marker = markers[marker_idx]
+                    btn.link_marker(marker)
+                    btn.update_text(obj.orbit.a)
 
-                if btn is not None:
-                    self.buttons.add(btn, layer=Systems.get_current().id)
-                    self.properties.add(btn)
-            self.sort_buttons()
+                if btn is not None and (obj.orbit is None or btn.completed):
+                    self.buttons.add(btn, layer=system.id)
+                    self.properties.add(btn, layer=4)
+
+            self.sort_buttons(system.id)
+
         else:
             self.show_no_system_error()
 
@@ -255,19 +249,23 @@ class PlanetaryOrbitPanel(BaseWidget):
             else:
                 marker.show()
 
-    def sort_buttons(self):
-        x, y = self.curr_x, self.curr_y
-        for bt in self.buttons.get_widgets_from_layer(Systems.get_current().id):
+    def sort_buttons(self, planet_id):
+        x, y = 3, 441
+        self.image.fill(COLOR_AREA, self.area_buttons)
+        for button in self.buttons.widgets():
+            button.hide()
+
+        for bt in self.buttons.get_widgets_from_layer(planet_id):
             bt.move(x, y)
-            if not self.area_buttons.contains(bt.rect):
-                bt.hide()
-            else:
-                bt.show()
             if x + bt.rect.w + 10 < self.rect.w - bt.rect.w + 10:
                 x += bt.rect.w + 10
             else:
                 x = 3
                 y += 32
+            if not self.area_buttons.contains(bt.rect):
+                bt.hide()
+            else:
+                bt.show()
 
     def create_roches_marker(self, obj):
         obj_density = obj.density.to('earth_density').m
@@ -354,7 +352,9 @@ class PlanetaryOrbitPanel(BaseWidget):
     def hide_markers(self):
         for marker in self.markers:
             marker.hide()
-        self.show_markers_button.enable()
+
+        if len(self.markers):
+            self.show_markers_button.enable()
 
     def hide_everything(self):
         for marker in self.markers:
@@ -449,15 +449,13 @@ class AvailablePlanets(ListedArea):
         self.show()
 
     def on_mousebuttondown(self, event):
-        super().on_mousebuttondown(event)
-        if self.parent.visible_markers:
-            self.parent.hide_markers()
-        self.parent.current = None
+        pass
 
     def select_by_data(self, data):
         for obj in self.listed_objects.widgets():
             if obj.object_data == data:
                 self.select_one(obj)
+                break
 
 
 class ObjectButton(ColoredBody):
@@ -465,17 +463,9 @@ class ObjectButton(ColoredBody):
     linked_marker = None
     completed = False
 
-    def __init__(self, parent, obj, x, y):
+    def __init__(self, parent, obj):
         self.orbit_data = None
-        if obj.has_name:
-            name = obj.name
-        else:
-            if hasattr(obj, 'cls'):
-                cls = obj.cls
-            else:
-                cls = obj.clase
-            name = '{} #{}'.format(cls, obj.idx)
-        super().__init__(parent, obj, name, x, y)
+        super().__init__(parent, obj, str(obj), 0, 0)
         self.img_dis = self.img_uns
 
     def update_text(self, orbit):
@@ -495,24 +485,21 @@ class ObjectButton(ColoredBody):
         if self.info is None:
             self.info = OrbitType(self.parent)
             self.info.link_astrobody(self.object_data)
+            self.info.link_button(self)
             self.parent.orbit_descriptions.add(self.info)
-        self.parent.sort_buttons()
 
     def on_mousebuttondown(self, event):
         if self.enabled:
             self.parent.select_one(self)
             if not self.parent.is_added(self.object_data) and self.parent.current is not None:
                 orbit, marker = self.parent.add_new(self.object_data)
+                self.parent.buttons.change_layer(self, self.parent.current.id)
                 self.create_type(orbit)
                 self.link_marker(marker)
             else:
-                if self.parent.visible_markers:
-                    self.parent.toggle_stellar_orbits()
-                else:
-                    self.parent.hide_everything()
-                if self.parent.current is None:
-                    self.parent.current = self.object_data.parent
-                    self.parent.planet_area.select_by_data(self.object_data.parent)
+                self.parent.hide_everything()
+                self.parent.current = self.object_data.parent
+                self.parent.planet_area.select_by_data(self.object_data.parent)
                 self.parent.show_markers_button.enable()
                 self.info.link_marker(self.linked_marker)
                 self.info.show()

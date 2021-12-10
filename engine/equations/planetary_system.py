@@ -68,8 +68,9 @@ class PlanetarySystem(Flagable):
                             ab = round(q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs'), 3)
                             self.distances[body.id][star.id] = body.orbit.a
                         else:
-                            ab = round(q(star.luminosity.m / pow(body.parent.orbit.a.m, 2), 'Vs'), 3)
-                            self.distances[body.id][star.id] = body.parent.orbit.a
+                            parent = body.find_topmost_parent(body)
+                            ab = round(q(star.luminosity.m / pow(parent.orbit.a.m, 2), 'Vs'), 3)
+                            self.distances[body.id][star.id] = parent.orbit.a
                     else:
                         x1, y1, z1 = self.star_system.position
                         x2, y2, z2 = star.position
@@ -107,17 +108,20 @@ class PlanetarySystem(Flagable):
             if body.orbit is not None:
                 self.visibility_of_stars(body)
                 for star in self.star_system:
-                    if body.parent.celestial_type in ('star', 'system'):
-                        relative_distance = body.orbit.a.to('km').m
+                    if star.id not in self.distances[body.id]:
+                        if body.parent.celestial_type in ('star', 'system'):
+                            relative_distance = body.orbit.a.to('km').m
+                        else:
+                            relative_distance = body.parent.orbit.a.to('km').m
                     else:
-                        relative_distance = body.parent.orbit.a.to('km').m
+                        relative_distance = self.distances[body.id][star.id].to('km').m
                     self.relative_sizes[body.id][star.id] = self.small_angle_aproximation(star, relative_distance)
 
                 x = body.orbit.a.to('m').m  # position of the Observer's planet
                 for other in [o for o in others if o.orbit is not None]:
                     y = other.orbit.a.to('m').m  # position of the observed body
 
-                    distance = abs(y - x)  # linear distance, much quicker
+                    distance = abs(y - x) if y > x else abs(x - y)  # linear distance, much quicker
                     self.distances[body.id][other.id] = q(distance, 'm')
                     self.relative_sizes[body.id][other.id] = self.small_angle_aproximation(other, distance)
                     albedo = other.albedo.m / 100
@@ -450,9 +454,11 @@ class Systems:
                 else:
                     star = cls.get_star_by_id(idx)
                     system = cls.get_system_by_star(star)
-                body = system.get_astrobody_by(idx, tag_type='id')
-                if body.flagged:
-                    del data[key][idx]
+
+                if system is not None:
+                    body = system.get_astrobody_by(idx, tag_type='id')
+                    if body.flagged:
+                        del data[key][idx]
 
         guardar_json(ruta, data)
 

@@ -1,4 +1,4 @@
-from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, WidgetGroup, ANCHO, COLOR_BOX, COLOR_SELECTED
+from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, WidgetGroup, ANCHO, COLOR_BOX, COLOR_SELECTED, Renderer
 from engine.frontend.widgets.panels.common import TextButton
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.object_type import ObjectType
@@ -68,6 +68,7 @@ class StarPanel(BasePanel):
             if star not in self.stars:
                 self.stars.append(star)
                 self.add_button(star)
+                Renderer.update()
 
         if len(self.star_buttons):
             self.current.current = self.star_buttons[0].object_data

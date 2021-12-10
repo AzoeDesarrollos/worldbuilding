@@ -9,14 +9,29 @@ class Flagable:
         self.flagged = True
 
 
-class BodyInHydrostaticEquilibrium(Flagable):
+class StarSystemBody(Flagable):
+    parent = None
+    celestial_type = ''
+
+    def set_parent(self, parent):
+        self.parent = parent
+
+    def is_orbiting_a_star(self):
+        return self.parent.parent is None
+
+    @staticmethod
+    def find_topmost_parent(this):
+        if this.parent.is_orbiting_a_star():
+            return this.parent
+        else:
+            return this.find_topmost_parent(this.parent)
+
+
+class BodyInHydrostaticEquilibrium(StarSystemBody):
     circumference = 0
     surface = 0
     volume = 0
     density = 0
-
-    celestial_type = ''
-    parent = None
 
     satellites = None
 

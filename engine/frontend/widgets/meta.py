@@ -25,7 +25,8 @@ class Meta(BaseWidget):
 
     def deselect(self):
         self.selected = False
-        self.image = self.img_uns
+        if self.enabled:
+            self.image = self.img_uns
 
     def update(self):
         if all([not self.has_mouseover, not self.selected, self.enabled]):

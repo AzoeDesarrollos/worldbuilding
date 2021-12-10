@@ -85,21 +85,23 @@ class PlanetPanel(BasePanel):
             button.hide()
         for button in self.planet_buttons.get_widgets_from_layer(idx):
             button.show()
-        self.sort_buttons()
+        if len(self.planet_buttons):
+            self.sort_buttons()
 
     def sort_buttons(self):
-        x, y = self.curr_x, self.curr_y
+        x = 0
+        y = 440
         for bt in self.planet_buttons.get_widgets_from_layer(Systems.get_current().id):
             bt.move(x, y)
-            if not self.area_buttons.contains(bt.rect):
-                bt.hide()
-            else:
-                bt.show()
-            if x + bt.rect.w + 15 < self.rect.w - bt.rect.w + 15:
+            if x + bt.rect.w + 15 < self.rect.w - bt.rect.w:
                 x += bt.rect.w + 15
             else:
                 x = 3
                 y += 32
+            if not self.area_buttons.contains(bt.rect):
+                bt.hide()
+            else:
+                bt.show()
 
     def select_one(self, btn=None):
         for button in self.planet_buttons.widgets():

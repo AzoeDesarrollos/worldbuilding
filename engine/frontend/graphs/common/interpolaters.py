@@ -8,7 +8,7 @@ def interpolate(x, x1, x2, y1, y2):
 
 
 def find_points(x: int, group_x: list, group_y: list):
-    if x < 0:
+    if x < 0 or x < group_x[0]:
         despues = 1
         antes = 0
     elif x >= group_x[-1]:

@@ -28,7 +28,7 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     lagrange_points = None
     hill_sphere = 0
-    roches_limit: q = 0
+    roches_limit = None
 
     _tilt = 'Not set'
     spin = 'N/A'
@@ -196,7 +196,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.orbit = None
         self.temperature = q(0, 'celsius')
         self.hill_sphere = 0
-        self.roches_limit = 0
+        self.roches_limit = None
         self.sky_color = None
         self.lagrange_points = None
         for satellite in self.satellites:
@@ -207,7 +207,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         radius = self.radius.to('earth_radius').m
 
         roches = q(round(2.44 * radius * pow(density / obj_density, 1 / 3), 3), 'earth_radius')
-        if self.roches_limit == 0 or roches < self.roches_limit:
+        if self.roches_limit is None or roches < self.roches_limit:
             self.roches_limit = roches
         return self.roches_limit
 
@@ -446,7 +446,7 @@ def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
 
 
 # Terrestial Graph parameters
-Terrestial = [0.0, 3.5, 0.0, 1.5]
+Terrestial = [0.1, 3.5, 0.0, 1.5]
 GasDwarf = [1, 20.5, 2, 0]
 
 

@@ -1,5 +1,5 @@
 from engine.frontend.globales import COLOR_ICYMOON, COLOR_ROCKYMOON, COLOR_IRONMOON
-from .general import BodyInHydrostaticEquilibrium, Flagable
+from .general import BodyInHydrostaticEquilibrium, Flagable, StarSystemBody
 from engine.backend.util import roll, generate_id
 from .orbit import SatelliteOrbit, PlanetOrbit
 from .lagrange import get_lagrange_points
@@ -7,11 +7,10 @@ from engine import q, material_densities
 from math import pi, sqrt
 
 
-class Satellite(Flagable):
+class Satellite(StarSystemBody, Flagable):
     name = None
     mass = None
     density = None
-    celestial_type = ''
     has_name = False
     cls = None
     orbit = None
@@ -22,8 +21,11 @@ class Satellite(Flagable):
     lagrange_points = None
     id = None
     idx = None
-    parent = None
     satellites = None
+
+    planet_type = 'satellite'
+
+    relative_size = 'Small'
 
     @staticmethod
     def calculate_density(ice, silicate, iron):
@@ -84,7 +86,10 @@ class Satellite(Flagable):
         return "{} #{}".format(self.cls, self.idx)
 
     def __eq__(self, other):
-        return self.id == other.id
+        if other is not None:
+            return self.id == other.id
+        else:
+            return False
 
     def update_everything(self):
         pass
@@ -95,6 +100,8 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
 
     def __init__(self, data):
         name = data.get('name', None)
+        if 'parent' in data:
+            self.set_parent(data['parent'])
         if name:
             self.name = name
             self.has_name = True
@@ -114,7 +121,8 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         self.title = 'Major'
         self.albedo = q(13.6)
 
-        self.satellites = []
+        self.satellites = [] if 'satellites' not in data else [i for i in data['satellites']]
+        self.orbit = None if 'orbit' not in data else data['orbit']
 
         # ID values make each satellite unique, even if they have the same characteristics.
         self.id = data['id'] if 'id' in data else generate_id()
@@ -127,11 +135,13 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         return NotImplemented
 
 
-class Minor(Satellite):
+class Minor(Satellite, StarSystemBody):
     celestial_type = 'asteroid'
     habitable = False
 
     def __init__(self, data):
+        if 'parent' in data:
+            self.set_parent(data['parent'])
         name = data.get('name', None)
         if name:
             self.name = name
@@ -165,7 +175,8 @@ class Minor(Satellite):
 
         self.system_id = data.get('system', None)
 
-        self.satellites = []
+        self.satellites = [] if 'satellites' not in data else [i for i in data['satellites']]
+        self.orbit = None if 'orbit' not in data else data['orbit']
 
     # noinspection PyUnusedLocal
     @staticmethod

@@ -1,7 +1,8 @@
 {
   "texts":{
-    "text": "It seems you are building a {planet_type}.\n\nIt's orbital eccentricity value should be {e}.\n\nIt's inclination should be {i}.",
-    "tno": "It seems you are building a{}Kupier Belt object. It may fit into one of the following categories, provided it has the appropiate values for ecentricity and inclination."
+    "text": "You {verb} a{n} {planet_type}.{orbit}\n\nIts orbital eccentricity value should be {e}.\n\nIts orbital inclination should be {i}.",
+    "tno": "You {verb} a{extra}Kupier Belt object.{orbit}",
+    "belt": "You {verb} a Small Solar System Body. {orbit}"
     },
  "classical":{
    "n": "Classical",
@@ -30,7 +31,7 @@
  },
  "giant":{
    "e": "between 0.001 and 0.09",
-   "i": "between 0° and 90° (but don't go crazy)"
+   "i": "between 0° and 90° (but don't go wild)"
  },
  "hot":{
    "i":"between 10° of the reference plane"

@@ -35,6 +35,10 @@ class Group:
         else:
             return []
 
+    def change_layer(self, sprite, layer):
+        self.remove(sprite)
+        self.add(sprite, layer=layer)
+
     def widgets(self):
         return self._list
 
@@ -53,3 +57,6 @@ class Group:
         self._d.clear()
         self._list.clear()
         self._leght = 0
+
+    def __repr__(self):
+        return str(self._list)

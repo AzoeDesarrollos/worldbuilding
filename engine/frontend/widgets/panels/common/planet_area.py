@@ -54,7 +54,8 @@ class ListedArea(BaseWidget):
         self.sort()
 
     def sort(self):
-        for i, listed in enumerate(self.listed_objects.widgets()):
+        by_mass = sorted(self.listed_objects.widgets(), key=lambda b: b.object_data.mass.to('earth_mass').m, reverse=1)
+        for i, listed in enumerate(by_mass):
             listed.rect.y = i * 16 + self.rect.y + 21
 
     def select_one(self, it):
@@ -70,6 +71,7 @@ class ListedArea(BaseWidget):
         return [o.object_data for o in self.listed_objects.widgets()]
 
     def show_current(self, idx):
+        self.sort()
         for listed in self.listed_objects.widgets():
             listed.hide()
         for listed in self.listed_objects.get_widgets_from_layer(idx):

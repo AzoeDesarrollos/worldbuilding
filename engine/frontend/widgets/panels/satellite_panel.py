@@ -215,12 +215,16 @@ class SatelliteType(ObjectType):
             data['radius'] = self.current.radius.m
             data['id'] = self.current.id
             data['system'] = self.current.system_id
-            data['idx'] = len([i for i in Systems.get_current().satellites if i.cls == self.current.cls])
+            data['idx'] = self.current.idx
+            data['parent'] = self.current.parent
+            data['satellites'] = [i for i in self.current.satellites]
+            data['orbit'] = self.current.orbit
 
         self.has_values = True
 
         moon = major_moon_by_composition(data)
-        moon.idx = len([i for i in Systems.get_current().satellites if i.cls == moon.cls])
+        if moon.idx is None:
+            moon.idx = len([i for i in Systems.get_current().satellites if i.cls == moon.cls])
         if self.current is None:
             if Systems.get_current().add_astro_obj(moon):
                 self.current = moon
@@ -333,12 +337,8 @@ class SatelliteButton(Meta):
         self.object_data = satellite
         self.f1 = self.crear_fuente(13)
         self.f2 = self.crear_fuente(13, bold=True)
-        if satellite.has_name:
-            name = satellite.name
-        else:
-            name = str(satellite)
-        self.img_uns = self.f1.render(name, True, satellite.color, COLOR_AREA)
-        self.img_sel = self.f2.render(name, True, satellite.color, COLOR_AREA)
+        self.img_uns = self.f1.render(str(satellite), True, satellite.color, COLOR_AREA)
+        self.img_sel = self.f2.render(str(satellite), True, satellite.color, COLOR_AREA)
         self.w = self.img_sel.get_width()
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))

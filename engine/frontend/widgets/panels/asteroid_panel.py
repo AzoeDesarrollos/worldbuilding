@@ -22,7 +22,7 @@ class AsteroidPanel(BasePanel):
 
     def __init__(self, parent):
         super().__init__('Asteroid', parent)
-        self.properties = WidgetGroup()
+        self.properties = Group()
         self.current = AsteroidType(self)
         f1 = self.crear_fuente(16, underline=True)
         f2 = self.crear_fuente(13, underline=True)
@@ -39,7 +39,7 @@ class AsteroidPanel(BasePanel):
         txt = 'Copy the values from a selected planet'
         self.f3 = self.crear_fuente(11)
         self.txt_a = self.write2(txt, self.f3, 130, COLOR_AREA, centerx=ro.centerx, y=self.area_asteroids.y + 50, j=1)
-        self.properties.add(self.button_add, self.button_del, self.copy_button)
+        self.properties.add(self.button_add, self.button_del, self.copy_button, layer=1)
         self.asteroids = Group()
         self.moons = []
         EventHandler.register(self.load_satellites, 'LoadData')
@@ -90,7 +90,7 @@ class AsteroidPanel(BasePanel):
             self.current.current.system_id = layer_number
         self.moons.append(self.current.current)
         self.asteroids.add(button, layer=layer_number)
-        self.properties.add(button)
+        self.properties.add(button, layer=layer_number)
         if self.is_visible:
             self.sort_buttons()
         self.current.erase()
@@ -138,7 +138,9 @@ class AsteroidPanel(BasePanel):
         super().show()
         if self.mass_number is None:
             self.properties.add(ShownMass(self))
-        for pr in self.properties.widgets():
+        for pr in self.properties.get_widgets_from_layer(1):
+            pr.show()
+        for pr in self.properties.get_widgets_from_layer(Systems.get_current_id(self)):
             pr.show()
 
     def hide(self):

@@ -1,11 +1,12 @@
-from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, image, K_LSHIFT, K_LCTRL, KEYUP
-from pygame import init, quit, display, font, event, Rect, Surface, SCALED
-from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, ANCHO, ALTO
+from pygame import K_UP, K_DOWN, K_RIGHT, K_LEFT, K_SPACE, K_LSHIFT, K_LCTRL, K_ESCAPE
+from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, ANCHO, ALTO, WidgetGroup
+from pygame import init, quit, display, font, event, Rect, Surface, image, mouse
+from pygame import KEYDOWN, QUIT, SCALED, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP
 from ..common import find_and_interpolate, Linea, Punto
-from engine.frontend.globales import WidgetGroup
 from pygame.sprite import Sprite
-from sys import exit
 from os import getcwd, path
+from engine import q
+from sys import exit
 from math import pi
 
 
@@ -47,6 +48,11 @@ def gasgraph_loop(limit_mass):
     text_mass = 'Mass: N/A'
     text_radius = 'Radius: N/A'
     text_density = 'Density: N/A'
+
+    text_mass_e = ''
+    text_radius_e = ''
+    text_density_e = ''
+
     invalid = True
 
     fondo = display.set_mode((ANCHO, ALTO), SCALED)
@@ -80,7 +86,7 @@ def gasgraph_loop(limit_mass):
     rect_puffy = Rect(x + 28, 16, (img_rect.w / 2) + 100, y - 16)
     rect_giant = Rect(31, 16, x - 3, y - 16)
 
-    lim_y = find_and_interpolate(limit_mass, mass_keys, yes)
+    lim_y = round(find_and_interpolate(limit_mass, mass_keys, yes))
     lim_rect = Rect(31, lim_y, img_rect.w, img_rect.h - lim_y + img_rect.y)
     lim_img = Surface(lim_rect.size)
     lim_img.set_alpha(150)
@@ -91,7 +97,9 @@ def gasgraph_loop(limit_mass):
     punto = Punto(img_rect, img_rect.centerx, img_rect.centery, lineas)
 
     move_x, move_y = True, True
+
     while not done:
+        x, y = mouse.get_pos()
         for e in event.get([KEYDOWN, KEYUP, QUIT, MOUSEBUTTONDOWN, MOUSEMOTION]):
             if (e.type == KEYDOWN and e.key == K_ESCAPE) or e.type == QUIT:
                 quit()
@@ -127,11 +135,19 @@ def gasgraph_loop(limit_mass):
                     text_radius = 'Radius: {}'.format(radius)
                     text_density = 'Density: {}'.format(d)
 
+                    text_mass_e = 'Mass E: {}'.format(round(q(mass, 'jupiter_mass').to('earth_mass').m, 3))
+                    text_radius_e = 'Radius E: {}'.format(round(q(radius, 'jupiter_radius').to('earth_radius').m, 3))
+                    text_density_e = 'Density E: {}'.format(round(q(d, 'jupiter_density').to('earth_density').m, 3))
+
                 else:
+                    data = {}
                     invalid = True
                     text_mass = 'Mass: N/A'
                     text_radius = 'Radius: N/A'
                     text_density = 'Density: N/A'
+                    text_mass_e = 'Mass E: N/A'
+                    text_radius_e = 'Radius E: N/A'
+                    text_density_e = 'Density E: N/A'
 
             elif e.type == MOUSEBUTTONDOWN:
                 if e.button == 1:
@@ -147,6 +163,30 @@ def gasgraph_loop(limit_mass):
                 elif e.key == K_LCTRL:
                     move_y = False
 
+                elif e.key == K_UP:
+                    if y - 1 >= img_rect.top:
+                        ev = event.Event(MOUSEMOTION,  pos=(x, y - 1), buttons=mouse.get_pressed())
+                        mouse.set_pos(x, y - 1)
+                        event.post(ev)
+
+                elif e.key == K_DOWN:
+                    if y + 1 < img_rect.bottom:
+                        ev = event.Event(MOUSEMOTION,  pos=(x, y + 1), buttons=mouse.get_pressed())
+                        mouse.set_pos(x, y + 1)
+                        event.post(ev)
+
+                elif e.key == K_RIGHT:
+                    if x + 1 < img_rect.right:
+                        ev = event.Event(MOUSEMOTION,  pos=(x + 1, y), buttons=mouse.get_pressed())
+                        mouse.set_pos(x + 1, y)
+                        event.post(ev)
+
+                elif e.key == K_LEFT:
+                    if x - 1 >= img_rect.left:
+                        ev = event.Event(MOUSEMOTION,  pos=(x - 1, y), buttons=mouse.get_pressed())
+                        mouse.set_pos(x - 1, y)
+                        event.post(ev)
+
             elif e.type == KEYUP:
                 if e.key == K_LSHIFT:
                     move_x = True
@@ -159,9 +199,20 @@ def gasgraph_loop(limit_mass):
         render_density = fuente.render(text_density, True, COLOR_TEXTO, COLOR_BOX)
 
         fondo.fill(COLOR_BOX)
-        fondo.blit(render_mass, (3, ALTO - 20))
-        fondo.blit(render_radius, (150, ALTO - 20))
-        fondo.blit(render_density, (300, ALTO - 20))
+        m = fondo.blit(render_mass, (3, ALTO - 20))
+        r = fondo.blit(render_radius, (150, ALTO - 20))
+        d = fondo.blit(render_density, (300, ALTO - 20))
+
+        render_e_mass = fuente2.render(text_mass_e, True, COLOR_TEXTO, COLOR_BOX)
+        render_e_radius = fuente2.render(text_radius_e, True, COLOR_TEXTO, COLOR_BOX)
+        render_e_density = fuente2.render(text_density_e, True, COLOR_TEXTO, COLOR_BOX)
+        r_m = render_e_mass.get_rect(bottomleft=m.topleft)
+        r_r = render_e_radius.get_rect(bottomleft=r.topleft)
+        r_d = render_e_density.get_rect(bottomleft=d.topleft)
+
+        fondo.blit(render_e_mass, r_m)
+        fondo.blit(render_e_radius, r_r)
+        fondo.blit(render_e_density, r_d)
 
         fondo.blit(img, img_rect)
         fondo.blit(lim_img, lim_rect)

@@ -154,6 +154,7 @@ class Star(BodyInHydrostaticEquilibrium):
 
     @staticmethod
     def stellar_classification(mass):
+        assert mass > 0, 'Star mass must be greater than 0.'
         masses = [0.08, 0.45, 0.8, 1.04, 1.4, 2.1, 16]
         classes = ["M", "K", "G", "F", "A", "B", "O"]
         idx = bisect_right(masses, mass)

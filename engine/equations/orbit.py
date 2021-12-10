@@ -3,6 +3,7 @@ from engine.frontend.globales import Renderer
 from math import sqrt, pow, cos, sin, pi
 from .general import Ellipse, Flagable
 from .planetary_system import Systems
+from decimal import Decimal
 from pygame import draw
 from engine import q
 
@@ -11,6 +12,9 @@ class RawOrbit:
     _unit = ''
     temperature = ''
     resonant = False
+    id = None
+
+    stable = True
 
     def __init__(self, star, a):
         self._unit = a.u
@@ -41,6 +45,24 @@ class RawOrbit:
     def __repr__(self):
         return 'Orbit @' + '{:}'.format(round(float(self), 3))
 
+    def __eq__(self, other):
+        return self.id == other.id
+
+    def __int__(self):
+        return round(self.a.m)
+
+    def __index__(self):
+        return round(self.a.m)
+
+    def __float__(self):
+        return float(self.semi_major_axis.m)
+
+    def __lt__(self, other):
+        return self.semi_major_axis.m < other
+
+    def __gt__(self, other):
+        return self.semi_major_axis.m > other
+
 
 class PseudoOrbit:
     eccentricity = ''
@@ -51,6 +73,8 @@ class PseudoOrbit:
     _period = 0
     resonant = False
 
+    stable = True
+
     def __init__(self, orbit):
         self.semi_major_axis = orbit.semi_major_axis
         self.temperature = orbit.temperature
@@ -60,6 +84,12 @@ class PseudoOrbit:
         elif self._star.letter == 'P':
             self._period = q(sqrt(pow(self.semi_major_axis.m, 3) / self._star.shared_mass.m), 'year')
         self.resonant = orbit.resonant
+
+        if hasattr(orbit, 'e'):
+            self.eccentricity = orbit.e
+
+        if hasattr(orbit, 'i'):
+            self.inclination = orbit.i
 
     @property
     def a(self):
@@ -74,7 +104,7 @@ class PseudoOrbit:
 
 
 class Orbit(Flagable, Ellipse):
-    period = 0
+    period: q = None
     velocity = 0
     motion = ''
 
@@ -94,6 +124,8 @@ class Orbit(Flagable, Ellipse):
     resonant = False
     resonance = None
     resonant_order = ''
+
+    stable = True
 
     def __init__(self, a, e, i, unit):
         super().__init__(a, e)
@@ -129,7 +161,7 @@ class Orbit(Flagable, Ellipse):
         self.astrobody = astro_body
         self._temperature = astro_body.temperature
         self._star = main
-        astro_body.parent = main
+        astro_body.set_parent(main)
 
         if main.celestial_type == "planet" or main.celestial_type == 'asteroid':
             self.reset_period_and_speed(main)
@@ -228,7 +260,7 @@ class Orbit(Flagable, Ellipse):
         return self._star
 
     def reset_period_and_speed(self, main):
-        return NotImplemented
+        raise NotImplementedError
 
     def __eq__(self, other):
         return self.id == other.id
@@ -245,8 +277,10 @@ class PlanetOrbit(Orbit):
             self.longitude_of_the_ascending_node = orbital_properties[0]
             self.argument_of_periapsis = orbital_properties[1]
         else:
+            if type(loan) is int or type(loan) is float:
+                loan = q(loan, 'degree')
             self.longitude_of_the_ascending_node = loan
-            self.argument_of_periapsis = aop
+            self.argument_of_periapsis = aop if type(aop) is str else q(aop, 'degree')
 
     def reset_period_and_speed(self, main):
         if main.letter is None:
@@ -283,7 +317,7 @@ class SatelliteOrbit(Orbit):
 class BinaryStarOrbit(Orbit):
     def __init__(self, star, other, a, e):
         super().__init__(a, e, q(0, 'degrees'), 'au')
-        self.reset_period_and_speed(star.mass.m+other.mass.m)
+        self.reset_period_and_speed(star.mass.m + other.mass.m)
 
     def reset_period_and_speed(self, main_body_mass):
         self.period = q(sqrt(pow(self._a, 3) / main_body_mass), 'year')
@@ -294,7 +328,7 @@ class GalacticStellarOrbit(Orbit):
     def __init__(self, a, e):
         super().__init__(a, e, q(0, 'degrees'), unit='kpc')
         age = self.star.age.m
-        self.star.z = q(49*cos((2*pi/72)*age), 'kpc')
+        self.star.z = q(49 * cos((2 * pi / 72) * age), 'kpc')
         # z difined as the star's shift ("bobbing") with respect to the galactic plane
         # also, this fuction is completely made up, as the actual formula dependes on observational data.
 
@@ -309,7 +343,7 @@ def from_stellar_resonance(star, planet, resonance: str):
     where both x and y are integers and x >= y.
     """
     x, y = [int(i) for i in resonance.split(':')]
-    period = (x/y) * planet.orbit.period.to('year').m
+    period = (x / y) * planet.orbit.period.to('year').m
     semi_major_axis = q(pow(pow(period, 2) * star.mass.to('sol_mass').m, (1 / 3)), 'au')
     return semi_major_axis
 
@@ -322,7 +356,7 @@ def from_planetary_resonance(planet, satellite, resonance: str):
     """
 
     x, y = [int(i) for i in resonance.split(':')]
-    period = (x/y) * satellite.orbit.period.to('year').m
+    period = (x / y) * satellite.orbit.period.to('year').m
     mass = planet.mass.m + satellite.mass.m  # earth masses
     semi_major_axis = q(pow(pow(period, 2) * mass, (1 / 3)), 'au')
     return semi_major_axis.to('earth_radius')
@@ -335,3 +369,26 @@ def set_orbital_properties(inclination):
         values = rotation_loop()
         Renderer.reset()
         return values
+
+
+def in_resonance(marker_a, marker_b):
+    if type(marker_a) is float:
+        period_a = sqrt(pow(marker_a, 3) / marker_a.star.mass.m)
+    elif hasattr(marker_a.orbit, 'period'):
+        period_a = marker_a.orbit.period.to('years').m
+    else:
+        period_a = sqrt(pow(marker_a.orbit.a.m, 3) / marker_a.star.mass.m)
+
+    if type(marker_b) is float:
+        period_b = sqrt(pow(marker_b, 3) / marker_a.star.mass.m)
+    elif hasattr(marker_b.orbit, 'period'):
+        period_b = marker_b.orbit.period.to('years').m
+    else:
+        period_b = sqrt(pow(marker_b.orbit.a.m, 3) / marker_b.star.mass.m)
+    r = period_a / period_b if period_a < period_b else period_b / period_a
+    ratio = Decimal(r)
+    x, y = ratio.as_integer_ratio()
+    if len(str(x)) <= 3 and len(str(y)) <= 3:
+        return ':'.join([str(x), str(y)])
+    else:
+        return False
