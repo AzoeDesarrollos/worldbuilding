@@ -168,28 +168,24 @@ class PlanetaryOrbitPanel(BaseWidget):
         system = Systems.get_current()
         if system is not None:
             self.image.fill(COLOR_BOX, [0, 32, self.rect.w, 380])
-            btn = None
             planets = [p for p in system.planets if p.relative_size != 'Giant']
             for obj in system.satellites + system.asteroids + planets:
-                if obj.orbit is None:
-                    if obj not in self.objects:
-                        self.objects.append(obj)
-                        btn = ObjectButton(self, obj)
-
-                elif obj not in self.objects:
+                btn = ObjectButton(self, obj)
+                if obj not in self.objects:
                     self.objects.append(obj)
-                    btn = ObjectButton(self, obj)
-                    # markers = self._markers[obj.orbit.star.id]
-                    # marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
-                    # marker = markers[marker_idx]
-                    # btn.link_marker(marker)
-                    # btn.update_text(obj.orbit.a)
 
-                if btn is not None:
-                    id = obj.parent.id if obj.parent is not None else -1
-                    self.buttons.add(btn, layer=id)
+                if obj.orbit is not None and obj.orbit.star.celestial_type == 'planet':
+                    markers = self._markers[obj.orbit.star.id]
+                    marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
+                    marker = markers[marker_idx]
+                    btn.link_marker(marker)
+                    btn.update_text(obj.orbit.a)
+
+                if btn is not None and (obj.orbit is None or btn.completed):
+                    self.buttons.add(btn, layer=system.id)
                     self.properties.add(btn, layer=4)
-                    self.sort_buttons(id)
+
+            self.sort_buttons(system.id)
 
         else:
             self.show_no_system_error()
@@ -224,7 +220,6 @@ class PlanetaryOrbitPanel(BaseWidget):
         if len(densest):
             self.create_roches_marker(densest[0])
         self.sort_markers()
-        self.sort_buttons(planet.id)
 
     def select_one(self, button):
         for bttn in self.buttons.widgets():
@@ -489,8 +484,8 @@ class ObjectButton(ColoredBody):
         if self.info is None:
             self.info = OrbitType(self.parent)
             self.info.link_astrobody(self.object_data)
+            self.info.link_button(self)
             self.parent.orbit_descriptions.add(self.info)
-        # self.parent.sort_buttons(self.object_data.id)
 
     def on_mousebuttondown(self, event):
         if self.enabled:

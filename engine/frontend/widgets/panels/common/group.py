@@ -37,7 +37,7 @@ class Group:
 
     def change_layer(self, sprite, layer):
         self.remove(sprite)
-        self.add(sprite, layer)
+        self.add(sprite, layer=layer)
 
     def widgets(self):
         return self._list

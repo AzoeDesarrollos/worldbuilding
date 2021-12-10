@@ -86,7 +86,10 @@ class Satellite(StarSystemBody, Flagable):
         return "{} #{}".format(self.cls, self.idx)
 
     def __eq__(self, other):
-        return self.id == other.id
+        if other is not None:
+            return self.id == other.id
+        else:
+            return False
 
     def update_everything(self):
         pass
