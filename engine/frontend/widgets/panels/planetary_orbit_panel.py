@@ -455,6 +455,7 @@ class AvailablePlanets(ListedArea):
         for obj in self.listed_objects.widgets():
             if obj.object_data == data:
                 self.select_one(obj)
+                break
 
 
 class ObjectButton(ColoredBody):
@@ -496,13 +497,9 @@ class ObjectButton(ColoredBody):
                 self.create_type(orbit)
                 self.link_marker(marker)
             else:
-                if self.parent.visible_markers:
-                    self.parent.toggle_stellar_orbits()
-                else:
-                    self.parent.hide_everything()
-                if self.parent.current is None:
-                    self.parent.current = self.object_data.parent
-                    self.parent.planet_area.select_by_data(self.object_data.parent)
+                self.parent.hide_everything()
+                self.parent.current = self.object_data.parent
+                self.parent.planet_area.select_by_data(self.object_data.parent)
                 self.parent.show_markers_button.enable()
                 self.info.link_marker(self.linked_marker)
                 self.info.show()
