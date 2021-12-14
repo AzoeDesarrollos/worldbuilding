@@ -183,15 +183,18 @@ class STypeSystem(BinarySystem):
         self.shared_mass = primary.mass + secondary.mass
         self.primary.position[0] = self.primary_distance
         self.secondary.position[0] = -self.secondary_distance
-
-        print(self.primary.position, self.secondary.position)
+        self.position = [0, 0, 0]
+        self.position[0] = round((self.primary_distance.m + self.secondary_distance.m) / 2)
+        self.position[1] = round((self.primary.position[1] + self.secondary.position[1]) / 2)
+        self.position[2] = round((self.primary.position[2] + self.secondary.position[2]) / 2)
 
         self.inner_forbbiden_zone = q(round(self.min_sep.m / 3, 3), 'au')
         self.outer_forbbiden_zone = q(round(self.max_sep.m * 3, 3), 'au')
         for star in self.composition():
-            inner = self.inner_forbbiden_zone
-            outer = self.outer_forbbiden_zone
-            star.inherit(self, inner, outer, self.shared_mass)
+            if star.letter is None:
+                inner = self.inner_forbbiden_zone
+                outer = self.outer_forbbiden_zone
+                star.inherit(self, inner, outer, self.shared_mass)
 
 
 def system_type(separation):

@@ -141,6 +141,10 @@ class PlanetarySystem(Flagable):
     def star(self):
         return self.star_system
 
+    @property
+    def mass(self):
+        return self.star_system.mass
+
     def astro_group(self, astro_obj):
         return self._get_astro_group(astro_obj)
 
@@ -233,7 +237,9 @@ class PlanetarySystem(Flagable):
         return unnamed
 
     def __eq__(self, other):
-        return self.id == other.id
+        if hasattr(other, 'id'):
+            return self.id == other.id
+        return False
 
     def __repr__(self):
         return 'System of ' + str(self.star_system)
@@ -328,7 +334,10 @@ class Systems:
             planetary_system = cls.get_system_by_star(system)
         else:
             for star in system:
-                cls.loose_stars.append(star)
+                if star.letter is not None:
+                    cls.dissolve_system(star)
+                else:
+                    cls.loose_stars.append(star)
 
         if planetary_system is None:
             planetary_system = cls.get_system_by_star(system)

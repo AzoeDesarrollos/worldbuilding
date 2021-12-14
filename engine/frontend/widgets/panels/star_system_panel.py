@@ -34,9 +34,9 @@ class StarSystemPanel(BaseWidget):
 
         self.systems = []
         self.setup_button = SetupButton(self, 484, 416)
-        self.undo_button = DissolveButton(self, 334, 416)
-        self.restore_button = UndoButton(self, 234, 416)
-        self.properties.add(self.setup_button, self.undo_button, self.restore_button, self.stars_area, self.current)
+        self.dissolve_button = DissolveButton(self, 334, 416)
+        self.undo_button = UndoButton(self, 234, 416)
+        self.properties.add(self.setup_button, self.dissolve_button, self.undo_button, self.stars_area, self.current)
         self.system_buttons = Group()
         EventHandler.register(self.save_systems, 'Save')
         EventHandler.register(self.load_systems, 'LoadData')
@@ -128,7 +128,7 @@ class StarSystemPanel(BaseWidget):
         self.system_buttons.remove(button)
         self.sort_buttons()
         self.properties.remove(button)
-        self.undo_button.disable()
+        self.dissolve_button.disable()
         if system in self.systems:
             Systems.dissolve_system(system)
 
@@ -177,9 +177,11 @@ class SystemType(BaseWidget):
     def create(self, props):
         for i, prop in enumerate([j for j in props]):
             vt = ValueText(self, prop, 3, 64 + i * 25, COLOR_TEXTO, COLOR_BOX)
-            self.properties.add(vt)
+            self.properties.add(vt, layer=2)
             if i in [2, 3, 4]:
                 vt.modifiable = True
+            if i in [0, 1]:
+                vt.enable()
 
         attrs = ['primary', 'secondary', 'separation', 'ecc_p', 'ecc_s']
         for idx, attr in enumerate(attrs):
@@ -191,8 +193,12 @@ class SystemType(BaseWidget):
             self.has_values = True
         else:
             self.secondary.value = star
-            self.parent.restore_button.enable()
+            self.parent.undo_button.enable()
             self.has_values = True
+
+        if self.primary.value != '' and self.secondary.value != '':
+            for obj in self.properties.get_widgets_from_layer(2):
+                obj.enable()
 
     def unset_stars(self):
         self.parent.stars_area.populate(Systems.loose_stars)
@@ -335,7 +341,7 @@ class SystemButton(Meta):
                 self.parent.current.current = self.object_data
             self.parent.setup_button.disable()
             self.parent.select_one(self)
-            self.parent.undo_button.enable()
+            self.parent.dissolve_button.enable()
 
     def move(self, x, y):
         self.rect.topleft = x, y
@@ -350,3 +356,4 @@ class UndoButton(TextButton):
 
     def on_mousebuttondown(self, event):
         self.parent.current.unset_stars()
+        self.disable()
