@@ -64,7 +64,6 @@ class StarPanel(BasePanel):
             star = Star(star_data)
             star.idx = len([i for i in self.stars if i.cls == star.cls])
             Systems.add_star(star)
-            Systems.set_system(star)
             if star not in self.stars:
                 self.stars.append(star)
                 self.add_button(star)
@@ -88,6 +87,7 @@ class StarPanel(BasePanel):
             obj.hide()
         if self.add_on_exit:
             self.parent.set_skippable('Star System', True)
+            self.parent.set_skippable('Multiple Stars', True)
             Systems.set_system(self.current.current)
         else:
             self.parent.set_skippable('Star System', False)
@@ -156,8 +156,7 @@ class StarPanel(BasePanel):
     def name_current(self, event):
         if event.data['object'] in self.stars:
             star = event.data['object']
-            star.name = event.data['name']
-            star.has_name = True
+            star.set_name(event.data['name'])
 
 
 class StarType(ObjectType):
@@ -179,6 +178,8 @@ class StarType(ObjectType):
         star = Star(star_data)
         star.idx = len([s for s in self.parent.stars if s.cls == cls])
         self.parent.button_add.enable()
+        if self.current is not None:
+            self.current.sprite.kill()
         self.current = star
         self.fill()
         self.toggle_habitable()
@@ -234,9 +235,11 @@ class StarType(ObjectType):
         if system is not None:
             system.update()
 
-        if self.current.sprite is None:
-            self.current.sprite = StarSprite(self, self.current, 460, 100)
+        new = StarSprite(self, self.current, 460, 100)
+        if new.is_distict(self.current.sprite):
+            self.current.sprite = new
             self.properties.add(self.current.sprite)
+
         self.current.sprite.show()
         self.parent.age_bar.enable()
         self.parent.enable()
@@ -258,7 +261,7 @@ class AddStarButton(TextButton):
         self.rect.right = x
 
     def on_mousebuttondown(self, event):
-        if self.enabled and self.parent.current.has_values:
+        if event.button == 1 and self.enabled and self.parent.current.has_values:
             star = self.parent.current.current
             self.parent.add_button(star)
             self.disable()

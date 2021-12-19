@@ -53,6 +53,11 @@ class Group:
     def __len__(self):
         return self._leght
 
+    def contains_this(self, text):
+        selected = [o for o in self._list if hasattr(o, 'text') and o.text == text]
+        if len(selected):
+            return selected[0]
+
     def empty(self):
         self._d.clear()
         self._list.clear()

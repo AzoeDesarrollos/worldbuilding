@@ -179,7 +179,7 @@ class SwapSystem(Meta):
         super().update()
         if not len(Systems.get_systems()):
             self.disable()
-        elif not self.enabled:
+        elif not self.enabled and 'Star' not in self.parent.current.name:
             self.enable()
 
 
@@ -196,13 +196,19 @@ class SystemName(BaseWidget):
         self.show()
 
     def get_name(self):
-        star = Systems.get_current_star()
-        if star is not None and star.has_name:
-            name = star.name
+        if 'Star' in self.parent.parent.current.name:
+            name = None
         else:
-            name = str(star)
+            star = Systems.get_current_star()
+            if star is not None and star.has_name:
+                name = star.name
+            else:
+                name = str(star)
 
-        if name == 'None':
+        if name is None:
+            self.color = COLOR_DISABLED
+            name = '-'
+        elif name == 'None':
             self.color = COLOR_DISABLED
         else:
             self.color = COLOR_TEXTO

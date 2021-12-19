@@ -34,6 +34,9 @@ class BinarySystem(Flagable):
             self.primary = secondary
             self.secondary = primary
 
+        self.primary.set_parent(self)
+        self.secondary.set_parent(self)
+
         if name is None:
             self.has_name = False
         else:
@@ -101,6 +104,13 @@ class BinarySystem(Flagable):
             return self.letter == other.letter
         else:
             return False
+
+    def set_parent(self, parent):
+        self.parent = parent
+
+    def set_name(self, name):
+        self.name = name
+        self.has_name = True
 
 
 class PTypeSystem(BinarySystem):

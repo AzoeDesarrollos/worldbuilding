@@ -49,8 +49,7 @@ class AsteroidPanel(BasePanel):
     def name_current(self, event):
         if event.data['object'] in self.moons:
             moon = event.data['object']
-            moon.name = event.data['name']
-            moon.has_name = True
+            moon.set_name(event.data['name'])
 
     def load_satellites(self, event):
         if 'Asteroids' in event.data and len(event.data['Asteroids']):

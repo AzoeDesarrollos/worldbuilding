@@ -42,7 +42,9 @@ class PlanetarySystem(Flagable):
         return self.body_mass
 
     def set_available_mass(self):
-        if self.star_system.shared_mass is not None:
+        if self.star_system.parent is not None:
+            mass = self.star_system.parent.shared_mass
+        elif self.star_system.shared_mass is not None:
             mass = self.star_system.shared_mass
         else:
             mass = self.star_system.mass
@@ -196,9 +198,16 @@ class PlanetarySystem(Flagable):
 
         if not len(astrobody):
             if self.star_system.letter == 'P':
-                astrobody = [self.star_system] if self.star_system.id == tag_identifier else []
+                if self.star_system.id == tag_identifier:
+                    astrobody = [self.star_system]
+                else:
+                    astrobody = [star for star in self.star_system.composition() if star.id == tag_identifier]
             else:  # tag_identifier could be a star's id
                 astrobody = [star for star in self.star_system if star.id == tag_identifier]
+
+        if not len(astrobody):  # tag_identifier could be a star's parent id
+            if self.star_system.parent.id == tag_identifier:
+                astrobody = [self.star_system]
 
         if not silenty:
             assert len(astrobody), 'the ID "{}" is invalid'.format(tag_identifier)
@@ -224,6 +233,9 @@ class PlanetarySystem(Flagable):
 
     def get_unnamed(self):
         unnamed = []
+        if self.star_system.parent is not None:
+            if not self.star_system.parent.has_name:
+                unnamed.append(self.star_system.parent)
         if not self.star_system.has_name:
             unnamed.append(self.star_system)
         if self.star_system.letter is not None:
@@ -295,7 +307,10 @@ class Systems:
             return
         if star.letter == 'S':
             for sub in star:
-                cls.set_system(sub)
+                for system in cls._systems:
+                    if system.star_system == sub:
+                        system.update()
+
         else:
             system = PlanetarySystem(star)
             if system not in cls._systems:
@@ -418,7 +433,8 @@ class Systems:
 
     @classmethod
     def add_star(cls, star):
-        cls.loose_stars.append(star)
+        if star not in cls.loose_stars:
+            cls.loose_stars.append(star)
         for system in cls._systems:
             for body in system.astro_bodies:
                 system.visibility_of_stars(body)

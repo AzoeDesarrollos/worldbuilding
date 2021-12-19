@@ -45,8 +45,7 @@ class StarSystemPanel(BaseWidget):
     def name_current(self, event):
         if event.data['object'] in self.systems:
             system = event.data['object']
-            system.name = event.data['name']
-            system.has_name = True
+            system.set_name(event.data['name'])
 
     def set_current(self, system_data):
         self.current.reset(system_data)
@@ -114,7 +113,7 @@ class StarSystemPanel(BaseWidget):
             system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, pos, id=id, name=name)
             button = self.create_button(system)
             button.hide()
-            Systems.set_system(system)
+            # Systems.set_system(system)
         self.sort_buttons()
 
     def select_one(self, btn):

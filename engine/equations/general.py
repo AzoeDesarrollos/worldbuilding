@@ -12,12 +12,18 @@ class Flagable:
 class StarSystemBody(Flagable):
     parent = None
     celestial_type = ''
+    name = None
+    has_name = False
 
     def set_parent(self, parent):
         self.parent = parent
 
     def is_orbiting_a_star(self):
         return self.parent.parent is None
+
+    def set_name(self, name):
+        self.name = name
+        self.has_name = True
 
     @staticmethod
     def find_topmost_parent(this):

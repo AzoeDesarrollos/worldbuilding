@@ -159,8 +159,7 @@ class PlanetPanel(BasePanel):
     def name_current(self, event):
         if event.data['object'] in self.planets:
             planet = event.data['object']
-            planet.name = event.data['name']
-            planet.has_name = True
+            planet.set_name(event.data['name'])
 
 
 class PlanetType(ObjectType):

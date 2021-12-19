@@ -16,8 +16,6 @@ class Star(BodyInHydrostaticEquilibrium):
     lifetime = 1
     temperature = 1
     classification = 'G'
-    name = None
-    has_name = False
 
     habitable_inner = 0
     habitable_outer = 0

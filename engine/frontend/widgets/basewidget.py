@@ -66,9 +66,8 @@ class BaseWidget(Sprite):
         WidgetHandler.del_widget(self)
 
     def kill(self) -> None:
+        self.hide()
         super().kill()
-        Renderer.del_widget(self)
-        WidgetHandler.del_widget(self)
 
     def write(self, text, fuente, bg=COLOR_BOX, **kwargs):
         render = fuente.render(text, True, COLOR_TEXTO, bg)

@@ -2,9 +2,8 @@ from .star_system_panel import SystemType, UndoButton, SetupButton, SystemButton
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, WidgetGroup
 from engine.frontend.widgets.panels.common import ListedBody, ListedArea, Group
 from engine.equations.planetary_system import Systems
-# from engine.backend.eventhandler import EventHandler
+from engine.backend.eventhandler import EventHandler
 from engine.equations.binary import system_type
-from engine.equations.star import Star
 from ..basewidget import BaseWidget
 from pygame import Surface
 
@@ -39,6 +38,12 @@ class MultipleStarsPanel(BaseWidget):
         self.setup_button = SetupButton(self, 484, 416)
         self.dissolve_button = DissolveButton(self, 334, 416)
         self.properties.add(self.current, self.stars_area, self.undo_button, self.setup_button, self.dissolve_button)
+        EventHandler.register(self.name_current, 'NameObject')
+
+    def name_current(self, event):
+        if event.data['object'] in self.systems:
+            system = event.data['object']
+            system.set_name(event.data['name'])
 
     def create_button(self, system_data):
         if system_data not in self.systems:
@@ -98,8 +103,6 @@ class MultipleStarsPanel(BaseWidget):
 
 
 class SystemsType(SystemType):
-    virtual_primary = None
-    virtual_secondary = None
 
     def __init__(self, parent):
         props = [
@@ -114,12 +117,10 @@ class SystemsType(SystemType):
         if str(self.primary.value) == '':
             self.primary.value = star
             self.has_values = True
-            self.virtual_primary = Star({'mass': star.mass.m if hasattr(star, 'mass') else star.shared_mass})
         else:
             self.secondary.value = star
             self.parent.undo_button.enable()
             self.has_values = True
-            self.virtual_secondary = Star({'mass': star.mass.m if hasattr(star, 'mass') else star.shared_mass})
 
         if self.primary.value != '' and self.secondary.value != '':
             for obj in self.properties.get_widgets_from_layer(2):
