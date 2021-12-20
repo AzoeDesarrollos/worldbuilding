@@ -60,9 +60,10 @@ class ValueText(BaseWidget):
 
     def elevate_changes(self, new_value, unit):
         value = q(new_value, unit)
-        returned = self.parent.elevate_changes(self, value)
-        if returned is not None:
-            self.text_area.set_value(returned)
+        if hasattr(self.parent, 'elevate_changes'):
+            returned = self.parent.elevate_changes(self, value)
+            if returned is not None:
+                self.text_area.set_value(returned)
 
     def set_min_and_max(self, min_v, max_v):
         self.text_area.min = min_v
@@ -188,6 +189,11 @@ class ValueText(BaseWidget):
     def __repr__(self):
         return self.text
 
+    def compare(self, other):
+        if isinstance(other, ValueText):
+            return self.text == other.text
+        return False
+
 
 class BaseArea(BaseWidget):
     modifiable = False
@@ -233,18 +239,12 @@ class NumberArea(BaseArea, IncrementalValue):
 
             elif event.tipo == 'Fin' and len(str(self.value)):
                 if self.great_grandparent.name == 'Star':
-                    self.grandparent.set_star({self.parent.text.lower(): float(self.value)})  # for stars
+                    self.grandparent.set_star({self.parent.text.lower(): float(self.value)})
 
-                elif self.great_grandparent.name == 'Star System':
+                elif self.great_grandparent.name in ['Star System', 'Orbit', 'Multiple Stars']:
                     self.grandparent.fill()
 
-                elif self.great_grandparent.name == 'Satellite':
-                    self.grandparent.calculate()
-
-                elif self.great_grandparent.name == 'Orbit':
-                    self.grandparent.fill()
-
-                elif self.great_grandparent.name == 'Asteroid':
+                elif self.great_grandparent.name in ['Satellite', 'Asteroid']:
                     self.grandparent.calculate()
 
                 elif self.great_grandparent.name == 'Planetary Orbit':
@@ -322,6 +322,8 @@ class NumberArea(BaseArea, IncrementalValue):
 
 
 class TextArea(BaseArea):
+    value = None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         EventHandler.register(self.input, 'Typed', 'BackSpace', 'Fin', 'Key')
@@ -337,6 +339,7 @@ class TextArea(BaseArea):
             elif tecla.tipo == 'Fin':
                 self.great_grandparent.name_objects()
                 self.great_grandparent.cycle(+1)
+                self.great_grandparent.check()
 
         elif tecla.origin != self.name:
             self.deselect()

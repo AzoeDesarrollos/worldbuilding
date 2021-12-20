@@ -28,7 +28,7 @@ class NamingPanel(BaseWidget):
         self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5)
 
         self.unnamed = Group()
-        self.objects = []
+        self.objects = {}
         self.dummy = DummyType(self)
 
     def hide(self):
@@ -38,8 +38,9 @@ class NamingPanel(BaseWidget):
             item.hide()
 
     def add_current(self):
-        idx = Systems.get_current().id
         system = Systems.get_current()
+        idx = system.id
+        self.unnamed.empty()
         if system is not None:
             objects = system.get_unnamed()
             if len(objects):
@@ -52,9 +53,10 @@ class NamingPanel(BaseWidget):
 
                         vt = ValueText(self.dummy, name, 3, 55 + i * 13 * 2, kind='letters')
                         vt.enable()
-                        if astrobody not in self.objects:
+                        if vt not in self.unnamed.get_widgets_from_layer(idx):
                             self.unnamed.add(vt, layer=idx)
-                            self.objects.append(astrobody)
+                        if astrobody.id not in self.objects:
+                            self.objects[astrobody.id] = [vt, astrobody]
                         self.all_named_error = False
                         self.no_system_error = False
             else:
@@ -75,7 +77,8 @@ class NamingPanel(BaseWidget):
             listed.rect.y = 55 + i * 13 * 2
 
     def show_current(self, idx):
-        flagged = [i for i in self.objects if i.flagged]
+        objects = [self.objects[i][1] for i in self.objects]
+        flagged = [obj for obj in objects if obj.flagged]
         for obj in flagged:
             button = self.unnamed.get_widget(obj.id)
             self.unnamed.remove(button)
@@ -86,9 +89,9 @@ class NamingPanel(BaseWidget):
         # if not len(self.unnamed.get_widgets_from_layer(idx)):
         self.add_current()
 
-        self.sort()
         for button in self.unnamed.get_widgets_from_layer(idx):
             button.show()
+        self.sort()
 
     def update(self):
         idx = Systems.get_current_id(self)
@@ -125,11 +128,24 @@ class NamingPanel(BaseWidget):
         self.current = current
         self.curr_idx = self.unnamed.widgets().index(current)
 
+    def check(self):
+        done = all([obj.text_area.value != '' for obj in self.unnamed.widgets()])
+        if done:
+            for item in self.unnamed.widgets():
+                item.hide()
+            self.no_system_error = True
+            self.update()
+
     def name_objects(self):
-        text = self.current.text_area.value
-        idx = self.unnamed.widgets().index(self.current)
-        obj = self.objects[idx]
-        EventHandler.trigger('NameObject', self, {'object': obj, 'name': text})
+        obj, text = None, None
+        for idx in self.objects:
+            vt, obj = self.objects[idx]
+            if self.current.compare(vt):
+                text = vt.text_area.value
+                break
+
+        if obj is not None and text is not None:
+            EventHandler.trigger('NameObject', self, {'object': obj, 'name': text})
 
 
 class DummyType(BaseWidget):

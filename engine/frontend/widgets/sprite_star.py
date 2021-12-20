@@ -54,6 +54,12 @@ class StarSprite(BaseWidget):
     def on_mouseover(self):
         self.animate()
 
+    def is_distict(self, other):
+        # similar to __eq__(), but doesn't induce a conflict with hash().
+        if other is not None:
+            return self.color != other.color and self.radius != other.radius
+        return True
+
 
 class PlanetSprite(BaseWidget):
     centerx = 0

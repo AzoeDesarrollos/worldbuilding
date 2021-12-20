@@ -301,7 +301,7 @@ class OrbitPanel(BaseWidget):
         main_body = marker.linked_astrobody
         body_a = a.linked_astrobody
         body_b = b.linked_astrobody
-        
+
         if main_body.clase == 'Dwarf Planet' or main_body.celestial_type == 'asteroid':
             if body_a.clase == 'Dwarf Planet' or body_a.celestial_type == 'asteroid':
                 valid_a = True
@@ -411,28 +411,29 @@ class OrbitPanel(BaseWidget):
         return d
 
     def load_orbits(self, event):
-        self.fill_indexes()
-        self.set_current()
-        existing_ids = [marker.orbit.id for marker in self.orbits]
-        for id in event.data.get('Stellar Orbits', []):
-            if id not in existing_ids:
-                orbit_data = event.data['Stellar Orbits'][id]
-                a = q(orbit_data['a'], 'au')
-                if 'e' not in orbit_data:
-                    self.add_orbit_marker(a)
-                else:
-                    e = q(orbit_data['e'])
-                    i = q(orbit_data['i'], 'degree')
-                    aop = q(orbit_data['AoP'], 'degree') if orbit_data['AoP'] != 'undefined' else 'undefined'
-                    loan = q(orbit_data['LoAN'], 'degree')
-                    system = Systems.get_system_by_id(orbit_data['star_id'])
-                    if system is not None:
-                        planet = system.get_astrobody_by(id, tag_type='id')
-                        star = system.star_system
-                        planet.set_orbit(star, [a, e, i, loan, aop])
-                        planet.orbit.id = id
-                        self.add_orbit_marker(planet.orbit, obj=planet)
-                        self.planet_area.delete_objects(planet)
+        if len(event.data.get('Stellar Orbits', [])):
+            self.fill_indexes()
+            self.set_current()
+            existing_ids = [marker.orbit.id for marker in self.orbits]
+            for id in event.data.get('Stellar Orbits', []):
+                if id not in existing_ids:
+                    orbit_data = event.data['Stellar Orbits'][id]
+                    a = q(orbit_data['a'], 'au')
+                    if 'e' not in orbit_data:
+                        self.add_orbit_marker(a)
+                    else:
+                        e = q(orbit_data['e'])
+                        i = q(orbit_data['i'], 'degree')
+                        aop = q(orbit_data['AoP'], 'degree') if orbit_data['AoP'] != 'undefined' else 'undefined'
+                        loan = q(orbit_data['LoAN'], 'degree')
+                        system = Systems.get_system_by_id(orbit_data['star_id'])
+                        if system is not None:
+                            planet = system.get_astrobody_by(id, tag_type='id')
+                            star = system.star_system
+                            planet.set_orbit(star, [a, e, i, loan, aop])
+                            planet.orbit.id = id
+                            self.add_orbit_marker(planet.orbit, obj=planet)
+                            self.planet_area.delete_objects(planet)
 
         # borrar las órbitas cargadas para evitar que se dupliquen.
         if self.is_visible:

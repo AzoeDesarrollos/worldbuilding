@@ -8,10 +8,9 @@ from math import pi, sqrt
 
 
 class Satellite(StarSystemBody, Flagable):
-    name = None
     mass = None
     density = None
-    has_name = False
+
     cls = None
     orbit = None
     hill_sphere = 0

@@ -34,6 +34,9 @@ class BinarySystem(Flagable):
             self.primary = secondary
             self.secondary = primary
 
+        self.primary.set_parent(self)
+        self.secondary.set_parent(self)
+
         if name is None:
             self.has_name = False
         else:
@@ -88,11 +91,26 @@ class BinarySystem(Flagable):
     def composition(self):
         return [self.primary, self.secondary]
 
+    @property
+    def system(self):
+        return self
+
+    @property
+    def mass(self):
+        return self.shared_mass
+
     def compare(self, other):
         if hasattr(other, 'letter'):
             return self.letter == other.letter
         else:
             return False
+
+    def set_parent(self, parent):
+        self.parent = parent
+
+    def set_name(self, name):
+        self.name = name
+        self.has_name = True
 
 
 class PTypeSystem(BinarySystem):
@@ -173,19 +191,26 @@ class STypeSystem(BinarySystem):
         self.max_sep = max_sep_p + max_sep_s
         self.min_sep = min_sep_p + min_sep_s
         self.shared_mass = primary.mass + secondary.mass
+        self.primary.position[0] = self.primary_distance
+        self.secondary.position[0] = -self.secondary_distance
+        self.position = [0, 0, 0]
+        self.position[0] = round((self.primary_distance.m + self.secondary_distance.m) / 2)
+        self.position[1] = round((self.primary.position[1] + self.secondary.position[1]) / 2)
+        self.position[2] = round((self.primary.position[2] + self.secondary.position[2]) / 2)
 
         self.inner_forbbiden_zone = q(round(self.min_sep.m / 3, 3), 'au')
         self.outer_forbbiden_zone = q(round(self.max_sep.m * 3, 3), 'au')
         for star in self.composition():
-            inner = self.inner_forbbiden_zone
-            outer = self.outer_forbbiden_zone
-            star.inherit(inner, outer, self.shared_mass)
+            if star.letter is None:
+                inner = self.inner_forbbiden_zone
+                outer = self.outer_forbbiden_zone
+                star.inherit(self, inner, outer, self.shared_mass)
 
 
 def system_type(separation):
-    if 0.15 <= float(separation) <= 6:
+    if 0.15 <= float(separation) <= 6:  # or 1.5 <= float(separation) <= 60?
         system = PTypeSystem
-    elif 120 <= float(separation) <= 600:
+    elif (120 <= float(separation) <= 600) or (1200 <= float(separation) <= 60000):
         system = STypeSystem
     else:
         raise AssertionError('The Average Separation is incompatible with\n'

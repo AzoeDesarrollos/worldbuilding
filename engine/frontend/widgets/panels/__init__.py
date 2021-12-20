@@ -8,10 +8,12 @@ from .asteroid_panel import AsteroidPanel
 from .planetary_orbit_panel import PlanetaryOrbitPanel
 from .naming_panel import NamingPanel
 from .info_panel import InformationPanel
+from .multiple_stars_panel import MultipleStarsPanel
 
 panels = [
     StarPanel,
     StarSystemPanel,
+    MultipleStarsPanel,
     PlanetPanel,
     SatellitePanel,
     AsteroidPanel,
