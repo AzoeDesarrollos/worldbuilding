@@ -277,7 +277,9 @@ class AsteroidType(BaseWidget):
             self.pie.set_values()
 
     def enable(self):
-        for arg in self.properties.widgets():
+        widgets = self.properties.get_widgets_from_layer(3)[:3]
+        widgets += self.properties.get_widgets_from_layer(4)
+        for arg in widgets:
             arg.enable()
         for obj in self.pie.chart.widgets():
             obj.enable()
@@ -311,6 +313,7 @@ class AsteroidType(BaseWidget):
         }
 
         for elemento in self.properties.get_widgets_from_layer(2):
+            elemento.enable()
             idx = self.properties.widgets().index(elemento)
             attr = self.relative_args[idx]
 
@@ -325,6 +328,7 @@ class AsteroidType(BaseWidget):
             elemento.text_area.show()
 
         for elemento in self.properties.get_widgets_from_layer(3):
+            elemento.enable()
             name = elemento.text
             if ' ' in elemento.text:
                 name = name.replace(' ', '_')

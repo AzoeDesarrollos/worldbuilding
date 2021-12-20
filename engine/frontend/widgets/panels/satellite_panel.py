@@ -166,12 +166,12 @@ class SatellitePanel(BasePanel):
 class SatelliteType(ObjectType):
 
     def __init__(self, parent):
-        rel_props = ['Mass', 'Radius', 'Surface Gravity', 'Escape velocity']
-        rel_args = ['mass', 'radius', 'gravity', 'escape_velocity']
+        rel_props = ['Radius', 'Mass', 'Surface Gravity', 'Escape velocity']
+        rel_args = ['radius', 'mass' , 'gravity', 'escape_velocity']
         abs_args = ['density', 'volume', 'surface', 'circumference', 'clase']
         abs_props = ['Density', 'Volume', 'Surface Area', 'Circumference', 'Clase']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
-        self.set_modifiables('relatives', 1)
+        self.set_modifiables('relatives', 0)
         self.show_layers.append(3)
 
         for item in self.relatives.widgets() + self.absolutes.widgets():
@@ -245,8 +245,11 @@ class SatelliteType(ObjectType):
         self.calculate()
 
     def enable(self):
-        for arg in self.properties.widgets():
+        widgets = self.properties.get_widgets_from_layer(1)[0:1]
+        widgets += self.properties.get_widgets_from_layer(2)
+        for arg in widgets:
             arg.enable()
+
         for obj in self.pie.chart.widgets():
             obj.enable()
         super().enable()
@@ -296,6 +299,8 @@ class SatelliteType(ObjectType):
                 'escape_velocity': 'EVm'
             }
         }
+        for element in self.properties.get_widgets_from_layer(1)[1:]:
+            element.enable()
         super().fill(tos)
 
         comp = {}
