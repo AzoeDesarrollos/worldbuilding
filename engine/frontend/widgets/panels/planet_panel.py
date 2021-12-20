@@ -195,6 +195,11 @@ class PlanetType(ObjectType):
             arg.enable()
         super().enable()
 
+    def disable(self):
+        for arg in self.properties:
+            arg.disable()
+        super().disable()
+
     def load_planet(self, event):
         if 'Planets' in event.data and len(event.data['Planets']):
             for id in event.data['Planets']:
@@ -378,9 +383,15 @@ class ShownMass(BaseWidget):
 
     def show_mass(self):
         try:
-            mass = Systems.get_current().get_available_mass()
-            if not self.parent.enabled:
-                self.parent.enable()
+            system = Systems.get_current()
+            mass = None
+            if system is not None:
+                mass = system.get_available_mass()
+                if not self.parent.enabled:
+                    self.parent.enable()
+            elif self.parent.enabled:
+                self.parent.disable()
+                raise AttributeError
         except AttributeError:
             mass = q(0, 'jupiter_mass')
         if not self.show_jovian_mass:

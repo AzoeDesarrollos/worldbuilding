@@ -2,7 +2,8 @@ from pygame import K_UP, K_DOWN, K_RIGHT, K_LEFT, K_SPACE, K_LSHIFT, K_LCTRL, K_
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, ANCHO, ALTO, WidgetGroup
 from pygame import init, quit, display, font, event, Rect, Surface, image, mouse
 from pygame import KEYDOWN, QUIT, SCALED, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP
-from ..common import find_and_interpolate, Linea, Punto
+from ..common import find_and_interpolate, Linea, Punto, BodyMarker
+from engine.equations.planetary_system import Systems
 from pygame.sprite import Sprite
 from os import getcwd, path
 from engine import q
@@ -59,6 +60,8 @@ def gasgraph_loop(limit_mass):
     fondo.fill(COLOR_BOX)
     exes, yes = [], []
     numbers = WidgetGroup()
+    markers = Systems.bodies_markers[Systems.get_current().id]['gasgraph']
+    marcadores = WidgetGroup()
     for i in [i for i in range(len(radius_keys[:4]))]:
         n = Number(radius_imgs[i], x=i * 28 + 30, y=3)
         numbers.add(n)
@@ -97,6 +100,9 @@ def gasgraph_loop(limit_mass):
     punto = Punto(img_rect, img_rect.centerx, img_rect.centery, lineas)
 
     move_x, move_y = True, True
+
+    for x, y in markers:
+        marcadores.add(BodyMarker(x, y))
 
     while not done:
         x, y = mouse.get_pos()
@@ -217,9 +223,14 @@ def gasgraph_loop(limit_mass):
         fondo.blit(img, img_rect)
         fondo.blit(lim_img, lim_rect)
         numbers.draw(fondo)
+        marcadores.update()
         lineas.update()
+        marcadores.draw(fondo)
         lineas.draw(fondo)
         display.update()
+
+    if done and len(data):
+        markers.append(punto.rect.center)
 
     display.quit()
     return data

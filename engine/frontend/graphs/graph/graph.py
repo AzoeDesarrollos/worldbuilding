@@ -1,7 +1,8 @@
 from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_SPACE, K_LCTRL, K_LSHIFT, QUIT
-from ..common import Linea, Punto, interpolate, find_and_interpolate, find_and_interpolate_flipped
+from ..common import Linea, Punto, interpolate, find_and_interpolate, find_and_interpolate_flipped, BodyMarker
 from pygame import font, Surface, Rect, image, mouse, event, Color as Clr, mask
 from pygame import display, init as py_init, quit as py_quit, SCALED
+from engine.equations.planetary_system import Systems
 from engine.backend.util import abrir_json
 from pygame.sprite import LayeredUpdates
 from os import environ, getcwd, path
@@ -58,6 +59,8 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
     fondo = display.set_mode((witdh, height), SCALED)
     rect = Rect(60, 2, 529, 476)
     lineas = LayeredUpdates()
+    markers = Systems.bodies_markers[Systems.get_current().id]['graph']
+    marcadores = LayeredUpdates()
 
     linea_h = Linea(rect, rect.x, rect.centery, rect.w, 1, lineas)
     linea_v = Linea(rect, rect.centerx, rect.y, 1, rect.h, lineas)
@@ -84,6 +87,9 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
 
     mouse.set_pos(rect.center)
     event.clear()
+
+    for x, y in markers:
+        marcadores.add(BodyMarker(x, y))
 
     done = False
     composition_text_comp = None
@@ -291,8 +297,13 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
             fondo.blit(texto2, rectT2)
             punto.update()
             lineas.update()
+            marcadores.update()
+            marcadores.draw(fondo)
             lineas.draw(fondo)
             display.update()
+
+        elif len(data):
+            markers.append(punto.rect.center)
 
     display.quit()
     return data

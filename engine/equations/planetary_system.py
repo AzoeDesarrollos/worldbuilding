@@ -267,6 +267,8 @@ class Systems:
     _current = None
     _system_cycler = None
 
+    bodies_markers = {}
+
     @classmethod
     def init(cls):
         cls._systems = []
@@ -292,6 +294,7 @@ class Systems:
                 cls.set_system(sub)
         else:
             system = PlanetarySystem(star)
+            cls.populate(star.id)
             if system not in cls._systems:
                 cls._systems.append(system)
                 if len(cls._systems) == 1:
@@ -304,9 +307,23 @@ class Systems:
                         system = cls.get_system_by_star(s)
                         if system is not None:
                             cls._systems.remove(system)
+                            cls.unpopulate(system.id)
                             s.flag()
                             for astro in system.astro_bodies:
                                 astro.flag()
+
+    @classmethod
+    def populate(cls, star_id):
+        cls.bodies_markers[star_id] = {
+            'graph': [],
+            'gasgraph': [],
+            'dwarfgraph': [],
+        }
+
+    @classmethod
+    def unpopulate(cls, star_id):
+        if star_id in cls.bodies_markers:
+            del cls.bodies_markers[star_id]
 
     @classmethod
     def unset_system(cls, star):
@@ -319,6 +336,7 @@ class Systems:
         else:
             cls.loose_stars.append(star)
         cls._systems.remove(system)
+        cls.unpopulate(system.id)
 
     @classmethod
     def dissolve_system(cls, system):
@@ -334,6 +352,7 @@ class Systems:
             planetary_system = cls.get_system_by_star(system)
         if planetary_system in cls._systems:
             cls._systems.remove(planetary_system)
+            cls.unpopulate(planetary_system.id)
             system.flag()
             for astro in planetary_system.astro_bodies:
                 astro.flag()
@@ -426,6 +445,9 @@ class Systems:
                     astrobody.flag()
                 star = system.star_system
                 cls.unset_system(star)
+
+        if not len(cls.loose_stars) and not len(cls._systems):
+            cls._current = None
 
     @classmethod
     def save(cls, event):

@@ -244,6 +244,11 @@ class SystemType(BaseWidget):
         for arg in self.properties.widgets():
             arg.enable()
 
+    def disable(self):
+        for arg in self.properties:
+            arg.disable()
+        super().disable()
+
 
 class ListedStar(ColoredBody):
     enabled = True

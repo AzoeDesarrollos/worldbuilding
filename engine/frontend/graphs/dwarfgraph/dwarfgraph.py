@@ -1,7 +1,8 @@
 from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, KEYUP, K_LSHIFT, K_LCTRL, SCALED
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO
+from ..common import Linea, Punto, find_and_interpolate, BodyMarker
 from pygame import display, event, font, transform, image
-from ..common import Linea, Punto, find_and_interpolate
+from engine.equations.planetary_system import Systems
 from engine.frontend.globales import WidgetGroup
 from pygame import init, quit, Rect, Surface
 from engine.backend.util import roll
@@ -77,7 +78,8 @@ def dwarfgraph_loop(limit_mass=None):
 
     done = False
     data = {}
-
+    markers = Systems.bodies_markers[Systems.get_current().id]['dwarfgraph']
+    marcadores = WidgetGroup()
     lineas = WidgetGroup()
     linea_h = Linea(bg_rect, bg_rect.x, bg_rect.centery, bg_rect.w, 1, lineas)
     linea_v = Linea(bg_rect, bg_rect.centerx, bg_rect.y, 1, bg_rect.h, lineas)
@@ -93,6 +95,10 @@ def dwarfgraph_loop(limit_mass=None):
         lim_rect = Rect(0, -100, 1, 1)
 
     move_x, move_y = True, True
+
+    for x, y in markers:
+        marcadores.add(BodyMarker(x, y))
+
     while not done:
         for e in event.get([KEYDOWN, QUIT, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP]):
             if (e.type == KEYDOWN and e.key == K_ESCAPE) or e.type == QUIT:
@@ -192,9 +198,14 @@ def dwarfgraph_loop(limit_mass=None):
         if limit_mass is not None:
             fondo.blit(lim_img, lim_rect)
         numbers.draw(fondo)
+        marcadores.update()
         lineas.update()
+        marcadores.draw(fondo)
         lineas.draw(fondo)
         display.update()
+
+    if done and len(data):
+        markers.append(punto.rect.center)
 
     display.quit()
     return data

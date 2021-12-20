@@ -206,6 +206,11 @@ class StarType(ObjectType):
         for arg in self.properties:
             arg.enable()
 
+    def disable(self):
+        for arg in self.properties:
+            arg.disable()
+        super().disable()
+
     def erase(self):
         if self.has_values:
             self.current.sprite.kill()

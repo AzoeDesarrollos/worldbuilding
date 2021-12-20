@@ -284,6 +284,13 @@ class AsteroidType(BaseWidget):
             obj.enable()
         super().enable()
 
+    def disable(self):
+        for arg in self.properties:
+            arg.disable()
+        for obj in self.pie.chart.widgets():
+            obj.disable()
+        super().disable()
+
     def destroy_button(self):
         destroyed = Systems.get_current().remove_astro_obj(self.current)
         if destroyed:

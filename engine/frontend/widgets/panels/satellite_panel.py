@@ -252,6 +252,13 @@ class SatelliteType(ObjectType):
             obj.enable()
         super().enable()
 
+    def disable(self):
+        for arg in self.properties:
+            arg.disable()
+        for obj in self.pie.chart.widgets():
+            obj.disable()
+        super().disable()
+
     def erase(self, replace=False):
         super().erase()
         self.current = None
