@@ -9,7 +9,7 @@ COLOR_FONDO = Color(10, 10, 10)
 COLOR_TEXTO = Color(0, 0, 0)
 COLOR_BOX = Color(125, 125, 125)
 COLOR_AREA = Color(200, 200, 200)
-COLOR_DARK_AREA = Color([160]*3)
+COLOR_DARK_AREA = Color([160] * 3)
 COLOR_DISABLED = Color(150, 150, 150)
 COLOR_SELECTED = Color(255, 255, 255)
 
@@ -53,6 +53,9 @@ hsla[1] = 20
 hsla[2] = 70
 COLOR_WATER_ICE_DIS.hsla = hsla
 
+WIDTH = 1000
+HEIGHT = 600
+
 __all__ = [
     # Tamaño de la ventana
     'ALTO',
@@ -91,5 +94,9 @@ __all__ = [
     'COLOR_SILICATES',
     'COLOR_SILICATES_DIS',
     'COLOR_WATER_ICE',
-    'COLOR_WATER_ICE_DIS'
+    'COLOR_WATER_ICE_DIS',
+
+    # Constantes del visualizador de órbitas
+    "WIDTH",
+    "HEIGHT"
 ]

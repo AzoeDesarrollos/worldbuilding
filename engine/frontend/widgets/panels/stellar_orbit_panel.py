@@ -3,6 +3,7 @@ from .common import TextButton, ListedArea, ToggleableButton, ColoredBody, Modif
 from engine.frontend.globales import WidgetGroup, render_textrect, WidgetHandler
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.basewidget import BaseWidget
+from engine.frontend.view import trigger_view, Background
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.globales.constantes import *
@@ -77,9 +78,11 @@ class OrbitPanel(BaseWidget):
         self.cycler = cycle(self.ratios)
         next(self.cycler)
 
+        self.view_button = ViewButton(self, *self.area_markers.topleft)
+
         self.properties.add([self.area_modify, self.planet_area, self.show_markers_button,
                              self.add_orbits_button, self.resonances_button, self.digit_x,
-                             self.digit_y, self.recomendation], layer=2)
+                             self.digit_y, self.recomendation, self.view_button], layer=2)
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
@@ -247,7 +250,7 @@ class OrbitPanel(BaseWidget):
 
     def on_mousebuttondown(self, event):
 
-        if self.area_markers.collidepoint(event.pos):
+        if self.area_markers.collidepoint(event.pos) and self.markers is not None:
             last_is_hidden = not self.markers[-1].is_visible
             if len(self.markers) > 16 and event.button in (4, 5):
                 if event.button == 4 and self.offset < 0:
@@ -1274,3 +1277,16 @@ class Recomendation(BaseWidget):
             self.image.blit(self.rendered_text, (0, self.rendered_rect.y))
         else:
             self.image.fill(COLOR_BOX)
+
+
+class ViewButton(TextButton):
+    enabled = True
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent, 'View', 0, 0)
+        self.rect.bottomleft = x, y
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1 and self.enabled:
+            trigger_view()
+            Background()

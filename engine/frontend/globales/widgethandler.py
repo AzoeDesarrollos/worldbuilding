@@ -1,5 +1,5 @@
-from pygame import event, QUIT, KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION, K_KP_ENTER, K_BACKSPACE
-from pygame import K_KP_EQUALS, K_UP, K_DOWN, K_ESCAPE, time, mouse, key
+from pygame import event, QUIT, KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION, K_BACKSPACE
+from pygame import K_UP, K_DOWN, K_ESCAPE, time, mouse, key
 from pygame import KMOD_RSHIFT, KMOD_LSHIFT
 from engine.backend.eventhandler import EventHandler
 from pygame.sprite import LayeredUpdates
@@ -14,19 +14,23 @@ class WidgetHandler:
     locked = False
     the_one = None
 
+    mode = 1
+
     @classmethod
     def init(cls):
         cls.contents = LayeredUpdates()
         cls.clock = time.Clock()
+        EventHandler.register(cls.switch_mode, 'SwitchMode')
 
     @classmethod
-    def add_widget(cls, widget, layer=1):
+    def add_widget(cls, widget):
         if widget not in cls.contents:
-            cls.contents.add(widget, layer=layer)
+            cls.contents.add(widget, layer=cls.mode)
 
     @classmethod
     def del_widget(cls, widget):
-        cls.contents.remove(widget)
+        if widget in cls.contents.get_sprites_from_layer(cls.mode):
+            cls.contents.remove(widget)
 
     @classmethod
     def lock_and_set(cls, the_one):
@@ -42,16 +46,30 @@ class WidgetHandler:
         cls.origin = widget
 
     @classmethod
+    def cap(cls, n):
+        if n != 0:
+            val = abs(n)
+            sign = n / n
+            if val >= 500:
+                n = 500 * sign
+        return n
+
+    @classmethod
+    def switch_mode(cls, evento):
+        cls.mode = evento.data['mode']
+
+    @classmethod
     def update(cls):
         cls.clock.tick(60)
         events = event.get([KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, QUIT, MOUSEMOTION])
         event.clear()
+        dx, dy = 0, 0
         for e in events:
             if e.type == QUIT or (e.type == KEYDOWN and e.key == K_ESCAPE):
                 EventHandler.trigger('salir', 'engine', {'mensaje': 'normal'})
 
             elif e.type == KEYDOWN and not cls.locked:
-                if e.key in (K_KP_ENTER, K_KP_EQUALS):
+                if key.name(e.key) in ('enter', 'return'):
                     EventHandler.trigger('Fin', cls.origin)
                 elif e.key == K_BACKSPACE:
                     EventHandler.trigger('BackSpace', cls.origin)
@@ -87,15 +105,28 @@ class WidgetHandler:
                 widgets[0].on_mousebuttonup(e)
 
             elif e.type == MOUSEMOTION:
-                x, y = e.pos
-                for widget in cls.contents.sprites():
-                    if widget.rect.collidepoint((x, y)):
-                        widget.on_mousemotion(e.rel)
+                if cls.mode == 1:
+                    x, y = e.pos
+                    for widget in cls.contents.sprites():
+                        if widget.rect.collidepoint((x, y)):
+                            widget.on_mousemotion(e.rel)
 
-        x, y = mouse.get_pos()
-        for widget in cls.contents.sprites():
-            if widget.rect.collidepoint((x, y)) and (not cls.locked or widget is cls.the_one):
-                widget.on_mouseover()
+                elif cls.mode == 2:
+                    if any(e.buttons):
+                        dx, dy = e.rel
+                        dx = cls.cap(dx)
+                        dy = cls.cap(dy)
+
+        if cls.mode == 2:
+            if dx or dy:
+                for widget in cls.contents.get_sprites_from_layer(cls.mode):
+                    widget.move(dx, dy)
+
+        elif cls.mode == 1:
+            x, y = mouse.get_pos()
+            for widget in cls.contents.sprites():
+                if widget.rect.collidepoint((x, y)) and (not cls.locked or widget is cls.the_one):
+                    widget.on_mouseover()
 
         cls.contents.update()
 
