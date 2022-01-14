@@ -395,8 +395,10 @@ class ShownMass(BaseWidget):
             mass = q(0, 'jupiter_mass')
         if not self.show_jovian_mass:
             mass = mass.to('earth_mass')
-        attr = '{:,g~}'.format((round(mass, 4)))
-        return attr
+        if mass is not None:
+            return '{:,g~}'.format((round(mass, 4)))
+        else:
+            return ''
 
     def update(self):
         self.parent.image.fill(COLOR_BOX, self.mass_rect)

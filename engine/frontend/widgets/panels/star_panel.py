@@ -102,6 +102,7 @@ class StarPanel(BasePanel):
             self.sort_buttons()
         self.current.erase()
         self.button_add.disable()
+        return button
 
     def del_button(self, star):
         button = [i for i in self.star_buttons if i.object_data == star][0]
@@ -307,6 +308,8 @@ class StarButton(Meta):
             self.parent.parent.select_one(self)
             self.parent.parent.button_del.enable()
             self.parent.toggle_habitable()
+        elif event.button in (4, 5):
+            self.parent.parent.on_mousebuttondown(event)
 
     def move(self, x, y):
         self.rect.topleft = x, y

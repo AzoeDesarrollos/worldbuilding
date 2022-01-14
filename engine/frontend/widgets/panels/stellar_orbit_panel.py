@@ -521,7 +521,7 @@ class OrbitPanel(BaseWidget):
             self.last_idx = idx
 
         if not self.no_star_error:
-            # self.image.fill(COLOR_BOX, self.area_markers)
+            self.image.fill(COLOR_BOX, self.area_markers)
             self.image.fill(COLOR_AREA, self.area_buttons)
         else:
             self.show_no_system_error()

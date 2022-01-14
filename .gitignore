@@ -8,3 +8,4 @@ __pycache__
 /build/
 /data/favicon.ico
 /installer.py
+/exports/

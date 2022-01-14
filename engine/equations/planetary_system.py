@@ -205,7 +205,7 @@ class PlanetarySystem(Flagable):
             else:  # tag_identifier could be a star's id
                 astrobody = [star for star in self.star_system if star.id == tag_identifier]
 
-        if not len(astrobody):  # tag_identifier could be a star's parent id
+        if not len(astrobody) and self.star_system.parent is not None:  # tag_identifier could be a star's parent id
             if self.star_system.parent.id == tag_identifier:
                 astrobody = [self.star_system]
 

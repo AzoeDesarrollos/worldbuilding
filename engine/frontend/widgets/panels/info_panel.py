@@ -1,10 +1,12 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, WidgetGroup, COLOR_AREA
 from engine.equations.tides import major_tides, minor_tides, is_tidally_locked
-from .common import ListedArea, ColoredBody
+from .common import ListedArea, ColoredBody, TextButton
 from engine.equations.planetary_system import Systems
+from engine.backend.util import generate_id
 from ..basewidget import BaseWidget
 from pygame import Surface, Rect
 from engine import q
+import os
 
 
 class InformationPanel(BaseWidget):
@@ -16,6 +18,8 @@ class InformationPanel(BaseWidget):
     render_rect = None
 
     selection = None
+
+    text = None
 
     def __init__(self, parent):
         self.name = 'Information'
@@ -31,7 +35,8 @@ class InformationPanel(BaseWidget):
         self.write(self.name + ' Panel', self.f1, centerx=(ANCHO // 4) * 1.5, y=0)
 
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
-        self.properties.add(self.planet_area, layer=2)
+        self.print_button = PrintButton(self, *self.planet_area.rect.midbottom)
+        self.properties.add(self.planet_area, self.print_button, layer=2)
         self.perceptions_rect = Rect(3, 250, 380, self.rect.h - 252)
 
     def on_mousebuttondown(self, event):
@@ -198,9 +203,11 @@ class InformationPanel(BaseWidget):
                 text = f'* It is unclear if {body} could be seen from {astrobody}.'
 
             text_lines.append(text)
-
-        self.render = self.write3('\n\n'.join(text_lines), self.f2, 380)
+        final_text = '\n'.join(text_lines)
+        self.text = final_text
+        self.render = self.write3(final_text, self.f2, 380)
         self.render_rect = self.render.get_rect(topleft=[3, 250])
+        self.print_button.enable()
 
     def update(self):
         self.image.fill(COLOR_BOX)
@@ -244,3 +251,22 @@ class AvailablePlanets(ListedArea):
             self.show()
             self.last_idx = idx
         self.show_current(idx)
+
+
+class PrintButton(TextButton):
+    enabled = False
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent, 'Print Info', x, y)
+        self.rect.midtop = x, y
+        self.rect.y += 10
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1 and self.enabled:
+            ruta = os.path.join(os.getcwd(), 'exports')
+            if not os.path.exists(ruta):
+                os.mkdir(ruta)
+            with open(os.path.join(ruta, 'export_' + generate_id() + '.txt'), 'w+t', encoding='utf-8') as file:
+                for line in self.parent.text.splitlines(keepends=True):
+                    file.write(line)
+            self.disable()
