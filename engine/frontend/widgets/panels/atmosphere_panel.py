@@ -8,7 +8,7 @@ from engine.frontend.globales import render_textrect
 from pygame import Surface, draw, SRCALPHA, Rect
 from .common import ListedArea, ColoredBody
 from engine import molecular_weight, q
-from math import sqrt
+from math import sqrt, log
 
 
 class AtmospherePanel(BaseWidget):
@@ -127,6 +127,9 @@ class AtmospherePanel(BaseWidget):
         elements = [i for i in self.elements.widgets() if bool(i.value()) is not False]
         data = dict(zip([e.symbol for e in elements], [float(e.percent.get_value()) for e in elements]))
         data.update({'pressure_at_sea_level': {'value': pressure.m, 'unit': str(pressure.u)}})
+        data['minimum_habitable_altitude'] = self.atmograph.altitude_at_pressure(self.atmograph.min_p)
+        data['maximum_habitable_altitude'] = self.atmograph.altitude_at_pressure(self.atmograph.max_p)
+        data['end_of_atmosphere'] = self.atmograph.altitude_at_pressure(0.000001)
         planet.set_atmosphere(data)
         self.fill(planet.atmosphere)
 
@@ -135,11 +138,11 @@ class AtmospherePanel(BaseWidget):
             e.percent.clear()
         elements = [e.symbol for e in self.elements.widgets()]
         for elem in atmosphere:
-            if elem != 'pressure_at_sea_level':
+            if elem in elements:
                 idx = elements.index(elem)
                 element = self.elements.widgets()[idx]
                 element.percent.value = str(atmosphere[elem])
-            else:
+            elif elem == 'pressure_at_sea_level':
                 value = atmosphere[elem]['value']
                 unit = atmosphere[elem]['unit']
                 self.pressure = q(value, unit)
@@ -227,6 +230,15 @@ class AtmospherePanel(BaseWidget):
 
         return round(effect, 2)
 
+    def aaw(self):
+        average_atomic_weight = (1 / 100) * sum([e.atomic_weight for e in self.elements.widgets()])
+        return average_atomic_weight
+
+    def scale_height(self):
+        temperature = self.curr_planet.temperature.to('kelvin').m
+        gravity = self.curr_planet.gravity.to('earth_gravity').m
+        return (8.3144598 * temperature) / (self.aaw() * gravity)
+
     def update(self):
         self.total = 0
         for element in self.elements.widgets():
@@ -266,6 +278,13 @@ class Element(BaseWidget):
         self.image = self.write_name(color)
         self.rect = self.image.get_rect(topleft=(x, y))
         self.percent = PercentageCell(self, 45, y)
+
+    @property
+    def atomic_weight(self):
+        value = self.value()
+        if value:
+            return value*self.weight
+        return 0
 
     def value(self):
         return self.percent.compile()
@@ -450,7 +469,7 @@ class PercentageCell(BaseWidget, IncrementalValue):
     def get_value(self):
         if self.value == '':
             return 0
-        elif self.value.isnumeric():
+        elif not self.value.isalpha():
             return float(self.value)
         else:
             return self.value
@@ -602,6 +621,10 @@ class Atmograph(BaseWidget):
                 self.enabled = False
                 self.reached = True
                 self.parent.show_pressure.elevate_pressure()
+
+    def altitude_at_pressure(self, pressure):
+        gravity = self.parent.curr_planet.gravity.to('earth_gravity').m
+        return round(log(pressure / self.pressure) / (-gravity / self.parent.scale_height()), 3)
 
     def update(self):
         if self.enabled:

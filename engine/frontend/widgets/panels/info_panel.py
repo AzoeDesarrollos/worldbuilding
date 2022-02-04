@@ -181,7 +181,7 @@ class InformationPanel(BaseWidget):
                 valor = str(relative_size.m)
             formato1 = f'of {valor}°'
 
-            distance = distances[body_id]
+            distance = round(distances[body_id], 3)
             if type(body_visibility) is q:
                 v = body_visibility.to('W/m^2')
                 if 'e' in str(v.m):
@@ -189,7 +189,7 @@ class InformationPanel(BaseWidget):
                     unidad = f"{v.u:P~}"
                     formato2 = f'of {valor + unidad}'
                 else:
-                    formato2 = f'of {v:~P}'
+                    formato2 = f'of {round(v, 3):~P}'
                 text = f'* The {body.celestial_type} {body}, at a distance of {distance:~P} '
                 text += f'has an apparent brightness, as seen from {astrobody}, ' + formato2
                 text += f" and a relative size {formato1} in it's sky."

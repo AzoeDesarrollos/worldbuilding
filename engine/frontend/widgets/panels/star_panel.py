@@ -58,6 +58,7 @@ class StarPanel(BasePanel):
         EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data})
 
     def load_stars(self, event):
+        systems = []
         for id in event.data['Stars']:
             star_data = event.data['Stars'][id]
             star_data.update({'id': id})
@@ -68,6 +69,11 @@ class StarPanel(BasePanel):
                 self.stars.append(star)
                 self.add_button(star)
                 Renderer.update()
+            for id_p in event.data['Stellar Orbits']:
+                orbit_data = event.data['Stellar Orbits'][id_p]
+                if orbit_data['star_id'] == id and star.id not in systems:
+                    Systems.set_system(star)
+                    systems.append(star.id)
 
         if len(self.star_buttons):
             self.current.current = self.star_buttons[0].object_data
