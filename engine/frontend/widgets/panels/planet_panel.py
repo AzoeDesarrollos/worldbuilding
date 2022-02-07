@@ -229,7 +229,7 @@ class PlanetType(ObjectType):
         self.has_values = False
         self.parent.image.fill(COLOR_BOX, self.hab_rect)
         if self.current is not None and self.current.sprite is not None:
-            self.current.sprite.hide()
+            self.current.sprite.kill()
 
     def create_button(self, planet=None):
         if planet is None:
@@ -426,8 +426,10 @@ class DelPlanetButton(TextButton):
 
 
 class CreatedPlanet(ColoredBody):
+    enabled = False
+
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.button == 1 and self.enabled:
             self.parent.set_planet(self.object_data)
             self.parent.parent.select_one(self)
 

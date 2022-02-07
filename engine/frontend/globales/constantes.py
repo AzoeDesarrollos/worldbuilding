@@ -27,7 +27,9 @@ COLOR_IRONMOON = Color(33, 126, 63)
 
 # Colores para las órbitas
 COLOR_STARORBIT = 111, 115, 47
+COLOR_RESONANT = 255, 125, 125
 
+# Colores para las PieCharts
 color = [155] * 3
 COLOR_IRON = Color(color)
 COLOR_IRON_DIS = Color(color)
@@ -36,7 +38,6 @@ hsla[1] = 20
 hsla[2] = 70
 COLOR_IRON_DIS.hsla = hsla
 
-# Colores para las PieCharts
 color = [155, 80, 0]  # silicates
 COLOR_SILICATES = Color(color)
 COLOR_SILICATES_DIS = Color(color)
@@ -82,8 +83,9 @@ __all__ = [
     'COLOR_ROCKYMOON',
     'COLOR_IRONMOON',
 
-    # Color de las órbitas cargadas
+    # Color de las órbitas
     'COLOR_STARORBIT',
+    'COLOR_RESONANT',
 
     # Colores de las PieCharts
     'COLOR_IRON',

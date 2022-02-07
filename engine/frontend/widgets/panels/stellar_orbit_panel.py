@@ -2,13 +2,13 @@ from engine.equations.orbit import RawOrbit, PseudoOrbit, from_stellar_resonance
 from .common import TextButton, ListedArea, ToggleableButton, ColoredBody, ModifyArea
 from engine.frontend.globales import WidgetGroup, render_textrect, WidgetHandler
 from engine.frontend.widgets.incremental_value import IncrementalValue
+from pygame import Surface, Rect, K_LCTRL, K_RCTRL, key as pyg_key
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.globales.constantes import *
 from engine.frontend.widgets.meta import Meta
 from engine import q, recomendation
-from pygame import Surface, Rect
 from engine.backend import roll
 from ..values import ValueText
 from itertools import cycle
@@ -35,6 +35,8 @@ class OrbitPanel(BaseWidget):
     skippable = False
 
     no_star_error = False
+
+    resonance_mode = False
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -80,7 +82,7 @@ class OrbitPanel(BaseWidget):
         self.properties.add([self.area_modify, self.planet_area, self.show_markers_button,
                              self.add_orbits_button, self.resonances_button, self.digit_x,
                              self.digit_y, self.recomendation], layer=2)
-        EventHandler.register(self.clear, 'ClearData')
+        # EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
 
@@ -163,7 +165,7 @@ class OrbitPanel(BaseWidget):
 
         test = False
         color = None
-        if type(position) not in (RawOrbit, PseudoOrbit):
+        if hasattr(position, 'e'):
             test = True  # saved orbits are valid by definition
             color = COLOR_STARORBIT
         elif resonance is False:
@@ -172,7 +174,7 @@ class OrbitPanel(BaseWidget):
         elif resonance is True:
             bd = [res_parent, res_order]
             test = inner < position  # TNOs orbit well outside of 40AUs.
-            color = (255, 0, 0)  # color provisorio
+            color = COLOR_RESONANT
 
         if test is True:
             new = OrbitMarker(self, obj, star, position, is_complete_orbit=bb, is_resonance=bc, res=bd)
@@ -483,6 +485,13 @@ class OrbitPanel(BaseWidget):
         self.visible_markers = not self.visible_markers
         self.area_modify.visible_markers = self.visible_markers
 
+    def on_orbit_button_press(self):
+        self.recomendation.hide()
+        self.hide_orbit_types()
+        self.show_markers_button.enable()
+        self.check_orbits()
+        # self.view_button.disable()
+
     def hide_orbit_types(self):
         for orbit_type in self.orbit_descriptions.widgets():
             orbit_type.hide()
@@ -495,12 +504,21 @@ class OrbitPanel(BaseWidget):
             marker.enable()
         m.select()
 
-    def link_astrobody_to_stellar_orbit(self, astrobody):
+    def link_astrobody_to_stellar_orbit(self, astrobody, **kwargs):
         system = Systems.get_current()
         star = system.star_system
-        pos = q(roll(star.inner_boundry.m, star.outer_boundry.m), 'au')
-        marker = self.add_orbit_marker(pos, obj=astrobody)
-        self.add_orbits_button.link(marker)
+        if self.resonance_mode is False:
+            pos = q(roll(star.inner_boundry.m, star.outer_boundry.m), 'au')
+            marker = self.add_orbit_marker(pos, obj=astrobody)
+            self.add_orbits_button.link(marker)
+        else:
+            pos = kwargs.pop('pos')
+            marker = self.add_orbit_marker(pos, obj=astrobody, **kwargs)
+            self.recomendation.set_resonance_text(step=3, obj=astrobody,
+                                                  anchor=kwargs['res_parent'],
+                                                  ratio=kwargs['res_order'])
+            self.resonances_button.link(marker)
+
         self.recomendation.update_suggestion(marker, astrobody, marker.orbit)
 
     def develop_orbit(self, marker):
@@ -548,11 +566,21 @@ class OrbitPanel(BaseWidget):
             ratio.select()
             WidgetHandler.set_origin(ratio)
 
+    def set_resonance_mode(self, anchor):
+        """Sets the resonance mode using the selected planet as anchor."""
+        self.resonance_mode = True
+        self.resonances_button.set_anchor(anchor)
+        self.recomendation.set_resonance_text(step=1)
+
+    def unset_resonance_mode(self):
+        """Unsets the resonance mode. New positions will be random."""
+        self.resonance_mode = False
+        self.recomendation.set_resonance_text(step=0)
+
     def ratios_to_string(self):
         x = int(self.digit_x.value)
         y = int(self.digit_y.value)
         assert x >= y, 'invalid ratio'
-        self.write('{}° Order'.format(x - y), self.order_f, right=self.digit_x.rect.left - 2, y=self.digit_x.rect.y)
         return '{}:{}'.format(x, y)
 
     def clear_ratios(self):
@@ -775,10 +803,18 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
         self.enabled = False
 
     def on_mousebuttondown(self, event):
+        pressed = pyg_key.get_pressed()
+        ctrl_pressed = pressed[K_RCTRL] or pressed[K_LCTRL]
         if event.button == 1:
+            if ctrl_pressed:
+                self.parent.set_resonance_mode(self.linked_astrobody)
+            else:
+                self.parent.unset_resonance_mode()
+
             if not self.locked:
                 self.parent.anchor_maker(self)
-                self.parent.recomendation.update_suggestion(self, self.linked_astrobody, self.orbit)
+                if self.parent.resonance_mode is False:
+                    self.parent.recomendation.update_suggestion(self, self.linked_astrobody, self.orbit)
 
         elif event.button == 3:
             self.parent.delete_marker(self)
@@ -861,12 +897,9 @@ class OrbitButton(Meta, Intertwined):
         if event.button == 1:
             if self.parent.visible_markers:
                 self.parent.toggle_stellar_orbits()
-            self.parent.hide_orbit_types()
-            self.parent.show_markers_button.enable()
-            # self.parent.view_button.disable()
+            self.parent.on_orbit_button_press()
             self.linked_type.show()
             self.lock()
-            self.parent.check_orbits()
 
     def update(self):
         super().update()
@@ -882,7 +915,11 @@ class RoguePlanet(ColoredBody):
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.parent.parent.visible_markers:
             self.enabled = False
-            self.parent.parent.link_astrobody_to_stellar_orbit(self.object_data)
+            if self.parent.parent.resonance_mode is False:
+                self.parent.parent.link_astrobody_to_stellar_orbit(self.object_data)
+            else:
+                self.parent.parent.resonances_button.set_resonant(self.object_data)
+                self.parent.parent.recomendation.set_resonance_text(step=2)
 
 
 class AvailablePlanets(ListedArea):
@@ -941,22 +978,45 @@ class SetOrbitButton(TextButton):
 
 
 class AddResonanceButton(TextButton):
+    anchor = None
+    resonant = None
+    linked_marker = None
+
     def __init__(self, parent, x, y):
         super().__init__(parent, 'Add Resonance', x, y)
 
+    def set_anchor(self, planet):
+        self.anchor = planet
+
+    def set_resonant(self, planet):
+        self.resonant = planet
+
+    def clear(self):
+        self.anchor = None
+        self.resonant = None
+        self.parent.unset_resonance_mode()
+
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
-            assert hasattr(self.parent.selected_marker.orbit, 'astrobody'), "The orbit is empty."
-            planet = self.parent.selected_marker.orbit.astrobody
-
+            assert self.resonant is not None, "Select a rogue planet to be resonant first."
             star = self.parent.current
             order = self.parent.ratios_to_string()
-            position = from_stellar_resonance(star, planet, order)
-            self.parent.add_orbit_marker(position, resonance=True, res_parent=planet, res_order=order)
+            position = from_stellar_resonance(star, self.anchor, order)
+            kwargs = {'pos': position, 'resonance': True, 'res_parent': self.anchor, 'res_order': order}
+            self.parent.link_astrobody_to_stellar_orbit(self.resonant, **kwargs)
+
+            self.parent.recomendation.notify()
+            self.parent.develop_orbit(self.linked_marker)
             self.parent.check_orbits()
-            # self.parent.check_artifexian(marker)
+            self.clear()
             self.disable()
             self.parent.clear_ratios()
+
+    def link(self, marker):
+        self.linked_marker = marker
+
+    def unlink(self):
+        self.linked_marker = None
 
     def enable(self):
         super().enable()
@@ -1038,6 +1098,8 @@ class Recomendation(BaseWidget):
     _orbit = None
 
     notified = False
+
+    resonance_text = ''
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -1129,7 +1191,7 @@ class Recomendation(BaseWidget):
 
         elif planet.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant', 'Gas Dwarf'):
             data = self.recomendation['giant'].copy()
-            data.update(**self.analyze_giants(planet, orbit, star))
+            data.update(**self.analyze_giants(planet, orbit, star, e))
             if data.get('eccentric', False):
                 data['orbit'] = ' Eccentric Jupiters can orbit anywhere in the system.'
             elif e is not None and 0.001 <= e <= 0.09:
@@ -1169,7 +1231,7 @@ class Recomendation(BaseWidget):
 
         self.format += txt
 
-    def analyze_giants(self, planet, orbit, star):
+    def analyze_giants(self, planet, orbit, star, eccentricity=None):
         clase = planet.clase in ('Puffy Giant', 'Gas Giant')
         orbita = 0.04 <= orbit.a.m <= 0.5
         period = q(sqrt(pow(orbit.a.m, 3) / star.mass.m), 'year').to('day').m >= 3
@@ -1196,6 +1258,8 @@ class Recomendation(BaseWidget):
                           pln.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant')]
             gas_giants.sort(key=lambda g: g.mass, reverse=True)
             data = self.recomendation['giant'].copy()
+            if eccentricity is not None:
+                data['e'] = eccentricity
             is_largest_gas_giant = gas_giants[0] == planet
             if is_largest_gas_giant:
                 distance = abs(round(orbit.a.m - star.frost_line.m, 3))
@@ -1209,10 +1273,12 @@ class Recomendation(BaseWidget):
             habitable = any([i.habitable for i in Systems.get_current().planets])
             data = self.recomendation['giant'].copy()
             data.update({'eccentric': True, 'planet_type': 'Eccentric Jupiter', 'orbit': ''})
-            if all([clase, habitable]) is True:
+            if all([clase, habitable]) is True and eccentricity is None:
                 data.update(**self.recomendation['eccentric_2'].copy())
             elif not habitable:
                 data.update(**self.recomendation['eccentric_1'].copy())
+            else:
+                data.update({'e': eccentricity})
         return data
 
     def create_suggestion(self, planet, temperature):
@@ -1231,12 +1297,17 @@ class Recomendation(BaseWidget):
             else:
                 self.format['n'] = ''
 
-            return base_text.format(**self.format)
+            return base_text.format(**self.format) + self.resonance_text
         else:
             return self.format
 
     def show_suggestion(self, planet, temp):
         text = self.create_suggestion(planet, temp)
+        self.rendered_text = render_textrect(text, self.f2, self.rect.w, COLOR_TEXTO, COLOR_DARK_AREA)
+        self.rendered_rect.size = self.rendered_text.get_rect().size
+
+    def show_resonance_text(self):
+        text = self.resonance_text
         self.rendered_text = render_textrect(text, self.f2, self.rect.w, COLOR_TEXTO, COLOR_DARK_AREA)
         self.rendered_rect.size = self.rendered_text.get_rect().size
 
@@ -1248,17 +1319,17 @@ class Recomendation(BaseWidget):
             if self.rendered_rect.bottom - 3 >= self.rect.bottom:
                 self.rendered_rect.move_ip(0, -3)
 
-    def update_suggestion(self, marker, astro_body, astro_orbit):
+    def update_suggestion(self, marker=None, astro_body=None, astro_orbit=None):
         if not self.notified:
             self.tense = 'seem to be building'
-        self._marker = marker
-        self._astro = astro_body
-        self._orbit = astro_orbit
-        self.suggest(astro_body, astro_orbit, Systems.get_current_star())
-        self.analyze_orbits(marker)
-        if astro_body.clase == 'Dwarf Planet' or astro_body.celestial_type == 'asteroid':
-            self.append_subclases(astro_orbit, Systems.get_current_star())
-        self.show_suggestion(astro_body, astro_orbit.temperature)
+        self._marker = marker if marker is not None else self._marker
+        self._astro = astro_body if astro_body is not None else self._astro
+        self._orbit = astro_orbit if astro_orbit is not None else self._orbit
+        self.suggest(self._astro, self._orbit, Systems.get_current_star())
+        self.analyze_orbits(self._marker)
+        if self._astro.clase == 'Dwarf Planet' or self._astro.celestial_type == 'asteroid':
+            self.append_subclases(self._orbit, Systems.get_current_star())
+        self.show_suggestion(self._astro, self._orbit.temperature)
         self.show()
 
     def notify(self):
@@ -1274,3 +1345,18 @@ class Recomendation(BaseWidget):
             self.image.blit(self.rendered_text, (0, self.rendered_rect.y))
         else:
             self.image.fill(COLOR_BOX)
+
+    def set_resonance_text(self, anchor=None, ratio=None, obj=None, step=0):
+        if step == 0:
+            self.resonance_text = ''
+        elif step == 1:
+            self.resonance_text = 'Resonance mode is enabled. Select a Rogue planet to establish the resonance.'
+            self.show_resonance_text()
+        elif step == 2:
+            self.resonance_text = "Resonance mode is enabled. Set the resonance's ratio and press the button."
+            self.show_resonance_text()
+        elif step == 3:
+            self.resonance_text = f'\n\n{obj} is in a {ratio} Mean Motion Resonance with {anchor}.'
+
+    def unset_resonance_text(self):
+        self.resonance_text = ''
