@@ -666,8 +666,7 @@ class AvailablePlanets(ListedArea):
         system = Systems.get_current()
         if system is not None:
             pop = [planet for planet in system.planets if planet.orbit is not None]
-            if not len(self.listed_objects.get_widgets_from_layer(system.id)):
-                self.populate(pop)
+            self.populate(pop)
         super().show()
 
     def on_mousebuttondown(self, event):
