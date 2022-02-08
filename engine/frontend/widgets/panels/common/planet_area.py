@@ -59,10 +59,10 @@ class ListedArea(BaseWidget):
                 self.offset -= 16
 
     def delete_objects(self, astronomical_object):
-        for listed in self.listed_objects.widgets():
-            if listed.object_data is astronomical_object:
-                listed.kill()
-                break
+        listed = [i for i in self.listed_objects.widgets() if i.object_data is astronomical_object]
+        if len(listed):
+            listed[0].kill()
+            self.listed_objects.remove(listed[0])
         self.sort()
 
     def sort(self):

@@ -18,14 +18,12 @@ from bisect import bisect_left
 
 class OrbitPanel(BaseWidget):
     current = None  # ahora será la estrella o sistema seleccionado.
-    selected_marker = None
 
     last_idx = 0
     _loaded_orbits = None
 
     offset = 0
     curr_x, curr_y = 3, 442
-    curr_digit = 0
 
     visible_markers = True
     orbits = None
@@ -82,7 +80,7 @@ class OrbitPanel(BaseWidget):
         self.properties.add([self.area_modify, self.planet_area, self.show_markers_button,
                              self.add_orbits_button, self.resonances_button, self.digit_x,
                              self.digit_y, self.recomendation], layer=2)
-        # EventHandler.register(self.clear, 'ClearData')
+        EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
 
@@ -182,7 +180,8 @@ class OrbitPanel(BaseWidget):
             self._orbits[star.id].append(new)
             if self.is_visible:
                 self.sort_markers()
-            self.anchor_maker(new)
+            if bb is False:
+                self.anchor_maker(new)
             self.add_button_and_type(star, new, color)
             self.properties.add(new, layer=4)
             return new
@@ -207,7 +206,7 @@ class OrbitPanel(BaseWidget):
     def sort_markers(self):
         self.markers.sort(key=lambda m: m.value)
         for i, marker in enumerate(self.markers, start=1):
-            marker.rect.y = i * 2 * 10 + 38 + self.offset
+            marker.rect.y = i * 2 * 10 + 16 + self.offset
             if not self.area_markers.contains(marker.rect):
                 marker.hide()
             else:
@@ -251,7 +250,7 @@ class OrbitPanel(BaseWidget):
 
         if self.area_markers.collidepoint(event.pos):
             last_is_hidden = not self.markers[-1].is_visible
-            if len(self.markers) > 16 and event.button in (4, 5):
+            if len(self.markers) >= 8 and event.button in (4, 5):
                 if event.button == 4 and self.offset < 0:
                     self.offset += 20
                 elif event.button == 5 and last_is_hidden:
@@ -275,10 +274,10 @@ class OrbitPanel(BaseWidget):
             elif event.button == 5:
                 pass
 
-        # elif event.button == 1 and self.markers is not None:
-        #     for marker in self.markers:
-        #         marker.deselect()
-        #         marker.enable()
+        elif event.button == 1 and self.markers is not None:
+            for marker in self.markers:
+                marker.deselect()
+                marker.enable()
 
     def check_orbits(self):
         self.orbits.sort(key=lambda o: o.value.m)
@@ -362,15 +361,12 @@ class OrbitPanel(BaseWidget):
     def anchor_maker(self, marker):
         self.deselect_markers(marker)
         self.area_modify.link(marker)
-        self.selected_marker = marker
 
     def clear(self, event):
         if event.data['panel'] is self:
             for marker in self.markers:
-                marker.kill()
-            for orbit in self.buttons:
-                orbit.kill()
-            self.markers.clear()
+                if not marker.locked:
+                    self.delete_marker(marker)
             self.clear_ratios()
 
     def save_orbits(self, event):
@@ -391,7 +387,6 @@ class OrbitPanel(BaseWidget):
                             self._loaded_orbits[astrobody_id] = d
 
         EventHandler.trigger(event.tipo + 'Data', 'Orbit', {'Stellar Orbits': self._loaded_orbits})
-        # self._loaded_orbits.clear()
 
     @staticmethod
     def create_save_data(orb):
@@ -474,6 +469,7 @@ class OrbitPanel(BaseWidget):
     def toggle_stellar_orbits(self):
         if self.visible_markers:
             self.area_modify.color_alert()
+            self.resonance_mode = False
             for marker in self.markers:
                 marker.hide()
         else:
@@ -518,7 +514,7 @@ class OrbitPanel(BaseWidget):
                                                   anchor=kwargs['res_parent'],
                                                   ratio=kwargs['res_order'])
             self.resonances_button.link(marker)
-
+        self.sort_markers()
         self.recomendation.update_suggestion(marker, astrobody, marker.orbit)
 
     def develop_orbit(self, marker):
@@ -547,19 +543,13 @@ class OrbitPanel(BaseWidget):
     def __repr__(self):
         return 'Orbit Panel'
 
-    def set_current_digit(self, idx):
-        self.curr_digit = self.ratios.index(idx)
-
     def cycle(self):
         has_values = False
         for ratio in self.ratios:
             ratio.deselect()
             has_values = ratio.value != ''
 
-        valid = has_values and not self.no_star_error
-        valid = valid and self.selected_marker is not None
-
-        if valid:
+        if has_values and not self.no_star_error:
             self.resonances_button.enable()
         else:
             ratio = next(self.cycler)
@@ -571,6 +561,7 @@ class OrbitPanel(BaseWidget):
         self.resonance_mode = True
         self.resonances_button.set_anchor(anchor)
         self.recomendation.set_resonance_text(step=1)
+        self.recomendation.update()
 
     def unset_resonance_mode(self):
         """Unsets the resonance mode. New positions will be random."""
@@ -721,6 +712,7 @@ class OrbitType(BaseWidget, Intertwined):
             self.parent.recomendation.hide()
         self.locked = True
         self.has_values = True
+        self.linked_marker.completed = True
 
     def clear(self):
         self.parent.image.fill(COLOR_BOX, [0, 21 * 2 - 1, self.parent.rect.w, 21])
@@ -759,6 +751,8 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
     locked = False
     orbit = None
 
+    completed = False
+
     def __init__(self, parent, astro, star, value, is_complete_orbit=None, is_resonance=False, res=None):
         super().__init__(parent)
         self.f1 = self.crear_fuente(16)
@@ -775,6 +769,7 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
             self.orbit = value
             self.text = '{:~}'.format(value.a)
             self.color = COLOR_SELECTED
+            self.completed = True
         elif is_complete_orbit is None:
             self.color = COLOR_TEXTO
             self.text = '{:~}'.format(value)
@@ -806,15 +801,17 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
         pressed = pyg_key.get_pressed()
         ctrl_pressed = pressed[K_RCTRL] or pressed[K_LCTRL]
         if event.button == 1:
+            self.parent.sort_markers()
             if ctrl_pressed:
                 self.parent.set_resonance_mode(self.linked_astrobody)
             else:
                 self.parent.unset_resonance_mode()
 
-            if not self.locked:
+            if not self.locked and not self.completed:
                 self.parent.anchor_maker(self)
-                if self.parent.resonance_mode is False:
-                    self.parent.recomendation.update_suggestion(self, self.linked_astrobody, self.orbit)
+                self.parent.recomendation.update_suggestion(self, self.linked_astrobody, self.orbit)
+            else:
+                self.parent.recomendation.hide()
 
         elif event.button == 3:
             self.parent.delete_marker(self)
@@ -913,7 +910,7 @@ class OrbitButton(Meta, Intertwined):
 class RoguePlanet(ColoredBody):
     # "rogue" because it doesn't have an orbit yet
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.parent.parent.visible_markers:
+        if event.button == 1 and self.parent.parent.visible_markers and self.enabled:
             self.enabled = False
             if self.parent.parent.resonance_mode is False:
                 self.parent.parent.link_astrobody_to_stellar_orbit(self.object_data)
@@ -947,7 +944,7 @@ class SetOrbitButton(TextButton):
         self.disable()
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled and not self.locked:
+        if event.button == 1 and self.enabled:
             if self.linked_marker.orbit.stable:
                 self.parent.recomendation.notify()
                 self.parent.develop_orbit(self.linked_marker)
@@ -1049,12 +1046,6 @@ class RatioDigit(BaseWidget):
             elif tecla.tipo == 'BackSpace':
                 self.value = self.value[0:-1]
 
-    def on_mousebuttondown(self, event):
-        if event.button == 1:
-            self.select()
-            self.parent.set_current_digit(self)
-            return self
-
     def deselect(self):
         self.selected = False
         self.image.fill((0, 0, 0))
@@ -1134,15 +1125,18 @@ class Recomendation(BaseWidget):
         else:
             txt = ' ' if all([v_left_in, v_left_out, v_right_in, v_right_out, v_in, v_out]) else 'n un'
 
-        adverb = ' T'
         if len(txt) > 1:
             adverb = ' However, t'
             if type(self.format) is dict:
                 if not self.format.get('eccentric', False):
                     # Eccentric Jupiters can orbit anywhere in the system, so their orbits are valid by definition.
                     marker.orbit.stable = False
-        else:
+        elif not marker.orbit.stability_overriten:
             marker.orbit.stable = True
+            adverb = ' T'
+        else:
+            adverb = ' However, t'
+            txt = 'n un'
 
         message = f'{adverb}his is a{txt}stable orbit.'
         if type(self.format) is str:
@@ -1159,11 +1153,11 @@ class Recomendation(BaseWidget):
         else:
             self.format = None
 
-        data = None
+        data = {'extra': ''}
         planets_in_system = len(Systems.get_current().planets)
         e = round(0.584 * pow(planets_in_system, -1.2), 3) if planets_in_system > 1 else None
         if planet.habitable and orbit.temperature == 'habitable':
-            data = self.recomendation['habitable'].copy()
+            data.update(self.recomendation['habitable'].copy())
             if hasattr(star, 'habitable_orbit'):
                 # though this may never come into play.
                 if orbit.a.m <= star.habitable_orbit:
@@ -1172,23 +1166,31 @@ class Recomendation(BaseWidget):
                 data.update({'e': e})
 
         elif planet.clase == 'Terrestial Planet':
-            data = self.recomendation['inner'].copy()
+            data.update(self.recomendation['inner'].copy())
             if e is not None and e <= 0.2:
                 data.update({'e': e})
 
         elif planet.clase == 'Dwarf Planet' or planet.celestial_type == 'asteroid':
             gas_giants = [pln for pln in Systems.get_current().astro_bodies if
                           pln.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant')]
+            terrestial_planets = [pln for pln in Systems.get_current().astro_bodies if pln.clase == 'Terrestial']
             gas_giants.sort(key=lambda g: g.orbit.a.m, reverse=True)
-            lim_min = 0
+            terrestial_planets.sort(key=lambda g: g.orbit.a.m, reverse=True)
+            lim_min, lim_max = 0, orbit.a.m + 10
+            lim_terra = 0
             if len(gas_giants):
                 last_gas_giant = gas_giants[0]
+                first_gas_giant = gas_giants[-1]
                 lim_min = last_gas_giant.orbit.a.m
+                lim_max = first_gas_giant.orbit.a.m
+            if len(terrestial_planets):
+                last_terrestial = terrestial_planets[0]
+                lim_terra = last_terrestial.orbit.a.m
 
             if lim_min <= orbit.a.m < star.outer_boundry.m:
                 data = self.recomendation['texts']['tno']
-            else:
-                pass
+            elif lim_terra <= orbit.a.m < lim_max:
+                data = self.recomendation['texts']['belt']
 
         elif planet.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant', 'Gas Dwarf'):
             data = self.recomendation['giant'].copy()
@@ -1244,18 +1246,40 @@ class Recomendation(BaseWidget):
             data.update({'planet_type': 'Puffy Giant'})
             return data
 
-        clase = planet.clase == 'Super Jupiter'
-        orbita = 0.04 <= orbit.a.m <= 1.2 + frost_line
-        if all([clase, orbita]) is True:
-            # this is more of a warning than a suggestion, since a super jupiter
-            # can't be placed too far away from the star, and there is no special
-            # consideration about it's eccentricity or inclination.
-            return self.recomendation['giant'].copy()
-        # elif clase:  # Is the planet still a Super Jupiter?
-        #     raise AssertionError("A super jupiter can't orbit so far away from it's star.")
-        #     # needs an "undo" after this.
+        orbita = 0.04 < orbit.a.m <= 1.2 + frost_line
+        if planet.clase == 'Super Jupiter':
+            data = self.recomendation['giant'].copy()
+            data.update({'extra': ''})
+            if not orbita:
+                txt = "\n\nSuper Jupiters must orbit between 0.04 AU and 1.2 AU away from the frost line."
+                txt += " Please put your planet in that zone."
+                data.update({'extra': txt})
+                data.update({'planet_type': planet.clase})
+                orbit.stable = False
+                orbit.stability_overriten = True
+            else:
+                orbit.stability_overriten = False
+                if orbit.a.m < frost_line:
+                    orbit.migrated = True
+            return data
 
-        if planet.clase in ('Gas Dwarf', 'Gas Giant'):
+        if planet.clase == 'Gas Dwarf':
+            orbita = 1.2 + frost_line <= orbit.a.m <= star.outer_boundry.m
+            data = self.recomendation['giant'].copy()
+            data['extra'] = ''
+            if not orbita:
+                txt = "\n\n"
+                txt += "Gas Dwarves must orbit between 1.2 AU from the frost line and the outer boundary of the system."
+                txt += " Please put your planet in that zone. For extra added realism stick to a very distant orbit."
+                data.update({'extra': txt})
+                data.update({'planet_type': planet.clase})
+                orbit.stable = False
+                orbit.stability_overriten = True
+            else:
+                orbit.stability_overriten = False
+            return data
+
+        if planet.clase == 'Gas Giant':
             orbita = frost_line + 1 <= orbit.a.m <= frost_line + 1.2 or orbit.a.m >= frost_line + 1.2
             gas_giants = [pln for pln in Systems.get_current().astro_bodies if
                           pln.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant')]
@@ -1272,12 +1296,16 @@ class Recomendation(BaseWidget):
                 txt += f" Currently, its orbit is {distance} AU away from the frost line."
                 data.update({'extra': txt})
                 data.update({'planet_type': planet.clase})
-            # return data
+                if not frost_line + 1 <= orbit.a.m <= frost_line + 1.2:
+                    orbit.stable = False
+                    orbit.stability_overriten = True
+                else:
+                    orbit.stability_overriten = False
+
             elif not orbita:
                 data.update({'extra': ''})
                 clase = planet.clase == 'Gas Giant'
                 habitable = any([i.habitable for i in Systems.get_current().planets])
-                # data = self.recomendation['giant'].copy()
                 data.update({'eccentric': True, 'planet_type': 'Eccentric Jupiter', 'orbit': ''})
                 if all([clase, habitable]) is True and eccentricity is None:
                     data.update(**self.recomendation['eccentric_2'].copy())
@@ -1285,7 +1313,7 @@ class Recomendation(BaseWidget):
                     data.update(**self.recomendation['eccentric_1'].copy())
                 else:
                     data.update({'e': eccentricity})
-        return data
+            return data
 
     def create_suggestion(self, planet, temperature):
         if not type(self.format) is str:
@@ -1307,36 +1335,42 @@ class Recomendation(BaseWidget):
         else:
             return self.format
 
+    def adjust_size(self):
+        if self.rendered_rect.size != self.rendered_text.get_rect().size:
+            self.rendered_rect.size = self.rendered_text.get_rect().size
+            self.rendered_rect.y = 17
+
     def show_suggestion(self, planet, temp):
         text = self.create_suggestion(planet, temp)
         self.rendered_text = render_textrect(text, self.f2, self.rect.w, COLOR_TEXTO, COLOR_DARK_AREA)
-        self.rendered_rect.size = self.rendered_text.get_rect().size
+        self.adjust_size()
+        self.show()
 
     def show_resonance_text(self):
         text = self.resonance_text
         self.rendered_text = render_textrect(text, self.f2, self.rect.w, COLOR_TEXTO, COLOR_DARK_AREA)
-        self.rendered_rect.size = self.rendered_text.get_rect().size
+        self.adjust_size()
+        self.show()
 
     def on_mousebuttondown(self, event):
         if event.button == 4:
             if self.rendered_rect.top + 12 <= 17:
                 self.rendered_rect.move_ip(0, +12)
         elif event.button == 5:
-            if self.rendered_rect.bottom - 12 >= self.rect.h:
+            if self.rendered_rect.bottom - 6 >= self.rect.h - 3:
                 self.rendered_rect.move_ip(0, -12)
 
-    def update_suggestion(self, marker=None, astro_body=None, astro_orbit=None):
+    def update_suggestion(self, marker, astro_body, astro_orbit):
         if not self.notified:
             self.tense = 'seem to be building'
-        self._marker = marker if marker is not None else self._marker
-        self._astro = astro_body if astro_body is not None else self._astro
-        self._orbit = astro_orbit if astro_orbit is not None else self._orbit
-        self.suggest(self._astro, self._orbit, Systems.get_current_star())
-        self.analyze_orbits(self._marker)
-        if self._astro.clase == 'Dwarf Planet' or self._astro.celestial_type == 'asteroid':
-            self.append_subclases(self._orbit, Systems.get_current_star())
-        self.show_suggestion(self._astro, self._orbit.temperature)
-        self.show()
+        self._marker = marker
+        self._astro = astro_body
+        self._orbit = astro_orbit
+        self.suggest(astro_body, astro_orbit, Systems.get_current_star())
+        self.analyze_orbits(marker)
+        if astro_body.clase == 'Dwarf Planet' or astro_body.celestial_type == 'asteroid':
+            self.append_subclases(astro_orbit, Systems.get_current_star())
+        self.show_suggestion(astro_body, astro_orbit.temperature)
 
     def notify(self):
         self.notified = True
@@ -1362,6 +1396,8 @@ class Recomendation(BaseWidget):
         elif step == 2:
             self.resonance_text = "Resonance mode is enabled. Set the resonance's ratio and press the button."
             self.show_resonance_text()
+            self.parent.digit_x.select()
+            WidgetHandler.set_origin(self.parent.digit_x)
         elif step == 3:
             self.resonance_text = f'\n\n{obj} is in a {ratio} Mean Motion Resonance with {anchor}.'
 

@@ -14,7 +14,9 @@ class RawOrbit:
     resonant = False
     id = None
 
-    stable = True
+    stable = False
+
+    stability_overriten = False
 
     def __init__(self, star, a):
         self._unit = a.u
@@ -73,7 +75,9 @@ class PseudoOrbit:
     _period = 0
     resonant = False
 
-    stable = True
+    stable = False
+
+    stability_overriten = False
 
     def __init__(self, orbit):
         self.semi_major_axis = orbit.semi_major_axis
@@ -125,7 +129,10 @@ class Orbit(Flagable, Ellipse):
     resonance = None
     resonant_order = ''
 
-    stable = True
+    stable = False
+
+    stability_overriten = False
+    migrated = False
 
     def __init__(self, a, e, i, unit):
         super().__init__(a, e)

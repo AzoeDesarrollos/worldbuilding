@@ -135,6 +135,8 @@ class PlanetPanel(BasePanel):
             item.show()
         if self.last_idx is not None:
             self.show_current(self.last_idx)
+        for button in self.planet_buttons.widgets():
+            button.enable()
 
     def hide(self):
         super().hide()
@@ -205,6 +207,7 @@ class PlanetType(ObjectType):
                 planet_data = event.data['Planets'][id]
                 planet_data['id'] = id
                 planet = Planet(planet_data)
+                planet.idx = len([i for i in Systems.get_current().planets if i.clase == planet.clase])
                 if planet not in self.parent.planets:
                     btn = self.create_button(planet)
                     if planet.composition is not None:
@@ -432,6 +435,7 @@ class CreatedPlanet(ColoredBody):
         if event.button == 1 and self.enabled:
             self.parent.set_planet(self.object_data)
             self.parent.parent.select_one(self)
+        return self
 
     def update(self):
         super().update()

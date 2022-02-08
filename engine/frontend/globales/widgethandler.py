@@ -39,7 +39,8 @@ class WidgetHandler:
 
     @classmethod
     def set_origin(cls, widget):
-        cls.origin = widget
+        if widget is not None:
+            cls.origin = widget
 
     @classmethod
     def update(cls):
@@ -77,7 +78,7 @@ class WidgetHandler:
                 widgets = [i for i in cls.contents.sprites() if i.rect.collidepoint(e.pos)]
                 widgets.sort(key=lambda o: o.layer, reverse=True)
                 if not cls.locked or widgets[0] is cls.the_one:
-                    cls.origin = widgets[0].on_mousebuttondown(e)
+                    cls.set_origin(widgets[0].on_mousebuttondown(e))
                 else:
                     cls.the_one.blink()
 
