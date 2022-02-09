@@ -578,6 +578,10 @@ class OrbitPanel(BaseWidget):
         self.digit_x.clear()
         self.digit_y.clear()
 
+    def reset_offset(self):
+        self.offset = 0
+        self.sort_markers()
+
 
 class Intertwined:
     linked_type = None
@@ -1403,3 +1407,14 @@ class Recomendation(BaseWidget):
 
     def unset_resonance_text(self):
         self.resonance_text = ''
+
+    def hide(self):
+        super().hide()
+        self.parent.area_markers.h += self.rect.h
+        self.parent.reset_offset()
+
+    def show(self):
+        super().show()
+        if self.parent.area_markers.colliderect(self.rect):
+            self.parent.area_markers.h -= self.rect.h
+            self.parent.sort_markers()
