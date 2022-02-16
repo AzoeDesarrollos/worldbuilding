@@ -349,6 +349,11 @@ class PlanetaryOrbitPanel(BaseWidget):
         obj_marker.set_min_value(min_value)
         self._markers[planet.id].append(obj_marker)
 
+    def remove_marker(self, marker):
+        self.markers.remove(marker)
+        marker.unlink()
+        marker.kill()
+
     def hide_markers(self):
         for marker in self.markers:
             marker.hide()
@@ -598,15 +603,32 @@ class Marker(Meta, IncrementalValue):
             tc = "A satellite cannot orbit below it's main body's Roche's limit."
             test_a = self.value.m + self.increment > self.min_value
             test_b = self.value.m + self.increment < self.max_value
+            test_c = self.it_may_be_a_ring(self.obj)
             if self.obj.celestial_type == 'satellite':
                 assert test_b, ta
-            assert test_a, tc
             assert test_b, tb
+            if not test_a:
+                if not test_c:
+                    raise AssertionError(tc)
+                else:
+                    self.parent.current.create_ring(self.obj)
+                    self.parent.remove_marker(self)
+                    self.parent.sort_markers()
+                    raise AssertionError(f'The asteroid {str(self.obj)} has been turned into a ring')
 
             self.value += q(self.increment, self.value.u)
             self.linked_button.update_text(self.value)
             self.increment = 0
             self.parent.sort_markers()
+
+    def it_may_be_a_ring(self, obj):
+        it_may = obj.celestial_type == 'asteroid'
+        if self.parent.current.orbit.a.m < Systems.get_current().star.frost_line.m:
+            it_may = it_may and obj.comp != 'Icy'
+        else:
+            it_may = it_may and obj.comp == 'Icy'
+
+        return it_may
 
     def set_value(self, new_value):
         self.value = q(new_value.m, self.value.u)
@@ -624,6 +646,10 @@ class Marker(Meta, IncrementalValue):
     def links(self, orbit, obj):
         self.orbit = orbit
         self.obj = obj
+
+    def unlink(self):
+        self.orbit = None
+        self.obj = None
 
     def __repr__(self):
         return self.name + ' Marker'

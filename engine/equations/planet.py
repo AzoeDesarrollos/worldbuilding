@@ -3,7 +3,7 @@ from engine import molecular_weight, q, albedos
 from .orbit import PlanetOrbit, SatelliteOrbit
 from engine.backend.util import generate_id
 from .lagrange import get_lagrange_points
-from math import sqrt, pi, pow, tan
+from math import sqrt, pi, pow, sin, cos
 from pygame import Color
 
 
@@ -37,6 +37,9 @@ class Planet(BodyInHydrostaticEquilibrium):
     radio_circulo_precession = 0
 
     sky_color = None
+
+    ring = None
+    has_ring = False
 
     def __init__(self, data):
         mass = data.get('mass', False)
@@ -96,7 +99,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.albedo = q(data['albedo'])
         self.clase = data['clase'] if 'clase' in data else self.set_class(self.mass, self.radius)
         self.relative_size = 'Dwarf' if 'Dwarf' in self.clase else 'Giant' if 'Giant' in self.clase else 'Medium'
-        self.tilt = data['tilt'] if 'tilt' in data else 0
+        self.tilt = data['tilt'] if 'tilt' in data else 'Not set'
 
         self.satellites = []
 
@@ -111,12 +114,13 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     @tilt.setter
     def tilt(self, value):
-        if 0 <= value < 90:
-            self.spin = 'prograde'
-        elif 90 <= value <= 180:
-            self.spin = 'retrograde'
-        self._tilt = q(value, 'degree')
-        self.habitable = self.set_habitability()
+        if type(value) is int:
+            self._tilt = AxialTilt(self, value)
+        else:
+            self._tilt = value
+
+    def set_spin(self, spin):
+        self.spin = spin
 
     @property
     def greenhouse(self):
@@ -135,7 +139,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.circumference = self.calculate_circumference(self.radius.to('kilometers'))
         self.escape_velocity = q(sqrt(self.mass.m / self.radius.m), unit + '_escape_velocity')
 
-    def set_habitability(self):
+    def set_habitability(self, tilt):
         mass = self.mass
         radius = self.radius
         gravity = self.gravity
@@ -143,9 +147,9 @@ class Planet(BodyInHydrostaticEquilibrium):
         habitable = q(0.1, 'earth_mass') < mass < q(3.5, 'earth_mass')
         habitable = habitable and q(0.5, 'earth_radius') < radius < q(1.5, 'earth_radius')
         habitable = habitable and q(0.4, 'earth_gravity') < gravity < q(1.6, 'earth_gravity')
-        habitable = habitable and (0 <= self.tilt <= 80 or 110 <= self.tilt <= 180)
+        habitable = habitable and (0 <= tilt.a.m <= 80 or 110 <= tilt.a.m <= 180)
 
-        return habitable
+        self.habitable = habitable
 
     def set_temperature(self, star_mass, semi_major_axis):
         t = planet_temperature(star_mass, semi_major_axis, self.albedo.m, self.greenhouse.m)
@@ -209,11 +213,6 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.roches_limit = roches
         return self.roches_limit
 
-    def set_precession_cycle(self):
-        tilt = self.tilt
-        self.duracion_ciclo_precession = q(-7.095217823187172 * pow(tilt, 2) + 1277.139208333333 * tilt, 'years')
-        self.radio_circulo_precession = tan(tilt) * self.radius.to('km')
-
     def create_ring(self, asteroid):
         mass = asteroid.mass.to('ring_mass').m
         density = asteroid.density.to('earth_density').m
@@ -230,7 +229,8 @@ class Planet(BodyInHydrostaticEquilibrium):
 
         thickness = q(4 / 3 * (pow(ra, 3) / (pow(ro, 2) - pow(ri, 2))), 'km').to('m')
 
-        return Ring(self, inner_limit, outer_limit, wideness, thickness)
+        self.ring = Ring(self, inner_limit, outer_limit, wideness, thickness)
+        self.has_ring = True
 
     @staticmethod
     def set_sky_color(star):
@@ -393,7 +393,7 @@ class Planet(BodyInHydrostaticEquilibrium):
             aop = orbit.argument_of_periapsis
 
             self.set_qs(self.unit)
-            self.set_habitability()
+            self.set_habitability(self.tilt)
             self.set_orbit(star, [a, e, i, loan, aop])
 
     def __eq__(self, other):
@@ -495,3 +495,50 @@ def albedo_by_lat(material: str, lat: float) -> float:
     n = y1 - m * dx
 
     return round(m * lat + n, 2)
+
+
+class AxialTilt:
+    _value = 0
+    _cycle = 0
+    x, y = 0, 0
+
+    def __init__(self, parent, inclination):
+        self.parent = parent
+        if 0 <= inclination < 90:
+            self.parent.set_spin('pograde')
+        elif 90 <= inclination <= 180:
+            self.parent.set_spin('retrograde')
+        self._value = inclination
+        self.parent.set_habitability(self)
+        self.x = inclination
+        self._cycle = -7.095217823187172 * pow(self._value, 2) + 1277.139208333333 * self._value
+
+    @property
+    def a(self):
+        # to be able to write tilt.a.m as with orbits
+        return q(self._value, 'degree')
+
+    @property
+    def u(self):
+        return 'degree'
+
+    @property
+    def m(self):
+        return self._value
+
+    @property
+    def cycle_lenght(self):
+        return q(round(self._cycle, 3), 'years')
+
+    def precess(self, year):
+        t = self._value
+        c = self._cycle
+        b = (2 * pi) / c
+        self.x = round(t * cos(year * b), 3)
+        self.y = round(t * sin(year * b), 3)
+
+    def __int__(self):
+        return self._value
+
+    def update(self, year):
+        self.precess(year)
