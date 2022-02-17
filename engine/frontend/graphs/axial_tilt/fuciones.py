@@ -44,6 +44,6 @@ def lines(tilt):
 
 
 def set_xy(rect, angle: int):
-    x = round(rect.centerx + rect.w // 2 * sin(radians(angle-90)))
+    x = round(rect.centerx + rect.w // 2 * sin(radians(angle+90)))
     y = round(rect.centery + rect.h // 2 * cos(radians(angle+90)))
     return x, y
