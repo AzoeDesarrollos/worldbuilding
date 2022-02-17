@@ -291,6 +291,13 @@ class PlanetaryOrbitPanel(BaseWidget):
             self.markers.append(x)
         self.properties.add(x, layer=3)
 
+    def create_ring_markers(self, ring):
+        x = Marker(self, "Ring's inner edge", ring.inner.to('earth_radius'), lock=True)
+        y = Marker(self, "Ring's outer edge", ring.outer.to('earth_radius'), lock=True)
+        for z in [x, y]:
+            self.markers.append(z)
+            self.properties.add(z, layer=3)
+
     def add_new(self, obj):
         if obj not in self.added:
             self.added.append(obj)
@@ -541,6 +548,8 @@ class Marker(Meta, IncrementalValue):
 
     linked_button = None
 
+    warned = False
+
     def __init__(self, parent, name, value, color=None, lock=True):
         super().__init__(parent)
         self.f1 = self.crear_fuente(16)
@@ -601,6 +610,8 @@ class Marker(Meta, IncrementalValue):
 
             tb = "A satellite cannot orbit beyond it's main body's Hill Sphere."
             tc = "A satellite cannot orbit below it's main body's Roche's limit."
+            td = f"If the asteroid {str(self.obj)} passes trough the planet's Roche's limit, it will be turned into" \
+                 f" a ring.\n\nYou have been warned."
             test_a = self.value.m + self.increment > self.min_value
             test_b = self.value.m + self.increment < self.max_value
             test_c = self.it_may_be_a_ring(self.obj)
@@ -610,11 +621,16 @@ class Marker(Meta, IncrementalValue):
             if not test_a:
                 if not test_c:
                     raise AssertionError(tc)
+                elif not self.warned:
+                    self.warned = True
+                    raise AssertionError(td)
                 else:
-                    self.parent.current.create_ring(self.obj)
+                    name = str(self.obj)
+                    ring = self.parent.current.set_ring(self.obj)
                     self.parent.remove_marker(self)
+                    self.parent.create_ring_markers(ring)
                     self.parent.sort_markers()
-                    raise AssertionError(f'The asteroid {str(self.obj)} has been turned into a ring')
+                    raise AssertionError(f'The asteroid {name} has been turned into a ring')
 
             self.value += q(self.increment, self.value.u)
             self.linked_button.update_text(self.value)

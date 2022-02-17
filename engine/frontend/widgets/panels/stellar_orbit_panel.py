@@ -85,9 +85,9 @@ class OrbitPanel(BaseWidget):
         EventHandler.register(self.load_orbits, 'LoadData')
 
     def set_current(self):
-        self.toggle_current_markers_and_buttons(False)
         star = Systems.get_current_star()
         self.current = star
+        self.last_idx = self.current.id
         self.orbits: list = self._orbits[star.id]
         self.markers = self._markers[star.id]
         self.buttons = self._buttons[star.id]
@@ -96,10 +96,7 @@ class OrbitPanel(BaseWidget):
                 self.depopulate()
             if not len(self.markers) or not self.markers[0].locked:
                 self.populate()
-            self.toggle_current_markers_and_buttons(True)
             self.sort_buttons()
-            self.visible_markers = False
-            self.toggle_stellar_orbits()
 
     def populate(self):
         star = self.current
@@ -139,14 +136,6 @@ class OrbitPanel(BaseWidget):
             self._markers[star.id].remove(each)
             self.properties.remove(each)
             each.kill()
-
-    def toggle_current_markers_and_buttons(self, toggle: bool):
-        if self.markers is not None:
-            for marker in self.markers:
-                marker.toggle(toggle)
-        if self.buttons is not None:
-            for button in self.buttons:
-                button.toggle(toggle)
 
     def add_orbit_marker(self, position, resonance=False, res_parent=None, res_order=None, obj=None):
         star = self.current if not hasattr(position, 'star') else position.star
@@ -207,10 +196,11 @@ class OrbitPanel(BaseWidget):
         self.markers.sort(key=lambda m: m.value)
         for i, marker in enumerate(self.markers, start=1):
             marker.rect.y = i * 2 * 10 + 16 + self.offset
-            if not self.area_markers.contains(marker.rect):
-                marker.hide()
-            else:
-                marker.show()
+            if self.visible_markers:
+                if not self.area_markers.contains(marker.rect):
+                    marker.hide()
+                else:
+                    marker.show()
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y
@@ -535,7 +525,7 @@ class OrbitPanel(BaseWidget):
             self.last_idx = idx
 
         if not self.no_star_error:
-            self.image.fill(COLOR_BOX, self.area_markers)
+            # self.image.fill(COLOR_BOX, self.area_markers)
             self.image.fill(COLOR_AREA, self.area_buttons)
         else:
             self.show_no_system_error()

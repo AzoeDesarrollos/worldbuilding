@@ -17,7 +17,6 @@ from ..pie import PieChart
 class AsteroidPanel(BasePanel):
     curr_x = 0
     curr_y = 0
-    mass_number = None
     last_idx = None
 
     def __init__(self, parent):
@@ -42,6 +41,7 @@ class AsteroidPanel(BasePanel):
         self.properties.add(self.button_add, self.button_del, self.copy_button, layer=1)
         self.asteroids = Group()
         self.moons = []
+        self.properties.add(ShownMass(self), layer=1)
         EventHandler.register(self.load_satellites, 'LoadData')
         EventHandler.register(self.save_satellites, 'Save')
         EventHandler.register(self.name_current, 'NameObject')
@@ -135,8 +135,6 @@ class AsteroidPanel(BasePanel):
 
     def show(self):
         super().show()
-        if self.mass_number is None:
-            self.properties.add(ShownMass(self))
         for pr in self.properties.get_widgets_from_layer(1):
             pr.show()
         for pr in self.properties.get_widgets_from_layer(Systems.get_current_id(self)):
@@ -286,7 +284,7 @@ class AsteroidType(BaseWidget):
         super().enable()
 
     def disable(self):
-        for arg in self.properties:
+        for arg in self.properties.widgets():
             arg.disable()
         for obj in self.pie.chart.widgets():
             obj.disable()

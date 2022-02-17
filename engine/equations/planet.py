@@ -1,6 +1,6 @@
-from .general import BodyInHydrostaticEquilibrium, Ring
+from .orbit import PlanetOrbit, SatelliteOrbit, from_satellite_resonance
+from .general import BodyInHydrostaticEquilibrium
 from engine import molecular_weight, q, albedos
-from .orbit import PlanetOrbit, SatelliteOrbit
 from engine.backend.util import generate_id
 from .lagrange import get_lagrange_points
 from math import sqrt, pi, pow, sin, cos
@@ -213,24 +213,10 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.roches_limit = roches
         return self.roches_limit
 
-    def create_ring(self, asteroid):
-        mass = asteroid.mass.to('ring_mass').m
-        density = asteroid.density.to('earth_density').m
-        vol = mass / density
-
-        outer_limit = self.roches_limit.to('km')
-        inner_limit = q(self._radius + 10000, 'km')
-        # "10K" debería ser seteado por el Atmosphere Panel, porque es el fin de la atmósfera.
-        wideness = outer_limit - inner_limit
-
-        ro = outer_limit.to('earth_radius').m
-        ri = inner_limit.to('earth_radius').m
-        ra = pow((vol / (4 / 3 * pi)), 3)
-
-        thickness = q(4 / 3 * (pow(ra, 3) / (pow(ro, 2) - pow(ri, 2))), 'km').to('m')
-
-        self.ring = Ring(self, inner_limit, outer_limit, wideness, thickness)
+    def set_ring(self, asteroid):
+        self.ring = Ring(self, asteroid)
         self.has_ring = True
+        return self.ring
 
     @staticmethod
     def set_sky_color(star):
@@ -542,3 +528,51 @@ class AxialTilt:
 
     def update(self, year):
         self.precess(year)
+
+
+class Ring:
+    inner = 0
+    outer = 0
+    wideness = 0
+    thickness = 0
+
+    gaps = None
+
+    def __init__(self, planet, asteroid):
+        self.parent = planet
+        self.create(asteroid)
+
+        self.gaps = []
+        self.find_gaps()
+
+    def create(self, asteroid):
+        mass = asteroid.mass.to('ring_mass').m
+        density = asteroid.density.to('earth_density').m
+        vol = mass / density
+
+        inner_limit = q(self.parent.radius.m + 10000, 'km')
+        # "10K" debería ser seteado por el Atmosphere Panel, porque es el fin de la atmósfera.
+        outer_limit = self.parent.roches_limit.to('km') - q(1, 'mm')
+        # we subtract 1mm to place the outer edge just before the planet's Roche's limit.
+
+        ro = outer_limit.to('earth_radius').m
+        ri = inner_limit.to('earth_radius').m
+        ra = pow((vol / (4 / 3 * pi)), 3)
+
+        self.wideness = outer_limit - inner_limit
+        self.thickness = q(4 / 3 * (pow(ra, 3) / (pow(ro, 2) - pow(ri, 2))), 'km').to('m')
+        self.inner = inner_limit
+        self.outer = outer_limit
+
+    def find_gaps(self):
+        resonances = [':'.join([str(y), str(x)]) for x in range(1, 20) for y in reversed(range(1, 20))]
+        semi_major_axes = []
+        for satellite in self.parent.satellites:
+            for resonance in resonances:
+                sma = from_satellite_resonance(satellite, resonance)
+                semi_major_axes.append(sma)
+
+        semi_major_axes.sort(key=lambda o: o.m)
+        for i in semi_major_axes:
+            if self.inner.m <= i.to('km').m <= self.outer.m:
+                self.gaps.append(i)

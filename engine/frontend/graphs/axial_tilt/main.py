@@ -1,7 +1,7 @@
 from pygame import KEYDOWN, K_UP, K_DOWN, QUIT, K_ESCAPE, K_SPACE, K_RETURN, KEYUP
 from pygame import draw, font, display, event, quit, init, Surface, time
 from engine.frontend.globales import ANCHO, ALTO
-from .fuciones import set_xy
+from .fuciones import set_xy, interpolate
 from .constantes import *
 from sys import exit
 
@@ -74,6 +74,15 @@ def axial_loop():
         x1, y1 = set_xy(planet.inflate(75, 75), tilt - 90)
         x2, y2 = set_xy(planet.inflate(75, 75), tilt + 90)
         draw.line(frame, negro, [x1, y1], [x2, y2], width=1)  # axial tilt line
+
+        x1, y1 = set_xy(planet, tilt - 180)
+        x2, y2 = set_xy(planet, tilt)
+        draw.line(frame, 'red', [x1, y1], [x2, y2], width=1)  # equator
+
+        north_tropic = interpolate(tilt, planet.h)
+        x1, y1 = set_xy(planet, tilt)
+        x2, y2 = set_xy(planet, north_tropic+tilt)
+        draw.line(frame, 'black', [x1, y1], [x2, y2], width=1)  # equator
 
         render_tilt = f.render('tilt: ' + str(round(tilt, 2)), True, negro)
         tilt_rect = render_tilt.get_rect(right=rect.w)

@@ -369,6 +369,13 @@ def from_planetary_resonance(planet, satellite, resonance: str):
     return semi_major_axis.to('earth_radius')
 
 
+def from_satellite_resonance(satellite, resonance: str):
+    x, y = [int(i) for i in resonance.split(':')]
+    period = (x / y) * satellite.orbit.period.to('year').m
+    semi_major_axis = q(pow(pow(period, 2) * satellite.mass.m, (1 / 3)), 'au')
+    return semi_major_axis.to('earth_radius')
+
+
 def set_orbital_properties(inclination):
     if inclination in (0, 180):
         return q(0, 'degree'), 'undefined'
@@ -379,19 +386,26 @@ def set_orbital_properties(inclination):
 
 
 def in_resonance(marker_a, marker_b):
+    starred_markers = [m for m in [marker_a, marker_b] if hasattr(m, 'star')]
+    if not len(starred_markers):
+        raise ValueError("None of the markers are linked to a star to stablish their periods")
+    else:
+        star = starred_markers[0].star
+
     if type(marker_a) is float:
-        period_a = sqrt(pow(marker_a, 3) / marker_a.star.mass.m)
+        period_a = sqrt(pow(marker_a, 3) / star.mass.m)
     elif hasattr(marker_a.orbit, 'period'):
         period_a = marker_a.orbit.period.to('years').m
     else:
-        period_a = sqrt(pow(marker_a.orbit.a.m, 3) / marker_a.star.mass.m)
+        period_a = sqrt(pow(marker_a.orbit.a.m, 3) / star.mass.m)
 
     if type(marker_b) is float:
-        period_b = sqrt(pow(marker_b, 3) / marker_a.star.mass.m)
+        period_b = sqrt(pow(marker_b, 3) / star.mass.m)
     elif hasattr(marker_b.orbit, 'period'):
         period_b = marker_b.orbit.period.to('years').m
     else:
-        period_b = sqrt(pow(marker_b.orbit.a.m, 3) / marker_b.star.mass.m)
+        period_b = sqrt(pow(marker_b.orbit.a.m, 3) / star.mass.m)
+
     r = period_a / period_b if period_a < period_b else period_b / period_a
     ratio = Decimal(r)
     x, y = ratio.as_integer_ratio()

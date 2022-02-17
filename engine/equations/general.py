@@ -99,12 +99,3 @@ class OblateSpheroid(Ellipse, BodyInHydrostaticEquilibrium):
 
     def calculate_volume(self, r):
         return 4 / 3 * pi * (self._a ** 2) * self._b
-
-
-class Ring:
-    def __init__(self, planet, inner, outer, w, h):
-        self.inner = inner
-        self.outer = outer
-        self.wideness = w
-        self.thickness = h
-        self.parent = planet

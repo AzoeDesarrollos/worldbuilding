@@ -1,18 +1,6 @@
 ﻿from pygame import draw, Surface, SRCALPHA
-from math import cos, sin, pi, radians
+from math import cos, sin, radians
 from .constantes import *
-
-
-def axial_precession(year):
-    a1 = 19.87  # minimum axial tilt value
-    a2 = 20.21  # maximum axial tilt value
-    m = 34000  # period of the precession
-
-    # from: https://www.youtube.com/watch?v=a5aAIbTs_Gw
-    b = (a1 + a2) / 2
-    a = a2 - b
-    y = a * cos((2 * pi / m) * year - pi) + b
-    return y
 
 
 def interpolate(x, h):
@@ -56,6 +44,6 @@ def lines(tilt):
 
 
 def set_xy(rect, angle: int):
-    x = round(rect.centerx + rect.w // 2 * cos(radians(angle)))
-    y = round(rect.centery + rect.w // 2 * sin(radians(angle)))
+    x = round(rect.centerx + rect.w // 2 * sin(radians(angle-90)))
+    y = round(rect.centery + rect.h // 2 * cos(radians(angle+90)))
     return x, y

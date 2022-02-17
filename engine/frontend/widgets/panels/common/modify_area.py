@@ -5,6 +5,7 @@ from pygame import Surface, mouse
 class ModifyArea(BaseWidget):
     marker = None
     visible_markers = False
+    ready = False
 
     def __init__(self, parent, x, y):
         super().__init__(parent)
@@ -13,7 +14,7 @@ class ModifyArea(BaseWidget):
         self.rect = self.image.get_rect(topleft=(x, y))
 
     def on_mousebuttondown(self, event):
-        if event.button in (4, 5):
+        if event.button in (4, 5) and self.ready:
             mouse.set_pos(self.rect.center)
         delta = 0
         if event.button == 4:
@@ -27,10 +28,12 @@ class ModifyArea(BaseWidget):
     def link(self, marker):
         self.marker = marker
         self.color_ready()
+        self.ready = True
 
     def unlink(self):
         self.marker = None
         self.color_standby()
+        self.ready = False
 
     def color_ready(self):
         self.image.fill((0, 255, 0), (1, 1, 30, 18))
