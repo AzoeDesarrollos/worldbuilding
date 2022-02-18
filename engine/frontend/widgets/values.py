@@ -138,6 +138,7 @@ class ValueText(BaseWidget):
                     self.parent.check_values(data.get('composition', None))
 
                 elif self.text == 'Axial tilt':
+
                     data = axial_loop()
                     self.parent.update_value(self, data)
 
