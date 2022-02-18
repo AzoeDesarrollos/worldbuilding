@@ -10,6 +10,30 @@ fps = time.Clock()
 display.set_caption('Worldbuilding')
 
 
+def hemiphere_note(angle: int):
+    real = angle
+    hemisphere = ''
+
+    if 0 < angle <= 90:
+        real = angle
+        hemisphere = 'N'
+    elif 90 < angle < 180:
+        real = 90 + (90 - angle)
+        hemisphere = 'S'
+    # elif 180 <= angle < 270:
+    #     real = abs(angle - 180)+90
+    #     hemisphere = 'N'
+    #     if real == 0:
+    #         hemisphere = ''
+    # elif 270 <= angle <= 360:
+    #     real = 90 - abs(angle - 270)
+    #     hemisphere = 'S'
+    #     if real == 0:
+    #         hemisphere = ''
+
+    return real, hemisphere
+
+
 def axial_loop():
     screen = display.set_mode((ANCHO, ALTO))
     frame = Surface(screen.get_size())
@@ -80,9 +104,14 @@ def axial_loop():
         equator = [tilt, tilt + 180]
         x1, y1 = set_xy(planet, equator[0])
         x2, y2 = set_xy(planet, equator[1])
+        x3, y3 = set_xy(planet.inflate(10, 10), equator[0])
+        x4, y4 = set_xy(planet.inflate(10, 10), equator[1])
         draw.line(frame, 'red', [x1, y1], [x2, y2], width=1)  # equator
-        render = f2.render(" "+str(0)+"°", 1, 'red')
-        frame.blit(render, [x1, y1])
+        render = f2.render(" " + str(0) + "°", 1, 'red')
+        render_rect = render.get_rect(center=[x3, y3])
+        frame.blit(render, render_rect)
+        render_rect = render.get_rect(center=[x4, y4])
+        frame.blit(render, render_rect)
 
         north_tropic = equator.copy()
         north_tropic[0] += tilt
@@ -90,8 +119,9 @@ def axial_loop():
         x1, y1 = set_xy(planet, north_tropic[0])
         x2, y2 = set_xy(planet, north_tropic[1])
         draw.line(frame, 'orange', [x1, y1], [x2, y2], width=1)  # tropic
-        render = f2.render(str(north_tropic[0]-tilt)+"° N", 1, 'black')
-        frame.blit(render, [x1, y1])
+        # tropic_north, hemisphere = hemiphere_note(tilt)
+        # render = f2.render(str(tropic_north) + f"° {hemisphere}", 1, 'black')
+        # frame.blit(render, [x1, y1])
 
         south_tropic = equator.copy()
         south_tropic[0] = 0
@@ -99,26 +129,28 @@ def axial_loop():
         x1, y1 = set_xy(planet, south_tropic[0])
         x2, y2 = set_xy(planet, south_tropic[1])
         draw.line(frame, 'orange', [x1, y1], [x2, y2], width=1)  # tropic
-        render = f2.render(str(north_tropic[0]-tilt)+"° S", 1, 'black')
-        frame.blit(render, [x1, y1])
+        # tropic_north, hemisphere = hemiphere_note(north_tropic[0])
+        # render = f2.render(str(tropic_north) + f"° {hemisphere}", 1, 'black')
+        # frame.blit(render, [x1, y1])
 
         north_polar_circle = equator.copy()
-        north_polar_circle[0] = 90-tilt
-        north_polar_circle[1] = axial_tilt[0]+(axial_tilt[0]-north_polar_circle[0])+360  # don't know if this is right.
+        north_polar_circle[0] = axial_tilt[0] - tilt
+        north_polar_circle[1] = axial_tilt[0] + (
+                axial_tilt[0] - north_polar_circle[0]) + 360  # don't know if this is right.
         x1, y1 = set_xy(planet, north_polar_circle[0])
         x2, y2 = set_xy(planet, north_polar_circle[1])
         draw.line(frame, 'cyan', [x1, y1], [x2, y2], width=1)  # polar circle
-        render = f2.render(str(north_polar_circle[0])+"° N", 1, 'black')
-        frame.blit(render, [x2, y2])
+        # render = f2.render(str(north_polar_circle[0]) + f"° {hemisphere}", 1, 'black')
+        # frame.blit(render, [x2, y2])
 
         south_polar_circle = equator.copy()
-        south_polar_circle[0] = north_polar_circle[1]+180
-        south_polar_circle[1] = north_polar_circle[0]+180
+        south_polar_circle[0] = north_polar_circle[1] + 180
+        south_polar_circle[1] = north_polar_circle[0] + 180
         x1, y1 = set_xy(planet, south_polar_circle[0])
         x2, y2 = set_xy(planet, south_polar_circle[1])
         draw.line(frame, 'cyan', [x1, y1], [x2, y2], width=1)  # polar circle
-        render = f2.render(str(north_polar_circle[0])+"° S", 1, 'black')
-        frame.blit(render, [x2, y2])
+        # render = f2.render(str(north_polar_circle[0]) + f"° {hemisphere}", 1, 'black')
+        # frame.blit(render, [x2, y2])
 
         render_tilt = f.render('tilt: ' + str(round(tilt, 2)), True, negro)
         tilt_rect = render_tilt.get_rect(right=rect.w)
