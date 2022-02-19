@@ -167,7 +167,7 @@ class SatelliteType(ObjectType):
 
     def __init__(self, parent):
         rel_props = ['Radius', 'Mass', 'Surface Gravity', 'Escape velocity']
-        rel_args = ['radius', 'mass' , 'gravity', 'escape_velocity']
+        rel_args = ['radius', 'mass', 'gravity', 'escape_velocity']
         abs_args = ['density', 'volume', 'surface', 'circumference', 'clase']
         abs_props = ['Density', 'Volume', 'Surface Area', 'Circumference', 'Clase']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)

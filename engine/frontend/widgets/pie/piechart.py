@@ -1,50 +1,75 @@
-from engine.frontend.globales import COLOR_IRON_DIS, COLOR_SILICATES_DIS, COLOR_WATER_ICE_DIS
 from engine.frontend.globales import COLOR_IRON, COLOR_SILICATES, COLOR_WATER_ICE
 from engine.frontend.globales.group import WidgetGroup
 from engine.frontend.globales import WidgetHandler
 from ..basewidget import BaseWidget
-from . import Arc  # Handle
-from pygame import Rect
+from pygame import Rect, Color
+from . import Arc, Handle
 
 
 class PieChart(BaseWidget):
     chart = None
-    colors_a = [COLOR_IRON, COLOR_SILICATES, COLOR_WATER_ICE]
-    colors_b = [COLOR_IRON_DIS, COLOR_SILICATES_DIS, COLOR_WATER_ICE_DIS]
+    colors_a = None
+    colors_b = None
 
-    def __init__(self, parent, cx, cy, radius, values):
+    def __init__(self, parent, cx, cy, radius, values, use_handlers=False, colors=None):
         super().__init__(parent)
         self.chart = WidgetGroup()
         self.radius = radius
         self.rect = Rect(0, 0, radius, radius)
         self.rect.center = cx, cy
         WidgetHandler.add_widget(self)
+        if colors is None:
+            self.use_default_colors()
+        else:
+            self.set_colors(colors)
 
         a, b = 0, 0
         arcs, handles = [], []
+        handle_color = None
         for i, name in enumerate(values):
             value = values[name]
-            # handle_color = values[name]['handle']
+            if use_handlers:
+                handle_color = 'black'
 
             b += round((value / 100) * 360)
 
             arc = Arc(self, name, self.colors_a[i], self.colors_b[i], a, b, radius)
             arc.default_value = value
-            # handle = Handle(self, b, arc.handle_pos, handle_color)
-
-            self.chart.add(arc, layer=1)
-            # self.chart.add(handle, layer=2)
             arcs.append(arc)
-            # handles.append(handle)
-            a = b
-        #
-        # arcs[0].links(handles[2], handles[0])
-        # arcs[1].links(handles[0], handles[1])
-        # arcs[2].links(handles[1], handles[2])
+            self.chart.add(arc, layer=1)
 
-        arcs[0].displace(cx, cy)
-        arcs[1].displace(cx, cy)
-        arcs[2].displace(cx, cy)
+            if use_handlers:
+                handle = Handle(self, b, arc.handle_pos, handle_color)
+                self.chart.add(handle, layer=2)
+                handles.append(handle)
+
+            a = b
+        if use_handlers:
+            for i in range(len(arcs)):
+                j = (i + len(arcs) // 2) % len(arcs)
+                arcs[i].links(handles[j], handles[i])
+
+        for arc in arcs:
+            arc.displace(cx, cy)
+
+    def set_colors(self, colors: list):
+        self.colors_a = colors.copy()
+        self.colors_b = [self.get_disabled_color(k) for k in colors]
+
+    def use_default_colors(self):
+        self.colors_a = [COLOR_IRON, COLOR_SILICATES, COLOR_WATER_ICE]
+        self.colors_b = [self.get_disabled_color(COLOR_IRON),
+                         self.get_disabled_color(COLOR_SILICATES),
+                         self.get_disabled_color(COLOR_WATER_ICE)]
+
+    @staticmethod
+    def get_disabled_color(rgb):
+        disabled = Color(rgb)
+        hsla = list(disabled.hsla)
+        hsla[1] = 20
+        hsla[2] = 70
+        disabled.hsla = hsla
+        return disabled
 
     def set_values(self, values: dict = None):
         names = 'iron', 'water ice', 'silicates'

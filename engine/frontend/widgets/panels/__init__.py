@@ -9,6 +9,7 @@ from .planetary_orbit_panel import PlanetaryOrbitPanel
 from .naming_panel import NamingPanel
 from .info_panel import InformationPanel
 from .multiple_stars_panel import MultipleStarsPanel
+from .albedo_panel import AlbedoPanel
 
 panels = [
     StarPanel,
@@ -17,6 +18,7 @@ panels = [
     PlanetPanel,
     SatellitePanel,
     AsteroidPanel,
+    AlbedoPanel,
     OrbitPanel,
     PlanetaryOrbitPanel,
     InformationPanel,

@@ -19,7 +19,7 @@ class Arc(BaseWidget):
     selected_color = None
     default_value = None
 
-    def __init__(self, parent, name, color_a, color_b, a, b, radius):
+    def __init__(self, parent, name, color_a, color_b, a, b, radius, use_handlers=False):
         super().__init__(parent)
         self.radius = radius
         self.color = color_a
@@ -29,6 +29,7 @@ class Arc(BaseWidget):
         self.a, self.b = a, b
         self.image = self.create()
         self.rect = self.image.get_rect()
+        self.using_handlers = use_handlers
 
     def show(self):
         self.parent.show()
@@ -113,10 +114,11 @@ class Arc(BaseWidget):
         except ValueError:
             if self.arc_lenght < 1:
                 self.hide()
-            # if self.handle_a.pressed:
-            #     self.handle_a.merge()
-            # elif self.handle_b.pressed:
-            #     self.handle_b.merge()
+            if self.using_handlers:
+                if self.handle_a.pressed:
+                    self.handle_a.merge()
+                elif self.handle_b.pressed:
+                    self.handle_b.merge()
 
         if rotation:
             image = transform.rotate(image, rotation)
@@ -130,38 +132,39 @@ class Arc(BaseWidget):
         dx = cx - self.rect.centerx
         dy = cy - self.rect.centery
         self.rect.move_ip(dx, dy)
-        # self.handle_a.rect.move_ip(dx // 2, dy // 2)
-        # self.handle_b.rect.move_ip(dx // 2, dy // 2)
+        if self.using_handlers:
+            self.handle_a.rect.move_ip(dx // 2, dy // 2)
+            self.handle_b.rect.move_ip(dx // 2, dy // 2)
 
-    # def adjust(self, handle):
-    #     if handle is self.handle_a:
-    #         self.a = handle.angle
-    #     if handle is self.handle_b:
-    #         self.b = handle.angle
-    #
-    #     if not self._finished:
-    #         pos = self.rect.center
-    #         self.image = self.create()
-    #         self.rect = self.image.get_rect(center=pos)
-    #     else:
-    #         # there's no point of having a handle if the "arc" is a circle,
-    #         # so the handle commits suicide.
-    #         handle.kill()
+    def adjust(self, handle):
+        if handle is self.handle_a:
+            self.a = handle.angle
+        if handle is self.handle_b:
+            self.b = handle.angle
+
+        if not self._finished:
+            pos = self.rect.center
+            self.image = self.create()
+            self.rect = self.image.get_rect(center=pos)
+        else:
+            # there's no point of having a handle if the "arc" is a circle,
+            # so the handle commits suicide.
+            handle.kill()
 
     def __repr__(self):
         return 'Arc ' + self.name
 
-    # def links(self, handle_a, handle_b):
-    #     self.handle_a = handle_a
-    #     self.handle_b = handle_b
-    #
-    #     self.handle_a.link(self)
-    #     self.handle_b.link(self)
+    def links(self, handle_a, handle_b):
+        self.handle_a = handle_a
+        self.handle_b = handle_b
 
-    # def is_handle(self, handle):
-    #     a = handle == self.handle_a
-    #     b = handle == self.handle_b
-    #     return a or b
+        self.handle_a.link(self)
+        self.handle_b.link(self)
+
+    def is_handle(self, handle):
+        a = handle == self.handle_a
+        b = handle == self.handle_b
+        return a or b
 
     def set_ab(self, a, b):
         self.a = a
