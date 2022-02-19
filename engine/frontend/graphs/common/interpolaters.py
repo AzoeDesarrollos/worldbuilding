@@ -1,10 +1,5 @@
 from bisect import bisect_right
-
-
-def interpolate(x, x1, x2, y1, y2):
-    a = (y2 - y1) / (x2 - x1)
-    b = y1 - a * x1
-    return a * x + b
+from engine.backend.util import interpolate
 
 
 def find_points(x: int, group_x: list, group_y: list):

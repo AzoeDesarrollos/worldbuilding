@@ -95,6 +95,12 @@ def generate_id():
     return now
 
 
+def interpolate(x, x1, x2, y1, y2):
+    a = (y2 - y1) / (x2 - x1)
+    b = y1 - a * x1
+    return a * x + b
+
+
 EventHandler.register(salir_handler, 'salir')
 
 __all__ = [
@@ -103,5 +109,6 @@ __all__ = [
     'guardar_json',
     'abrir_json',
     'decimal_round',
-    'add_decimal'
+    'add_decimal',
+    'interpolate'
 ]
