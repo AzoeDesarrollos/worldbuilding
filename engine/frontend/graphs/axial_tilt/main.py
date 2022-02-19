@@ -1,10 +1,11 @@
-from pygame import KEYDOWN, K_UP, K_DOWN, KMOD_CTRL, QUIT, K_ESCAPE, K_SPACE, K_RETURN, KEYUP
-from .fuciones import set_xy, graph_seasonal_var, set_latitude, print_info
+from pygame import KEYDOWN, K_UP, K_DOWN, QUIT, K_ESCAPE, K_SPACE, K_RETURN, KEYUP, K_LCTRL, K_RCTRL
 from pygame import draw, font, display, event, quit, init, Surface, time
+from .fuciones import set_xy, graph_seasonal_var, print_info
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX
 from pygame import MOUSEBUTTONDOWN, MOUSEMOTION
 from .constantes import *
 from sys import exit
+from engine import q
 
 init()
 fps = time.Clock()
@@ -134,7 +135,7 @@ def axial_loop(planet):
     done = False
     delta = 0
     tilt = 0
-
+    mod = 1
     while not done:
         fps.tick(60)
         events = event.get([KEYDOWN, QUIT, KEYUP, MOUSEBUTTONDOWN, MOUSEMOTION])
@@ -144,41 +145,38 @@ def axial_loop(planet):
             if e.type == QUIT or (e.type == KEYDOWN and e.key == K_ESCAPE):
                 quit()
                 exit()
+            if e.type == KEYUP:
+                if e.key not in (K_LCTRL, K_RCTRL):
+                    delta = 0
+                else:
+                    mod = 1
 
-            elif e.type == KEYDOWN:
+            if e.type == KEYDOWN:
+                if e.key in (K_LCTRL, K_RCTRL):
+                    mod = 10
+
                 if e.key == K_UP:
-                    if e.mod & KMOD_CTRL:
-                        delta = -0.1
-                    else:
-                        delta = -1
+                    delta = -1
                 elif e.key == K_DOWN:
-                    if e.mod & KMOD_CTRL:
-                        delta = +0.1
-                    else:
-                        delta = +1
+                    delta = +1
                 elif e.key == K_RETURN or e.key == K_SPACE:
                     done = True
-
-            elif e.type == KEYUP:
-                delta = 0
 
         if tilt + delta < 0:
             tilt = 180
         elif tilt + delta > 180:
             tilt = 0
 
-        tilt += delta
+        tilt += delta/mod
         tilt = tilt if planet.tilt == 'Not set' else planet.tilt.m
         screen.fill(COLOR_BOX)
         panel.fill(COLOR_BOX)
         interactive_loop(tilt)
-        # latitude = set_latitude(events, panel, 20, 230, latitude)
         graph_seasonal_var(panel, tilt)
-        if type(tilt) is not str:
-            print_info(panel, planet, 360, 130, 300)
+        print_info(panel, planet, 165, 0, 410)
         screen.blit(panel, panel_rect)
         display.update()
-    return tilt
+    return q(tilt, 'degree')
 
 
 __all__ = [

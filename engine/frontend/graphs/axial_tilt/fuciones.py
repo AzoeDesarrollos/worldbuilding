@@ -1,8 +1,6 @@
 ﻿from engine.frontend.globales import COLOR_SELECTED, COLOR_BOX, COLOR_AREA, render_textrect
 from pygame import Rect, Surface, font, draw, MOUSEMOTION, mouse
-from engine.backend.util import decimal_round
 from math import cos, sin, radians, pi
-from bisect import bisect_right
 from .constantes import *
 
 
@@ -45,21 +43,13 @@ def graph_seasonal_var(panel, tilt):
     draw.aalines(graph_surf, blanco, False, points=puntos)
     draw.rect(graph_surf, gris, graph_surf.get_rect(), 2)
 
-    poss = [0, graph_rect.h//3, graph_rect.h]
-    colors = [rojo, verde, azul]
     rect = Rect(graph_rect.right+2, 0, 6, 1)
-    for y in range(graph_rect.h):
-        if y in poss:
-            color = colors[y]
-        else:
-            color = Color(color_and_cap(poss, colors, y))
-            colors.insert(y, color)
-
-        if y not in poss:
-            poss.append(y)
-        poss.sort()
+    for y in range(0, graph_rect.h):
+        r = red_gradient(y)
+        b = blue_gradient(y)
+        color = Color(r, 0, b)
         panel.fill(color, rect)
-        rect.y = y
+        rect.y = y+1
 
     panel.blit(f_render, f_rect)
     panel.blit(graph_surf, graph_rect)
@@ -100,60 +90,21 @@ def set_latitude(events, panel, x, y, latitude):
 def print_info(panel, planet, x, y, w):
     f = font.SysFont('Verdana', 15)
     if planet.tilt == 'Not set':
-        text = f"The planet {str(planet)}'s axial tilt has not been set yet."
+        text = f"The planet {str(planet)}'s axial tilt has not been set yet.\n\n"
+        text += "Set the axial tilt using the Up and Down keys. Hold Ctrl to increase precision."
     else:
-        text = f'The planet {str(planet)} has an axial tilt of {planet.tilt.m}°'
+        text = f'The planet {str(planet)} has an axial tilt of {planet.tilt.m}°.'
 
     render = render_textrect(text, f, w, COLOR_SELECTED, COLOR_BOX)
-    render_rect = render.get_rect(center=(x, y))
+    render_rect = render.get_rect(topleft=(x, y))
     panel.blit(render, render_rect)
 
 
-def color_and_cap(grupo_a, grupo_b, t):
-    if t in grupo_a:
-        return grupo_b[t]
+def red_gradient(x):
+    a = -1.961538462
+    return round(a * x + 255)
 
-    elif t < grupo_a[0]:
-        # "extrapolación" lineal positiva
-        despues = 1
-        antes = 0
-    elif t > grupo_a[-1]:
-        # "extrapolación" lineal nagativa
-        despues = -1
-        antes = -2
-    else:
-        # interpolación lineal
-        despues = bisect_right(grupo_a, t)
-        antes = despues - 1
 
-    x1 = grupo_a[antes]
-    x2 = grupo_a[despues]
-
-    y1 = grupo_b[antes]
-    y2 = grupo_b[despues]
-
-    diff_x = x2 - x1
-    ar = (y2.r - y1.r) / diff_x
-    ag = (y2.g - y1.g) / diff_x
-    ab = (y2.b - y1.b) / diff_x
-
-    br = y1.r - ar * x1
-    bg = y1.g - ag * x1
-    bb = y1.b - ab * x1
-
-    x = t - x1 if t > x1 else x1 - t
-
-    def cap(number):
-        if number >= 255:
-            return 255
-        elif number < 0:
-            v = abs(number)
-            return cap(v)
-        else:
-            return number
-
-    r = cap(decimal_round(ar * x + br))
-    g = cap(decimal_round(ag * x + bg))
-    b = cap(decimal_round(ab * x + bb))
-
-    return r, g, b
+def blue_gradient(x):
+    a = 1.961538462
+    return round(a * x)

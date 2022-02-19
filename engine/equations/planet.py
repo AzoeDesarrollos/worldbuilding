@@ -15,7 +15,7 @@ class Planet(BodyInHydrostaticEquilibrium):
     gravity = 0
     escape_velocity = 0
     composition = None
-    habitable = True
+    habitable = False
 
     orbit = None
     albedo = 29

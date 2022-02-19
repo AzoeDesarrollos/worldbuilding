@@ -2,7 +2,7 @@ from pygame import K_UP, K_DOWN, K_RIGHT, K_LEFT, K_SPACE, K_LSHIFT, K_LCTRL, K_
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, ANCHO, ALTO, WidgetGroup
 from pygame import init, quit, display, font, event, Rect, Surface, image, mouse
 from pygame import KEYDOWN, QUIT, SCALED, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP
-from ..common import find_and_interpolate, Linea, Punto, BodyMarker
+from ..common import find_and_interpolate, find_and_interpolate_flipped, Linea, Punto, BodyMarker
 from engine.equations.planetary_system import Systems
 from pygame.sprite import Sprite
 from os import getcwd, path
@@ -100,6 +100,15 @@ def gasgraph_loop(limit_mass):
     punto = Punto(img_rect, img_rect.centerx, img_rect.centery, lineas)
 
     move_x, move_y = True, True
+
+    for planet in Systems.get_current().planets:
+        if planet.planet_type == 'gaseous':
+            mass = planet.mass.m
+            radius = planet.radius.m
+
+            x = find_and_interpolate(mass, mass_keys, yes)
+            y = find_and_interpolate(radius, radius_keys, exes)
+            markers.append([x, y])
 
     for x, y in markers:
         marcadores.add(BodyMarker(x, y))

@@ -88,6 +88,15 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
     mouse.set_pos(rect.center)
     event.clear()
 
+    for planet in Systems.get_current().planets:
+        if planet.relative_size != 'Giant':
+            mass = planet.mass.m
+            radius = planet.radius.m
+
+            x = find_and_interpolate(mass, mass_keys, exes)
+            y = find_and_interpolate_flipped(radius, radius_keys, yes)
+            markers.append([x, y])
+
     for x, y in markers:
         marcadores.add(BodyMarker(x, y))
 

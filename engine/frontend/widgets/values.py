@@ -29,7 +29,7 @@ class ValueText(BaseWidget):
 
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))
-        EventHandler.register(self.clear_selection, 'Clear')
+        EventHandler.register(self.clear_selection, 'ClearData')
 
         if kind == 'digits':
             self.text_area = NumberArea(self, text, self.rect.right + 3, self.rect.y, fg, bg)
@@ -175,6 +175,10 @@ class ValueText(BaseWidget):
             self.active = False
             self.text_area.disable()
 
+    def clear(self):
+        self.deselect()
+        self.text_area.clear()
+
     def update(self):
         if self.selected and self.enabled:
             self.image = self.img_sel
@@ -214,6 +218,9 @@ class BaseArea(BaseWidget):
 
     def set_value(self, quantity):
         return NotImplemented
+
+    def clear(self):
+        raise NotImplementedError
 
 
 class NumberArea(BaseArea, IncrementalValue):
@@ -350,6 +357,9 @@ class TextArea(BaseArea):
     def update(self):
         self.image = self.f.render(self.value, True, self.fg, self.bg)
         self.rect = self.image.get_rect(topleft=self.rect.topleft)
+
+    def clear(self):
+        self.value = None
 
     def __repr__(self):
         return self.name + ' Text'

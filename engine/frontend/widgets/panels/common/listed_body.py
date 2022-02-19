@@ -20,6 +20,7 @@ class ListedBody(Meta):
         self.color = fg_color
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))
+        self.max_w = self.img_sel.get_width()
 
     def on_mousebuttondown(self, event):
         raise NotImplementedError()

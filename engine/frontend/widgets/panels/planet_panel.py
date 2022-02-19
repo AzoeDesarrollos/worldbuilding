@@ -1,4 +1,4 @@
-from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, WidgetGroup, ANCHO
+from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, WidgetGroup, ANCHO, ALTO
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.sprite_star import PlanetSprite
 from engine.frontend.widgets.object_type import ObjectType
@@ -13,7 +13,7 @@ from engine import q
 
 
 class PlanetPanel(BasePanel):
-    curr_x = 0
+    curr_x = 3
     curr_y = 440
     unit = None
     is_visible = False
@@ -23,6 +23,7 @@ class PlanetPanel(BasePanel):
     def __init__(self, parent):
         super().__init__('Planet', parent)
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
+        self.area_type = Rect(32, 32, ANCHO, ALTO - (self.area_buttons.h + 200))
         self.current = PlanetType(self)
         self.properties = WidgetGroup()
 
@@ -38,7 +39,7 @@ class PlanetPanel(BasePanel):
         EventHandler.register(self.name_current, 'NameObject')
 
     def save_planets(self, event):
-        data = self.current.loaded_data if self.current.loaded_data is not None else {}
+        data = {}
         for system in Systems.get_systems():
             for planet in self.planets:
                 if planet in system.planets:
@@ -52,7 +53,7 @@ class PlanetPanel(BasePanel):
                         'clase': planet.clase,
                         'system': system.id,
                         'albedo': planet.albedo.m,
-                        'tilt': planet.tilt.m
+                        'tilt': planet.tilt.m if type(planet.tilt) is not str else planet.tilt
                     }
                     data[planet.id] = planet_data
         EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": data})
@@ -89,12 +90,12 @@ class PlanetPanel(BasePanel):
             self.sort_buttons()
 
     def sort_buttons(self):
-        x = 0
-        y = 440
+        x = self.curr_x
+        y = self.curr_y
         for bt in self.planet_buttons.get_widgets_from_layer(Systems.get_current().id):
             bt.move(x, y)
-            if x + bt.rect.w + 15 < self.rect.w - bt.rect.w:
-                x += bt.rect.w + 15
+            if x + bt.max_w + 10 < self.area_buttons.w - bt.max_w:
+                x += bt.max_w + 10
             else:
                 x = 3
                 y += 32
@@ -135,8 +136,7 @@ class PlanetPanel(BasePanel):
             item.show()
         if self.last_idx is not None:
             self.show_current(self.last_idx)
-        for button in self.planet_buttons.widgets():
-            button.enable()
+        self.enable_buttons()
 
     def hide(self):
         super().hide()
@@ -150,6 +150,14 @@ class PlanetPanel(BasePanel):
     def disable(self):
         super().disable()
         self.current.disable()
+
+    def enable_buttons(self):
+        for button in self.planet_buttons.widgets():
+            button.enable()
+
+    def disable_buttons(self):
+        for button in self.planet_buttons.widgets():
+            button.disable()
 
     def update(self):
         idx = Systems.get_current_id(self)
@@ -165,9 +173,6 @@ class PlanetPanel(BasePanel):
 
 
 class PlanetType(ObjectType):
-    counter = 0
-
-    loaded_data = None
 
     def __init__(self, parent):
         rel_props = ['Mass', 'Radius', 'Surface gravity', 'Escape velocity']
@@ -187,7 +192,9 @@ class PlanetType(ObjectType):
 
         f = self.crear_fuente(16, bold=True)
         self.habitable = f.render('Habitable', True, (0, 255, 0), COLOR_BOX)
-        self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right - 10, y=self.parent.rect.y + 50)
+        self.uninhabitable = f.render('Uninhabitable', True, (255, 0, 0), COLOR_BOX)
+        self.hab_rect = self.habitable.get_rect(centerx=460, y=self.parent.rect.y + 250)
+        self.uhb_rect = self.uninhabitable.get_rect(centerx=460, y=self.parent.rect.y + 250)
 
         EventHandler.register(self.load_planet, 'LoadData')
 
@@ -226,11 +233,11 @@ class PlanetType(ObjectType):
     def clear(self, event):
         if event.data['panel'] is self.parent:
             for button in self.properties.get_sprites_from_layer(1):
-                button.text_area.clear()
+                button.clear()
         self.parent.select_one()
         self.parent.button_del.disable()
         self.has_values = False
-        self.parent.image.fill(COLOR_BOX, self.hab_rect)
+        self.parent.image.fill(COLOR_BOX, self.parent.area_type)
         if self.current is not None and self.current.sprite is not None:
             self.current.sprite.kill()
 
@@ -243,7 +250,7 @@ class PlanetType(ObjectType):
 
         if system is not None and system.add_astro_obj(planet):
             for button in self.properties.get_widgets_from_layer(1):
-                button.text_area.clear()
+                button.clear()
             self.parent.button_add.disable()
             btn = self.parent.add_button(planet)
             self.has_values = False
@@ -260,10 +267,11 @@ class PlanetType(ObjectType):
             self.erase()
 
     def toggle_habitable(self):
+        self.parent.image.fill(COLOR_BOX, self.uhb_rect)
         if self.current.habitable:
             self.parent.image.blit(self.habitable, self.hab_rect)
         else:
-            self.parent.image.fill(COLOR_BOX, self.hab_rect)
+            self.parent.image.blit(self.uninhabitable, self.uhb_rect)
 
     def check_values(self, composition):
         attrs = {}
@@ -298,6 +306,7 @@ class PlanetType(ObjectType):
             else:
                 self.parent.button_add.disable()
                 self.parent.mass_number.mass_color = 200, 0, 0
+            self.parent.disable_buttons()
             self.fill()
 
     def update_value(self, button, data):
@@ -416,6 +425,7 @@ class AddPlanetButton(TextButton):
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
             self.parent.current.create_button()
+            self.parent.enable_buttons()
 
 
 class DelPlanetButton(TextButton):
@@ -430,6 +440,9 @@ class DelPlanetButton(TextButton):
 
 class CreatedPlanet(ColoredBody):
     enabled = False
+
+    def disable(self):
+        self.enabled = False
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:

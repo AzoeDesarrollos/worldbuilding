@@ -96,6 +96,15 @@ def dwarfgraph_loop(limit_mass=None):
 
     move_x, move_y = True, True
 
+    for planet in Systems.get_current().planets:
+        if planet.relative_size == 'Dwarf':
+            mass = planet.mass.m
+            radius = planet.radius.m
+
+            x = find_and_interpolate(mass, mass_keys, yes)
+            y = find_and_interpolate(radius, radius_keys, exes)
+            markers.append([x, y])
+
     for x, y in markers:
         marcadores.add(BodyMarker(x, y))
 
