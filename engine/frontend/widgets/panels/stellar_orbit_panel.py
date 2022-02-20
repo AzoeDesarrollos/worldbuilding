@@ -4,7 +4,6 @@ from engine.frontend.globales import WidgetGroup, render_textrect, WidgetHandler
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from pygame import Surface, Rect, K_LCTRL, K_RCTRL, key as pyg_key
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.frontend.view import trigger_view, Background
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.globales.constantes import *
@@ -78,11 +77,9 @@ class OrbitPanel(BaseWidget):
         self.cycler = cycle(self.ratios)
         next(self.cycler)
 
-        self.view_button = ViewButton(self, *self.area_markers.topleft)
-
         self.properties.add([self.area_modify, self.planet_area, self.show_markers_button,
                              self.add_orbits_button, self.resonances_button, self.digit_x,
-                             self.digit_y, self.recomendation, self.view_button], layer=2)
+                             self.digit_y, self.recomendation], layer=2)
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
@@ -472,7 +469,6 @@ class OrbitPanel(BaseWidget):
             self.hide_orbit_types()
             self.show_markers_button.disable()
             self.area_modify.color_standby()
-            self.view_button.enable()
         self.visible_markers = not self.visible_markers
         self.area_modify.visible_markers = self.visible_markers
 
@@ -481,7 +477,6 @@ class OrbitPanel(BaseWidget):
         self.hide_orbit_types()
         self.show_markers_button.enable()
         self.check_orbits()
-        self.view_button.disable()
 
     def hide_orbit_types(self):
         for orbit_type in self.orbit_descriptions.widgets():
@@ -1413,17 +1408,3 @@ class Recomendation(BaseWidget):
         if self.parent.area_markers.colliderect(self.rect):
             self.parent.area_markers.h -= self.rect.h
             self.parent.sort_markers()
-
-
-class ViewButton(TextButton):
-    enabled = True
-
-    def __init__(self, parent, x, y):
-        super().__init__(parent, 'View', 0, 0)
-        self.rect.bottomleft = x, y
-
-    def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
-            self.parent.hide()
-            trigger_view()
-            Background()
