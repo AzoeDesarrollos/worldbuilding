@@ -472,6 +472,7 @@ class OrbitPanel(BaseWidget):
             self.hide_orbit_types()
             self.show_markers_button.disable()
             self.area_modify.color_standby()
+            self.view_button.enable()
         self.visible_markers = not self.visible_markers
         self.area_modify.visible_markers = self.visible_markers
 
@@ -480,7 +481,7 @@ class OrbitPanel(BaseWidget):
         self.hide_orbit_types()
         self.show_markers_button.enable()
         self.check_orbits()
-        # self.view_button.disable()
+        self.view_button.disable()
 
     def hide_orbit_types(self):
         for orbit_type in self.orbit_descriptions.widgets():
