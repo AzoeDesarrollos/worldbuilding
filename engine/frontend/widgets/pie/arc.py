@@ -19,7 +19,7 @@ class Arc(BaseWidget):
     selected_color = None
     default_value = None
 
-    def __init__(self, parent, name, color_a, color_b, a, b, radius, use_handlers=False):
+    def __init__(self, parent, name, color_a, color_b, a, b, radius, using_handlers=False, is_set=True):
         super().__init__(parent)
         self.radius = radius
         self.color = color_a
@@ -29,7 +29,8 @@ class Arc(BaseWidget):
         self.a, self.b = a, b
         self.image = self.create()
         self.rect = self.image.get_rect()
-        self.using_handlers = use_handlers
+        self.using_handlers = using_handlers
+        self._set = is_set
 
     def show(self):
         self.parent.show()
@@ -42,6 +43,7 @@ class Arc(BaseWidget):
     def disable(self):
         super().disable()
         self.selected_color = self.color_dis
+        self.image = self.create()
 
     def enable(self):
         super().enable()

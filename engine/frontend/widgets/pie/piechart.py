@@ -11,7 +11,7 @@ class PieChart(BaseWidget):
     colors_a = None
     colors_b = None
 
-    def __init__(self, parent, cx, cy, radius, values, use_handlers=False, colors=None):
+    def __init__(self, parent, cx, cy, radius, values, use_handlers=False, colors=None, is_set=True):
         super().__init__(parent)
         self.chart = WidgetGroup()
         self.radius = radius
@@ -33,20 +33,22 @@ class PieChart(BaseWidget):
 
             b += round((value / 100) * 360)
 
-            arc = Arc(self, name, self.colors_a[i], self.colors_b[i], a, b, radius)
+            arc = Arc(self, name, self.colors_a[i], self.colors_b[i], a, b, radius, using_handlers=use_handlers,
+                      is_set=is_set)
             arc.default_value = value
             arcs.append(arc)
             self.chart.add(arc, layer=1)
 
             if use_handlers:
-                handle = Handle(self, b, arc.handle_pos, handle_color)
+                handle = Handle(self, b, name, arc.handle_pos, handle_color)
                 self.chart.add(handle, layer=2)
                 handles.append(handle)
 
             a = b
         if use_handlers:
             for i in range(len(arcs)):
-                j = (i + len(arcs) // 2) % len(arcs)
+                j = (i + (len(arcs) - 1)) % len(arcs)
+
                 arcs[i].links(handles[j], handles[i])
 
         for arc in arcs:
@@ -61,6 +63,10 @@ class PieChart(BaseWidget):
         self.colors_b = [self.get_disabled_color(COLOR_IRON),
                          self.get_disabled_color(COLOR_SILICATES),
                          self.get_disabled_color(COLOR_WATER_ICE)]
+
+    @staticmethod
+    def set_active(widget=None):
+        WidgetHandler.set_active(widget)
 
     @staticmethod
     def get_disabled_color(rgb):
@@ -105,12 +111,24 @@ class PieChart(BaseWidget):
                     handle.on_mousebuttonup(event)
 
     def show(self):
+        "Overrides the base function because this class has no image to add to the Renderer"""
         self.is_visible = True
         WidgetHandler.add_widget(self)
 
     def hide(self):
+        "Overrides the base function because this class has no image to remove from the Renderer"""
         self.is_visible = False
         WidgetHandler.del_widget(self)
+
+    def enable(self):
+        super().enable()
+        for widget in self.chart.widgets():
+            widget.enable()
+
+    def disable(self):
+        super().disable()
+        for widget in self.chart.widgets():
+            widget.disable()
 
     def draw(self, fondo):
         self.chart.update()
@@ -124,20 +142,18 @@ class PieChart(BaseWidget):
             arc = None
         return arc
 
-    # def get_value(self, name):
-    #     arc = self.get_arc(name)
-    #     return arc.get_value()
+    def get_value(self, name):
+        arc = self.get_arc(name)
+        return arc.get_value()
 
     def get_default_value(self, name):
         arc = self.get_arc(name)
         return str(arc.default_value) + ' %'
 
-    # def update(self):
-    #     if not self.parent.parent.enabled:
-    #         for arc in self.chart.get_widgets_from_layer(1):
-    #             if arc.enabled:
-    #                 arc.disable()
-    #     elif not self.enabled:
-    #         for arc in self.chart.get_widgets_from_layer(1):
-    #             if not arc.enabled:
-    #                 arc.enable()
+    @property
+    def arcs(self):
+        return self.chart.get_widgets_from_layer(1)
+
+    @property
+    def handles(self):
+        return self.chart.get_widgets_from_layer(2)

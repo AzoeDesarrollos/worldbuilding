@@ -16,12 +16,12 @@ class ValueText(BaseWidget):
     do_round = True
     editable = False
 
-    def __init__(self, parent, text, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX, kind='digits'):
+    def __init__(self, parent, text, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX, kind='digits', size=16):
         super().__init__(parent)
         self.text = text
 
-        f1 = self.crear_fuente(16)
-        f2 = self.crear_fuente(16, underline=True)
+        f1 = self.crear_fuente(size)
+        f2 = self.crear_fuente(size, underline=True)
 
         self.img_uns = f1.render(text + ':', True, fg, bg)
         self.img_sel = f2.render(text + ':', True, fg, bg)
@@ -32,10 +32,10 @@ class ValueText(BaseWidget):
         EventHandler.register(self.clear_selection, 'ClearData')
 
         if kind == 'digits':
-            self.text_area = NumberArea(self, text, self.rect.right + 3, self.rect.y, fg, bg)
+            self.text_area = NumberArea(self, text, self.rect.right + 3, self.rect.y, fg, bg, size=size)
 
         elif kind == 'letters':
-            self.text_area = TextArea(self, text, self.rect.right + 3, self.rect.y, fg, bg)
+            self.text_area = TextArea(self, text, self.rect.right + 3, self.rect.y, fg, bg, size=size)
 
     def kill(self) -> None:
         super().kill()
@@ -158,7 +158,7 @@ class ValueText(BaseWidget):
                 p.parent.set_current(self)
                 self.active = True
                 self.text_area.enable()
-            else:
+            elif self.modifiable:
                 self.active = True
                 self.text_area.enable()
             return self.text
@@ -204,12 +204,12 @@ class BaseArea(BaseWidget):
     modifiable = False
     unit = None
 
-    def __init__(self, parent, name, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
+    def __init__(self, parent, name, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX, size=16):
         super().__init__(parent)
         self.value = ''
         self.name = name
         self.fg, self.bg = fg, bg
-        self.f = self.crear_fuente(16)
+        self.f = self.crear_fuente(size)
         self.image = Surface((0, self.f.get_height()))
         self.rect = self.image.get_rect(topleft=(x, y))
 
@@ -228,8 +228,8 @@ class NumberArea(BaseArea, IncrementalValue):
     min = 0
     max = None
 
-    def __init__(self, parent, name, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX):
-        super().__init__(parent, name, x, y, fg, bg)
+    def __init__(self, parent, name, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX, size=16):
+        super().__init__(parent, name, x, y, fg, bg, size=size)
         EventHandler.register(self.get_value, 'SetValue')
 
     def input(self, event):
@@ -259,7 +259,10 @@ class NumberArea(BaseArea, IncrementalValue):
                     self.great_grandparent.show_markers_button.enable()
                     self.grandparent.fill()
 
-    def set_value(self, quantity):
+                elif self.grandparent.name == 'Albedo':
+                    self.grandparent.total_albedo()
+
+    def set_value(self, quantity, is_percentage=False):
         if type(quantity) is q:
             self.value = float(quantity.m)
             self.unit = str(quantity.u)
@@ -272,9 +275,18 @@ class NumberArea(BaseArea, IncrementalValue):
             self.value = quantity
             self.unit = None
 
+        elif is_percentage:
+            self.value = quantity
+            self.unit = '%'
+
     def get_value(self, event):
         if event.origin.capitalize() == self.parent.text:
             self.set_value(event.data['value'])
+
+    def get_value_from_event(self, event):
+        if event.origin == self.parent.text:
+            value = float(event.data['value'].strip('%'))
+            self.set_value(value, is_percentage=True)
 
     def on_mousebuttondown(self, event):
         self.increment = self.update_increment()
@@ -315,16 +327,19 @@ class NumberArea(BaseArea, IncrementalValue):
 
     def update(self):
         self.reset_power()
-        if hasattr(self.value, '__round__') and self.unit is not None:
+        if hasattr(self.value, '__round__') and self.unit is not None and self.unit != '%':
             if self.parent.do_round:
                 value = q(add_decimal(str(round(self.value, 3))), self.unit)
             else:
                 value = q(add_decimal(str(self.value)), self.unit)
             if self.unit != 'year':
                 value = '{:~}'.format(value)
-            value = str(value)
-        else:
+            if self.unit != "%":
+                value = str(value)
+        elif self.unit != "%":
             value = str(self.value)
+        else:
+            value = str(self.value)+self.unit
         self.image = self.f.render(value, True, self.fg, self.bg)
         self.rect = self.image.get_rect(topleft=self.rect.topleft)
 
