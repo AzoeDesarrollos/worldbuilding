@@ -49,7 +49,7 @@ class ListedArea(BaseWidget):
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.deselect_all()
-        else:
+        elif len(self.listed_objects.widgets()):
             buttons = self.listed_objects.widgets()
             last_is_hidden = not buttons[-1].is_visible
             first_is_hidden = not buttons[0].is_visible
