@@ -47,6 +47,10 @@ class WidgetHandler:
             cls.origin = widget
 
     @classmethod
+    def set_active(cls, widget=None):
+        cls.active = widget
+
+    @classmethod
     def cap(cls, n):
         if n != 0:
             val = abs(n)
@@ -95,7 +99,7 @@ class WidgetHandler:
             elif e.type == MOUSEBUTTONDOWN:
                 widgets = [i for i in cls.contents.sprites() if i.rect.collidepoint(e.pos)]
                 widgets.sort(key=lambda o: o.layer, reverse=True)
-                if not cls.locked or widgets[0] is cls.the_one:
+                if not cls.locked or widgets[0] is cls.the_one or widgets[0] is cls.active:
                     cls.set_origin(widgets[0].on_mousebuttondown(e))
                 else:
                     cls.the_one.blink()
@@ -103,13 +107,16 @@ class WidgetHandler:
             elif e.type == MOUSEBUTTONUP:
                 widgets = [i for i in cls.contents.sprites() if i.rect.collidepoint(e.pos)]
                 widgets.sort(key=lambda o: o.layer, reverse=True)
-                widgets[0].on_mousebuttonup(e)
+                if cls.active is None:
+                    widgets[0].on_mousebuttonup(e)
+                else:
+                    cls.active.on_mousebuttonup(e)
 
             elif e.type == MOUSEMOTION:
                 if cls.mode == 1:
                     x, y = e.pos
                     for widget in cls.contents.sprites():
-                        if widget.rect.collidepoint((x, y)):
+                        if widget.rect.collidepoint((x, y)) or widget is cls.active:
                             widget.on_mousemotion(e.rel)
 
                 elif cls.mode == 2:

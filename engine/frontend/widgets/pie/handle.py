@@ -1,41 +1,50 @@
-from pygame import Surface, transform, SRCALPHA, Color, mouse
+from pygame import Surface, transform, SRCALPHA, Color
 from math import sin, cos, radians, sqrt
 from ..meta import Meta
 
 
 class Handle(Meta):
     pressed = False
-    enabled = True
 
-    def __init__(self, parent, angle, pos, color1, color2='white'):
+    def __init__(self, parent, angle, name, pos):
         super().__init__(parent)
-        self.layer += 1
+        self.layer += 10
         self.angle = angle
+        self.name = name
         self.linked = []
-        self.img_uns = self.create(6, color1)
-        self.img_sel = self.create(8, color2)
-        self.image = self.img_uns
+        color3 = self.parent.get_disabled_color('black')
+        self.img_uns = self.create(6, 'black')
+        self.img_sel = self.create(8, 'white')
+        self.img_dis = self.create(6, color3)
+        self.image = self.img_dis
         self.rect = self.image.get_rect(center=pos)
 
     @staticmethod
-    def create(size, fg, bg='gold'):
+    def create(size, fg):
         image = Surface((size + 2, size + 2), SRCALPHA)
-        image.fill(bg)
+        image.fill('gold')
         image.fill(Color(fg), rect=[1, 1, size, size])
         return transform.rotate(image, 45.0)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.button == 1 and self.enabled:
             self.pressed = True
+            self.parent.set_active(self)
+        return self
 
     def on_mousebuttonup(self, event):
-        if event.button == 1:
+        if event.button == 1 and self.enabled:
             self.pressed = False
+            self.parent.set_active()
+
+    def on_mouseover(self):
+        if self.enabled:
+            self.selected = True
 
     def on_mousemotion(self, rel):
         dx, dy = rel
         delta = 0
-        if self.pressed:
+        if self.pressed and self.enabled:
             if 0 <= self.angle <= 90:  # bottomright
                 if dx < 0 or dy > 0:
                     delta = +1
@@ -88,17 +97,34 @@ class Handle(Meta):
         d = sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
         return d
 
+    def get_direction(self, x2, y2):
+        x1, y1 = self.rect.center
+        dx = x2 - x1
+        dy = y2 - y1
+        if dx > dy:
+            if dy < 0:
+                return 0, +1
+            else:
+                return 0, -1
+        else:
+            if dx < 0:
+                return +1, 0
+            else:
+                return -1, 0
+
     def update(self, *args, **kwargs) -> None:
         """Controla la imagen del handle según si está seleccionado o no."""
 
-        super().update()
-        rel = mouse.get_rel()
-
-        if self.pressed and rel:
-
-            self.on_mousemotion(rel)
+        if self.selected and self.enabled:
+            self.image = self.img_sel
+        elif self.enabled:
+            self.image = self.img_uns
+        else:
+            self.image = self.img_dis
 
         self.rect = self.image.get_rect(center=self.rect.center)
+        if not self.pressed:
+            self.selected = False
 
     def merge(self):
         """

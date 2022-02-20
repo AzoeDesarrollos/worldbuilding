@@ -196,14 +196,15 @@ class OrbitPanel(BaseWidget):
         button.enable()
 
     def sort_markers(self):
-        self.markers.sort(key=lambda m: m.value)
-        for i, marker in enumerate(self.markers, start=1):
-            marker.rect.y = i * 2 * 10 + 16 + self.offset
-            if self.visible_markers:
-                if not self.area_markers.contains(marker.rect):
-                    marker.hide()
-                else:
-                    marker.show()
+        if self.markers is not None:
+            self.markers.sort(key=lambda m: m.value)
+            for i, marker in enumerate(self.markers, start=1):
+                marker.rect.y = i * 2 * 10 + 16 + self.offset
+                if self.visible_markers:
+                    if not self.area_markers.contains(marker.rect):
+                        marker.hide()
+                    else:
+                        marker.show()
 
     def sort_buttons(self):
         x, y = self.curr_x, self.curr_y

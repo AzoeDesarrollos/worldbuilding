@@ -1,63 +1,99 @@
-from engine.frontend.globales import COLOR_IRON_DIS, COLOR_SILICATES_DIS, COLOR_WATER_ICE_DIS
 from engine.frontend.globales import COLOR_IRON, COLOR_SILICATES, COLOR_WATER_ICE
 from engine.frontend.globales.group import WidgetGroup
 from engine.frontend.globales import WidgetHandler
 from ..basewidget import BaseWidget
-from . import Arc  # Handle
-from pygame import Rect
+from pygame import Rect, Color
+from . import Arc, Handle
+from decimal import Decimal as Dc
 
 
 class PieChart(BaseWidget):
     chart = None
-    colors_a = [COLOR_IRON, COLOR_SILICATES, COLOR_WATER_ICE]
-    colors_b = [COLOR_IRON_DIS, COLOR_SILICATES_DIS, COLOR_WATER_ICE_DIS]
+    colors_a = None
+    colors_b = None
 
-    def __init__(self, parent, cx, cy, radius, values):
+    default_names = ['iron', 'water ice', 'silicates']
+
+    def __init__(self, parent, cx, cy, radius, values, use_handlers=False, colors=None, is_set=True):
         super().__init__(parent)
         self.chart = WidgetGroup()
         self.radius = radius
         self.rect = Rect(0, 0, radius, radius)
         self.rect.center = cx, cy
         WidgetHandler.add_widget(self)
+        if colors is None:
+            self.use_default_colors()
+        else:
+            self.set_colors(colors)
 
-        a, b = 0, 0
+        ca = self.colors_a  # shortcuts
+        cb = self.colors_b  # for oneliners
+
+        a, b = Dc(0), Dc(0)
         arcs, handles = [], []
         for i, name in enumerate(values):
-            value = values[name]
-            # handle_color = values[name]['handle']
+            value = Dc(values[name])
 
-            b += round((value / 100) * 360)
+            b += round((value / Dc(100)) * Dc(360))
 
-            arc = Arc(self, name, self.colors_a[i], self.colors_b[i], a, b, radius)
+            arc = Arc(self, name, ca[i], cb[i], a, b, radius, using_handlers=use_handlers, is_set=is_set)
+            WidgetHandler.add_widget(arc)
             arc.default_value = value
-            # handle = Handle(self, b, arc.handle_pos, handle_color)
-
-            self.chart.add(arc, layer=1)
-            # self.chart.add(handle, layer=2)
             arcs.append(arc)
-            # handles.append(handle)
+            self.chart.add(arc, layer=1)
+
+            if use_handlers:
+                handle = Handle(self, b, name, arc.handle_pos)
+                self.chart.add(handle, layer=2)
+                handles.append(handle)
+
             a = b
-        #
-        # arcs[0].links(handles[2], handles[0])
-        # arcs[1].links(handles[0], handles[1])
-        # arcs[2].links(handles[1], handles[2])
+        if use_handlers:
+            for i in range(len(arcs)):
+                j = (i + (len(arcs) - 1)) % len(arcs)
+                arcs[i].links(handles[j], handles[i])
 
-        arcs[0].displace(cx, cy)
-        arcs[1].displace(cx, cy)
-        arcs[2].displace(cx, cy)
+        for arc in arcs:
+            arc.displace(cx, cy)
 
-    def set_values(self, values: dict = None):
-        names = 'iron', 'water ice', 'silicates'
+    def set_colors(self, colors: list):
+        self.colors_a = colors.copy()
+        self.colors_b = [self.get_disabled_color(k) for k in colors]
+
+    def use_default_colors(self):
+        self.colors_a = [COLOR_IRON, COLOR_SILICATES, COLOR_WATER_ICE]
+        self.colors_b = [self.get_disabled_color(COLOR_IRON),
+                         self.get_disabled_color(COLOR_SILICATES),
+                         self.get_disabled_color(COLOR_WATER_ICE)]
+
+    @staticmethod
+    def set_active(widget=None):
+        WidgetHandler.set_active(widget)
+
+    @staticmethod
+    def get_disabled_color(rgb):
+        disabled = Color(rgb)
+        hsla = list(disabled.hsla)
+        hsla[1] = 20
+        hsla[2] = 70
+        disabled.hsla = hsla
+        return disabled
+
+    def set_values(self, values: dict = None, use_names=False):
+        if use_names is True:
+            names = list(values.keys())
+        else:
+            names = self.default_names
         a, b = 0, 0
         for i, name in enumerate(sorted(names)):
             arc = self.get_arc(name)
             value = values[name] if values is not None else arc.default_value
             b += round((value / 100) * 360)
 
-            if not self.parent.parent.enabled and arc.enabled:
-                arc.disable()
-            elif not arc.enabled:
-                arc.enable()
+            # if not self.parent.parent.enabled and arc.enabled:
+            # #     arc.disable()
+            # elif not arc.enabled:
+            #     arc.enable()
 
             if value == 0:
                 arc.hide()
@@ -65,8 +101,8 @@ class PieChart(BaseWidget):
                 arc.show()
 
             if arc is not None:
-                if arc.is_visible:
-                    arc.set_ab(a, b)
+                # if arc.is_visible:
+                arc.set_ab(a, b)
             else:
                 arc = Arc(self, name, self.colors_a[i], self.colors_b[i], a, b, self.radius)
                 self.chart.add(arc, layer=1)
@@ -80,12 +116,24 @@ class PieChart(BaseWidget):
                     handle.on_mousebuttonup(event)
 
     def show(self):
+        "Overrides the base function because this class has no image to add to the Renderer"""
         self.is_visible = True
         WidgetHandler.add_widget(self)
 
     def hide(self):
+        "Overrides the base function because this class has no image to remove from the Renderer"""
         self.is_visible = False
         WidgetHandler.del_widget(self)
+
+    def enable(self):
+        super().enable()
+        for widget in self.chart.widgets():
+            widget.enable()
+
+    def disable(self):
+        super().disable()
+        for widget in self.chart.widgets():
+            widget.disable()
 
     def draw(self, fondo):
         self.chart.update()
@@ -99,20 +147,25 @@ class PieChart(BaseWidget):
             arc = None
         return arc
 
-    # def get_value(self, name):
-    #     arc = self.get_arc(name)
-    #     return arc.get_value()
+    def get_value(self, name):
+        arc = self.get_arc(name)
+        return arc.get_value()
 
     def get_default_value(self, name):
         arc = self.get_arc(name)
         return str(arc.default_value) + ' %'
 
-    # def update(self):
-    #     if not self.parent.parent.enabled:
-    #         for arc in self.chart.get_widgets_from_layer(1):
-    #             if arc.enabled:
-    #                 arc.disable()
-    #     elif not self.enabled:
-    #         for arc in self.chart.get_widgets_from_layer(1):
-    #             if not arc.enabled:
-    #                 arc.enable()
+    @property
+    def arcs(self):
+        return self.chart.get_widgets_from_layer(1)
+
+    @property
+    def handles(self):
+        return self.chart.get_widgets_from_layer(2)
+
+    def __contains__(self, item):
+        if type(item) is Arc:
+            if self.get_arc(str(item)) is not None:
+                return True
+        elif item in self.chart.widgets():
+            return True

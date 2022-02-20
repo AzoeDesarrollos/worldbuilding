@@ -20,6 +20,7 @@ class LayoutPanel(BaseWidget):
         self.image.fill(COLOR_SELECTED)
         self.rect = self.image.get_rect()
         self.show()
+        self.name = 'Layout'
 
         Systems.init()
 

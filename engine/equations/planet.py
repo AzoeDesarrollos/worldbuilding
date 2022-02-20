@@ -18,7 +18,6 @@ class Planet(BodyInHydrostaticEquilibrium):
     habitable = False
 
     orbit = None
-    albedo = 29
     _greenhouse = 1
     temperature = q(0, 'celsius')
 
@@ -40,6 +39,9 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     ring = None
     has_ring = False
+
+    _albedo = 29
+    _surface_coverage = None
 
     def __init__(self, data):
         mass = data.get('mass', False)
@@ -80,6 +82,10 @@ class Planet(BodyInHydrostaticEquilibrium):
                     'iron': data['composition'].get('iron', 0)
                 }
                 self.planet_type = 'rocky'
+                if self.composition['water ice'] > 0:
+                    self.planet_subtype = 'Water World'
+                else:
+                    self.planet_subtype = 'Earth-like Planet'
 
             else:
                 self.composition = {
@@ -87,9 +93,11 @@ class Planet(BodyInHydrostaticEquilibrium):
                     'hydrogen': data['composition'].get('hydrogen', 0)
                 }
                 self.planet_type = 'gaseous'
+                self.planet_subtype = 'Gas Planet'  # this might change in the future; #placeholder
 
         else:
             self.planet_type = 'gaseous'
+            self.planet_subtype = 'Gas Planet'  # this might change in the future; #placeholder
 
         self.atmosphere = {}
         if len(data.get('atmosphere', [])):
@@ -107,6 +115,14 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.id = data['id'] if 'id' in data else generate_id()
 
         self.system_id = data.get('system', None)
+
+    @property
+    def albedo(self):
+        return self._albedo
+
+    @albedo.setter
+    def albedo(self, value):
+        self._albedo = q(value)
 
     @property
     def tilt(self):
