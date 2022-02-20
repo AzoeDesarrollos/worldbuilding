@@ -51,6 +51,12 @@ class LayoutPanel(BaseWidget):
 
         self.load_button = d
 
+        EventHandler.register(self.show_current, 'SwitchMode')
+
+    def show_current(self, event):
+        if event.data['mode'] == 1:
+            self.current.show()
+
     def cycle(self, delta):
         if self.curr_idx + delta < 0:
             self.curr_idx = len(self.panels)-1

@@ -1,9 +1,9 @@
 from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_SPACE, K_LCTRL, K_LSHIFT, QUIT
-from ..common import Linea, Punto, interpolate, find_and_interpolate, find_and_interpolate_flipped, BodyMarker
+from ..common import Linea, Punto, find_and_interpolate, find_and_interpolate_flipped, BodyMarker
 from pygame import font, Surface, Rect, image, mouse, event, Color as Clr, mask
 from pygame import display, init as py_init, quit as py_quit, SCALED
+from engine.backend.util import abrir_json, interpolate
 from engine.equations.planetary_system import Systems
-from engine.backend.util import abrir_json
 from pygame.sprite import LayeredUpdates
 from os import environ, getcwd, path
 import sys

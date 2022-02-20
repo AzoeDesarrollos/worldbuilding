@@ -573,7 +573,7 @@ class OrbitPanel(BaseWidget):
 
     def reset_offset(self):
         self.offset = 0
-        self.sort_markers()
+        # self.sort_markers()
 
 
 class Intertwined:
@@ -1422,5 +1422,6 @@ class ViewButton(TextButton):
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
+            self.parent.hide()
             trigger_view()
             Background()

@@ -8,7 +8,7 @@ def trigger_view():
 
 
 def reset_view(event):
-    if event.origin is None:
+    if event.origin == 'engine':
         EventHandler.trigger('SwitchMode', 'Background', {"mode": 1})
 
 

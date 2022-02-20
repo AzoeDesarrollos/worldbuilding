@@ -25,7 +25,7 @@ class Renderer:
         EventHandler.register(cls.switch_mode, 'SwitchMode')
 
     @staticmethod
-    def reset(ancho, alto):
+    def _reset(ancho, alto):
         display.quit()
         os.environ['SDL_VIDEO_CENTERED'] = "{!s},{!s}".format(0, 0)
         display.set_icon(image.load(os.path.join(os.getcwd(), 'data', 'favicon.png')))
@@ -36,12 +36,12 @@ class Renderer:
     @classmethod
     def set_view_mode(cls):
         if cls.mode == 1:
-            cls.reset(ANCHO, ALTO)
+            cls._reset(ANCHO, ALTO)
             cls.color = COLOR_FONDO
             cls.contents = cls.panels
 
         else:
-            cls.reset(WIDTH, HEIGHT)
+            cls._reset(WIDTH, HEIGHT)
             cls.color = 'black'
             cls.contents = cls.views
             display.get_surface().fill('black')

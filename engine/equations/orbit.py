@@ -381,7 +381,7 @@ def set_orbital_properties(inclination):
         return q(0, 'degree'), 'undefined'
     else:
         values = rotation_loop()
-        Renderer.reset()
+        Renderer.set_view_mode()
         return values
 
 
