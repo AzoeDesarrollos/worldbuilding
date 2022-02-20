@@ -59,11 +59,14 @@ class ValueText(BaseWidget):
         self.text_area.set_value(quantity)
 
     def elevate_changes(self, new_value, unit):
-        value = q(new_value, unit)
+        if unit != '%':
+            value = q(new_value, unit)
+        else:
+            value = new_value
         if hasattr(self.parent, 'elevate_changes'):
             returned = self.parent.elevate_changes(self, value)
             if returned is not None:
-                self.text_area.set_value(returned)
+                self.text_area.set_value(returned, is_percentage=True if unit == '%' else False)
 
     def set_min_and_max(self, min_v, max_v):
         self.text_area.min = min_v
@@ -216,7 +219,7 @@ class BaseArea(BaseWidget):
         self.great_grandparent = self.parent.parent.parent
         self.grandparent = self.parent.parent
 
-    def set_value(self, quantity):
+    def set_value(self, quantity, is_percentage=False):
         return NotImplemented
 
     def clear(self):
@@ -263,7 +266,7 @@ class NumberArea(BaseArea, IncrementalValue):
                     self.grandparent.total_albedo()
 
     def set_value(self, quantity, is_percentage=False):
-        if type(quantity) is q:
+        if type(quantity) is q and not is_percentage:
             self.value = float(quantity.m)
             self.unit = str(quantity.u)
 
@@ -276,7 +279,10 @@ class NumberArea(BaseArea, IncrementalValue):
             self.unit = None
 
         elif is_percentage:
-            self.value = quantity
+            if isinstance(quantity, q):
+                self.value = float(quantity.m)
+            elif type(quantity) is float:
+                self.value = quantity
             self.unit = '%'
 
     def get_value(self, event):

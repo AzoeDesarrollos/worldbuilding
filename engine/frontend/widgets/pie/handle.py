@@ -6,23 +6,23 @@ from ..meta import Meta
 class Handle(Meta):
     pressed = False
 
-    def __init__(self, parent, angle, name, pos, color1, color2='white'):
+    def __init__(self, parent, angle, name, pos):
         super().__init__(parent)
         self.layer += 10
         self.angle = angle
         self.name = name
         self.linked = []
-        color3 = self.parent.get_disabled_color(color1)
-        self.img_uns = self.create(6, color1)
-        self.img_sel = self.create(8, color2)
+        color3 = self.parent.get_disabled_color('black')
+        self.img_uns = self.create(6, 'black')
+        self.img_sel = self.create(8, 'white')
         self.img_dis = self.create(6, color3)
         self.image = self.img_dis
         self.rect = self.image.get_rect(center=pos)
 
     @staticmethod
-    def create(size, fg, bg='gold'):
+    def create(size, fg):
         image = Surface((size + 2, size + 2), SRCALPHA)
-        image.fill(bg)
+        image.fill('gold')
         image.fill(Color(fg), rect=[1, 1, size, size])
         return transform.rotate(image, 45.0)
 
@@ -30,6 +30,7 @@ class Handle(Meta):
         if event.button == 1 and self.enabled:
             self.pressed = True
             self.parent.set_active(self)
+        return self
 
     def on_mousebuttonup(self, event):
         if event.button == 1 and self.enabled:

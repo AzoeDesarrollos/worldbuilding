@@ -4,12 +4,15 @@ from engine.frontend.globales import WidgetHandler
 from ..basewidget import BaseWidget
 from pygame import Rect, Color
 from . import Arc, Handle
+from decimal import Decimal as Dc
 
 
 class PieChart(BaseWidget):
     chart = None
     colors_a = None
     colors_b = None
+
+    default_names = ['iron', 'water ice', 'silicates']
 
     def __init__(self, parent, cx, cy, radius, values, use_handlers=False, colors=None, is_set=True):
         super().__init__(parent)
@@ -23,24 +26,24 @@ class PieChart(BaseWidget):
         else:
             self.set_colors(colors)
 
-        a, b = 0, 0
+        ca = self.colors_a  # shortcuts
+        cb = self.colors_b  # for oneliners
+
+        a, b = Dc(0), Dc(0)
         arcs, handles = [], []
-        handle_color = None
         for i, name in enumerate(values):
-            value = values[name]
-            if use_handlers:
-                handle_color = 'black'
+            value = Dc(values[name])
 
-            b += round((value / 100) * 360)
+            b += round((value / Dc(100)) * Dc(360))
 
-            arc = Arc(self, name, self.colors_a[i], self.colors_b[i], a, b, radius, using_handlers=use_handlers,
-                      is_set=is_set)
+            arc = Arc(self, name, ca[i], cb[i], a, b, radius, using_handlers=use_handlers, is_set=is_set)
+            WidgetHandler.add_widget(arc)
             arc.default_value = value
             arcs.append(arc)
             self.chart.add(arc, layer=1)
 
             if use_handlers:
-                handle = Handle(self, b, name, arc.handle_pos, handle_color)
+                handle = Handle(self, b, name, arc.handle_pos)
                 self.chart.add(handle, layer=2)
                 handles.append(handle)
 
@@ -48,7 +51,6 @@ class PieChart(BaseWidget):
         if use_handlers:
             for i in range(len(arcs)):
                 j = (i + (len(arcs) - 1)) % len(arcs)
-
                 arcs[i].links(handles[j], handles[i])
 
         for arc in arcs:
@@ -77,18 +79,21 @@ class PieChart(BaseWidget):
         disabled.hsla = hsla
         return disabled
 
-    def set_values(self, values: dict = None):
-        names = 'iron', 'water ice', 'silicates'
+    def set_values(self, values: dict = None, use_names=False):
+        if use_names is True:
+            names = list(values.keys())
+        else:
+            names = self.default_names
         a, b = 0, 0
         for i, name in enumerate(sorted(names)):
             arc = self.get_arc(name)
             value = values[name] if values is not None else arc.default_value
             b += round((value / 100) * 360)
 
-            if not self.parent.parent.enabled and arc.enabled:
-                arc.disable()
-            elif not arc.enabled:
-                arc.enable()
+            # if not self.parent.parent.enabled and arc.enabled:
+            # #     arc.disable()
+            # elif not arc.enabled:
+            #     arc.enable()
 
             if value == 0:
                 arc.hide()
@@ -96,8 +101,8 @@ class PieChart(BaseWidget):
                 arc.show()
 
             if arc is not None:
-                if arc.is_visible:
-                    arc.set_ab(a, b)
+                # if arc.is_visible:
+                arc.set_ab(a, b)
             else:
                 arc = Arc(self, name, self.colors_a[i], self.colors_b[i], a, b, self.radius)
                 self.chart.add(arc, layer=1)
@@ -157,3 +162,10 @@ class PieChart(BaseWidget):
     @property
     def handles(self):
         return self.chart.get_widgets_from_layer(2)
+
+    def __contains__(self, item):
+        if type(item) is Arc:
+            if self.get_arc(str(item)) is not None:
+                return True
+        elif item in self.chart.widgets():
+            return True

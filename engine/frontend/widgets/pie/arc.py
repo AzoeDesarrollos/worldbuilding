@@ -2,6 +2,7 @@ from pygame import draw, Surface, SRCALPHA, transform
 from engine.backend.eventhandler import EventHandler
 from ..basewidget import BaseWidget
 from math import sin, cos, pi
+from decimal import Decimal as Dc
 
 
 # adapted from https://stackoverflow.com/questions/23246185/python-draw-pie-shapes-with-colour-filled
@@ -36,10 +37,6 @@ class Arc(BaseWidget):
         self.parent.show()
         super().show()
 
-    def hide(self):
-        self.parent.hide()
-        super().hide()
-
     def disable(self):
         super().disable()
         self.selected_color = self.color_dis
@@ -56,8 +53,17 @@ class Arc(BaseWidget):
         return x, y
 
     def get_value(self):
-        value = self.arc_lenght - 1 if self.arc_lenght != 0 else self.arc_lenght
-        return str(round(value * 100 / 360, 2)) + ' %'
+        r = self._value
+        if r > Dc(0):
+            return str(round(r)) + ' %'
+        else:
+            return str(Dc(0)) + ' %'
+
+    @property
+    def _value(self):
+        value = Dc(self.arc_lenght - 1 if self.arc_lenght != 0 else self.arc_lenght)
+        r = value * Dc(100) / Dc(360)
+        return r
 
     def post_value(self):
         EventHandler.trigger('SetValue', self.name, {'value': self.get_value()})
@@ -73,27 +79,29 @@ class Arc(BaseWidget):
         x, y = a, b
         rotation = False
         # these are because 360 and 0 represent the same point
-        if a == 0 and b == 360:
-            y = 0
-        elif a == 360 and b == 0:
-            x = 0
+        if a == Dc(0) and b == Dc(360):
+            y = Dc(0)
+        elif a == Dc(360) and b == Dc(0):
+            x = Dc(0)
 
         # these are to avoid a glitch when the arc begins before 0°/360° and ends after 0° but before 360°
-        if a < 0:
-            x = 0
+        if a < Dc(0):
+            x = Dc(0)
             y = b + abs(a)
             rotation = abs(a)
 
-        elif 360 >= a > b:
-            y = 360 - a + b
-            x = 0
-            rotation = abs(360 - a)
-        elif x == 0 and y == 0:
+        elif Dc(360) >= a > b:
+            y = Dc(360) - a + b
+            x = Dc(0)
+            rotation = abs(Dc(360) - a)
+        elif x == Dc(0) and y == Dc(0) and self.arc_lenght < 360:
             self.arc_lenght = -1
-        elif x == y == 360:
+        elif x == y == Dc(360):
             self.hide()
+        elif x == y:
+            y -= Dc(1)
 
-        for n in range(x, y + 1):
+        for n in range(int(x), int(y) + 1):
             # we add 1 here to y for the initial point in the center.
             point_sequence.append(self.point(n, rect))
 
@@ -108,10 +116,12 @@ class Arc(BaseWidget):
                 self.arc_lenght = len(point_sequence) - 1
             if 1 < self.arc_lenght < 360:
                 draw.polygon(image, self.selected_color, point_sequence)
-            else:
+            elif self._value > Dc(1):
                 rotation = False
                 self._finished = True
                 draw.circle(image, self.selected_color, [self.radius, self.radius], self.radius)
+                self.adjust(self.handle_a)
+                self.adjust(self.handle_b)
 
         except ValueError:
             if self.arc_lenght < 1:
@@ -156,6 +166,9 @@ class Arc(BaseWidget):
     def __repr__(self):
         return 'Arc ' + self.name
 
+    def __str__(self):
+        return self.name
+
     def links(self, handle_a, handle_b):
         self.handle_a = handle_a
         self.handle_b = handle_b
@@ -171,7 +184,7 @@ class Arc(BaseWidget):
     def set_ab(self, a, b):
         self.a = a
         self.b = b
-        self._set = True
         pos = self.rect.center
+        self.arc_lenght = b - a
         self.image = self.create()
         self.rect = self.image.get_rect(center=pos)

@@ -3,14 +3,14 @@ from engine.frontend.widgets import BaseWidget, ValueText
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from .common import ListedArea, ColoredBody
-from pygame import Surface, Rect
+from pygame import Surface, Rect, draw
 from ..pie import PieChart as Pc
-from engine import albedos
+from engine import albedos, q
+from decimal import Decimal as Dc
 
 
 class AlbedoPanel(BaseWidget):
-    skippable = True  # initially, we only care for the albedo of habitable planets,
-    # this may change in the future because the albedo (bond) also affects the object's visibility.
+    skippable = False
     skip = False
 
     current = None
@@ -44,16 +44,21 @@ class AlbedoPanel(BaseWidget):
         # Section A
         d = {'Land': 50, 'Ocean': 50}  # "clouds" is a single value
         ks = [[128, 64, 0], [0, 183, 235]]
-        self.pie_coverage = Pc(self, b2.centerx+150, a1.centery - 20, b3.h / 1.4, d,
+        self.pie_coverage = Pc(self, b2.centerx + 150, a1.centery - 20, b3.h / 1.4, d,
                                use_handlers=1, colors=ks, is_set=0)
         self.charts.add(self.pie_coverage)
 
         # Section B
         n = sorted(albedos.keys())
         x, y = 'names', 'colors'
-        a = {x: {n[4]: 50, n[5]: 50}, y: [k[i] for i in [4, 5]]}
-        b = {x: {n[0]: 16, n[1]: 17, n[2]: 16, n[3]: 17, n[6]: 17, n[9]: 17}, y: [k[i] for i in [0, 1, 2, 3, 6, 9]]}
-        c = {x: {n[7]: 50, n[8]: 50}, y: [k[i] for i in [7, 8]]}
+
+        o = Dc(16)
+        p = Dc(17)
+        g = Dc(50)
+
+        a = {x: {n[4]: g, n[5]: g}, y: [k[i] for i in [4, 5]]}
+        b = {x: {n[0]: o, n[1]: p, n[2]: o, n[3]: p, n[6]: p, n[9]: p}, y: [k[i] for i in [0, 1, 2, 3, 6, 9]]}
+        c = {x: {n[7]: g, n[8]: g}, y: [k[i] for i in [7, 8]]}
 
         u = [b1.center, b2.center, b3.center]
         self.pie_ocean = Pc(self, u[1][0] + 150, u[1][1] - 30, b2.h / 2, a[x], use_handlers=True, colors=a[y], is_set=0)
@@ -73,10 +78,12 @@ class AlbedoPanel(BaseWidget):
             vt.modifiable = False
             EventHandler.register(vt.text_area.get_value_from_event, "SetValue")
             self.properties.add(vt, layer=2)
-        vt = ValueText(self, 'Clouds', 3, 2 * 20 + r.bottom, size=14)
-        vt.modifiable = True
-        vt.value = '50%'
-        self.properties.add(vt, layer=2)
+        self.clouds_text = ValueText(self, 'Clouds', 3, 2 * 20 + r.bottom, size=14)
+        self.clouds_text.enable()
+        self.clouds_text.modifiable = True
+        self.clouds_text.text_area.set_value(q(50), is_percentage=True)
+        self.properties.add(self.clouds_text, layer=2)
+        draw.aaline(self.image, 'black', [1, self.clouds_text.rect.top - 1], [100, self.clouds_text.rect.top - 1])
 
         r = self.write('Ocean Breakdown', f2, x=3, y=6 * 20 + r.bottom)
         for i, arc in enumerate(self.pie_ocean.arcs):
@@ -105,18 +112,43 @@ class AlbedoPanel(BaseWidget):
             EventHandler.register(vt.text_area.get_value_from_event, "SetValue")
             self.properties.add(vt, layer=2)
 
-        vt = ValueText(self, 'Total Albedo', self.planet_area.rect.x, self.planet_area.rect.bottom + 10)
-        vt.enable()
-        vt.modifiable = False
-        self.properties.add(vt, layer=2)
+        self.albedo_vt = ValueText(self, 'Total Albedo', self.planet_area.rect.x, self.planet_area.rect.bottom + 10)
+        self.albedo_vt.enable()
+        self.albedo_vt.modifiable = False
+        self.properties.add(self.albedo_vt, layer=2)
+
+        EventHandler.register(self.conclude, 'Fin')
 
     def total_albedo(self):
         """Computes the total bond albedo (WIP)"""
         arcs = self.pie_land.arcs + self.pie_ocean.arcs + self.pie_clouds.arcs
-        print(arcs)
+        total_albedo = Dc(0)
+        for arc in arcs:
+            if arc.enabled:
+                coverage = 'Land' if arc in self.pie_land else 'Ocean' if arc in self.pie_ocean else 'Clouds'
+                local_name = arc.name
+                min_v = Dc(albedos[local_name]['min']) / Dc(100)
+                max_v = Dc(albedos[local_name]['max']) / Dc(100)
+                total_albedo += ((min_v + max_v) / Dc(2)) * self.total_coverage(coverage, local_name)
 
-    def total_coverage(self):
-        pass
+        value = (round(total_albedo, 2) * Dc(100))
+        self.current.albedo = value
+        self.albedo_vt.text_area.set_value(q(float(value)), is_percentage=True)
+
+    def total_coverage(self, global_title: str, title: str):
+        g_chart = None
+        l_chart = None
+        if global_title == 'Clouds':
+            g_chart = Dc(self.clouds_text.value) / Dc(100)
+            l_chart = Dc(self.pie_clouds.get_value(title).strip('%')) / Dc(100)
+        elif global_title == 'Ocean':
+            g_chart = Dc(self.pie_coverage.get_value(global_title).strip('%')) / Dc(100)
+            l_chart = Dc(self.pie_ocean.get_value(title).strip('%')) / Dc(100)
+        elif global_title == 'Land':
+            g_chart = Dc(self.pie_coverage.get_value(global_title).strip('%')) / Dc(100)
+            l_chart = Dc(self.pie_land.get_value(title).strip('%')) / Dc(100)
+
+        return g_chart * l_chart
 
     def clear(self):
         for chart in self.charts.widgets():
@@ -137,8 +169,30 @@ class AlbedoPanel(BaseWidget):
 
     def set_planet(self, planet):
         self.current = planet
-        for chart in self.charts.widgets():
-            chart.enable()
+        if planet.habitable:
+            for chart in self.charts.widgets():
+                chart.enable()
+        elif planet.planet_type == 'gaseous':
+            self.pie_clouds.enable()
+            self.clouds_text.text_area.set_value(q(100), is_percentage=True)
+        elif planet.planet_subtype == 'Water World':
+            self.pie_clouds.enable()
+            self.pie_ocean.enable()
+            self.pie_coverage.enable()
+            self.pie_coverage.set_values({'Ocean': 100, 'Land': 0}, use_names=True)
+
+    @staticmethod
+    def elevate_changes(key, new_value: float):
+        if key.text == 'Clouds':
+            if new_value < 0:
+                return q(0)
+            elif new_value > 100:
+                return q(100)
+
+    def conclude(self, event):
+        if hasattr(event.origin, 'parent'):
+            if event.origin.parent.parent is self:
+                self.total_albedo()
 
 
 class UnbondedBody(ColoredBody):
@@ -154,7 +208,7 @@ class AvailablePlanets(ListedArea):
     def show(self):
         system = Systems.get_current()
         if system is not None:
-            bodies = [body for body in system.astro_bodies if body.habitable is True]
+            bodies = [body for body in system.astro_bodies]
             self.populate(bodies)
 
         super().show()
