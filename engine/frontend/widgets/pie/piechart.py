@@ -126,6 +126,8 @@ class PieChart(BaseWidget):
         "Overrides the base function because this class has no image to remove from the Renderer"""
         self.is_visible = False
         WidgetHandler.del_widget(self)
+        for widget in self.chart.widgets():
+            widget.hide()
 
     def enable(self):
         super().enable()

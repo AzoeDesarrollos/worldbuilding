@@ -49,9 +49,6 @@ COLOR_FOREST = COLOR_HABITABLE
 color_areas = [COLOR_DESERT, COLOR_FOREST, COLOR_GRASSLAND, COLOR_INLAND_WATER_BODIES, COLOR_OPEN_OCEAN, COLOR_SEA_ICE,
                COLOR_SNOW_AND_ICE, COLOR_THICK_CLOUDS, COLOR_THIN_CLOUDS, COLOR_URBAN]
 
-WIDTH = 1000
-HEIGHT = 600
-
 __all__ = [
     # Tamaño de la ventana
     'ALTO',
@@ -100,9 +97,6 @@ __all__ = [
     'COLOR_INLAND_WATER_BODIES',
     'COLOR_SNOW_AND_ICE',
     'COLOR_FOREST',
-    'color_areas',
+    'color_areas'
 
-    # Constantes del visualizador de órbitas
-    "WIDTH",
-    "HEIGHT"
 ]

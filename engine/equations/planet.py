@@ -130,7 +130,7 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     @tilt.setter
     def tilt(self, value):
-        if type(value) is int:
+        if type(value) is not str:
             self._tilt = AxialTilt(self, value)
         else:
             self._tilt = value
@@ -506,6 +506,8 @@ class AxialTilt:
 
     def __init__(self, parent, inclination):
         self.parent = parent
+        if type(inclination) is q:
+            inclination = inclination.m
         if 0 <= inclination < 90:
             self.parent.set_spin('pograde')
         elif 90 <= inclination <= 180:

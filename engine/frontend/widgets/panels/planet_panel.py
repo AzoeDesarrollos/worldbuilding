@@ -71,6 +71,7 @@ class PlanetPanel(BasePanel):
         if self.is_visible:
             self.sort_buttons()
         self.properties.add(button, layer=3)
+        self.image.fill(COLOR_BOX, self.area_type)
         return button
 
     def del_button(self, planet):
@@ -92,13 +93,14 @@ class PlanetPanel(BasePanel):
     def sort_buttons(self):
         x = self.curr_x
         y = self.curr_y
-        for bt in self.planet_buttons.get_widgets_from_layer(Systems.get_current().id):
+        buttons = self.planet_buttons.get_widgets_from_layer(Systems.get_current().id)
+        for i, bt in enumerate(buttons):
             bt.move(x, y)
-            if x + bt.max_w + 10 < self.area_buttons.w - bt.max_w:
-                x += bt.max_w + 10
-            else:
+            x += bt.max_w + 5
+            if bt.rect.right > self.area_buttons.w:
                 x = 3
                 y += 32
+                bt.move(x, y)
             if not self.area_buttons.contains(bt.rect):
                 bt.hide()
             else:
@@ -313,6 +315,7 @@ class PlanetType(ObjectType):
         idx = self.absolutes.widgets().index(button)
         attr = self.absolute_args[idx]
         setattr(self.current, attr, data)
+        self.toggle_habitable()
         self.fill()
 
     def fill(self, tos=None):

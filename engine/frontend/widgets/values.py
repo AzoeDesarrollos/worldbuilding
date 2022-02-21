@@ -124,7 +124,7 @@ class ValueText(BaseWidget):
                     assert available_mass > 0.0001, not_enough_mass
                     data = dwarfgraph_loop(available_mass if available_mass < 0.1 else None)
                 if not p.has_values:
-                    Renderer.set_view_mode()
+                    Renderer.reset()
                 if data is not None:
                     for elemento in self.parent.properties.get_sprites_from_layer(1):
                         attr = ''
@@ -190,8 +190,7 @@ class ValueText(BaseWidget):
         else:
             self.image = self.img_uns
 
-        if not self.active:
-            self.deselect()
+        self.deselect()
         self.text_area.update()
 
     def __repr__(self):

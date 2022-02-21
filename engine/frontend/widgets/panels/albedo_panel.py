@@ -119,6 +119,9 @@ class AlbedoPanel(BaseWidget):
 
         EventHandler.register(self.conclude, 'Fin')
 
+        for chart in self.charts.widgets():
+            chart.hide()
+
     def total_albedo(self):
         """Computes the total bond albedo (WIP)"""
         arcs = self.pie_land.arcs + self.pie_ocean.arcs + self.pie_clouds.arcs

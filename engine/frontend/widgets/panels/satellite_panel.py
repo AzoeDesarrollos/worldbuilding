@@ -190,6 +190,8 @@ class SatelliteType(ObjectType):
             self.properties.add(a, layer=2)
             a.modifiable = True
 
+        self.pie.hide()
+
     def calculate(self):
         data = {'composition': None}
         if self.current is None:
