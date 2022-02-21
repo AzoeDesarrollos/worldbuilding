@@ -1,19 +1,17 @@
-from .constantes import ALTO, ANCHO, COLOR_FONDO, HEIGHT, WIDTH
-from pygame import display, init, SCALED, image, event, Rect
+from pygame import display, init, SCALED, image, event
+from .constantes import ALTO, ANCHO, COLOR_FONDO
 from pygame.sprite import LayeredUpdates
 import os
 
 
 class Renderer:
     contents = None
-    rect = None
 
     @classmethod
     def init(cls):
         init()
         cls.contents = LayeredUpdates()
         cls.reset()
-        cls.rect = Rect(0, 0, WIDTH, HEIGHT)
 
     @staticmethod
     def reset():
@@ -23,10 +21,6 @@ class Renderer:
         display.set_caption("WorldBuilding")
         display.set_mode((ANCHO, ALTO), SCALED)
         event.clear()
-
-    @classmethod
-    def contains(cls, item):
-        return cls.rect.colliderect(item.rect)
 
     @classmethod
     def add_widget(cls, widget, layer=1):
