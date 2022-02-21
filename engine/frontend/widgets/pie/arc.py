@@ -20,6 +20,8 @@ class Arc(BaseWidget):
     selected_color = None
     default_value = None
 
+    using_handlers = False
+
     def __init__(self, parent, name, color_a, color_b, a, b, radius, using_handlers=False, is_set=True):
         super().__init__(parent)
         self.radius = radius
@@ -116,6 +118,9 @@ class Arc(BaseWidget):
                 self.arc_lenght = len(point_sequence) - 1
             if 1 < self.arc_lenght < 360:
                 draw.polygon(image, self.selected_color, point_sequence)
+                if self.using_handlers:
+                    self.handle_a.show()
+                    self.handle_b.show()
             elif self._value > Dc(1):
                 rotation = False
                 self._finished = True
@@ -160,8 +165,8 @@ class Arc(BaseWidget):
             self.rect = self.image.get_rect(center=pos)
         else:
             # there's no point of having a handle if the "arc" is a circle,
-            # so the handle commits suicide.
-            handle.kill()
+            # so the handle hides (because it may come back).
+            handle.hide()
 
     def __repr__(self):
         return 'Arc ' + self.name
@@ -186,5 +191,8 @@ class Arc(BaseWidget):
         self.b = b
         pos = self.rect.center
         self.arc_lenght = b - a
+        self._finished = False
         self.image = self.create()
+        self.handle_a.restore(a)
+        self.handle_b.restore(b)
         self.rect = self.image.get_rect(center=pos)

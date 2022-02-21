@@ -77,6 +77,10 @@ class Handle(Meta):
             for widget in self.linked:
                 widget.adjust(self)
 
+    def restore(self, angle):
+        self.angle = angle
+        self.rect.center = self.set_xy()
+
     def link(self, arc):
         if arc not in self.linked:
             self.linked.append(arc)

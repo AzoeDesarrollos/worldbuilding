@@ -169,6 +169,10 @@ class AlbedoPanel(BaseWidget):
 
     def set_planet(self, planet):
         self.current = planet
+        for chart in self.charts.widgets():
+            chart.set_values()
+            chart.disable()
+
         if planet.habitable:
             for chart in self.charts.widgets():
                 chart.enable()

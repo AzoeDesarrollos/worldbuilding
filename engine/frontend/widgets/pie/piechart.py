@@ -12,10 +12,11 @@ class PieChart(BaseWidget):
     colors_a = None
     colors_b = None
 
-    default_names = ['iron', 'water ice', 'silicates']
+    default_names = None
 
     def __init__(self, parent, cx, cy, radius, values, use_handlers=False, colors=None, is_set=True):
         super().__init__(parent)
+        self.default_names = []
         self.chart = WidgetGroup()
         self.radius = radius
         self.rect = Rect(0, 0, radius, radius)
@@ -32,6 +33,7 @@ class PieChart(BaseWidget):
         a, b = Dc(0), Dc(0)
         arcs, handles = [], []
         for i, name in enumerate(values):
+            self.default_names.append(name)
             value = Dc(values[name])
 
             b += round((value / Dc(100)) * Dc(360))
