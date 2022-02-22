@@ -60,3 +60,9 @@ class Group:
 
     def __repr__(self):
         return str(self._list)
+
+    def __contains__(self, item):
+        candidates = [i for i in self._list if i.name == item.name]
+        if len(candidates):
+            return True
+        return False

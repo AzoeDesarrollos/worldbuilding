@@ -30,6 +30,8 @@ class ColoredBody(ListedBody):
 
         super().__init__(parent, astro, name, x, y, fg_color=color)
 
+        self.name = 'Button of '+str(self.object_data)
+
     def on_mousebuttondown(self, event):
         raise NotImplementedError()
 
@@ -37,4 +39,5 @@ class ColoredBody(ListedBody):
         self.rect.topleft = x, y
 
     def __repr__(self):
-        return 'Button of '+str(self.object_data)
+        return self.name
+

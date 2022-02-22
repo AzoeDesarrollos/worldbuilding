@@ -168,7 +168,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.habitable = habitable
 
     def set_temperature(self, star_mass, semi_major_axis):
-        t = planet_temperature(star_mass, semi_major_axis, self.albedo.m, self.greenhouse.m)
+        t = planet_temperature(star_mass, semi_major_axis, float(self.albedo.m), self.greenhouse.m)
         self._temperature = round(t.to('earth_temperature').m)
         self.temperature = q(self._temperature, 'earth_temperature').to('celsius')
         return t
@@ -176,7 +176,7 @@ class Planet(BodyInHydrostaticEquilibrium):
     def get_temperature(self):
         star = self.orbit.star
         orbit = self.orbit.a
-        t = planet_temperature(star.mass.m, orbit.m, self.albedo, self.greenhouse.m)
+        t = planet_temperature(star.mass.m, orbit.m, float(self.albedo.m), self.greenhouse.m)
         return t
 
     def set_orbit(self, star, orbital_parameters):
@@ -559,6 +559,7 @@ class Ring:
     def __init__(self, planet, asteroid):
         self.parent = planet
         self.create(asteroid)
+        self.material = asteroid
 
         self.gaps = []
         self.find_gaps()
@@ -594,3 +595,8 @@ class Ring:
         for i in semi_major_axes:
             if self.inner.m <= i.to('km').m <= self.outer.m:
                 self.gaps.append(i)
+
+    def recreate(self):
+        self.create(self.material)
+        self.find_gaps()
+        return self

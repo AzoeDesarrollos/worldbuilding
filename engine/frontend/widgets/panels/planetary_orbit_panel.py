@@ -171,19 +171,20 @@ class PlanetaryOrbitPanel(BaseWidget):
             planets = [p for p in system.planets if p.relative_size != 'Giant']
             for obj in system.satellites + system.asteroids + planets:
                 btn = ObjectButton(self, obj)
-                if obj not in self.objects:
-                    self.objects.append(obj)
+                if btn not in self.buttons:
+                    if obj not in self.objects:
+                        self.objects.append(obj)
 
-                if obj.orbit is not None and obj.orbit.star.celestial_type == 'planet':
-                    markers = self._markers[obj.orbit.star.id]
-                    marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
-                    marker = markers[marker_idx]
-                    btn.link_marker(marker)
-                    btn.update_text(obj.orbit.a)
+                    if obj.orbit is not None and obj.orbit.star.celestial_type == 'planet':
+                        markers = self._markers[obj.orbit.star.id]
+                        marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
+                        marker = markers[marker_idx]
+                        btn.link_marker(marker)
+                        btn.update_text(obj.orbit.a)
 
-                if btn is not None and (obj.orbit is None or btn.completed):
-                    self.buttons.add(btn, layer=system.id)
-                    self.properties.add(btn, layer=4)
+                    if btn is not None and (obj.orbit is None or btn.completed):
+                        self.buttons.add(btn, layer=system.id)
+                        self.properties.add(btn, layer=4)
 
             self.sort_buttons(system.id)
 
@@ -219,6 +220,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         densest = sorted(sats, key=lambda i: i.density.to('earth_density').m, reverse=True)
         if len(densest):
             self.create_roches_marker(densest[0])
+        self.add_orbits_button.disable()
         self.sort_markers()
 
     def select_one(self, button):
@@ -249,13 +251,13 @@ class PlanetaryOrbitPanel(BaseWidget):
             else:
                 marker.show()
 
-    def sort_buttons(self, planet_id):
+    def sort_buttons(self, system_id):
         x, y = 3, 441
         self.image.fill(COLOR_AREA, self.area_buttons)
         for button in self.buttons.widgets():
             button.hide()
 
-        for bt in self.buttons.get_widgets_from_layer(planet_id):
+        for bt in self.buttons.get_widgets_from_layer(system_id):
             bt.move(x, y)
             if x + bt.rect.w + 10 < self.rect.w - bt.rect.w + 10:
                 x += bt.rect.w + 10
@@ -271,13 +273,21 @@ class PlanetaryOrbitPanel(BaseWidget):
         obj_density = obj.density.to('earth_density').m
         roches = self.current.set_roche(obj_density)
         roches_marker = Marker(self, "Roche's Limit", roches, lock=True)
-        first = self.markers[0]
-        if first.name == "Roche's Limit":
-            self.properties.remove(first)
-            self.markers[0] = roches_marker
+        marker = None
+        for m in self.markers:
+            if m.name == "Roche's Limit":
+                self.properties.remove(m)
+                marker = m
+                break
+
+        if marker is not None:
+            idx = self.markers.index(marker)
+            self.markers[idx] = roches_marker
         else:
             self.markers.append(roches_marker)
         self.properties.add(roches_marker, layer=3)
+        self.replace_ring()
+
         return roches
 
     def create_hill_marker(self, planet):
@@ -292,11 +302,27 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.properties.add(x, layer=3)
 
     def create_ring_markers(self, ring):
+        self.add_orbits_button.disable()
         x = Marker(self, "Ring's inner edge", ring.inner.to('earth_radius'), lock=True)
         y = Marker(self, "Ring's outer edge", ring.outer.to('earth_radius'), lock=True)
         for z in [x, y]:
             self.markers.append(z)
             self.properties.add(z, layer=3)
+
+    def replace_ring(self):
+        ring_makers = [marker for marker in self.markers if 'Ring' in marker.name]
+        if len(ring_makers):
+            new_ring = self.current.ring.recreate()
+            for marker in ring_makers:
+                self.markers.remove(marker)
+                self.properties.remove(marker)
+            self.create_ring_markers(new_ring)
+
+    def on_button_press(self, body):
+        self.hide_everything()
+        self.current = body.parent
+        self.planet_area.select_by_data(body.parent)
+        self.show_markers_button.enable()
 
     def add_new(self, obj):
         if obj not in self.added:
@@ -358,8 +384,10 @@ class PlanetaryOrbitPanel(BaseWidget):
 
     def remove_marker(self, marker):
         self.markers.remove(marker)
+        marker.linked_button.kill()
         marker.unlink()
         marker.kill()
+        self.sort_buttons(self.current.orbit.star.id)
 
     def hide_markers(self):
         for marker in self.markers:
@@ -509,10 +537,7 @@ class ObjectButton(ColoredBody):
                 self.create_type(orbit)
                 self.link_marker(marker)
             else:
-                self.parent.hide_everything()
-                self.parent.current = self.object_data.parent
-                self.parent.planet_area.select_by_data(self.object_data.parent)
-                self.parent.show_markers_button.enable()
+                self.parent.on_button_press(self.object_data)
                 self.info.link_marker(self.linked_marker)
                 self.info.show()
 
@@ -627,8 +652,9 @@ class Marker(Meta, IncrementalValue):
                 else:
                     name = str(self.obj)
                     ring = self.parent.current.set_ring(self.obj)
-                    self.parent.remove_marker(self)
+                    Systems.get_current().remove_astro_obj(self.obj)
                     self.parent.create_ring_markers(ring)
+                    self.parent.remove_marker(self)
                     self.parent.sort_markers()
                     raise AssertionError(f'The asteroid {name} has been turned into a ring')
 

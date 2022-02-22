@@ -193,6 +193,7 @@ class Arc(BaseWidget):
         self.arc_lenght = b - a
         self._finished = False
         self.image = self.create()
-        self.handle_a.restore(a)
-        self.handle_b.restore(b)
+        if self.using_handlers:
+            self.handle_a.restore(a)
+            self.handle_b.restore(b)
         self.rect = self.image.get_rect(center=pos)

@@ -470,7 +470,6 @@ class OrbitPanel(BaseWidget):
             self.show_markers_button.disable()
             self.area_modify.color_standby()
         self.visible_markers = not self.visible_markers
-        self.area_modify.visible_markers = self.visible_markers
 
     def on_orbit_button_press(self):
         self.recomendation.hide()

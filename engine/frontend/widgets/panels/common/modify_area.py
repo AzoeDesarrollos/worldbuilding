@@ -4,7 +4,6 @@ from pygame import Surface, mouse
 
 class ModifyArea(BaseWidget):
     marker = None
-    visible_markers = False
     ready = False
 
     def __init__(self, parent, x, y):
@@ -22,7 +21,7 @@ class ModifyArea(BaseWidget):
         elif event.button == 5:
             delta = +1
 
-        if self.marker is not None and self.visible_markers:
+        if self.marker is not None and self.parent.visible_markers:
             self.marker.tune_value(delta)
 
     def link(self, marker):

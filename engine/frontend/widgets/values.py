@@ -235,7 +235,7 @@ class NumberArea(BaseArea, IncrementalValue):
         EventHandler.register(self.get_value, 'SetValue')
 
     def input(self, event):
-        if self.enabled and not self.grandparent.locked:
+        if self.enabled and not self.grandparent.locked and event.origin == self.name:
             assert self.modifiable, 'This value is a derivated value. It is not directly modifiable.'
             if event.data is not None:
                 char = event.data['value']
