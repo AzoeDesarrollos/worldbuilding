@@ -1,5 +1,4 @@
-from engine.frontend.globales import ALTO, ANCHO, COLOR_TEXTO, COLOR_SELECTED, COLOR_BOX, COLOR_DISABLED
-from engine.frontend.globales import Renderer, WidgetHandler
+from engine.frontend.globales import ALTO, ANCHO, COLOR_TEXTO, COLOR_SELECTED, COLOR_BOX, COLOR_DISABLED, WidgetGroup
 from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface, draw, transform, SRCALPHA
 from engine.equations.planetary_system import Systems
@@ -19,10 +18,10 @@ class LayoutPanel(BaseWidget):
         self.image = Surface((ANCHO, ALTO))
         self.image.fill(COLOR_SELECTED)
         self.rect = self.image.get_rect()
-        self.show()
         self.name = 'Layout'
 
         Systems.init()
+        self.properties = WidgetGroup()
 
         self.panels = []
         for panel in panels:
@@ -38,19 +37,11 @@ class LayoutPanel(BaseWidget):
         d = LoadButton(self, (self.rect.w//6)*3, self.rect.bottom - 26)
         c = SaveButton(self, (self.rect.w//6)*5-32, self.rect.bottom - 26)
 
-        SwapSystem(self, ANCHO-200, 2)
-
-        Renderer.add_widget(a)
-        Renderer.add_widget(b)
-        Renderer.add_widget(c)
-        Renderer.add_widget(d)
-        Renderer.add_widget(e)
-
-        WidgetHandler.add_widget(c)
-        WidgetHandler.add_widget(d)
-        WidgetHandler.add_widget(e)
+        f = SwapSystem(self, ANCHO - 200, 2)
 
         self.load_button = d
+
+        self.properties.add(a, b, c, d, e, f, layer=1)
 
         EventHandler.register(self.show_current, 'SwitchMode')
 
@@ -80,13 +71,22 @@ class LayoutPanel(BaseWidget):
     def __repr__(self):
         return 'Layout Panel'
 
+    def show(self):
+        super().show()
+        for widget in self.properties.get_widgets_from_layer(1):
+            widget.show()
+
+    def hide(self):
+        super().hide()
+        for widget in self.properties.get_widgets_from_layer(1):
+            widget.hide()
+
 
 class Arrow(Meta):
     enabled = True
 
     def __init__(self, parent, direccion, angulo, centerx, y):
         super().__init__(parent)
-        WidgetHandler.add_widget(self)
         self.direccion = direccion
 
         self.img_uns = self.create(COLOR_BOX, angulo)
@@ -176,7 +176,6 @@ class SwapSystem(Meta):
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))
         self.system_image = SystemName(self, left=self.rect.right+6, y=2)
-        self.show()
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -189,6 +188,14 @@ class SwapSystem(Meta):
         elif not self.enabled and 'Star' not in self.parent.current.name:
             self.enable()
 
+    def show(self):
+        super().show()
+        self.system_image.show()
+
+    def hide(self):
+        super().hide()
+        self.system_image.hide()
+
 
 class SystemName(BaseWidget):
     color = COLOR_DISABLED
@@ -200,7 +207,6 @@ class SystemName(BaseWidget):
         self.image = self.f.render(self.get_name(), True, COLOR_TEXTO, COLOR_BOX)
         self._rect = self.image.get_rect(**kwargs)
         self.rect = self._rect.copy()
-        self.show()
 
     def get_name(self):
         if 'Star' in self.parent.parent.current.name:

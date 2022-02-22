@@ -10,8 +10,10 @@ from .naming_panel import NamingPanel
 from .info_panel import InformationPanel
 from .multiple_stars_panel import MultipleStarsPanel
 from .albedo_panel import AlbedoPanel
+from .start_panel import StartPanel
 
 panels = [
+    StartPanel,
     StarPanel,
     StarSystemPanel,
     MultipleStarsPanel,
