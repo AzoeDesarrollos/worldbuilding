@@ -43,7 +43,7 @@ class Number(Sprite):
         self.rect = self.image.get_rect(**kwargs)
 
 
-def gasgraph_loop(limit_mass):
+def gasgraph_loop(limit_mass=None):
     done = False
     data = {}
     text_mass = 'Mass: N/A'

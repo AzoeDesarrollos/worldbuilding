@@ -94,25 +94,28 @@ class ValueText(BaseWidget):
                 self.active = True
                 available_mass = system.get_available_mass()
                 if p.parent.unit.name == 'Habitable' and not p.has_values:
-                    available_mass = available_mass.to('earth_mass').m
                     m_low, m_high, r_low, r_high = Terrestial
-                    if available_mass < m_high:
-                        m_high = available_mass
-                    assert available_mass > 0.1, not_enough_mass
+                    if type(available_mass) is q:
+                        available_mass = available_mass.to('earth_mass').m
+                        if available_mass < m_high:
+                            m_high = available_mass
+                        assert available_mass > 0.1, not_enough_mass
                     data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
                                       radius_lower_limit=r_low, radius_upper_limit=r_high)
                 elif p.parent.unit.name == 'Terrestial' and not p.has_values:
-                    available_mass = available_mass.to('earth_mass').m
                     m_high = 10
-                    if available_mass < m_high:
-                        m_high = available_mass
-                    assert m_high > 0.1, not_enough_mass
+                    if type(available_mass) is q:
+                        available_mass = available_mass.to('earth_mass').m
+                        if available_mass < m_high:
+                            m_high = available_mass
+                        assert m_high > 0.1, not_enough_mass
                     data = graph_loop(mass_upper_limit=m_high)
                 elif p.parent.unit.name == 'Gas Dwarf' and not p.has_values:
                     m_low, m_high, r_low, r_high = GasDwarf
-                    if available_mass.to('earth_mass').m < m_high:
-                        m_high = available_mass.m
-                    assert m_high > 0.2, not_enough_mass
+                    if type(available_mass) is q:
+                        if available_mass.to('earth_mass').m < m_high:
+                            m_high = available_mass.m
+                        assert m_high > 0.2, not_enough_mass
                     data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
                                       radius_lower_limit=r_low, radius_upper_limit=r_high,
                                       is_gas_drwaf=True)

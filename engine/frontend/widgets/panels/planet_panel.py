@@ -395,24 +395,29 @@ class ShownMass(BaseWidget):
             self.show_jovian_mass = not self.show_jovian_mass
 
     def show_mass(self):
-        try:
-            system = Systems.get_current()
-            mass = None
-            if system is not None:
-                mass = system.get_available_mass()
-                if not self.parent.enabled:
-                    self.parent.enable()
-            elif self.parent.enabled:
-                self.parent.disable()
-                raise AttributeError
-        except AttributeError:
-            mass = q(0, 'jupiter_mass')
-        if not self.show_jovian_mass:
-            mass = mass.to('earth_mass')
-        if mass is not None:
-            return '{:,g~}'.format((round(mass, 4)))
+        if Systems.restricted_mode:
+            try:
+                system = Systems.get_current()
+                mass = None
+                if system is not None:
+                    mass = system.get_available_mass()
+                    if not self.parent.enabled:
+                        self.parent.enable()
+                elif self.parent.enabled:
+                    self.parent.disable()
+                    raise AttributeError
+            except AttributeError:
+                mass = q(0, 'jupiter_mass')
+            if not self.show_jovian_mass:
+                mass = mass.to('earth_mass')
+            if mass is not None:
+                return '{:,g~}'.format((round(mass, 4)))
+            else:
+                return ''
         else:
-            return ''
+            if not self.parent.enabled:
+                self.parent.enable()
+            return 'Unlimited'
 
     def update(self):
         self.parent.image.fill(COLOR_BOX, self.mass_rect)

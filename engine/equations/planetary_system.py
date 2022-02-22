@@ -28,7 +28,8 @@ class PlanetarySystem(Flagable):
         self.astro_bodies = []
         self.star_system = star_system
         self.id = star_system.id
-        self.set_available_mass()
+        if Systems.restricted_mode:
+            self.set_available_mass()
         self.aparent_brightness = {}
         self.relative_sizes = {}
         self.distances = {}
@@ -36,10 +37,14 @@ class PlanetarySystem(Flagable):
             self.age = star_system.age
 
     def update(self):
-        self.set_available_mass()
+        if Systems.restricted_mode:
+            self.set_available_mass()
 
     def get_available_mass(self):
-        return self.body_mass
+        if Systems.restricted_mode:
+            return self.body_mass
+        else:
+            return 'Unlimited'
 
     def set_available_mass(self):
         if self.star_system.parent is not None:
@@ -154,11 +159,11 @@ class PlanetarySystem(Flagable):
         group = self._get_astro_group(astro_obj)
 
         if astro_obj not in group:
-            minus_mass = astro_obj.mass.to('jupiter_mass')
-
-            text = 'There is not enough mass in the system to create new bodies of this type.'
-            assert minus_mass <= self.body_mass, text
-            self.body_mass -= minus_mass
+            if Systems.restricted_mode:
+                minus_mass = astro_obj.mass.to('jupiter_mass')
+                text = 'There is not enough mass in the system to create new bodies of this type.'
+                assert minus_mass <= self.body_mass, text
+                self.body_mass -= minus_mass
             group.append(astro_obj)
             self.astro_bodies.append(astro_obj)
             if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
@@ -169,8 +174,9 @@ class PlanetarySystem(Flagable):
 
     def remove_astro_obj(self, astro_obj):
         group = self._get_astro_group(astro_obj)
-        plus_mass = astro_obj.mass.to('jupiter_mass')
-        self.body_mass += plus_mass
+        if Systems.restricted_mode:
+            plus_mass = astro_obj.mass.to('jupiter_mass')
+            self.body_mass += plus_mass
         group.remove(astro_obj)
         astro_obj.flag()
         self.astro_bodies.remove(astro_obj)
@@ -287,6 +293,8 @@ class Systems:
 
     bodies_markers = {}
 
+    restricted_mode = True
+
     @classmethod
     def init(cls):
         cls._systems = []
@@ -300,6 +308,13 @@ class Systems:
         ruta = join(getcwd(), 'data', 'savedata.json')
         if not exists(ruta):
             guardar_json(ruta, cls.save_data)
+
+    @classmethod
+    def set_mode(cls, mode):
+        if mode == 'restricted':
+            cls.restricted_mode = True
+        elif mode == 'unrestricted':
+            cls.restricted_mode = False
 
     @classmethod
     def set_system(cls, star):
