@@ -10,7 +10,7 @@ class StartPanel(BaseWidget):
     skip = True
 
     def __init__(self, parent):
-        self.name = 'Naming'
+        self.name = 'Start'
         super().__init__(parent)
         self.image = Surface((ANCHO, ALTO))
         self.image.fill(COLOR_BOX)

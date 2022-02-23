@@ -170,6 +170,9 @@ class AlbedoPanel(BaseWidget):
         for prop in self.properties.widgets():
             prop.hide()
 
+        if Systems.get_current().name == 'Rogue Planets':
+            self.parent.set_skippable('Orbit', True)
+
     def set_planet(self, planet):
         self.current = planet
         for chart in self.charts.widgets():

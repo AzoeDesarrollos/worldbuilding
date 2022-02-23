@@ -228,7 +228,7 @@ class PlanetType(ObjectType):
 
     def clear(self, event):
         if event.data['panel'] is self.parent:
-            for button in self.properties.get_sprites_from_layer(1):
+            for button in self.properties.get_widgets_from_layer(1):
                 button.clear()
         self.parent.select_one()
         self.parent.button_del.disable()

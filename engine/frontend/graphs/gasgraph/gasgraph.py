@@ -103,7 +103,7 @@ def gasgraph_loop(limit_mass=None):
 
     move_x, move_y = True, True
 
-    if Systems.restricted_mode:
+    if Systems.restricted_mode and Systems.get_current().name != 'Rogue Planets':
         markers = Systems.bodies_markers[Systems.get_current().id]['gasgraph']
         marcadores = Group()
         for planet in Systems.get_current().planets:
@@ -249,7 +249,7 @@ def gasgraph_loop(limit_mass=None):
         lineas.draw(fondo)
         display.update()
 
-    if done and len(data) and Systems.restricted_mode:
+    if done and len(data) and Systems.restricted_mode and Systems.get_current().name != 'Rogue Planets':
         # noinspection PyUnboundLocalVariable
         markers.append(punto.rect.center)
 

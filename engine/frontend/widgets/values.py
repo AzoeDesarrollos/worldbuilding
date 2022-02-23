@@ -92,7 +92,7 @@ class ValueText(BaseWidget):
                 data = None
                 system = Systems.get_current()
                 self.active = True
-                if Systems.restricted_mode:
+                if Systems.get_current().name != 'Rogue Planets' and Systems.restricted_mode:
                     available_mass = system.get_available_mass()
                 else:
                     available_mass = None

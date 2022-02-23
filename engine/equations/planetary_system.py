@@ -297,9 +297,10 @@ class Systems:
 
     @classmethod
     def init(cls):
-        cls._systems = []
+        cls._systems = [RoguePlanets]
         cls.loose_stars = []
         cls._system_cycler = cycle(cls._systems)
+        cls._current = RoguePlanets
 
         EventHandler.register(cls.save, "SaveDataFile")
         EventHandler.register(cls.compound_save_data, "SaveData")
@@ -450,7 +451,10 @@ class Systems:
     @classmethod
     def get_current_star(cls):
         if cls._current is not None:
-            return cls._current.star_system
+            if cls._current is RoguePlanets:
+                return RoguePlanets
+            else:
+                return cls._current.star_system
 
     @classmethod
     def get_current_id(cls, instance):
@@ -463,7 +467,10 @@ class Systems:
 
     @classmethod
     def get_systems(cls):
-        return cls._systems
+        if RoguePlanets not in cls._systems and len(cls._systems) >= 1:
+            return cls._systems
+        else:
+            return []
 
     @classmethod
     def add_star(cls, star):
@@ -541,6 +548,15 @@ class RoguePlanets:
     asteroids = []
     astro_bodies = []
 
+    has_name = True
+    name = 'Rogue Planets'
+
+    id = 0
+
+    @classmethod
+    def init(cls):
+        cls.star_system = cls
+
     @classmethod
     def add_astro_obj(cls, astro_obj):
         group = cls._get_astro_group(astro_obj)
@@ -602,3 +618,14 @@ class RoguePlanets:
     @classmethod
     def astro_group(cls, astro_obj):
         return cls._get_astro_group(astro_obj)
+
+    @classmethod
+    def update(cls):
+        pass
+
+    @classmethod
+    def __repr__(cls):
+        return cls.name
+
+
+RoguePlanets.init()
