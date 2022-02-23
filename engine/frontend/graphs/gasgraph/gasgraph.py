@@ -1,6 +1,6 @@
 from pygame import K_UP, K_DOWN, K_RIGHT, K_LEFT, K_SPACE, K_LSHIFT, K_LCTRL, K_ESCAPE
-from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, ANCHO, ALTO, WidgetGroup
 from pygame import init, quit, display, font, event, Rect, Surface, image, mouse
+from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, ANCHO, ALTO, Group
 from pygame import KEYDOWN, QUIT, SCALED, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP
 from ..common import find_and_interpolate, Linea, Punto, BodyMarker
 from engine.equations.planetary_system import Systems
@@ -59,9 +59,9 @@ def gasgraph_loop(limit_mass=None):
     fondo = display.set_mode((ANCHO, ALTO), SCALED)
     fondo.fill(COLOR_BOX)
     exes, yes = [], []
-    numbers = WidgetGroup()
+    numbers = Group()
     markers = Systems.bodies_markers[Systems.get_current().id]['gasgraph']
-    marcadores = WidgetGroup()
+    marcadores = Group()
     for i in [i for i in range(len(radius_keys[:4]))]:
         n = Number(radius_imgs[i], x=i * 28 + 30, y=3)
         numbers.add(n)
@@ -98,7 +98,7 @@ def gasgraph_loop(limit_mass=None):
         lim_rect = None
         lim_img = None
 
-    lineas = WidgetGroup()
+    lineas = Group()
     linea_h = Linea(img_rect, img_rect.x, img_rect.centery, img_rect.w, 1, lineas)
     linea_v = Linea(img_rect, img_rect.centerx, img_rect.y, 1, img_rect.h, lineas)
     punto = Punto(img_rect, img_rect.centerx, img_rect.centery, lineas)

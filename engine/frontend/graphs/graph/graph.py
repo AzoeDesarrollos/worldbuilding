@@ -1,14 +1,14 @@
-from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_SPACE, K_LCTRL, K_LSHIFT, QUIT
+from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_SPACE, K_LCTRL, K_LSHIFT
 from ..common import Linea, Punto, find_and_interpolate, find_and_interpolate_flipped, BodyMarker
 from pygame import font, Surface, Rect, image, mouse, event, Color as Clr, mask
-from pygame import display, init as py_init, quit as py_quit, SCALED
+from pygame import display, quit as py_quit, SCALED
 from engine.backend.util import abrir_json, interpolate
 from engine.equations.planetary_system import Systems
-from pygame.sprite import LayeredUpdates
+from engine.frontend.globales import Group
 from os import environ, getcwd, path
 import sys
 
-py_init()
+
 fuente1 = font.SysFont('verdana', 15)
 fuente2 = font.SysFont('verdana', 14)
 negro, blanco, rojo = Clr(0, 0, 0, 255), Clr(255, 255, 255, 255), Clr(255, 0, 0, 255)
@@ -58,9 +58,9 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
 
     fondo = display.set_mode((witdh, height), SCALED)
     rect = Rect(60, 2, 529, 476)
-    lineas = LayeredUpdates()
+    lineas = Group()
     markers = Systems.bodies_markers[Systems.get_current().id]['graph']
-    marcadores = LayeredUpdates()
+    marcadores = Group()
 
     linea_h = Linea(rect, rect.x, rect.centery, rect.w, 1, lineas)
     linea_v = Linea(rect, rect.centerx, rect.y, 1, rect.h, lineas)
@@ -105,11 +105,11 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
     invalid = False
     while not done:
         for e in event.get():
-            if e.type == QUIT:
-                py_quit()
-                if __name__ == '__main__':
-                    sys.exit()
-            elif e.type == MOUSEBUTTONDOWN:
+            # if e.type == QUIT:
+            #     py_quit()
+            #     if __name__ == '__main__':
+            #         sys.exit()
+            if e.type == MOUSEBUTTONDOWN:
                 if e.button == 1:
                     if (not lockx) or (not locky):
                         if (not lockx) and (not move_x):

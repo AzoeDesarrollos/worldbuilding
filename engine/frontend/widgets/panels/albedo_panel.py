@@ -1,12 +1,12 @@
-from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, WidgetGroup, color_areas as k
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, color_areas as k, Group
 from engine.frontend.widgets import BaseWidget, ValueText
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from .common import ListedArea, ColoredBody
 from pygame import Surface, Rect, draw
+from decimal import Decimal as Dc
 from ..pie import PieChart as Pc
 from engine import albedos, q
-from decimal import Decimal as Dc
 
 
 class AlbedoPanel(BaseWidget):
@@ -27,7 +27,7 @@ class AlbedoPanel(BaseWidget):
         f2 = self.crear_fuente(15, underline=True, bold=True)
         self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5)
 
-        self.properties = WidgetGroup()
+        self.properties = Group()
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 300)
         self.properties.add(self.planet_area, layer=2)
 
@@ -39,7 +39,7 @@ class AlbedoPanel(BaseWidget):
         b2 = Rect(0, a1.bottom, b0.w / 2, h / 2)
         b3 = Rect(0, b2.bottom, b0.w / 2, h / 2)
 
-        self.charts = WidgetGroup()
+        self.charts = Group()
 
         # Section A
         d = {'Land': 50, 'Ocean': 50}  # "clouds" is a single value

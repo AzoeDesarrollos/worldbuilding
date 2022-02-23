@@ -1,12 +1,12 @@
-from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_SELECTED, COLOR_TEXTO
-from .common import ColoredBody, ListedArea, ModifyArea, TextButton, ToggleableButton, Group
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_SELECTED, COLOR_TEXTO, Group
+from .common import ColoredBody, ListedArea, ModifyArea, TextButton, ToggleableButton
 from engine.equations.orbit import PseudoOrbit, RawOrbit, from_planetary_resonance
 from engine.frontend.widgets.incremental_value import IncrementalValue
-from engine.frontend.globales import WidgetHandler, WidgetGroup
 from engine.frontend.widgets.basewidget import BaseWidget
 from .stellar_orbit_panel import OrbitType, RatioDigit
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
+from engine.frontend.globales import WidgetHandler
 from engine.frontend.widgets.meta import Meta
 from pygame import Surface, Rect
 from itertools import cycle
@@ -32,9 +32,9 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.image = Surface((ANCHO, ALTO - 32))
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
-        self.properties = WidgetGroup()
+        self.properties = Group()
         self.buttons = Group()
-        self.orbit_descriptions = WidgetGroup()
+        self.orbit_descriptions = Group()
         self._markers = {}
         self.markers = []
         self.added = []
@@ -157,7 +157,7 @@ class PlanetaryOrbitPanel(BaseWidget):
             self._markers[planet.id] = []
         self.markers = self._markers[planet.id]
         for marker in self.markers:
-            if marker not in self.properties:
+            if marker not in self.properties.widgets():
                 self.properties.add(marker, layer=3)
             marker.show()
 

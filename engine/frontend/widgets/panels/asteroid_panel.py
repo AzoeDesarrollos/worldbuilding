@@ -1,15 +1,14 @@
+from engine.frontend.globales import COLOR_AREA, ANCHO, COLOR_TEXTO, COLOR_BOX, Group
 from engine.frontend.widgets.panels.satellite_panel import CopyCompositionButton
-from engine.frontend.globales import COLOR_AREA, ANCHO, COLOR_TEXTO, COLOR_BOX
 from engine.equations.satellite import minor_moon_by_composition
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
-from engine.frontend.globales import WidgetGroup
 from engine.frontend.widgets.meta import Meta
-from .common import TextButton, Group
 from engine import material_densities, q
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
+from .common import TextButton
 from ..values import ValueText
 from ..pie import PieChart
 
@@ -31,17 +30,16 @@ class AsteroidPanel(BasePanel):
         self.write('Asteroids', f2, COLOR_AREA, x=self.area_asteroids.x + 3, y=self.area_asteroids.y)
         self.curr_x = self.area_asteroids.x + 3
         self.curr_y = self.area_asteroids.y + 21
-        self.properties.add(self.current)
         self.button_add = AddAsteroidButton(self, ANCHO - 13, 398)
         self.button_del = DelAsteroidButton(self, ANCHO - 13, 416)
         self.copy_button = CopyCompositionButton(self, ro.centerx,  ro.bottom + 6)
         txt = 'Copy the values from a selected planet'
         self.f3 = self.crear_fuente(11)
         self.txt_a = self.write2(txt, self.f3, 130, COLOR_AREA, centerx=ro.centerx, y=self.area_asteroids.y + 50, j=1)
-        self.properties.add(self.button_add, self.button_del, self.copy_button, layer=1)
+        self.mass_number = ShownMass(self)
+        self.properties.add(self.current, self.mass_number, self.button_add, self.button_del, self.copy_button, layer=1)
         self.asteroids = Group()
         self.moons = []
-        self.properties.add(ShownMass(self), layer=1)
         EventHandler.register(self.load_satellites, 'LoadData')
         EventHandler.register(self.save_satellites, 'Save')
         EventHandler.register(self.name_current, 'NameObject')
@@ -188,7 +186,7 @@ class AsteroidType(BaseWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.properties = WidgetGroup()
+        self.properties = Group()
 
         EventHandler.register(self.clear, 'ClearData')
         self.relative_args = ['density', 'mass', 'volume']
@@ -270,7 +268,7 @@ class AsteroidType(BaseWidget):
         self.has_values = False
         self.parent.clear()
         for vt in self.properties.get_widgets_from_layer(2)+self.properties.get_widgets_from_layer(3):
-            vt.value = ''
+            vt.text_area.set_value('')
         for vt in self.properties.get_widgets_from_layer(4):
             vt.value = self.pie.get_default_value(vt.text.lower())
         if not replace:
@@ -312,9 +310,10 @@ class AsteroidType(BaseWidget):
             }
         }
 
-        for elemento in self.properties.get_widgets_from_layer(2):
+        elementos = self.properties.get_widgets_from_layer(2)
+        for elemento in elementos:
             elemento.enable()
-            idx = self.properties.widgets().index(elemento)
+            idx = elementos.index(elemento)
             attr = self.relative_args[idx]
 
             if self.parent.mode == 0:

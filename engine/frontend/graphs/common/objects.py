@@ -8,7 +8,8 @@ gris = Color(125, 125, 125, 255)
 
 class Linea(Sprite):
     def __init__(self, area, x, y, w, h, grupo):
-        super().__init__(grupo)
+        super().__init__()
+        grupo.add(self)
         self.image = Surface((w, h))
         self.image.fill(cian)
 
@@ -32,7 +33,8 @@ class Punto(Sprite):
     selected = False
 
     def __init__(self, area, x, y, grupo):
-        super().__init__(grupo)
+        super().__init__()
+        grupo.add(self)
         self.image_des = Surface((10, 10), SRCALPHA)
         self.image_sel = Surface((10, 10), SRCALPHA)
         self.image_dis = Surface((10, 10), SRCALPHA)

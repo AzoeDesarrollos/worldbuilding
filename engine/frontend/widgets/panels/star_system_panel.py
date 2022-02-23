@@ -1,6 +1,6 @@
-from engine.frontend.globales import WidgetGroup, ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_TEXTO
-from .common import ListedArea, ColoredBody, TextButton, Group
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_TEXTO, Group
 from engine.frontend.widgets.basewidget import BaseWidget
+from .common import ListedArea, ColoredBody, TextButton
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.equations.binary import system_type
@@ -25,7 +25,7 @@ class StarSystemPanel(BaseWidget):
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.f2 = self.crear_fuente(14, underline=True)
         self.write('Star Systems', self.f2, COLOR_AREA, x=3, y=420)
-        self.properties = WidgetGroup()
+        self.properties = Group()
         self.f1 = self.crear_fuente(16, underline=True)
         self.write(self.name + ' Panel', self.f1, centerx=(ANCHO // 4) * 1.5, y=0)
         self.stars_area = AvailableStars(self, ANCHO - 200, 32, 200, 340)
@@ -160,7 +160,7 @@ class SystemType(BaseWidget):
 
     def __init__(self, parent, props=None):
         super().__init__(parent)
-        self.properties = WidgetGroup()
+        self.properties = Group()
 
         if props is None:
             props = [
@@ -184,7 +184,7 @@ class SystemType(BaseWidget):
 
         attrs = ['primary', 'secondary', 'separation', 'ecc_p', 'ecc_s']
         for idx, attr in enumerate(attrs):
-            setattr(self, attr, self.properties.get_sprite(idx))
+            setattr(self, attr, self.properties.get_widget(idx))
 
     def set_star(self, star):
         if str(self.primary.value) == '':
@@ -256,7 +256,7 @@ class SystemType(BaseWidget):
             arg.enable()
 
     def disable(self):
-        for arg in self.properties:
+        for arg in self.properties.widgets():
             arg.disable()
         super().disable()
 

@@ -1,6 +1,6 @@
-from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, WidgetGroup, ANCHO, COLOR_BOX, COLOR_SELECTED, Renderer
-from engine.frontend.widgets.panels.common import TextButton
+from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, ANCHO, COLOR_BOX, COLOR_SELECTED, Renderer, Group
 from engine.frontend.widgets.panels.base_panel import BasePanel
+from engine.frontend.widgets.panels.common import TextButton
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.sprite_star import StarSprite
 from engine.equations.planetary_system import Systems
@@ -18,7 +18,7 @@ class StarPanel(BasePanel):
 
     def __init__(self, parent):
         super().__init__('Star', parent)
-        self.properties = WidgetGroup()
+        self.properties = Group()
         self.current = StarType(self)
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         f = self.crear_fuente(14, underline=True)
@@ -211,11 +211,11 @@ class StarType(ObjectType):
 
     def enable(self):
         super().enable()
-        for arg in self.properties:
+        for arg in self.properties.widgets():
             arg.enable()
 
     def disable(self):
-        for arg in self.properties:
+        for arg in self.properties.widgets():
             arg.disable()
         super().disable()
 

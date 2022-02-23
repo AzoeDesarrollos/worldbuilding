@@ -1,21 +1,79 @@
-from pygame.sprite import LayeredUpdates
-from .widgethandler import WidgetHandler
-from .renderer import Renderer
+class Group:
+    """A disclosed imitation of Pygame's Layered Updates Group
 
+    It can take strings as layers as well as ints.
+    """
 
-class WidgetGroup(LayeredUpdates):
-    """Wrapper para evitar inspeccciones incorrectas de PyCharm"""
-    def get_widgets_from_layer(self, layer: int):
-        return super().get_sprites_from_layer(layer)
+    def __init__(self):
+        self._d = {}
+        self._list = []
+        self._leght = 0
+
+    def add(self, *item, layer=1):
+        if layer not in self._d:
+            self._d[layer] = []
+
+        for unit in item:
+            self._d[layer].append(unit)
+            self._list.append(unit)
+            self._leght += 1
+
+    def remove(self, item):
+        layer = None
+        for layer in self._d:
+            if item in self._d[layer]:
+                break
+        self._d[layer].remove(item)
+        if not len(self._d[layer]):
+            del self._d[layer]
+        self._list.remove(item)
+        self._leght -= 1
+
+    def get_widgets_from_layer(self, layer):
+        if layer in self._d:
+            return self._d[layer]
+        else:
+            return []
+
+    def change_layer(self, sprite, layer):
+        self.remove(sprite)
+        self.add(sprite, layer=layer)
 
     def widgets(self):
-        return super().sprites()
+        return self._list
 
-    def get_widget(self, idx):
-        return super().get_sprite(idx)
+    def get_widget(self, id):
+        for item in self._list:
+            if hasattr(item, 'id') and item.id == id:
+                return item
 
-    def remove(self, *sprites) -> None:
-        super().remove(*sprites)
-        for sp in sprites:
-            Renderer.del_widget(sp)
-            WidgetHandler.del_widget(sp)
+        if type(id) is int and 0 <= id <= len(self._list):
+            return self._list[id]
+
+    def __len__(self):
+        return self._leght
+
+    def empty(self):
+        self._d.clear()
+        self._list.clear()
+        self._leght = 0
+
+    def __repr__(self):
+        return str(self._list)
+
+    def __contains__(self, item):
+        if hasattr(item, 'name'):
+            candidates = [i for i in self._list if i.name == item.name]
+            if len(candidates):
+                return True
+            return False
+        else:
+            return item in self._list
+
+    def draw(self, bg):
+        for each in self._list:
+            bg.blit(each.image, each.rect)
+
+    def update(self):
+        for each in self._list:
+            each.update()
