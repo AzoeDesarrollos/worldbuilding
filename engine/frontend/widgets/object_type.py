@@ -1,5 +1,5 @@
-from ..globales import WidgetGroup, Renderer
 from engine.backend import EventHandler
+from ..globales import Renderer, Group
 from .basewidget import BaseWidget
 from .values import ValueText
 from engine import q
@@ -24,9 +24,9 @@ class ObjectType(BaseWidget):
         self.relative_args = relative_args
         self.absolute_args = absolute_args
 
-        self.properties = WidgetGroup()
-        self.relatives = WidgetGroup()
-        self.absolutes = WidgetGroup()
+        self.properties = Group()
+        self.relatives = Group()
+        self.absolutes = Group()
         for i, button in enumerate(relative_names+absolute_names):
             vt = ValueText(self, button, 50, 40 + i * 14 * 2)
             if button in relative_names:

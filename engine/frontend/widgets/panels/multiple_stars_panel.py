@@ -1,6 +1,6 @@
 from .star_system_panel import SystemType, UndoButton, SetupButton, SystemButton, DissolveButton
-from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, WidgetGroup
-from engine.frontend.widgets.panels.common import ListedBody, ListedArea, Group
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
+from engine.frontend.widgets.panels.common import ListedBody, ListedArea
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.equations.binary import system_type
@@ -21,7 +21,7 @@ class MultipleStarsPanel(BaseWidget):
         self.image = Surface((ANCHO, ALTO - 32))
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
-        self.properties = WidgetGroup()
+        self.properties = Group()
 
         f1 = self.crear_fuente(16, underline=True)
         self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5, y=0)

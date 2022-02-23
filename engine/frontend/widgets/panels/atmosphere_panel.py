@@ -1,5 +1,5 @@
 from engine.frontend.graphs.atmograph.atmograph import graph, atmo, reversed_atmo, interpolacion_lineal, convert
-from engine.frontend import WidgetHandler, ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO, WidgetGroup, COLOR_DISABLED
+from engine.frontend import WidgetHandler, ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO, COLOR_DISABLED, Group
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.planetary_system import Systems
@@ -27,7 +27,7 @@ class AtmospherePanel(BaseWidget):
         self.image = Surface((ANCHO, ALTO - 32))
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
-        self.elements = WidgetGroup()
+        self.elements = Group()
         self.pressure = q(0, 'psi')
 
         f1 = self.crear_fuente(16, underline=True)
@@ -66,7 +66,7 @@ class AtmospherePanel(BaseWidget):
         self.atmograph = Atmograph(self, 190, 60)
         self.show_pressure = ShownPressure(self, x=self.atmograph.rect.x, centery=self.atmograph.rect.bottom + 10)
         self.show_pressure.update_text('Not stablished')
-        self.properties = WidgetGroup()
+        self.properties = Group()
         self.planets = AvailablePlanets(self, ANCHO - 200, 460, 200, 132)
         self.properties.add(self.planets)
 

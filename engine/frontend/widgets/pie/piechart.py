@@ -1,10 +1,9 @@
-from engine.frontend.globales import COLOR_IRON, COLOR_SILICATES, COLOR_WATER_ICE
-from engine.frontend.globales.group import WidgetGroup
+from engine.frontend.globales import COLOR_IRON, COLOR_SILICATES, COLOR_WATER_ICE, Group
 from engine.frontend.globales import WidgetHandler
 from ..basewidget import BaseWidget
+from decimal import Decimal as Dc
 from pygame import Rect, Color
 from . import Arc, Handle
-from decimal import Decimal as Dc
 
 
 class PieChart(BaseWidget):
@@ -17,7 +16,7 @@ class PieChart(BaseWidget):
     def __init__(self, parent, cx, cy, radius, values, use_handlers=False, colors=None, is_set=True):
         super().__init__(parent)
         self.default_names = []
-        self.chart = WidgetGroup()
+        self.chart = Group()
         self.radius = radius
         self.rect = Rect(0, 0, radius, radius)
         self.rect.center = cx, cy

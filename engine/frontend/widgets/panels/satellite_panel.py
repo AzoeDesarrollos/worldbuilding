@@ -1,14 +1,14 @@
-from engine.frontend.globales import WidgetGroup, COLOR_AREA, ANCHO, COLOR_TEXTO, COLOR_DISABLED, COLOR_SELECTED
+from engine.frontend.globales import COLOR_AREA, ANCHO, COLOR_TEXTO, COLOR_DISABLED, COLOR_SELECTED, Group
 from engine.equations.satellite import major_moon_by_composition
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.values import ValueText
 from engine.frontend.widgets.meta import Meta
-from .common import TextButton, Group
 from engine import material_densities
 from ..object_type import ObjectType
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
+from .common import TextButton
 from pygame import Surface
 from ..pie import PieChart
 from itertools import cycle
@@ -32,15 +32,15 @@ class SatellitePanel(BasePanel):
         f2 = self.crear_fuente(13, underline=True)
         r = self.write('Composition', f1, COLOR_AREA, topleft=(18, 420))
         self.write('Satellites', f2, COLOR_AREA, x=self.area_satellites.x + 3, y=self.area_satellites.y)
-        self.properties = WidgetGroup()
-
+        self.properties = Group()
+        self.mass_number = ShownMass(self)
         self.button_add = AddMoonButton(self, ANCHO - 13, 398)
         self.button_del = DelMoonButton(self, ANCHO - 13, 416)
         self.copy_button = CopyCompositionButton(self, r.centerx, r.bottom + 6)
         txt = 'Copy the values from a selected planet'
         self.f3 = self.crear_fuente(11)
         self.txt_a = self.write2(txt, self.f3, 130, COLOR_AREA, centerx=r.centerx, y=self.area_satellites.y + 50, j=1)
-        self.properties.add(self.button_add, self.button_del, self.copy_button)
+        self.properties.add(self.button_add, self.button_del, self.copy_button, self.mass_number)
         self.satellites = Group()
         self.moons = []
         EventHandler.register(self.load_satellites, 'LoadData')
@@ -130,7 +130,7 @@ class SatellitePanel(BasePanel):
     def show(self):
         super().show()
         if self.mass_number is None:
-            self.properties.add(ShownMass(self))
+            self.properties.add()
         for pr in self.properties.widgets():
             pr.show()
 
@@ -200,7 +200,7 @@ class SatelliteType(ObjectType):
             data['composition'] = self.current.composition
 
         if not len(data['composition']):
-            for material in self.properties.get_sprites_from_layer(2):
+            for material in self.properties.get_widgets_from_layer(2):
                 if material.text_area.value:  # not empty
                     text = material.text_area.value.strip(' %')
                     data['composition'][material.text.lower()] = float(text)

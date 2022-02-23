@@ -68,7 +68,6 @@ class WidgetHandler:
         cls.clock.tick(60)
         events = event.get([KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, QUIT, MOUSEMOTION])
         event.clear()
-        dx, dy = 0, 0
         for e in events:
             if e.type == QUIT or (e.type == KEYDOWN and e.key == K_ESCAPE):
                 EventHandler.trigger('salir', 'engine', {'mensaje': 'normal'})
@@ -113,28 +112,15 @@ class WidgetHandler:
                     cls.active.on_mousebuttonup(e)
 
             elif e.type == MOUSEMOTION:
-                if cls.mode == 1:
-                    x, y = e.pos
-                    for widget in cls.contents.sprites():
-                        if widget.rect.collidepoint((x, y)) or widget is cls.active:
-                            widget.on_mousemotion(e.rel)
+                x, y = e.pos
+                for widget in cls.contents.sprites():
+                    if widget.rect.collidepoint((x, y)) or widget is cls.active:
+                        widget.on_mousemotion(e.rel)
 
-                elif cls.mode == 2:
-                    if any(e.buttons):
-                        dx, dy = e.rel
-                        dx = cls.cap(dx)
-                        dy = cls.cap(dy)
-
-        if cls.mode == 2:
-            if dx or dy:
-                for widget in cls.contents.get_sprites_from_layer(cls.mode):
-                    widget.move(dx, dy)
-
-        elif cls.mode == 1:
-            x, y = mouse.get_pos()
-            for widget in cls.contents.sprites():
-                if widget.rect.collidepoint((x, y)) and (not cls.locked or widget is cls.the_one):
-                    widget.on_mouseover()
+        x, y = mouse.get_pos()
+        for widget in cls.contents.sprites():
+            if widget.rect.collidepoint((x, y)) and (not cls.locked or widget is cls.the_one):
+                widget.on_mouseover()
 
         cls.contents.update()
 

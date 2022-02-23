@@ -1,10 +1,9 @@
-from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, render_textrect, WidgetHandler
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, render_textrect, WidgetHandler, Group
 from engine.equations.planetary_system import Systems
 from engine.frontend.widgets.values import ValueText
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets import BaseWidget
 from pygame import Surface, Rect
-from .common import Group
 
 
 class NamingPanel(BaseWidget):

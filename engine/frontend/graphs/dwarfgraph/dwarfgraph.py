@@ -1,9 +1,8 @@
 from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, KEYUP, K_LSHIFT, K_LCTRL, SCALED
-from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO, Group
 from ..common import Linea, Punto, find_and_interpolate, BodyMarker
 from pygame import display, event, font, transform, image
 from engine.equations.planetary_system import Systems
-from engine.frontend.globales import WidgetGroup
 from pygame import init, quit, Rect, Surface
 from engine.backend.util import roll
 from pygame.sprite import Sprite
@@ -38,7 +37,7 @@ mass_imgs = [fuente.render(str(mass_keys[i]), True, COLOR_TEXTO, COLOR_BOX) for 
 radius_imgs = [fuente.render(str(radius_keys[i]), True, COLOR_TEXTO, COLOR_BOX) for i in range(len(radius_keys))]
 
 exes, yes = [], []
-numbers = WidgetGroup()
+numbers = Group()
 for i in [i for i in range(len(radius_keys))]:
     n = Number(radius_imgs[i], x=i * 40 + 53, y=3)
     numbers.add(n)
@@ -79,8 +78,8 @@ def dwarfgraph_loop(limit_mass=None):
     done = False
     data = {}
     markers = Systems.bodies_markers[Systems.get_current().id]['dwarfgraph']
-    marcadores = WidgetGroup()
-    lineas = WidgetGroup()
+    marcadores = Group()
+    lineas = Group()
     linea_h = Linea(bg_rect, bg_rect.x, bg_rect.centery, bg_rect.w, 1, lineas)
     linea_v = Linea(bg_rect, bg_rect.centerx, bg_rect.y, 1, bg_rect.h, lineas)
     punto = Punto(bg_rect, bg_rect.centerx, bg_rect.centery, lineas)

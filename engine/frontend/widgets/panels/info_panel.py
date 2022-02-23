@@ -1,5 +1,5 @@
-from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, WidgetGroup, COLOR_AREA
 from engine.equations.tides import major_tides, minor_tides, is_tidally_locked
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
 from .common import ListedArea, ColoredBody, TextButton
 from engine.equations.planetary_system import Systems
 from engine.backend.util import generate_id
@@ -24,7 +24,7 @@ class InformationPanel(BaseWidget):
     def __init__(self, parent):
         self.name = 'Information'
         super().__init__(parent)
-        self.properties = WidgetGroup()
+        self.properties = Group()
         self.image = Surface((ANCHO, ALTO - 32))
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()

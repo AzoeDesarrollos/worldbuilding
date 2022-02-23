@@ -126,7 +126,7 @@ class ValueText(BaseWidget):
                 if not p.has_values:
                     Renderer.reset()
                 if data is not None:
-                    for elemento in self.parent.properties.get_sprites_from_layer(1):
+                    for elemento in self.parent.properties.get_widgets_from_layer(1):
                         attr = ''
                         if elemento in self.parent.relatives:
                             idx = self.parent.relatives.widgets().index(elemento)

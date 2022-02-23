@@ -1,12 +1,12 @@
-from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, WidgetGroup, ANCHO, ALTO
+from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, ANCHO, ALTO, Group
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.sprite_star import PlanetSprite
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
-from .common import ColoredBody, TextButton, Group
 from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.meta import Meta
+from .common import ColoredBody, TextButton
 from engine.equations.planet import Planet
 from pygame import Rect
 from engine import q
@@ -25,14 +25,12 @@ class PlanetPanel(BasePanel):
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.area_type = Rect(32, 32, ANCHO, ALTO - (self.area_buttons.h + 200))
         self.current = PlanetType(self)
-        self.properties = WidgetGroup()
-
+        self.properties = Group()
         self.unit = Unit(self, 0, 416)
-        self.properties.add(self.unit)
-
+        self.mass_number = ShownMass(self)
         self.button_add = AddPlanetButton(self, ANCHO - 13, 398)
         self.button_del = DelPlanetButton(self, ANCHO - 13, 416)
-        self.properties.add(self.button_add, self.button_del)
+        self.properties.add(self.unit, self.mass_number, self.button_add, self.button_del)
         self.planet_buttons = Group()
         self.planets = []
         EventHandler.register(self.save_planets, 'Save')
@@ -130,11 +128,7 @@ class PlanetPanel(BasePanel):
 
     def show(self):
         super().show()
-        if self.mass_number is None:
-            self.properties.add(ShownMass(self))
-        props = self.properties.get_widgets_from_layer(1)
-        props += self.properties.get_widgets_from_layer(2)
-        for item in props:
+        for item in self.properties.get_widgets_from_layer(1):
             item.show()
         if self.last_idx is not None:
             self.show_current(self.last_idx)
@@ -201,12 +195,12 @@ class PlanetType(ObjectType):
         EventHandler.register(self.load_planet, 'LoadData')
 
     def enable(self):
-        for arg in self.properties:
+        for arg in self.properties.widgets():
             arg.enable()
         super().enable()
 
     def disable(self):
-        for arg in self.properties:
+        for arg in self.properties.widgets():
             arg.disable()
         super().disable()
 
@@ -277,7 +271,7 @@ class PlanetType(ObjectType):
 
     def check_values(self, composition):
         attrs = {}
-        for button in self.properties.get_sprites_from_layer(1):
+        for button in self.properties.get_widgets_from_layer(1):
             attr = ''
             if button in self.relatives:
                 idx = self.relatives.widgets().index(button)
@@ -388,7 +382,6 @@ class ShownMass(BaseWidget):
         self.rect = self.image.get_rect(left=200, bottom=416)
         self.mass_img = self.f2.render(self.show_mass(), True, self.mass_color, COLOR_BOX)
         self.mass_rect = Rect(self.rect.right + 3, self.rect.y, 150, self.mass_img.get_height())
-        self.parent.mass_number = self
 
     def on_mousebuttondown(self, event):
         if event.button == 1:

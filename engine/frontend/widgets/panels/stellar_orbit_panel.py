@@ -1,6 +1,6 @@
 from engine.equations.orbit import RawOrbit, PseudoOrbit, from_stellar_resonance, in_resonance
 from .common import TextButton, ListedArea, ToggleableButton, ColoredBody, ModifyArea
-from engine.frontend.globales import WidgetGroup, render_textrect, WidgetHandler
+from engine.frontend.globales import render_textrect, WidgetHandler, Group
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from pygame import Surface, Rect, K_LCTRL, K_RCTRL, key as pyg_key
 from engine.frontend.widgets.basewidget import BaseWidget
@@ -42,7 +42,7 @@ class OrbitPanel(BaseWidget):
         self.image = Surface((ANCHO, ALTO - 32))
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
-        self.properties = WidgetGroup()
+        self.properties = Group()
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.area_markers = Rect(3, 32, 380, 20 * 10)
         self.area_modify = ModifyArea(self, ANCHO - 201, 374)
@@ -64,7 +64,7 @@ class OrbitPanel(BaseWidget):
         self._buttons = {}
         self._markers = {}
 
-        self.orbit_descriptions = WidgetGroup()
+        self.orbit_descriptions = Group()
         self.show_markers_button = ToggleableButton(self, 'Stellar Orbits', self.toggle_stellar_orbits, 3, 421)
         self.show_markers_button.disable()
         self.add_orbits_button = SetOrbitButton(self, ANCHO - 94, 394)
@@ -77,9 +77,9 @@ class OrbitPanel(BaseWidget):
         self.cycler = cycle(self.ratios)
         next(self.cycler)
 
-        self.properties.add([self.area_modify, self.planet_area, self.show_markers_button,
-                             self.add_orbits_button, self.resonances_button, self.digit_x,
-                             self.digit_y, self.recomendation], layer=2)
+        self.properties.add(self.area_modify, self.planet_area, self.show_markers_button,
+                            self.add_orbits_button, self.resonances_button, self.digit_x,
+                            self.digit_y, self.recomendation, layer=2)
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
@@ -630,7 +630,7 @@ class OrbitType(BaseWidget, Intertwined):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.properties = WidgetGroup()
+        self.properties = Group()
         self.f = self.crear_fuente(16, underline=True)
 
     def link_astrobody(self, astro):
