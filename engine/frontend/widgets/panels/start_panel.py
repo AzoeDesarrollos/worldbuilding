@@ -1,4 +1,4 @@
-from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, WidgetGroup
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, Group
 from engine.equations.planetary_system import Systems
 from engine.frontend.widgets import BaseWidget
 from pygame import Surface, Rect
@@ -16,7 +16,7 @@ class StartPanel(BaseWidget):
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
 
-        self.properties = WidgetGroup()
+        self.properties = Group()
         rect_a = Rect(0, 0, self.rect.w // 2, ALTO)
         rect_b = Rect(self.rect.centerx, 0, self.rect.w // 2, ALTO)
         self.button_a = RadioButton(self, rect_a.centerx, rect_a.centery - 50)

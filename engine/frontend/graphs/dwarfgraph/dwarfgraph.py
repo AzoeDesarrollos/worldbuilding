@@ -77,8 +77,6 @@ def dwarfgraph_loop(limit_mass=None):
 
     done = False
     data = {}
-    markers = Systems.bodies_markers[Systems.get_current().id]['dwarfgraph']
-    marcadores = Group()
     lineas = Group()
     linea_h = Linea(bg_rect, bg_rect.x, bg_rect.centery, bg_rect.w, 1, lineas)
     linea_v = Linea(bg_rect, bg_rect.centerx, bg_rect.y, 1, bg_rect.h, lineas)
@@ -95,17 +93,20 @@ def dwarfgraph_loop(limit_mass=None):
 
     move_x, move_y = True, True
 
-    for planet in Systems.get_current().planets:
-        if planet.relative_size == 'Dwarf':
-            mass = planet.mass.m
-            radius = planet.radius.m
+    if Systems.restricted_mode:
+        markers = Systems.bodies_markers[Systems.get_current().id]['dwarfgraph']
+        marcadores = Group()
+        for planet in Systems.get_current().planets:
+            if planet.relative_size == 'Dwarf':
+                mass = planet.mass.m
+                radius = planet.radius.m
 
-            x = find_and_interpolate(mass, mass_keys, yes)
-            y = find_and_interpolate(radius, radius_keys, exes)
-            markers.append([x, y])
+                x = find_and_interpolate(mass, mass_keys, yes)
+                y = find_and_interpolate(radius, radius_keys, exes)
+                markers.append([x, y])
 
-    for x, y in markers:
-        marcadores.add(BodyMarker(x, y))
+        for x, y in markers:
+            marcadores.add(BodyMarker(x, y))
 
     while not done:
         for e in event.get([KEYDOWN, QUIT, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP]):
@@ -206,13 +207,16 @@ def dwarfgraph_loop(limit_mass=None):
         if limit_mass is not None:
             fondo.blit(lim_img, lim_rect)
         numbers.draw(fondo)
-        marcadores.update()
+        if Systems.restricted_mode:
+            # noinspection PyUnboundLocalVariable
+            marcadores.update()
+            marcadores.draw(fondo)
         lineas.update()
-        marcadores.draw(fondo)
         lineas.draw(fondo)
         display.update()
 
-    if done and len(data):
+    if done and len(data) and Systems.restricted_mode:
+        # noinspection PyUnboundLocalVariable
         markers.append(punto.rect.center)
 
     display.quit()

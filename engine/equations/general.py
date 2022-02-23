@@ -41,6 +41,11 @@ class BodyInHydrostaticEquilibrium(StarSystemBody):
 
     satellites = None
 
+    rogue = False  # Bodies created outside a system are rogue planets by definition.
+
+    def set_rogue(self):
+        self.rogue = True
+
     @staticmethod
     def calculate_circumference(r):
         return 2 * pi * r

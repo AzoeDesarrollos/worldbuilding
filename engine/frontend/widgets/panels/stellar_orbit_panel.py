@@ -30,11 +30,13 @@ class OrbitPanel(BaseWidget):
     markers = None
     buttons = None
 
-    skippable = False
+    skippable = True  # Rogue Planets, by definition, don't orbit any star, so setting an orbit for them is pointless.
 
     no_star_error = False
 
     resonance_mode = False
+
+    skip = False
 
     def __init__(self, parent):
         super().__init__(parent)

@@ -60,8 +60,6 @@ def gasgraph_loop(limit_mass=None):
     fondo.fill(COLOR_BOX)
     exes, yes = [], []
     numbers = Group()
-    markers = Systems.bodies_markers[Systems.get_current().id]['gasgraph']
-    marcadores = Group()
     for i in [i for i in range(len(radius_keys[:4]))]:
         n = Number(radius_imgs[i], x=i * 28 + 30, y=3)
         numbers.add(n)
@@ -105,17 +103,20 @@ def gasgraph_loop(limit_mass=None):
 
     move_x, move_y = True, True
 
-    for planet in Systems.get_current().planets:
-        if planet.planet_type == 'gaseous':
-            mass = planet.mass.m
-            radius = planet.radius.m
+    if Systems.restricted_mode:
+        markers = Systems.bodies_markers[Systems.get_current().id]['gasgraph']
+        marcadores = Group()
+        for planet in Systems.get_current().planets:
+            if planet.planet_type == 'gaseous':
+                mass = planet.mass.m
+                radius = planet.radius.m
 
-            x = find_and_interpolate(mass, mass_keys, yes)
-            y = find_and_interpolate(radius, radius_keys, exes)
-            markers.append([x, y])
+                x = find_and_interpolate(mass, mass_keys, yes)
+                y = find_and_interpolate(radius, radius_keys, exes)
+                markers.append([x, y])
 
-    for x, y in markers:
-        marcadores.add(BodyMarker(x, y))
+        for x, y in markers:
+            marcadores.add(BodyMarker(x, y))
 
     while not done:
         x, y = mouse.get_pos()
@@ -240,13 +241,16 @@ def gasgraph_loop(limit_mass=None):
         if limit_mass is not None:
             fondo.blit(lim_img, lim_rect)
         numbers.draw(fondo)
-        marcadores.update()
+        if Systems.restricted_mode:
+            # noinspection PyUnboundLocalVariable
+            marcadores.update()
+            marcadores.draw(fondo)
         lineas.update()
-        marcadores.draw(fondo)
         lineas.draw(fondo)
         display.update()
 
-    if done and len(data):
+    if done and len(data) and Systems.restricted_mode:
+        # noinspection PyUnboundLocalVariable
         markers.append(punto.rect.center)
 
     display.quit()

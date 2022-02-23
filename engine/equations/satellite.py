@@ -138,6 +138,8 @@ class Minor(Satellite, StarSystemBody):
     celestial_type = 'asteroid'
     habitable = False
 
+    rogue = False  # Bodies created outside a system are rogue planets by definition.
+
     def __init__(self, data):
         if 'parent' in data:
             self.set_parent(data['parent'])
@@ -185,6 +187,9 @@ class Minor(Satellite, StarSystemBody):
     def get_radius(self):
         # chapuza
         return q((self.a_axis.m+self.b_axis.m+self.c_axis.m)/3, 'km')
+
+    def set_rogue(self):
+        self.rogue = True
 
 
 class RockyMoon(Satellite):

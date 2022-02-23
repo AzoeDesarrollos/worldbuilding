@@ -59,8 +59,6 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
     fondo = display.set_mode((witdh, height), SCALED)
     rect = Rect(60, 2, 529, 476)
     lineas = Group()
-    markers = Systems.bodies_markers[Systems.get_current().id]['graph']
-    marcadores = Group()
 
     linea_h = Linea(rect, rect.x, rect.centery, rect.w, 1, lineas)
     linea_v = Linea(rect, rect.centerx, rect.y, 1, rect.h, lineas)
@@ -87,18 +85,21 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
 
     mouse.set_pos(rect.center)
     event.clear()
+    if Systems.restricted_mode:
+        markers = Systems.bodies_markers[Systems.get_current().id]['graph']
+        marcadores = Group()
 
-    for planet in Systems.get_current().planets:
-        if planet.relative_size != 'Giant':
-            mass = planet.mass.m
-            radius = planet.radius.m
+        for planet in Systems.get_current().planets:
+            if planet.relative_size != 'Giant':
+                mass = planet.mass.m
+                radius = planet.radius.m
 
-            x = find_and_interpolate(mass, mass_keys, exes)
-            y = find_and_interpolate_flipped(radius, radius_keys, yes)
-            markers.append([x, y])
+                x = find_and_interpolate(mass, mass_keys, exes)
+                y = find_and_interpolate_flipped(radius, radius_keys, yes)
+                markers.append([x, y])
 
-    for x, y in markers:
-        marcadores.add(BodyMarker(x, y))
+        for x, y in markers:
+            marcadores.add(BodyMarker(x, y))
 
     done = False
     composition_text_comp = None
@@ -306,12 +307,15 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
             fondo.blit(texto2, rectT2)
             punto.update()
             lineas.update()
-            marcadores.update()
-            marcadores.draw(fondo)
+            if Systems.restricted_mode:
+                # noinspection PyUnboundLocalVariable
+                marcadores.update()
+                marcadores.draw(fondo)
             lineas.draw(fondo)
             display.update()
 
-        elif len(data):
+        elif len(data) and Systems.restricted_mode:
+            # noinspection PyUnboundLocalVariable
             markers.append(punto.rect.center)
 
     display.quit()

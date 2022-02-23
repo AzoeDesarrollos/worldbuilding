@@ -533,3 +533,72 @@ class Systems:
     @classmethod
     def load_data(cls, event):
         cls.save_data.update(event.data)
+
+
+class RoguePlanets:
+    planets = []
+    satellites = []
+    asteroids = []
+    astro_bodies = []
+
+    @classmethod
+    def add_astro_obj(cls, astro_obj):
+        group = cls._get_astro_group(astro_obj)
+
+        if astro_obj not in group:
+            group.append(astro_obj)
+            cls.astro_bodies.append(astro_obj)
+            astro_obj.set_rogue()
+            if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
+                EventHandler.trigger('RockyPlanet', 'RoguePlanets', {'planet': astro_obj, 'operation': 'add'})
+            return True
+
+        return False
+
+    @classmethod
+    def remove_astro_obj(cls, astro_obj):
+        group = cls._get_astro_group(astro_obj)
+        group.remove(astro_obj)
+        astro_obj.flag()
+        cls.astro_bodies.remove(astro_obj)
+        if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
+            EventHandler.trigger('RockyPlanet', 'RoguePlanets', {'planet': astro_obj, 'operation': 'remove'})
+        return True
+
+    @classmethod
+    def _get_astro_group(cls, astro_obj):
+        group = None
+        if astro_obj.celestial_type == 'planet':
+            group = cls.planets
+        elif astro_obj.celestial_type == 'satellite':
+            group = cls.satellites
+        elif astro_obj.celestial_type == 'asteroid':
+            group = cls.asteroids
+
+        return group
+
+    @classmethod
+    def get_astrobody_by(cls, tag_identifier, tag_type='name', silenty=False):
+        astrobody = None
+        if tag_type == 'name':
+            astrobody = [body for body in cls.astro_bodies if body.name == tag_identifier]
+        elif tag_type == 'id':
+            astrobody = [body for body in cls.astro_bodies if body.id == tag_identifier]
+
+        if not silenty:
+            assert len(astrobody), 'the ID "{}" is invalid'.format(tag_identifier)
+            return astrobody[0]
+        else:
+            if not len(astrobody):
+                return False
+            else:
+                return astrobody[0]
+
+    @classmethod
+    def get_unnamed(cls):
+        unnamed = [body for body in cls.astro_bodies if not body.has_name]
+        return unnamed
+
+    @classmethod
+    def astro_group(cls, astro_obj):
+        return cls._get_astro_group(astro_obj)

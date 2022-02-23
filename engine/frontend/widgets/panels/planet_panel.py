@@ -1,9 +1,9 @@
 from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, ANCHO, ALTO, Group
+from engine.equations.planetary_system import Systems, RoguePlanets
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.sprite_star import PlanetSprite
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.equations.planetary_system import Systems
 from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.meta import Meta
 from .common import ColoredBody, TextButton
@@ -244,7 +244,10 @@ class PlanetType(ObjectType):
         else:
             system = Systems.get_system_by_id(planet.system_id)
 
-        if system is not None and system.add_astro_obj(planet):
+        test_a = system is not None and system.add_astro_obj(planet)
+        test_b = system is None and RoguePlanets.add_astro_obj(planet)
+
+        if test_a or test_b:
             for button in self.properties.get_widgets_from_layer(1):
                 button.clear()
             self.parent.button_add.disable()
@@ -294,9 +297,9 @@ class PlanetType(ObjectType):
             if composition is not None:
                 attrs['composition'] = composition
             self.current = Planet(attrs)
-            self.current.idx = len([i for i in Systems.get_current().planets if i.clase == self.current.clase])
+            # self.current.idx = len([i for i in Systems.get_current().planets if i.clase == self.current.clase])
             self.toggle_habitable()
-            if self.current.mass <= Systems.get_current().body_mass or Systems.restricted_mode is False:
+            if Systems.restricted_mode is False or self.current.mass <= Systems.get_current().body_mass:
                 self.parent.button_add.enable()
                 self.parent.mass_number.mass_color = COLOR_TEXTO
             else:
@@ -408,7 +411,7 @@ class ShownMass(BaseWidget):
             else:
                 return ''
         else:
-            if not self.parent.enabled and Systems.get_current() is not None:
+            if not self.parent.enabled and not Systems.restricted_mode:
                 self.parent.enable()
             return 'Unlimited'
 

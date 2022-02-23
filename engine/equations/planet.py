@@ -176,10 +176,13 @@ class Planet(BodyInHydrostaticEquilibrium):
         return t
 
     def get_temperature(self):
-        star = self.orbit.star
-        orbit = self.orbit.a
-        t = planet_temperature(star.mass.m, orbit.m, float(self.albedo.m), self.greenhouse.m)
-        return t
+        if self.rogue is False:
+            star = self.orbit.star
+            orbit = self.orbit.a
+            t = planet_temperature(star.mass.m, orbit.m, float(self.albedo.m), self.greenhouse.m)
+            return t
+        else:
+            return q(2.7, 'Kelvin')  # temperature of the vacuum of space.
 
     def set_orbit(self, star, orbital_parameters):
         if star.celestial_type in ('star', 'system'):
