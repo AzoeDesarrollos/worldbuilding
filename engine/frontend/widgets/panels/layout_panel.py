@@ -1,4 +1,4 @@
-from engine.frontend.globales import ALTO, ANCHO, COLOR_TEXTO, COLOR_SELECTED, COLOR_BOX, COLOR_DISABLED, WidgetGroup
+from engine.frontend.globales import ALTO, ANCHO, COLOR_TEXTO, COLOR_SELECTED, COLOR_BOX, COLOR_DISABLED, Group
 from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface, draw, transform, SRCALPHA
 from engine.equations.planetary_system import Systems
@@ -21,7 +21,7 @@ class LayoutPanel(BaseWidget):
         self.name = 'Layout'
 
         Systems.init()
-        self.properties = WidgetGroup()
+        self.properties = Group()
 
         self.panels = []
         for panel in panels:
