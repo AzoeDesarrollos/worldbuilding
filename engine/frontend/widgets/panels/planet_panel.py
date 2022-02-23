@@ -302,7 +302,7 @@ class PlanetType(ObjectType):
             self.current = Planet(attrs)
             self.current.idx = len([i for i in Systems.get_current().planets if i.clase == self.current.clase])
             self.toggle_habitable()
-            if self.current.mass <= Systems.get_current().body_mass:
+            if self.current.mass <= Systems.get_current().body_mass or Systems.restricted_mode is False:
                 self.parent.button_add.enable()
                 self.parent.mass_number.mass_color = COLOR_TEXTO
             else:
@@ -415,7 +415,7 @@ class ShownMass(BaseWidget):
             else:
                 return ''
         else:
-            if not self.parent.enabled:
+            if not self.parent.enabled and Systems.get_current() is not None:
                 self.parent.enable()
             return 'Unlimited'
 

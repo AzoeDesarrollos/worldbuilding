@@ -89,10 +89,14 @@ def gasgraph_loop(limit_mass=None):
     rect_puffy = Rect(x + 28, 16, (img_rect.w / 2) + 100, y - 16)
     rect_giant = Rect(31, 16, x - 3, y - 16)
 
-    lim_y = round(find_and_interpolate(limit_mass, mass_keys, yes))
-    lim_rect = Rect(31, lim_y, img_rect.w, img_rect.h - lim_y + img_rect.y)
-    lim_img = Surface(lim_rect.size)
-    lim_img.set_alpha(150)
+    if limit_mass is not None:
+        lim_y = round(find_and_interpolate(limit_mass, mass_keys, yes))
+        lim_rect = Rect(31, lim_y, img_rect.w, img_rect.h - lim_y + img_rect.y)
+        lim_img = Surface(lim_rect.size)
+        lim_img.set_alpha(150)
+    else:
+        lim_rect = None
+        lim_img = None
 
     lineas = WidgetGroup()
     linea_h = Linea(img_rect, img_rect.x, img_rect.centery, img_rect.w, 1, lineas)
@@ -134,7 +138,10 @@ def gasgraph_loop(limit_mass=None):
                 valid = [rect_puffy.collidepoint(dx, dy),
                          rect_giant.collidepoint(dx, dy),
                          rect_super.collidepoint(dx, dy)]
-                off_limit = lim_rect.collidepoint(dx, dy)
+                if lim_rect is not None:
+                    off_limit = lim_rect.collidepoint(dx, dy)
+                else:
+                    off_limit = False
 
                 if img_rect.collidepoint(px, py) and any(valid) and not off_limit:
                     invalid = False
@@ -230,7 +237,8 @@ def gasgraph_loop(limit_mass=None):
         fondo.blit(render_e_density, r_d)
 
         fondo.blit(img, img_rect)
-        fondo.blit(lim_img, lim_rect)
+        if limit_mass is not None:
+            fondo.blit(lim_img, lim_rect)
         numbers.draw(fondo)
         marcadores.update()
         lineas.update()

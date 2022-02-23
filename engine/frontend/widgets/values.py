@@ -92,7 +92,10 @@ class ValueText(BaseWidget):
                 data = None
                 system = Systems.get_current()
                 self.active = True
-                available_mass = system.get_available_mass()
+                if Systems.restricted_mode:
+                    available_mass = system.get_available_mass()
+                else:
+                    available_mass = None
                 if p.parent.unit.name == 'Habitable' and not p.has_values:
                     m_low, m_high, r_low, r_high = Terrestial
                     if type(available_mass) is q:
@@ -120,12 +123,18 @@ class ValueText(BaseWidget):
                                       radius_lower_limit=r_low, radius_upper_limit=r_high,
                                       is_gas_drwaf=True)
                 elif p.parent.unit.name == 'Gas Giant' and not p.has_values:
-                    assert available_mass.m >= 0.03, not_enough_mass
-                    data = gasgraph_loop(round(available_mass.m, 2))
+                    m_high = None
+                    if type(available_mass) is q:
+                        assert available_mass.m >= 0.03, not_enough_mass
+                        m_high = round(available_mass.m, 2)
+                    data = gasgraph_loop(m_high)
                 elif p.parent.unit.name == 'Dwarf Planet' and not p.has_values:
-                    available_mass = round(available_mass.to('earth_mass').m, 4)
-                    assert available_mass > 0.0001, not_enough_mass
-                    data = dwarfgraph_loop(available_mass if available_mass < 0.1 else None)
+                    m_high = None
+                    if type(available_mass) is q:
+                        available_mass = round(available_mass.to('earth_mass').m, 4)
+                        assert available_mass > 0.0001, not_enough_mass
+                        m_high = available_mass if available_mass < 0.1 else None
+                    data = dwarfgraph_loop(m_high)
                 if not p.has_values:
                     Renderer.reset()
                 if data is not None:

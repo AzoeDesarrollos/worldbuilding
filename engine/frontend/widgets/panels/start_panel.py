@@ -39,7 +39,7 @@ class StartPanel(BaseWidget):
         f3 = self.crear_fuente(14, bold=True)
         self.f = f2
 
-        r = self.write2('WORLDBUILDING', f, self.rect.w, centerx=self.rect.centerx, y=50, j=True)
+        r = self.write2('W O R L D B U I L D I N G', f, self.rect.w, centerx=self.rect.centerx, y=50, j=True)
         self.write2('v2022', f0, self.rect.w, centerx=self.rect.centerx, top=r.bottom, j=True)
 
         self.write2(text_intro, f2, self.rect.w, centerx=self.rect.centerx, y=self.rect.centery - 200, j=True)
