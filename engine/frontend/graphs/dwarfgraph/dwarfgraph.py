@@ -2,9 +2,8 @@ from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPAC
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO, Group
 from ..common import Linea, Punto, find_and_interpolate, BodyMarker
 from pygame import display, event, font, transform, image
-from engine.equations.planetary_system import Systems
 from pygame import init, quit, Rect, Surface
-from engine.backend.util import roll
+from engine.backend import Systems, roll
 from pygame.sprite import Sprite
 from os import getcwd, path
 from math import pi, pow

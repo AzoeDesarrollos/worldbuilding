@@ -1,8 +1,7 @@
 from engine.frontend.globales import ALTO, ANCHO, COLOR_TEXTO, COLOR_SELECTED, COLOR_BOX, COLOR_DISABLED, Group
 from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface, draw, transform, SRCALPHA
-from engine.equations.planetary_system import Systems
-from engine.backend.eventhandler import EventHandler
+from engine.backend import EventHandler, Systems
 from engine.frontend.widgets.meta import Meta
 from engine.backend.util import abrir_json
 from os.path import exists, join
@@ -157,7 +156,7 @@ class NewButton(BaseButton):
 
 
 class SwapSystem(Meta):
-    enabled = True
+    enabled = False
 
     def __init__(self, parent, x, y):
         super().__init__(parent)
@@ -167,7 +166,7 @@ class SwapSystem(Meta):
         self.img_sel = self.f1.render('System: ', True, COLOR_TEXTO, COLOR_BOX)
         self.img_uns = self.f2.render('System: ', True, COLOR_TEXTO, COLOR_BOX)
         self.img_dis = self.f1.render('System: ', True, COLOR_DISABLED, COLOR_BOX)
-        self.image = self.img_uns
+        self.image = self.img_dis
         self.rect = self.image.get_rect(topleft=(x, y))
         self.system_image = SystemName(self, left=self.rect.right+6, y=2)
 
@@ -177,9 +176,7 @@ class SwapSystem(Meta):
 
     def update(self):
         super().update()
-        if not len(Systems.get_systems()):
-            self.disable()
-        elif not self.enabled and 'Star' not in self.parent.current.name:
+        if not self.enabled and 'Star' not in self.parent.current.name:
             self.enable()
 
     def show(self):

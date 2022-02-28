@@ -1,7 +1,7 @@
 from pygame import display, event, init, quit, Surface, draw, font, time, Color
 from pygame import QUIT, KEYDOWN, KEYUP, K_ESCAPE, K_UP, K_DOWN, K_SPACE
 from math import sin, cos, sqrt, radians, pow
-from engine import q
+from engine.backend import q
 from sys import exit
 import os
 

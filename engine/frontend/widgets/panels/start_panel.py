@@ -1,6 +1,6 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, Group
-from engine.equations.planetary_system import Systems
 from engine.frontend.widgets import BaseWidget
+from engine.backend.systems import Systems
 from pygame import Surface, Rect
 from .common import RadioButton
 

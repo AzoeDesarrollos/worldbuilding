@@ -1,11 +1,11 @@
 from engine.equations.tides import major_tides, minor_tides, is_tidally_locked
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
+from engine.equations.planetary_system import RoguePlanets
 from .common import ListedArea, ColoredBody, TextButton
-from engine.equations.planetary_system import Systems
-from engine.backend.util import generate_id
+from engine.backend import generate_id, Systems, q
+from engine.equations.space import Universe
 from ..basewidget import BaseWidget
 from pygame import Surface, Rect
-from engine import q
 import os
 
 
@@ -80,16 +80,19 @@ class InformationPanel(BaseWidget):
         self.selection = astrobody
         diameter = astrobody.radius.to('earth_radius').m * 2
 
-        if system.star_system.letter == 'S':
-            star = system.star_system.primary
-            stellar_tides = minor_tides(diameter, star.mass.m, astrobody.orbit.a.m)
+        if system is not RoguePlanets:
+            if system.star_system.letter == 'S':
+                star = system.star_system.primary
+                stellar_tides = minor_tides(diameter, star.mass.m, astrobody.orbit.a.m)
+            else:
+                combined_mass = sum([star.mass.m for star in system.star_system])
+                stellar_tides = minor_tides(diameter, combined_mass, astrobody.orbit.a.m)
         else:
-            combined_mass = sum([star.mass.m for star in system.star_system])
-            stellar_tides = minor_tides(diameter, combined_mass, astrobody.orbit.a.m)
+            stellar_tides = q(0, 'meter')
 
         if astrobody.celestial_type == 'planet':
             lunar_tides = 0
-            if astrobody.parent.celestial_type == 'star':
+            if astrobody.rogue or astrobody.parent.celestial_type == 'star':
                 primary = 'moon'
                 for satellite in astrobody.satellites:
                     if satellite.celestial_type == 'satellite':
@@ -103,6 +106,8 @@ class InformationPanel(BaseWidget):
 
         if stellar_tides > lunar_tides:
             primary = 'star'
+        elif astrobody.rogue:
+            primary = 'rogue'
         std_high = abs(q(lunar_tides * 0.54, 'm'))
         std_low = -std_high if std_high.m != 0 else abs(std_high)
 
@@ -134,16 +139,20 @@ class InformationPanel(BaseWidget):
 
             rect = self.write(f'{name}: {formato}', self.f2, x=3, y=rect.bottom + dy)
 
-        star = self.current.orbit.star
-        if star.celestial_type == 'star':
-            if star.letter is None:
-                mass = star.mass.m
+        mass = None
+        if primary != 'rogue':
+            star = self.current.orbit.star
+            if star.celestial_type == 'star':
+                if star.letter is None:
+                    mass = star.mass.m
+                else:
+                    mass = star.shared_mass.m
             else:
-                mass = star.shared_mass.m
-        else:
-            mass = star.mass.m
+                mass = star.mass.m
 
-        if is_tidally_locked(lunar_tides, system.age.m / 10 ** 9, mass):
+        if primary == 'rogue':
+            text = f'{str(self.current)} is a rogue planet.'
+        elif is_tidally_locked(lunar_tides, system.age.m / 10 ** 9, mass):
             text = f'{str(self.current)} is tidally locked to its {primary}.'
         elif is_tidally_locked(stellar_tides, system.age.m / 10 ** 9, mass):
             text = f'{str(self.current)} is tidally locked to its {primary}.'
@@ -158,14 +167,14 @@ class InformationPanel(BaseWidget):
     def extra_info(self, astrobody):
         self.image.fill(COLOR_BOX, self.perceptions_rect)
         system = Systems.get_current()
-        visibility = system.aparent_brightness[astrobody.id]
-        sizes = system.relative_sizes[astrobody.id]
-        distances = system.distances[astrobody.id]
+        visibility = Universe.aparent_brightness[astrobody.id]
+        sizes = Universe.relative_sizes[astrobody.id]
+        distances = Universe.distances[astrobody.id]
         text_lines = []
         analyzed = []
         for idx, body_id in enumerate(visibility):
             body_visibility = visibility[body_id]
-            body = system.get_astrobody_by(body_id, tag_type='id', silenty=True)
+            body = Universe.get_astrobody_by(body_id, tag_type='id', silenty=True)
             if body is False:
                 for sys in Systems.get_systems():
                     if sys != system and body_id not in analyzed:
@@ -233,7 +242,7 @@ class AvailablePlanets(ListedArea):
     def show(self):
         system = Systems.get_current()
         if system is not None:
-            bodies = [body for body in system.astro_bodies if body.orbit is not None]
+            bodies = [body for body in system.astro_bodies]
             self.populate(bodies)
         else:
             self.parent.show_no_system_error()

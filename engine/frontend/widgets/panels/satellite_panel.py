@@ -1,10 +1,8 @@
 from engine.frontend.globales import COLOR_AREA, ANCHO, COLOR_TEXTO, COLOR_DISABLED, COLOR_SELECTED, Group
+from engine.backend import EventHandler, Systems, material_densities
 from engine.equations.satellite import major_moon_by_composition
-from engine.equations.planetary_system import Systems
-from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.values import ValueText
 from engine.frontend.widgets.meta import Meta
-from engine import material_densities
 from ..object_type import ObjectType
 from .planet_panel import ShownMass
 from .base_panel import BasePanel

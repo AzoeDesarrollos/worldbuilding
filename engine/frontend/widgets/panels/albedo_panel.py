@@ -1,12 +1,10 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, color_areas as k, Group
+from engine.backend import EventHandler, Systems, albedos, q
 from engine.frontend.widgets import BaseWidget, ValueText
-from engine.equations.planetary_system import Systems
-from engine.backend.eventhandler import EventHandler
 from .common import ListedArea, ColoredBody
 from pygame import Surface, Rect, draw
 from decimal import Decimal as Dc
 from ..pie import PieChart as Pc
-from engine import albedos, q
 
 
 class AlbedoPanel(BaseWidget):

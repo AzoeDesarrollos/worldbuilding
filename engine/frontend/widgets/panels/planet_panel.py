@@ -1,15 +1,14 @@
 from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, ANCHO, ALTO, Group
-from engine.equations.planetary_system import Systems, RoguePlanets
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.sprite_star import PlanetSprite
+from engine.equations.planetary_system import RoguePlanets
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.backend.eventhandler import EventHandler
+from engine.backend import EventHandler, Systems
 from engine.frontend.widgets.meta import Meta
 from .common import ColoredBody, TextButton
 from engine.equations.planet import Planet
 from pygame import Rect
-from engine import q
 
 
 class PlanetPanel(BasePanel):
@@ -299,7 +298,8 @@ class PlanetType(ObjectType):
             self.current = Planet(attrs)
             # self.current.idx = len([i for i in Systems.get_current().planets if i.clase == self.current.clase])
             self.toggle_habitable()
-            if Systems.restricted_mode is False or self.current.mass <= Systems.get_current().body_mass:
+            system = Systems.get_current()
+            if system.get_available_mass() == 'Unlimited' or self.current.mass <= system.body_mass:
                 self.parent.button_add.enable()
                 self.parent.mass_number.mass_color = COLOR_TEXTO
             else:
@@ -376,6 +376,7 @@ class Unit(Meta):
 class ShownMass(BaseWidget):
     show_jovian_mass = True
     mass_color = COLOR_TEXTO
+    mass_img = None
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -383,8 +384,7 @@ class ShownMass(BaseWidget):
         self.f2 = self.crear_fuente(12)
         self.image = self.f1.render('Available mass: ', True, COLOR_TEXTO, COLOR_BOX)
         self.rect = self.image.get_rect(left=200, bottom=416)
-        self.mass_img = self.f2.render(self.show_mass(), True, self.mass_color, COLOR_BOX)
-        self.mass_rect = Rect(self.rect.right + 3, self.rect.y, 150, self.mass_img.get_height())
+        self.mass_rect = Rect(self.rect.right + 3, self.rect.y, 150, 15)
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -392,20 +392,18 @@ class ShownMass(BaseWidget):
 
     def show_mass(self):
         if Systems.restricted_mode:
-            try:
-                system = Systems.get_current()
-                mass = None
-                if system is not None:
-                    mass = system.get_available_mass()
-                    if not self.parent.enabled:
-                        self.parent.enable()
-                elif self.parent.enabled:
-                    self.parent.disable()
-                    raise AttributeError
-            except AttributeError:
-                mass = q(0, 'jupiter_mass')
+            system = Systems.get_current()
+            if not self.parent.enabled:
+                self.parent.enable()
+
+            if system.has_name and system.name == 'Rogue Planets':
+                return 'Unlimited'
+            else:
+                mass = system.get_available_mass()
+
             if not self.show_jovian_mass:
                 mass = mass.to('earth_mass')
+
             if mass is not None:
                 return '{:,g~}'.format((round(mass, 4)))
             else:

@@ -1,6 +1,6 @@
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.frontend.globales import COLOR_AREA, Group
-from engine.equations.planetary_system import Systems
+from engine.backend.systems import Systems
 from pygame import Surface, Rect
 
 

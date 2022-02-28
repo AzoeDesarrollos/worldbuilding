@@ -1,13 +1,11 @@
 from engine.frontend.graphs.atmograph.atmograph import graph, atmo, reversed_atmo, interpolacion_lineal, convert
 from engine.frontend import WidgetHandler, ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO, COLOR_DISABLED, Group
 from engine.frontend.widgets.incremental_value import IncrementalValue
+from engine.backend import EventHandler, Systems, molecular_weight, q
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.equations.planetary_system import Systems
-from engine.backend.eventhandler import EventHandler
 from engine.frontend.globales import render_textrect
 from pygame import Surface, draw, SRCALPHA, Rect
 from .common import ListedArea, ColoredBody
-from engine import molecular_weight, q
 from math import sqrt, log
 
 

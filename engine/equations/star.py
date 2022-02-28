@@ -1,10 +1,9 @@
-from engine.backend.util import decimal_round, roll, generate_id
+from engine.backend import decimal_round, roll, generate_id,  q
 from .general import BodyInHydrostaticEquilibrium
 from bisect import bisect_right
 from math import sqrt, pow
 from random import choice
 from pygame import Color
-from engine import q
 
 
 class Star(BodyInHydrostaticEquilibrium):

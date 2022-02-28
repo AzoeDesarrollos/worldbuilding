@@ -3,8 +3,7 @@ from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.panels.common import TextButton
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.sprite_star import StarSprite
-from engine.equations.planetary_system import Systems
-from engine.backend.eventhandler import EventHandler
+from engine.backend import EventHandler, Systems
 from engine.frontend.widgets.meta import Meta
 from pygame import Surface, mouse, draw
 from engine.equations.star import Star
@@ -91,10 +90,11 @@ class StarPanel(BasePanel):
         super().hide()
         for obj in self.properties.widgets():
             obj.hide()
-        if self.add_on_exit:
+        if self.add_on_exit or not len(self.stars):
             self.parent.set_skippable('Star System', True)
             self.parent.set_skippable('Multiple Stars', True)
-            Systems.set_system(self.current.current)
+            if len(self.stars):
+                Systems.set_system(self.current.current)
         else:
             self.parent.set_skippable('Star System', False)
 

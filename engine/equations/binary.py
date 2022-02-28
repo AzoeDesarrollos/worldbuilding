@@ -1,8 +1,7 @@
-from engine.backend.util import roll, generate_id
+from engine.backend.util import roll, generate_id, q
 from .orbit import BinaryStarOrbit
 from .general import Flagable
 from math import sqrt
-from engine import q
 
 
 class BinarySystem(Flagable):

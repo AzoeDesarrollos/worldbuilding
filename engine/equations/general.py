@@ -1,3 +1,4 @@
+from engine.backend.util import roll
 from math import pi, sqrt, asin
 from pygame import Rect
 
@@ -42,9 +43,20 @@ class BodyInHydrostaticEquilibrium(StarSystemBody):
     satellites = None
 
     rogue = False  # Bodies created outside a system are rogue planets by definition.
+    _position = None
 
     def set_rogue(self):
         self.rogue = True
+        self._position = roll(-100, 100), roll(-100, 100), roll(-100, 100)
+
+    @property
+    def position(self):
+        return self._position
+
+    @position.setter
+    def position(self, values):
+        x, y, z = values
+        self._position = x, y, z
 
     @staticmethod
     def calculate_circumference(r):
@@ -84,7 +96,10 @@ class Ellipse:
         self._a = float(a.m)
         self._e = float(e.m)
         self._b = self._a * sqrt(1 - (self._e ** 2))
-        self.focus = sqrt(self._a ** 2 - self._b ** 2)
+        self._c = sqrt(self._a ** 2 - self._b ** 2)
+        self.f1 = Point(self._c, 0)
+        self.f2 = Point(-self._c, 0)
+        self.focus = self.f1
 
     def get_rect(self, x, y):
         """returns the rect of the ellipse for the use of pygame.draw.ellipse().
@@ -104,3 +119,9 @@ class OblateSpheroid(Ellipse, BodyInHydrostaticEquilibrium):
 
     def calculate_volume(self, r):
         return 4 / 3 * pi * (self._a ** 2) * self._b
+
+
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y

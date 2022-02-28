@@ -1,9 +1,8 @@
 from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_SPACE, K_LCTRL, K_LSHIFT
 from ..common import Linea, Punto, find_and_interpolate, find_and_interpolate_flipped, BodyMarker
 from pygame import font, Surface, Rect, image, mouse, event, Color as Clr, mask
+from engine.backend import abrir_json, interpolate, Systems
 from pygame import display, quit as py_quit, SCALED
-from engine.backend.util import abrir_json, interpolate
-from engine.equations.planetary_system import Systems
 from engine.frontend.globales import Group
 from os import environ, getcwd, path
 import sys

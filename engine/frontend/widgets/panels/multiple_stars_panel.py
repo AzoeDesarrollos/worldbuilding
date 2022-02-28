@@ -1,8 +1,7 @@
 from .star_system_panel import SystemType, UndoButton, SetupButton, SystemButton, DissolveButton
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
 from engine.frontend.widgets.panels.common import ListedBody, ListedArea
-from engine.equations.planetary_system import Systems
-from engine.backend.eventhandler import EventHandler
+from engine.backend import EventHandler, Systems
 from engine.equations.binary import system_type
 from ..basewidget import BaseWidget
 from pygame import Surface

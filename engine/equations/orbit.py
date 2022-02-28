@@ -1,11 +1,10 @@
 from engine.frontend.graphs.orbital_properties import rotation_loop
 from engine.frontend.globales import Renderer
+from engine.backend import Systems, q
 from math import sqrt, pow, cos, sin, pi
 from .general import Ellipse, Flagable
-from .planetary_system import Systems
 from decimal import Decimal
 from pygame import draw
-from engine import q
 
 
 class RawOrbit:
@@ -381,7 +380,7 @@ def set_orbital_properties(inclination):
         return q(0, 'degree'), 'undefined'
     else:
         values = rotation_loop()
-        Renderer.set_view_mode()
+        Renderer.reset()
         return values
 
 

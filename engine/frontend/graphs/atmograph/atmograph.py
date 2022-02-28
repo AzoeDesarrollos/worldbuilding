@@ -1,8 +1,8 @@
 from ..common import find_and_interpolate, find_and_interpolate_flipped
 from pygame import image, PixelArray
 from bisect import bisect_left
+from engine.backend import q
 from os import getcwd, path
-from engine import q
 
 if path.exists(path.join(getcwd(), "lib")):
     ruta = path.join(getcwd(), 'lib', 'engine', 'frontend', 'graphs', 'atmograph', 'atmograph04rev24.png')

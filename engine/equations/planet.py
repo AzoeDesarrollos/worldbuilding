@@ -1,7 +1,6 @@
+from engine.backend.util import generate_id, molecular_weight, q, albedos
 from .orbit import PlanetOrbit, SatelliteOrbit, from_satellite_resonance
 from .general import BodyInHydrostaticEquilibrium
-from engine import molecular_weight, q, albedos
-from engine.backend.util import generate_id
 from .lagrange import get_lagrange_points
 from math import sqrt, pi, pow, sin, cos
 from pygame import Color

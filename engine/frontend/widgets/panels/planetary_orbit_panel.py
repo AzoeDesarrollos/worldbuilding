@@ -2,15 +2,13 @@ from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_S
 from .common import ColoredBody, ListedArea, ModifyArea, TextButton, ToggleableButton
 from engine.equations.orbit import PseudoOrbit, RawOrbit, from_planetary_resonance
 from engine.frontend.widgets.incremental_value import IncrementalValue
+from engine.backend import EventHandler, Systems,  q, roll
 from engine.frontend.widgets.basewidget import BaseWidget
 from .stellar_orbit_panel import OrbitType, RatioDigit
-from engine.equations.planetary_system import Systems
-from engine.backend.eventhandler import EventHandler
 from engine.frontend.globales import WidgetHandler
 from engine.frontend.widgets.meta import Meta
 from pygame import Surface, Rect
 from itertools import cycle
-from engine import q, roll
 
 
 class PlanetaryOrbitPanel(BaseWidget):

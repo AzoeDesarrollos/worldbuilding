@@ -1,19 +1,16 @@
 from engine.equations.orbit import RawOrbit, PseudoOrbit, from_stellar_resonance, in_resonance
 from .common import TextButton, ListedArea, ToggleableButton, ColoredBody, ModifyArea
 from engine.frontend.globales import render_textrect, WidgetHandler, Group
+from engine.backend import EventHandler, Systems, roll, q, recomendation
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from pygame import Surface, Rect, K_LCTRL, K_RCTRL, key as pyg_key
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.equations.planetary_system import Systems
-from engine.backend.eventhandler import EventHandler
 from engine.frontend.globales.constantes import *
 from engine.frontend.widgets.meta import Meta
-from engine import q, recomendation
-from engine.backend import roll
 from ..values import ValueText
+from bisect import bisect_left
 from itertools import cycle
 from math import sqrt, pow
-from bisect import bisect_left
 
 
 class OrbitPanel(BaseWidget):

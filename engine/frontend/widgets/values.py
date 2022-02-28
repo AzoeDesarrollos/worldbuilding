@@ -2,14 +2,12 @@ from engine.frontend.graphs import dwarfgraph_loop, gasgraph_loop, graph_loop
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_DISABLED
 from engine.frontend.graphs.axial_tilt import axial_loop
 from engine.equations.planet import GasDwarf, Terrestial
-from engine.equations.planetary_system import Systems
-from engine.backend.eventhandler import EventHandler
 from engine.frontend import Renderer, WidgetHandler
+from engine.backend import EventHandler, Systems, q
 from .incremental_value import IncrementalValue
 from engine.backend.util import add_decimal
 from .basewidget import BaseWidget
 from pygame import Surface
-from engine import q
 
 
 class ValueText(BaseWidget):
@@ -92,10 +90,7 @@ class ValueText(BaseWidget):
                 data = None
                 system = Systems.get_current()
                 self.active = True
-                if Systems.get_current().name != 'Rogue Planets' and Systems.restricted_mode:
-                    available_mass = system.get_available_mass()
-                else:
-                    available_mass = None
+                available_mass = system.get_available_mass()  # if the "system" is Rogue Planets, mass is a str.
                 if p.parent.unit.name == 'Habitable' and not p.has_values:
                     m_low, m_high, r_low, r_high = Terrestial
                     if type(available_mass) is q:

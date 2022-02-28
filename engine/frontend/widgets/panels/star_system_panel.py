@@ -1,8 +1,7 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_TEXTO, Group
 from engine.frontend.widgets.basewidget import BaseWidget
 from .common import ListedArea, ColoredBody, TextButton
-from engine.equations.planetary_system import Systems
-from engine.backend.eventhandler import EventHandler
+from engine.backend import EventHandler, Systems
 from engine.equations.binary import system_type
 from engine.frontend.widgets.meta import Meta
 from ..values import ValueText

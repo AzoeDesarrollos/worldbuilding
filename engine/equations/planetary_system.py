@@ -1,11 +1,7 @@
-from engine.backend.util import abrir_json, guardar_json
-from engine.backend.eventhandler import EventHandler
-from os.path import join, exists
-from math import exp, pow, sqrt
+from engine.backend import EventHandler, Systems, q
 from .general import Flagable
-from itertools import cycle
-from os import getcwd
-from engine import q
+from .space import Universe
+from math import exp
 
 
 class PlanetarySystem(Flagable):
@@ -16,10 +12,11 @@ class PlanetarySystem(Flagable):
     id = None
 
     aparent_brightness = None
-    average_visibility = None
 
     age = 0
     body_mass = 0
+
+    has_name = False
 
     def __init__(self, star_system):
         self.planets = []
@@ -56,94 +53,6 @@ class PlanetarySystem(Flagable):
 
         self.body_mass = q(16 * exp(-0.6931 * mass.m) * 0.183391347289428, 'jupiter_mass')
 
-    def visibility_of_stars(self, body):
-        if body.id not in self.aparent_brightness:
-            self.aparent_brightness[body.id] = {}
-        if body.id not in self.distances:
-            self.distances[body.id] = {}
-
-        for system in Systems.get_systems() + Systems.loose_stars:
-            if system.star_system.letter == 'P':
-                stars = [system.star_system]
-            else:
-                stars = [s for s in system.star_system]
-
-            for star in stars:
-                if body.orbit is not None and star.id not in self.aparent_brightness[body.id]:
-                    if star == self.star_system:
-                        if body.parent == star:
-                            ab = round(q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs'), 3)
-                            self.distances[body.id][star.id] = body.orbit.a
-                        else:
-                            parent = body.find_topmost_parent(body)
-                            ab = round(q(star.luminosity.m / pow(parent.orbit.a.m, 2), 'Vs'), 3)
-                            self.distances[body.id][star.id] = parent.orbit.a
-                    else:
-                        x1, y1, z1 = self.star_system.position
-                        x2, y2, z2 = star.position
-                        d = q(sqrt(pow(abs(x2 - x1), 2) + pow(abs(y2 - y1), 2) + pow(abs(z2 - z1), 2)), 'lightyears')
-                        self.distances[body.id][star.id] = round(d)
-                        ab = q(star.luminosity.m / pow(d.to('au').m, 2), 'Vs')
-
-                    if star not in self.relative_sizes[body.id]:
-                        d = self.distances[body.id][star.id]
-                        value = self.small_angle_aproximation(star, d.to('km').m)
-                        self.relative_sizes[body.id][star.id] = value
-                    self.aparent_brightness[body.id][star.id] = ab
-
-    @staticmethod
-    def small_angle_aproximation(body, distance):
-        d = body.radius.to('km').m * 2
-        sma = q(d / distance, 'radian').to('degree')
-        decimals = 1
-        while round(sma, decimals) == 0:
-            decimals += 1
-        return round(sma, decimals)
-
-    def visibility_by_albedo(self):
-        luminosity = self.star_system.luminosity.to('watt').m
-        to_see = self.planets + self.satellites + self.asteroids
-        for i, body in enumerate(to_see):
-            if body.id not in self.aparent_brightness:
-                self.aparent_brightness[body.id] = {}
-            if body.id not in self.relative_sizes:
-                self.relative_sizes[body.id] = {}
-            if body.id not in self.distances:
-                self.distances[body.id] = {}
-
-            others = to_see[:i] + to_see[i + 1:]
-            if body.orbit is not None:
-                self.visibility_of_stars(body)
-                for star in self.star_system:
-                    if star.id not in self.distances[body.id]:
-                        if body.parent.celestial_type in ('star', 'system'):
-                            relative_distance = body.orbit.a.to('km').m
-                        else:
-                            relative_distance = body.parent.orbit.a.to('km').m
-                    else:
-                        relative_distance = self.distances[body.id][star.id].to('km').m
-                    self.relative_sizes[body.id][star.id] = self.small_angle_aproximation(star, relative_distance)
-
-                x = body.orbit.a.to('m').m  # position of the Observer's planet
-                for other in [o for o in others if o.orbit is not None]:
-                    y = other.orbit.a.to('m').m  # position of the observed body
-
-                    distance = abs(y - x) if y > x else abs(x - y)  # linear distance, much quicker
-                    self.distances[body.id][other.id] = q(distance, 'm')
-                    self.relative_sizes[body.id][other.id] = self.small_angle_aproximation(other, distance)
-                    albedo = other.albedo.m / 100
-                    radius = other.radius.to('m').m
-                    semi_major_axis = other.orbit.semi_major_axis.to('m').m
-
-                    ab = (albedo * luminosity * pow(radius, 2)) / (pow(semi_major_axis, 2) * pow(distance, 2))
-                    if ab > 1.3e-7:
-                        visibility = 'naked'
-                    elif ab < 1.2e-9:
-                        visibility = 'telescope'
-                    else:
-                        visibility = 'undetermined'
-                    self.aparent_brightness[body.id][other.id] = visibility
-
     @property
     def star(self):
         return self.star_system
@@ -156,6 +65,7 @@ class PlanetarySystem(Flagable):
         return self._get_astro_group(astro_obj)
 
     def add_astro_obj(self, astro_obj):
+        Universe.add_astro_obj(astro_obj)
         group = self._get_astro_group(astro_obj)
 
         if astro_obj not in group:
@@ -173,6 +83,7 @@ class PlanetarySystem(Flagable):
         return False
 
     def remove_astro_obj(self, astro_obj):
+        Universe.remove_astro_obj(astro_obj)
         group = self._get_astro_group(astro_obj)
         if Systems.restricted_mode:
             plus_mass = astro_obj.mass.to('jupiter_mass')
@@ -276,272 +187,6 @@ class PlanetarySystem(Flagable):
             raise StopIteration()
 
 
-class Systems:
-    _systems = None
-    loose_stars = None
-    save_data = {
-        'Asteroids': {},
-        'Planets': {},
-        'Satellites': {},
-        'Stars': {},
-        'Binary Systems': {},
-        'Planetary Orbits': {},
-        'Stellar Orbits': {}
-    }
-    _current = None
-    _system_cycler = None
-
-    bodies_markers = {}
-
-    restricted_mode = True
-
-    @classmethod
-    def init(cls):
-        cls._systems = [RoguePlanets]
-        cls.loose_stars = []
-        cls._system_cycler = cycle(cls._systems)
-        cls._current = RoguePlanets
-
-        EventHandler.register(cls.save, "SaveDataFile")
-        EventHandler.register(cls.compound_save_data, "SaveData")
-        EventHandler.register(cls.load_data, 'LoadData')
-
-        ruta = join(getcwd(), 'data', 'savedata.json')
-        if not exists(ruta):
-            guardar_json(ruta, cls.save_data)
-
-    @classmethod
-    def set_mode(cls, mode):
-        if mode == 'restricted':
-            cls.restricted_mode = True
-        elif mode == 'unrestricted':
-            cls.restricted_mode = False
-
-    @classmethod
-    def set_system(cls, star):
-        if star in cls.loose_stars:
-            cls.loose_stars.remove(star)
-        elif star.celestial_type != 'system':
-            return
-        if star.letter == 'S':
-            for sub in star:
-                for system in cls._systems:
-                    if system.star_system == sub:
-                        system.update()
-
-        else:
-            system = PlanetarySystem(star)
-            cls.populate(star.id)
-            if system not in cls._systems:
-                cls._systems.append(system)
-                if len(cls._systems) == 1:
-                    cls._current = next(cls._system_cycler)
-            if star.letter is not None:
-                for s in star:
-                    if s in cls.loose_stars:
-                        cls.loose_stars.remove(s)
-                    else:
-                        system = cls.get_system_by_star(s)
-                        if system is not None:
-                            cls._systems.remove(system)
-                            cls.unpopulate(system.id)
-                            s.flag()
-                            for astro in system.astro_bodies:
-                                astro.flag()
-
-    @classmethod
-    def populate(cls, star_id):
-        cls.bodies_markers[star_id] = {
-            'graph': [],
-            'gasgraph': [],
-            'dwarfgraph': [],
-        }
-
-    @classmethod
-    def unpopulate(cls, star_id):
-        if star_id in cls.bodies_markers:
-            del cls.bodies_markers[star_id]
-
-    @classmethod
-    def unset_system(cls, star):
-        system = cls.get_system_by_star(star)
-        if star.letter is not None:
-            if star.letter == system.star_system.primary:
-                cls.loose_stars.append(system.star_system.secondary)
-            elif star == system.star_system.secondary:
-                cls.loose_stars.append(system.star_system.primary)
-        else:
-            cls.loose_stars.append(star)
-        cls._systems.remove(system)
-        cls.unpopulate(system.id)
-
-    @classmethod
-    def dissolve_system(cls, system):
-        planetary_system = None
-        if system.letter is None:
-            cls.loose_stars.append(system)
-            planetary_system = cls.get_system_by_star(system)
-        else:
-            for star in system:
-                if star.letter is not None:
-                    cls.dissolve_system(star)
-                else:
-                    cls.loose_stars.append(star)
-
-        if planetary_system is None:
-            planetary_system = cls.get_system_by_star(system)
-        if planetary_system in cls._systems:
-            cls._systems.remove(planetary_system)
-            cls.unpopulate(planetary_system.id)
-            system.flag()
-            for astro in planetary_system.astro_bodies:
-                astro.flag()
-            if planetary_system == cls._current:
-                cls.cycle_systems()
-
-    @classmethod
-    def get_system_by_id(cls, id_number):
-        systems = [s for s in cls._systems if s.id == id_number]
-        if len(systems) == 1:
-            return systems[0]
-        else:
-            return None
-
-    @classmethod
-    def get_star_by_id(cls, id_number):
-        for star in cls.loose_stars:
-            if star.id == id_number:
-                return star
-        for system in cls._systems:
-            if id_number == system.id:
-                return system.star_system
-            else:
-                for star in system:
-                    if star.id == id_number:
-                        return star
-
-    @classmethod
-    def get_system_by_star(cls, star):
-        star = cls.find_parent(star)
-        for system in cls._systems:
-            if hasattr(system, 'letter'):
-                if any([body == star for body in system.star_system.composition()]):
-                    return system
-            elif system.star_system == star:
-                return system
-
-    @classmethod
-    def find_parent(cls, body):
-        if body.parent is None:
-            return body
-        else:
-            return cls.find_parent(body.parent)
-
-    @classmethod
-    def cycle_systems(cls):
-        if len(cls._systems):
-            system = next(cls._system_cycler)
-            cls._current = system
-
-    @classmethod
-    def get_current(cls):
-        if cls._current is not None:
-            return cls._current
-
-    @classmethod
-    def get_current_star(cls):
-        if cls._current is not None:
-            if cls._current is RoguePlanets:
-                return RoguePlanets
-            else:
-                return cls._current.star_system
-
-    @classmethod
-    def get_current_id(cls, instance):
-        system = cls.get_current()
-        if system is not None:
-            idx = system.id
-        else:
-            idx = instance.last_idx
-        return idx
-
-    @classmethod
-    def get_systems(cls):
-        if RoguePlanets not in cls._systems and len(cls._systems) >= 1:
-            return cls._systems
-        else:
-            return []
-
-    @classmethod
-    def add_star(cls, star):
-        if star not in cls.loose_stars:
-            cls.loose_stars.append(star)
-        for system in cls._systems:
-            for body in system.astro_bodies:
-                system.visibility_of_stars(body)
-
-    @classmethod
-    def remove_star(cls, star):
-        star.flag()
-        if star in cls.loose_stars:
-            cls.loose_stars.remove(star)
-        else:
-            system = cls.get_system_by_star(star)
-            if system is not None:
-                for astrobody in system.astro_bodies:
-                    astrobody.flag()
-                star = system.star_system
-                cls.unset_system(star)
-
-        if not len(cls.loose_stars) and not len(cls._systems):
-            cls._current = None
-
-    @classmethod
-    def save(cls, event):
-        ruta = join(getcwd(), 'data', 'savedata.json')
-        data = abrir_json(ruta)
-        read_data = abrir_json(ruta)
-        keys = 'Asteroids', 'Planets', 'Satellites', 'Stars', 'Binary Systems', 'Planetary Orbits', 'Stellar Orbits'
-        for key in keys:
-            new_data = event.data.get(key, [])
-            for item_id in new_data:
-                item_data = new_data[item_id]
-                if item_id in read_data[key]:
-                    data[key][item_id].update(item_data)
-                else:
-                    data[key][item_id] = item_data
-
-        copy_data = data.copy()
-        for key in keys:
-            for idx in copy_data[key]:
-                datos = copy_data[key][idx]
-                if 'system' in datos:
-                    system = cls.get_system_by_id(datos['system'])
-                elif 'star_id' in copy_data[key][idx]:
-                    star = cls.get_star_by_id(datos['star_id'])
-                    system = cls.get_system_by_star(star)
-                else:
-                    star = cls.get_star_by_id(idx)
-                    system = cls.get_system_by_star(star)
-
-                if system is not None:
-                    body = system.get_astrobody_by(idx, tag_type='id')
-                    if body.flagged:
-                        del data[key][idx]
-
-        guardar_json(ruta, data)
-
-    @classmethod
-    def compound_save_data(cls, event):
-        cls.save_data.update(event.data)
-        if not EventHandler.is_quequed('SaveDataFile'):
-            EventHandler.trigger('SaveDataFile', 'EngineData', cls.save_data)
-
-    @classmethod
-    def load_data(cls, event):
-        cls.save_data.update(event.data)
-
-
 class RoguePlanets:
     planets = []
     satellites = []
@@ -558,7 +203,12 @@ class RoguePlanets:
         cls.star_system = cls
 
     @classmethod
+    def get_available_mass(cls):
+        return 'Unlimited'
+
+    @classmethod
     def add_astro_obj(cls, astro_obj):
+        Universe.add_astro_obj(astro_obj)
         group = cls._get_astro_group(astro_obj)
 
         if astro_obj not in group:
@@ -573,6 +223,7 @@ class RoguePlanets:
 
     @classmethod
     def remove_astro_obj(cls, astro_obj):
+        Universe.remove_astro_obj(astro_obj)
         group = cls._get_astro_group(astro_obj)
         group.remove(astro_obj)
         astro_obj.flag()
@@ -629,3 +280,4 @@ class RoguePlanets:
 
 
 RoguePlanets.init()
+Systems.import_clases(rogues=RoguePlanets, planetary=PlanetarySystem)

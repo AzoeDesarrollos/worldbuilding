@@ -1,8 +1,7 @@
-from engine.backend import EventHandler
+from engine.backend import EventHandler, q
 from ..globales import Renderer, Group
 from .basewidget import BaseWidget
 from .values import ValueText
-from engine import q
 
 
 class ObjectType(BaseWidget):

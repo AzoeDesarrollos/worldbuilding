@@ -3,10 +3,9 @@ from pygame import init, quit, display, font, event, Rect, Surface, image, mouse
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, ANCHO, ALTO, Group
 from pygame import KEYDOWN, QUIT, SCALED, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP
 from ..common import find_and_interpolate, Linea, Punto, BodyMarker
-from engine.equations.planetary_system import Systems
+from engine.backend import Systems, q
 from pygame.sprite import Sprite
 from os import getcwd, path
-from engine import q
 from sys import exit
 from math import pi
 

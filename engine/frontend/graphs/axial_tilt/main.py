@@ -3,9 +3,9 @@ from pygame import draw, font, display, event, quit, init, Surface, time
 from .fuciones import set_xy, graph_seasonal_var, print_info
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX
 from pygame import MOUSEBUTTONDOWN, MOUSEMOTION
+from engine.backend import q
 from .constantes import *
 from sys import exit
-from engine import q
 
 init()
 fps = time.Clock()

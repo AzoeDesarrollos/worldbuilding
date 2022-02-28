@@ -1,11 +1,9 @@
 from engine.frontend.globales import COLOR_AREA, ANCHO, COLOR_TEXTO, COLOR_BOX, Group
 from engine.frontend.widgets.panels.satellite_panel import CopyCompositionButton
+from engine.backend import EventHandler, Systems, material_densities, q
 from engine.equations.satellite import minor_moon_by_composition
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.equations.planetary_system import Systems
-from engine.backend.eventhandler import EventHandler
 from engine.frontend.widgets.meta import Meta
-from engine import material_densities, q
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
 from .common import TextButton

@@ -2,6 +2,8 @@ from .eventhandler import EventHandler
 from math import trunc, ceil, floor
 from random import random, uniform
 from datetime import datetime
+from pint import UnitRegistry
+from os import getcwd, path
 from pygame import quit
 from sys import exit
 import json
@@ -91,7 +93,7 @@ def salir_handler(event):
 
 def generate_id():
     now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
-    now = now[0:-5]+'-'+now[-5:]
+    now = now[0:-5] + '-' + now[-5:]
     return now
 
 
@@ -101,7 +103,30 @@ def interpolate(x, x1, x2, y1, y2):
     return a * x + b
 
 
+def small_angle_aproximation(body, distance):
+    d = body.radius.to('km').m * 2
+    sma = q(d / distance, 'radian').to('degree')
+    decimals = 1
+    while round(sma, decimals) == 0:
+        decimals += 1
+    return round(sma, decimals)
+
+
 EventHandler.register(salir_handler, 'salir')
+
+if path.exists(path.join(getcwd(), "lib")):
+    ruta = path.join(getcwd(), 'lib', 'engine')
+else:
+    ruta = path.join(getcwd(), 'engine')
+
+ureg = UnitRegistry()
+ureg.load_definitions(path.join(ruta, 'unit_definitions.txt'))
+q = ureg.Quantity
+
+material_densities = abrir_json(path.join(ruta, 'material_densities.json'))
+molecular_weight = abrir_json(path.join(ruta, 'molecular_weight.json'))
+recomendation = abrir_json(path.join(ruta, 'recomendation.json'))
+albedos = abrir_json(path.join(ruta, 'albedo_values.json'))
 
 __all__ = [
     'generate_id',
@@ -110,5 +135,11 @@ __all__ = [
     'abrir_json',
     'decimal_round',
     'add_decimal',
-    'interpolate'
+    'interpolate',
+    'small_angle_aproximation',
+    "material_densities",
+    "molecular_weight",
+    "recomendation",
+    "albedos",
+    "q"
 ]
