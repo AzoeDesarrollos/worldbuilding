@@ -1,5 +1,5 @@
+from math import trunc, ceil, floor, sqrt
 from .eventhandler import EventHandler
-from math import trunc, ceil, floor
 from random import random, uniform
 from datetime import datetime
 from pint import UnitRegistry
@@ -112,21 +112,37 @@ def small_angle_aproximation(body, distance):
     return round(sma, decimals)
 
 
+def eucledian_distance(p1, p2):
+    if len(p1) == 3:
+        x1, y1, z1 = p1
+        x2, y2, z2 = p2
+        d = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
+    elif len(p1) == 2:
+        x1, y1 = p1
+        x2, y2 = p2
+        d = sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+    else:
+        x1 = p1
+        x2 = p2
+        d = x2 - x1
+    return d
+
+
 EventHandler.register(salir_handler, 'salir')
 
 if path.exists(path.join(getcwd(), "lib")):
-    ruta = path.join(getcwd(), 'lib', 'engine')
+    filepath = path.join(getcwd(), 'lib', 'engine')
 else:
-    ruta = path.join(getcwd(), 'engine')
+    filepath = path.join(getcwd(), 'engine')
 
 ureg = UnitRegistry()
-ureg.load_definitions(path.join(ruta, 'unit_definitions.txt'))
+ureg.load_definitions(path.join(filepath, 'unit_definitions.txt'))
 q = ureg.Quantity
 
-material_densities = abrir_json(path.join(ruta, 'material_densities.json'))
-molecular_weight = abrir_json(path.join(ruta, 'molecular_weight.json'))
-recomendation = abrir_json(path.join(ruta, 'recomendation.json'))
-albedos = abrir_json(path.join(ruta, 'albedo_values.json'))
+material_densities = abrir_json(path.join(filepath, 'material_densities.json'))
+molecular_weight = abrir_json(path.join(filepath, 'molecular_weight.json'))
+recomendation = abrir_json(path.join(filepath, 'recomendation.json'))
+albedos = abrir_json(path.join(filepath, 'albedo_values.json'))
 
 __all__ = [
     'generate_id',
@@ -141,5 +157,6 @@ __all__ = [
     "molecular_weight",
     "recomendation",
     "albedos",
-    "q"
+    "q",
+    "eucledian_distance"
 ]

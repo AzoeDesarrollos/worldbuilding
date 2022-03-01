@@ -20,7 +20,6 @@ class OrbitPanel(BaseWidget):
     _loaded_orbits = None
 
     offset = 0
-    curr_x, curr_y = 3, 442
 
     visible_markers = True
     orbits = None
@@ -95,7 +94,7 @@ class OrbitPanel(BaseWidget):
                 self.depopulate()
             if not len(self.markers) or not self.markers[0].locked:
                 self.populate()
-            self.sort_buttons()
+            self.prepare_and_sort()
 
     def populate(self):
         star = self.current
@@ -186,7 +185,7 @@ class OrbitPanel(BaseWidget):
 
         self.orbit_descriptions.add(orbit_type)
         if len(self.buttons) and self.is_visible:
-            self.sort_buttons()
+            self.prepare_and_sort()
         self.properties.add(button, layer=4)
         self.properties.add(orbit_type, layer=4)
         button.enable()
@@ -201,20 +200,6 @@ class OrbitPanel(BaseWidget):
                         marker.hide()
                     else:
                         marker.show()
-
-    def sort_buttons(self):
-        x, y = self.curr_x, self.curr_y
-        for bt in sorted(self.buttons, key=lambda b: b.get_value().m):
-            bt.move(x, y)
-            if not self.area_buttons.contains(bt.rect):
-                bt.hide()
-            else:
-                bt.show()
-            if x + bt.rect.w + 15 < self.rect.w - bt.rect.w + 15:
-                x += bt.rect.w + 15
-            else:
-                x = 3
-                y += 32
 
     def delete_marker(self, marker):
         """
@@ -234,7 +219,7 @@ class OrbitPanel(BaseWidget):
                 marker.orbit.astrobody.unset_orbit()
             self.planet_area.show()
             self.sort_markers()
-            self.sort_buttons()
+            self.prepare_and_sort()
 
     def on_mousebuttondown(self, event):
 
@@ -256,7 +241,7 @@ class OrbitPanel(BaseWidget):
                 self.curr_y += 32
             elif event.button == 5 and last_is_hidden:
                 self.curr_y -= 32
-            self.sort_buttons()
+            self.prepare_and_sort()
 
         elif self.area_recomendation.collidepoint(event.pos):
             if event.button == 4:
@@ -268,6 +253,10 @@ class OrbitPanel(BaseWidget):
             for marker in self.markers:
                 marker.deselect()
                 marker.enable()
+
+    def prepare_and_sort(self):
+        listed = sorted(self.buttons, key=lambda b: b.get_value().m)
+        self.sort_buttons(listed)
 
     def check_orbits(self):
         self.orbits.sort(key=lambda o: o.value.m)
@@ -824,7 +813,7 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
                 self.parent.sort_markers()
                 self.parent.recomendation.update_suggestion(self, self.linked_astrobody, self.orbit)
                 self.parent.add_orbits_button.link(self)
-                self.parent.sort_buttons()
+                self.parent.prepare_and_sort()
 
     def key_to_mouse(self, event):
         if event.origin == self:
@@ -849,6 +838,8 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
 class OrbitButton(Meta, Intertwined):
     locked = False
 
+    max_w = 0
+
     def __init__(self, parent, color):
         super().__init__(parent)
         self.f1 = self.crear_fuente(14)
@@ -869,6 +860,7 @@ class OrbitButton(Meta, Intertwined):
         self.img_sel = self.f2.render(t, True, self.color, COLOR_AREA)
         self.img_dis = self.f1.render(t, True, COLOR_DISABLED, COLOR_AREA)
         self.rect = self.img_sel.get_rect(topleft=self._rect.topleft)
+        self.max_w = self.img_sel.get_rect().width
 
     def move(self, x, y):
         self._rect.topleft = x, y

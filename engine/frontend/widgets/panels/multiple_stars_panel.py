@@ -162,8 +162,9 @@ class AvailableSystems(ListedArea):
     def repopulate(self):
         population = []
         for system_or_star in Systems.get_systems():
-            if system_or_star.star_system.system not in population:
-                population.append(system_or_star.star_system.system)
+            if system_or_star.is_a_system:
+                if system_or_star.star_system.system not in population:
+                    population.append(system_or_star.star_system.system)
         population.sort(key=lambda s: s.mass, reverse=True)
         if len(population):
             self.populate(population)

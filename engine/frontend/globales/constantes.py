@@ -12,6 +12,7 @@ COLOR_AREA = Color(200, 200, 200)
 COLOR_DARK_AREA = Color([160] * 3)
 COLOR_DISABLED = Color(150, 150, 150)
 COLOR_SELECTED = Color(255, 255, 255)
+COLOR_WARNING = Color(230, 155, 0)
 
 # Colores de cuerpos celestes
 COLOR_TERRESTIAL = Color(59, 82, 154)
@@ -64,6 +65,7 @@ __all__ = [
     'COLOR_TEXTO',
     'COLOR_SELECTED',
     'COLOR_DISABLED',
+    'COLOR_WARNING',
 
     # Colores para los botones de planetas
     'COLOR_DWARFPLANET',

@@ -84,7 +84,7 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
 
     mouse.set_pos(rect.center)
     event.clear()
-    if Systems.restricted_mode and Systems.get_current().name != 'Rogue Planets':
+    if Systems.restricted_mode and Systems.get_current().is_a_system:
         markers = Systems.bodies_markers[Systems.get_current().id]['graph']
         marcadores = Group()
 
@@ -306,14 +306,14 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
             fondo.blit(texto2, rectT2)
             punto.update()
             lineas.update()
-            if Systems.restricted_mode and Systems.get_current().name != 'Rogue Planets':
+            if Systems.restricted_mode and Systems.get_current().is_a_system:
                 # noinspection PyUnboundLocalVariable
                 marcadores.update()
                 marcadores.draw(fondo)
             lineas.draw(fondo)
             display.update()
 
-        elif len(data) and Systems.restricted_mode and Systems.get_current().name != 'Rogue Planets':
+        elif len(data) and Systems.restricted_mode and Systems.get_current().is_a_system:
             # noinspection PyUnboundLocalVariable
             markers.append(punto.rect.center)
 

@@ -3,17 +3,15 @@ from engine.frontend.widgets.panels.satellite_panel import CopyCompositionButton
 from engine.backend import EventHandler, Systems, material_densities, q
 from engine.equations.satellite import minor_moon_by_composition
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.frontend.widgets.meta import Meta
+from .common import TextButton, ColoredBody
+from engine.equations.space import Universe
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
-from .common import TextButton
 from ..values import ValueText
 from ..pie import PieChart
 
 
 class AsteroidPanel(BasePanel):
-    curr_x = 0
-    curr_y = 0
     last_idx = None
 
     def __init__(self, parent):
@@ -24,16 +22,17 @@ class AsteroidPanel(BasePanel):
         f2 = self.crear_fuente(13, underline=True)
         r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 132, 200])
         ro = self.write('Composition', f1, COLOR_AREA, topleft=(18, 420))
-        self.area_asteroids = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 200))
-        self.write('Asteroids', f2, COLOR_AREA, x=self.area_asteroids.x + 3, y=self.area_asteroids.y)
-        self.curr_x = self.area_asteroids.x + 3
-        self.curr_y = self.area_asteroids.y + 21
+        self.area_buttons = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 200))
+        self.write('Asteroids', f2, COLOR_AREA, x=self.area_buttons.x + 3, y=self.area_buttons.y)
+        self.curr_x = self.area_buttons.x + 3
+        self.curr_y = self.area_buttons.y - 11
+        self.default_x = self.area_buttons.x + 3
         self.button_add = AddAsteroidButton(self, ANCHO - 13, 398)
         self.button_del = DelAsteroidButton(self, ANCHO - 13, 416)
         self.copy_button = CopyCompositionButton(self, ro.centerx,  ro.bottom + 6)
         txt = 'Copy the values from a selected planet'
         self.f3 = self.crear_fuente(11)
-        self.txt_a = self.write2(txt, self.f3, 130, COLOR_AREA, centerx=ro.centerx, y=self.area_asteroids.y + 50, j=1)
+        self.txt_a = self.write2(txt, self.f3, 130, COLOR_AREA, centerx=ro.centerx, y=self.area_buttons.y + 50, j=1)
         self.mass_number = ShownMass(self)
         self.properties.add(self.current, self.mass_number, self.button_add, self.button_del, self.copy_button, layer=1)
         self.asteroids = Group()
@@ -77,7 +76,8 @@ class AsteroidPanel(BasePanel):
             EventHandler.trigger(event.tipo + 'Data', 'Asteroid', {"Asteroids": data})
 
     def add_button(self):
-        button = AsteroidButton(self.current, self.current.current, self.curr_x, self.curr_y)
+        asteroid = self.current.current
+        button = AsteroidButton(self.current, asteroid, str(asteroid), self.curr_x, self.curr_y)
         if self.current.current.system_id is not None:
             layer_number = self.current.current.system_id
         else:
@@ -87,7 +87,7 @@ class AsteroidPanel(BasePanel):
         self.asteroids.add(button, layer=layer_number)
         self.properties.add(button, layer=layer_number)
         if self.is_visible:
-            self.sort_buttons()
+            self.sort_buttons(self.asteroids.get_widgets_from_layer(Systems.get_current().id))
         self.current.erase()
         self.button_add.disable()
 
@@ -95,7 +95,7 @@ class AsteroidPanel(BasePanel):
         button = [i for i in self.asteroids.widgets() if i.object_data == satellite][0]
         self.moons.remove(satellite)
         self.asteroids.remove(button)
-        self.sort_buttons()
+        self.sort_buttons(self.asteroids.get_widgets_from_layer(Systems.get_current().id))
         self.properties.remove(button)
         self.button_del.disable()
 
@@ -104,26 +104,12 @@ class AsteroidPanel(BasePanel):
             button.hide()
         for button in self.asteroids.get_widgets_from_layer(idx):
             button.show()
-        self.sort_buttons()
+        self.sort_buttons(self.asteroids.get_widgets_from_layer(Systems.get_current().id))
 
     def select_one(self, btn):
         for button in self.asteroids.widgets():
             button.deselect()
         btn.select()
-
-    def sort_buttons(self):
-        x, y = self.curr_x, self.curr_y
-        for bt in self.asteroids.get_widgets_from_layer(Systems.get_current().id):
-            bt.move(x, y)
-            if not self.area_asteroids.contains(bt.rect):
-                bt.hide()
-            else:
-                bt.show()
-            if x + bt.rect.w + 10 < self.rect.w - bt.rect.w + 10:
-                x += bt.rect.w + 10
-            else:
-                x = 3
-                y += 32
 
     def enable(self):
         super().enable()
@@ -151,18 +137,6 @@ class AsteroidPanel(BasePanel):
         if idx != self.last_idx:
             self.show_current(idx)
             self.last_idx = idx
-
-    def next_idx(self, form):
-        types = 'Obleate', 'Tri-Axial', 'Prolate'
-        type_a = len([moon.idx for moon in self.moons if moon.cls == types[0]])
-        type_b = len([moon.idx for moon in self.moons if moon.cls == types[1]])
-        type_c = len([moon.idx for moon in self.moons if moon.cls == types[2]])
-        if form == types[0]:
-            return type_a + 1
-        elif form == types[1]:
-            return type_b + 1
-        elif form == types[2]:
-            return type_c + 1
 
     def clear(self):
         self.image.fill(COLOR_AREA, [0, 498, 130, 14])
@@ -238,16 +212,17 @@ class AsteroidType(BaseWidget):
 
         if self.current is None:
             moon = minor_moon_by_composition(data)
-            moon.idx = moon.idx = len([i for i in Systems.get_current().asteroids if i.clase == moon.clase])
         else:
             moon = self.current
 
         if self.current is None:
             if Systems.get_current().add_astro_obj(moon):
+                Universe.add_astro_obj(moon)
                 self.current = moon
                 self.parent.button_add.enable()
         elif moon != self.current:
             Systems.get_current().remove_astro_obj(self.current)
+            Universe.remove_astro_obj(self.current)
             if Systems.get_current().add_astro_obj(moon):
                 self.current = moon
 
@@ -381,29 +356,11 @@ class DelAsteroidButton(TextButton):
             self.parent.current.destroy_button()
 
 
-class AsteroidButton(Meta):
+class AsteroidButton(ColoredBody):
     enabled = True
-
-    def __init__(self, parent, satellite, x, y):
-        super().__init__(parent)
-        self.object_data = satellite
-        self.f1 = self.crear_fuente(13)
-        self.f2 = self.crear_fuente(13, bold=True)
-        if satellite.has_name:
-            name = satellite.name
-        else:
-            name = "{} #{}".format(satellite.cls, satellite.idx)
-        self.img_uns = self.f1.render(name, True, satellite.color, COLOR_AREA)
-        self.img_sel = self.f2.render(name, True, satellite.color, COLOR_AREA)
-        self.w = self.img_sel.get_width()
-        self.image = self.img_uns
-        self.rect = self.image.get_rect(topleft=(x, y))
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.show_current(self.object_data)
             self.parent.parent.select_one(self)
             self.parent.parent.button_del.enable()
-
-    def move(self, x, y):
-        self.rect.topleft = x, y

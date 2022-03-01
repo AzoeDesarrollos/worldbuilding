@@ -17,8 +17,6 @@ class InformationPanel(BaseWidget):
     render = None
     render_rect = None
 
-    selection = None
-
     text = None
 
     def __init__(self, parent):
@@ -37,7 +35,8 @@ class InformationPanel(BaseWidget):
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.print_button = PrintButton(self, *self.planet_area.rect.midbottom)
         self.properties.add(self.planet_area, self.print_button, layer=2)
-        self.perceptions_rect = Rect(3, 250, 380, self.rect.h - 252)
+        self.perceptions_rect = Rect(3, 250, 380, ALTO)
+        self.info_rect = Rect(3, self.perceptions_rect.bottom, 380, ALTO - (self.perceptions_rect.h + 380 + 21))
 
     def on_mousebuttondown(self, event):
         if event.button == 4:
@@ -53,15 +52,9 @@ class InformationPanel(BaseWidget):
         text = 'Information about ' + str(astrobody)
         self.write(text, self.f2, centerx=(ANCHO // 4) * 1.5, y=21)
 
-        self.current = astrobody
-        if self.selection is None:
-            self.render = None
-        self.show_selected()
-
     def clear(self):
-        self.image.fill(COLOR_BOX)
+        # self.image.fill(COLOR_BOX)
         self.render = None
-        self.selection = None
 
     def show(self):
         super().show()
@@ -74,10 +67,10 @@ class InformationPanel(BaseWidget):
         for prop in self.properties.widgets():
             prop.hide()
 
-    def show_selected(self):
+    def show_selected(self, astrobody):
         system = Systems.get_current()
-        astrobody = self.current
-        self.selection = astrobody
+        self.current = astrobody
+        self.show_name(astrobody)
         diameter = astrobody.radius.to('earth_radius').m * 2
 
         if system is not RoguePlanets:
@@ -161,8 +154,7 @@ class InformationPanel(BaseWidget):
 
         self.write(text, self.f3, x=3, y=rect.bottom + 12)
 
-        if self.render is None:
-            self.extra_info(astrobody)
+        self.extra_info(astrobody)
 
     def extra_info(self, astrobody):
         self.image.fill(COLOR_BOX, self.perceptions_rect)
@@ -216,24 +208,16 @@ class InformationPanel(BaseWidget):
         self.text = final_text
         self.render = self.write3(final_text, self.f2, 380)
         self.render_rect = self.render.get_rect(topleft=[3, 250])
+        self.image.fill(COLOR_BOX, self.info_rect)
+        self.image.blit(self.render, self.render_rect)
         self.print_button.enable()
-
-    def update(self):
-        self.image.fill(COLOR_BOX)
-        if self.render is not None:
-            self.image.blit(self.render, self.render_rect)
-        self.image.fill(COLOR_BOX, [0, 0, ANCHO, 64])
-        self.write(self.name + ' Panel', self.f1, centerx=(ANCHO // 4) * 1.5, y=0)
-        if self.selection is not None:
-            self.show_name(self.selection)
 
 
 class Astrobody(ColoredBody):
 
     def on_mousebuttondown(self, event):
         self.parent.select_one(self)
-        self.parent.parent.selection = None
-        self.parent.parent.show_name(self.object_data)
+        self.parent.parent.show_selected(self.object_data)
 
 
 class AvailablePlanets(ListedArea):
@@ -243,6 +227,7 @@ class AvailablePlanets(ListedArea):
         system = Systems.get_current()
         if system is not None:
             bodies = [body for body in system.astro_bodies]
+            bodies = [body for body in bodies if body.orbit is not None or body.rogue is True]
             self.populate(bodies)
         else:
             self.parent.show_no_system_error()

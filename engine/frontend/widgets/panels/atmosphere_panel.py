@@ -19,6 +19,8 @@ class AtmospherePanel(BaseWidget):
     written_info = None
     total = 0
 
+    last_idx = None
+
     def __init__(self, parent):
         super().__init__(parent)
         self.name = 'Atmosphere'
@@ -70,8 +72,11 @@ class AtmospherePanel(BaseWidget):
 
     def clear(self, event):
         if event.data['panel'] is self:
-            for element in self.elements.widgets():
-                element.percent.value = ''
+            self.erase()
+
+    def erase(self):
+        for element in self.elements.widgets():
+            element.percent.value = ''
         if self.curr_planet is not None:
             self.curr_planet.atmosphere.clear()
         self.show_pressure.clear()
@@ -237,7 +242,7 @@ class AtmospherePanel(BaseWidget):
         gravity = self.curr_planet.gravity.to('earth_gravity').m
         return (8.3144598 * temperature) / (self.aaw() * gravity)
 
-    def update(self):
+    def show_current(self):
         self.total = 0
         for element in self.elements.widgets():
             value = element.percent.get_value()
@@ -252,6 +257,14 @@ class AtmospherePanel(BaseWidget):
         self.write('Greenhouse effect: ' + str(self.global_warming()), self.f2, x=3, y=ALTO - 67)
         if self.curr_planet is not None:
             self.set_planet(self.curr_planet)
+
+    def update(self):
+        idx = Systems.get_current_id(self)
+
+        if idx != self.last_idx:
+            self.erase()
+            self.show_current()
+            self.last_idx = idx
 
 
 class Element(BaseWidget):
@@ -425,7 +438,7 @@ class PercentageCell(BaseWidget, IncrementalValue):
     def on_mousebuttondown(self, event):
         self.increment = self.update_increment()
         value = 0
-        if event.button == 1:
+        if event.button == 1 and self.enabled:
             for element in self.grandparent.elements:
                 element.percent.deselect()
             self.enabled = True
@@ -663,7 +676,7 @@ class AvailablePlanets(ListedArea):
     def show(self):
         system = Systems.get_current()
         if system is not None:
-            pop = [planet for planet in system.planets if planet.orbit is not None]
+            pop = [planet for planet in system.planets if planet.orbit is not None or planet.rogue is True]
             self.populate(pop)
         super().show()
 

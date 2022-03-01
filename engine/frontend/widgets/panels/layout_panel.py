@@ -1,6 +1,7 @@
-from engine.frontend.globales import ALTO, ANCHO, COLOR_TEXTO, COLOR_SELECTED, COLOR_BOX, COLOR_DISABLED, Group
 from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface, draw, transform, SRCALPHA
+from engine.frontend.globales.constantes import *
+from engine.frontend.globales.group import Group
 from engine.backend import EventHandler, Systems
 from engine.frontend.widgets.meta import Meta
 from engine.backend.util import abrir_json
@@ -172,7 +173,7 @@ class SwapSystem(Meta):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            Systems.cycle_systems()
+            Systems.cycle_systems(self.parent.current.name)
 
     def update(self):
         super().update()
@@ -212,8 +213,8 @@ class SystemName(BaseWidget):
         if name is None:
             self.color = COLOR_DISABLED
             name = '-'
-        elif name == 'None':
-            self.color = COLOR_DISABLED
+        elif name == 'Rogue Planets':
+            self.color = COLOR_WARNING
         else:
             self.color = COLOR_TEXTO
         return name

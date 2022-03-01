@@ -184,7 +184,8 @@ class PlanetaryOrbitPanel(BaseWidget):
                         self.buttons.add(btn, layer=system.id)
                         self.properties.add(btn, layer=4)
 
-            self.sort_buttons(system.id)
+            bodies = self.buttons.get_widgets_from_layer(system.id)
+            self.sort_buttons(bodies)
 
         else:
             self.show_no_system_error()
@@ -249,23 +250,23 @@ class PlanetaryOrbitPanel(BaseWidget):
             else:
                 marker.show()
 
-    def sort_buttons(self, system_id):
-        x, y = 3, 441
-        self.image.fill(COLOR_AREA, self.area_buttons)
-        for button in self.buttons.widgets():
-            button.hide()
-
-        for bt in self.buttons.get_widgets_from_layer(system_id):
-            bt.move(x, y)
-            if x + bt.rect.w + 10 < self.rect.w - bt.rect.w + 10:
-                x += bt.rect.w + 10
-            else:
-                x = 3
-                y += 32
-            if not self.area_buttons.contains(bt.rect):
-                bt.hide()
-            else:
-                bt.show()
+    # def sort_buttons(self, system_id):
+    #     x, y = 3, 441
+    #     self.image.fill(COLOR_AREA, self.area_buttons)
+    #     for button in self.buttons.widgets():
+    #         button.hide()
+    #
+    #     for bt in self.buttons.get_widgets_from_layer(system_id):
+    #         bt.move(x, y)
+    #         if x + bt.rect.w + 10 < self.rect.w - bt.rect.w + 10:
+    #             x += bt.rect.w + 10
+    #         else:
+    #             x = 3
+    #             y += 32
+    #         if not self.area_buttons.contains(bt.rect):
+    #             bt.hide()
+    #         else:
+    #             bt.show()
 
     def create_roches_marker(self, obj):
         obj_density = obj.density.to('earth_density').m
@@ -385,7 +386,8 @@ class PlanetaryOrbitPanel(BaseWidget):
         marker.linked_button.kill()
         marker.unlink()
         marker.kill()
-        self.sort_buttons(self.current.orbit.star.id)
+        bodies = self.buttons.get_widgets_from_layer(self.current.orbit.star.id)
+        self.sort_buttons(bodies)
 
     def hide_markers(self):
         for marker in self.markers:

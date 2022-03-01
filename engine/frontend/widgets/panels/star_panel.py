@@ -7,11 +7,11 @@ from engine.backend import EventHandler, Systems
 from engine.frontend.widgets.meta import Meta
 from pygame import Surface, mouse, draw
 from engine.equations.star import Star
+from .common import ColoredBody
 
 
 class StarPanel(BasePanel):
-    curr_x = 3
-    curr_y = 440
+    default_spacing = 7
 
     add_on_exit = False
 
@@ -80,7 +80,7 @@ class StarPanel(BasePanel):
 
     def show(self):
         super().show()
-        self.sort_buttons()
+        self.sort_buttons(self.star_buttons)
         for obj in self.properties.widgets():
             obj.show()
         if self.current.has_values:
@@ -99,13 +99,13 @@ class StarPanel(BasePanel):
             self.parent.set_skippable('Star System', False)
 
     def add_button(self, star):
-        button = StarButton(self.current, star, self.curr_x, self.curr_y)
+        button = StarButton(self.current, star, str(star), self.curr_x, self.curr_y)
         self.properties.add(button, layer=2)
         Systems.add_star(star)
         if star not in self.stars:
             self.stars.append(star)
         if self.is_visible:
-            self.sort_buttons()
+            self.sort_buttons(self.star_buttons)
         self.current.erase()
         self.button_add.disable()
         return button
@@ -114,24 +114,10 @@ class StarPanel(BasePanel):
         button = [i for i in self.star_buttons if i.object_data == star][0]
         self.properties.remove(button)
         if self.is_visible:
-            self.sort_buttons()
+            self.sort_buttons(self.star_buttons)
         self.button_del.disable()
         self.stars.remove(button.object_data)
         Systems.remove_star(star)
-
-    def sort_buttons(self):
-        x, y = self.curr_x, self.curr_y
-        for bt in self.star_buttons:
-            bt.move(x, y)
-            if not self.area_buttons.contains(bt.rect):
-                bt.hide()
-            else:
-                bt.show()
-            if x + bt.rect.w + 10 < self.rect.w - bt.rect.w + 10:
-                x += bt.rect.w + 10
-            else:
-                x = 3
-                y += 32
 
     def select_one(self, btn):
         for button in self.star_buttons:
@@ -151,7 +137,7 @@ class StarPanel(BasePanel):
                     self.curr_y += 32
                 elif event.button == 5 and last_is_hidden:
                     self.curr_y -= 32
-                self.sort_buttons()
+                self.sort_buttons(self.star_buttons)
 
     def on_mousebuttonup(self, event):
         if event.button == 1:
@@ -291,20 +277,8 @@ class DelStarButton(TextButton):
             self.parent.current.destroy_button()
 
 
-class StarButton(Meta):
+class StarButton(ColoredBody):
     enabled = True
-
-    def __init__(self, parent, star, x, y):
-        super().__init__(parent)
-        self.object_data = star
-        self.f1 = self.crear_fuente(13)
-        self.f2 = self.crear_fuente(13, bold=True)
-        name = str(star)
-        self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)
-        self.img_sel = self.f2.render(name, True, COLOR_TEXTO, COLOR_AREA)
-        self.w = self.img_sel.get_width()
-        self.image = self.img_uns
-        self.rect = self.image.get_rect(topleft=(x, y))
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -316,9 +290,6 @@ class StarButton(Meta):
             self.parent.toggle_habitable()
         elif event.button in (4, 5):
             self.parent.parent.on_mousebuttondown(event)
-
-    def move(self, x, y):
-        self.rect.topleft = x, y
 
     def hide(self):
         super().hide()

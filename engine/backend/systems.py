@@ -30,9 +30,12 @@ class Systems:
     @classmethod
     def import_clases(cls, rogues=None, planetary=None, universe=None):
         # this method exists to avert a circular import.
-        cls.rogue = rogues
-        cls.planetary = planetary
-        cls.universe = universe
+        if rogues is not None:
+            cls.rogue = rogues
+        if planetary is not None:
+            cls.planetary = planetary
+        if universe is not None:
+            cls.universe = universe
 
     @classmethod
     def init(cls):
@@ -73,7 +76,7 @@ class Systems:
             cls.populate(star.id)
             if system not in cls._systems:
                 cls._systems.append(system)
-                if len(cls._systems) == 1:
+                if len(cls._systems):
                     cls._current = next(cls._system_cycler)
             if star.letter is not None:
                 for s in star:
@@ -177,9 +180,12 @@ class Systems:
             return cls.find_parent(body.parent)
 
     @classmethod
-    def cycle_systems(cls):
+    def cycle_systems(cls, panel_name=None):
         if len(cls._systems):
             system = next(cls._system_cycler)
+            if panel_name == 'Orbit' and not system.is_a_system:
+                cls.cycle_systems(panel_name)
+                raise AssertionError()
             cls._current = system
 
     @classmethod
@@ -206,21 +212,21 @@ class Systems:
 
     @classmethod
     def get_systems(cls):
-        if cls.rogue not in cls._systems and len(cls._systems) >= 1:
+        if len(cls._systems):
             return cls._systems
         else:
             return []
 
     @classmethod
     def get_stars_and_systems(cls):
-        everything = [i for i in [cls.loose_stars] + [cls._systems]]
+        everything = [i for i in cls.loose_stars + cls._systems]
         everything.remove(cls.rogue)
         return everything
 
     @classmethod
     def get_only_stars(cls):
-        stars = [cls.loose_stars]
-        systems = [cls._systems]
+        stars = cls.loose_stars.copy()
+        systems = cls._systems.copy()
         systems.remove(cls.rogue)
         for system in systems:
             stars.append(system.star_system)

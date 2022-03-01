@@ -1,4 +1,4 @@
-from engine.backend import small_angle_aproximation, Systems, q
+from engine.backend import small_angle_aproximation, Systems, q, eucledian_distance
 from math import sqrt
 
 
@@ -50,6 +50,10 @@ class Universe:
         if astro_obj not in group:
             group.append(astro_obj)
             cls.astro_bodies.append(astro_obj)
+        if hasattr(astro_obj, 'clase'):
+            astro_obj.idx = len([i for i in group if i.clase == astro_obj.clase])-1
+        elif hasattr(astro_obj, 'cls'):
+            astro_obj.idx = len([i for i in group if i.cls == astro_obj.cls])-1
 
     @classmethod
     def remove_astro_obj(cls, astro_obj):
@@ -109,8 +113,12 @@ class Universe:
     @classmethod
     def visibility_by_albedo(cls):
         to_see = cls.planets + cls.satellites + cls.asteroids
+        to_see = [i for i in to_see if i.orbit is not None or i.rogue is True]
         for i, body in enumerate(to_see):
-            luminosity = body.orbit.star.luminosity.to('watt').m
+            if body.orbit is not None:
+                luminosity = body.orbit.star.luminosity.to('watt').m
+            else:
+                luminosity = 0
             if body.id not in cls.aparent_brightness:
                 cls.aparent_brightness[body.id] = {}
             if body.id not in cls.relative_sizes:
@@ -128,10 +136,13 @@ class Universe:
                 x = body.position[0]
             for star in stars:
                 if star.id not in cls.distances[body.id]:
-                    if body.parent.celestial_type in ('star', 'system'):
-                        relative_distance = body.orbit.a.to('km').m
+                    if body.parent is not None:
+                        if body.parent.celestial_type in ('star', 'system'):
+                            relative_distance = body.orbit.a.to('km').m
+                        else:
+                            relative_distance = body.parent.orbit.a.to('km').m
                     else:
-                        relative_distance = body.parent.orbit.a.to('km').m
+                        relative_distance = eucledian_distance(body.position, star.position)
                 else:
                     relative_distance = cls.distances[body.id][star.id].to('km').m
                 cls.relative_sizes[body.id][star.id] = small_angle_aproximation(star, relative_distance)
@@ -141,26 +152,29 @@ class Universe:
             for other in others:
                 if other.orbit is not None:
                     y = other.orbit.a.to('m').m  # position of the observed body
-                else:
+                elif other.rogue:
                     y = other.position[0]
+                else:  # body is not in orbit yet, but it's not a rogue planet either.
+                    y = None
 
-                distance = abs(y - x) if y > x else abs(x - y)  # linear distance, much quicker
-                cls.distances[body.id][other.id] = q(distance, 'm')
-                cls.relative_sizes[body.id][other.id] = small_angle_aproximation(other, distance)
-                albedo = other.albedo.m / 100
-                radius = other.radius.to('m').m
-                semi_major_axis = other.orbit.semi_major_axis.to('m').m
-
-                ab = (albedo * luminosity * pow(radius, 2)) / (pow(semi_major_axis, 2) * pow(distance, 2))
-                if ab > 1.3e-7:
-                    visibility = 'naked'
-                elif ab < 1.2e-9:
-                    visibility = 'telescope'
-                else:
+                if y is not None:
+                    distance = abs(y - x) if y > x else abs(x - y)  # linear distance, much quicker
+                    cls.distances[body.id][other.id] = q(distance, 'm')
+                    cls.relative_sizes[body.id][other.id] = small_angle_aproximation(other, distance)
+                    albedo = other.albedo.m / 100
+                    radius = other.radius.to('m').m
                     visibility = 'undetermined'
-                cls.aparent_brightness[body.id][other.id] = visibility
+                    if other.rogue is not True:
+                        semi_major_axis = other.orbit.semi_major_axis.to('m').m
+                        ab = (albedo * luminosity * pow(radius, 2)) / (pow(semi_major_axis, 2) * pow(distance, 2))
+                        if ab > 1.3e-7:
+                            visibility = 'naked'
+                        elif ab < 1.2e-9:
+                            visibility = 'telescope'
+                    cls.aparent_brightness[body.id][other.id] = visibility
 
 
+Universe.init()
 Systems.import_clases(universe=Universe)
 # the orbital velocity of a planet in orbit is equal to sqrt(M/a) where M is the mass of the star and a is the sma.
 # a planet ejected from its system retains its orbital velocity (I guess) but now traces a linear path, away from

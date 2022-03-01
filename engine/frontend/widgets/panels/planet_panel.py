@@ -12,8 +12,6 @@ from pygame import Rect
 
 
 class PlanetPanel(BasePanel):
-    curr_x = 3
-    curr_y = 440
     unit = None
     is_visible = False
     last_idx = None
@@ -66,7 +64,8 @@ class PlanetPanel(BasePanel):
         self.planet_buttons.add(button, layer=layer_number)
         self.planets.append(planet)
         if self.is_visible:
-            self.sort_buttons()
+            planets = self.planet_buttons.get_widgets_from_layer(Systems.get_current().id)
+            self.sort_buttons(planets)
         self.properties.add(button, layer=3)
         self.image.fill(COLOR_BOX, self.area_type)
         return button
@@ -75,7 +74,8 @@ class PlanetPanel(BasePanel):
         button = [i for i in self.planet_buttons.widgets() if i.object_data == planet][0]
         self.planet_buttons.remove(button)
         self.planets.remove(planet)
-        self.sort_buttons()
+        planets = self.planet_buttons.get_widgets_from_layer(Systems.get_current().id)
+        self.sort_buttons(planets)
         self.properties.remove(button)
         self.button_del.disable()
 
@@ -85,23 +85,8 @@ class PlanetPanel(BasePanel):
         for button in self.planet_buttons.get_widgets_from_layer(idx):
             button.show()
         if len(self.planet_buttons):
-            self.sort_buttons()
-
-    def sort_buttons(self):
-        x = self.curr_x
-        y = self.curr_y
-        buttons = self.planet_buttons.get_widgets_from_layer(Systems.get_current().id)
-        for i, bt in enumerate(buttons):
-            bt.move(x, y)
-            x += bt.max_w + 5
-            if bt.rect.right > self.area_buttons.w:
-                x = 3
-                y += 32
-                bt.move(x, y)
-            if not self.area_buttons.contains(bt.rect):
-                bt.hide()
-            else:
-                bt.show()
+            planets = self.planet_buttons.get_widgets_from_layer(Systems.get_current().id)
+            self.sort_buttons(planets)
 
     def select_one(self, btn=None):
         for button in self.planet_buttons.widgets():
@@ -123,7 +108,8 @@ class PlanetPanel(BasePanel):
                     self.curr_y += 32
                 elif event.button == 5 and last_is_hidden:
                     self.curr_y -= 32
-                self.sort_buttons()
+                planets = self.planet_buttons.get_widgets_from_layer(Systems.get_current().id)
+                self.sort_buttons(planets)
 
     def show(self):
         super().show()
@@ -209,7 +195,6 @@ class PlanetType(ObjectType):
                 planet_data = event.data['Planets'][id]
                 planet_data['id'] = id
                 planet = Planet(planet_data)
-                planet.idx = len([i for i in Systems.get_current().planets if i.clase == planet.clase])
                 if planet not in self.parent.planets:
                     btn = self.create_button(planet)
                     if planet.composition is not None:

@@ -18,6 +18,8 @@ class PlanetarySystem(Flagable):
 
     has_name = False
 
+    is_a_system = True
+
     def __init__(self, star_system):
         self.planets = []
         self.satellites = []
@@ -198,6 +200,8 @@ class RoguePlanets:
 
     id = 0
 
+    is_a_system = False
+
     @classmethod
     def init(cls):
         cls.star_system = cls
@@ -215,6 +219,8 @@ class RoguePlanets:
             group.append(astro_obj)
             cls.astro_bodies.append(astro_obj)
             astro_obj.set_rogue()
+            astro_obj.temperature = q(2.7, 'kelvin')
+            Universe.visibility_by_albedo()
             if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
                 EventHandler.trigger('RockyPlanet', 'RoguePlanets', {'planet': astro_obj, 'operation': 'add'})
             return True
@@ -277,6 +283,10 @@ class RoguePlanets:
     @classmethod
     def __repr__(cls):
         return cls.name
+
+    @classmethod
+    def __str__(cls):
+        return 'None'
 
 
 RoguePlanets.init()

@@ -92,7 +92,7 @@ def dwarfgraph_loop(limit_mass=None):
 
     move_x, move_y = True, True
 
-    if Systems.restricted_mode and Systems.get_current().name != 'Rogue Planets':
+    if Systems.restricted_mode and Systems.get_current().is_a_system:
         markers = Systems.bodies_markers[Systems.get_current().id]['dwarfgraph']
         marcadores = Group()
         for planet in Systems.get_current().planets:
@@ -214,7 +214,7 @@ def dwarfgraph_loop(limit_mass=None):
         lineas.draw(fondo)
         display.update()
 
-    if done and len(data) and Systems.restricted_mode and Systems.get_current().name != 'Rogue Planets':
+    if done and len(data) and Systems.restricted_mode and Systems.get_current().is_a_system:
         # noinspection PyUnboundLocalVariable
         markers.append(punto.rect.center)
 

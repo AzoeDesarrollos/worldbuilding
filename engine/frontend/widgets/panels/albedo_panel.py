@@ -168,7 +168,7 @@ class AlbedoPanel(BaseWidget):
         for prop in self.properties.widgets():
             prop.hide()
 
-        if Systems.get_current().name == 'Rogue Planets':
+        if not Systems.get_current().is_a_system:
             self.parent.set_skippable('Orbit', True)
 
     def set_planet(self, planet):
@@ -216,7 +216,7 @@ class AvailablePlanets(ListedArea):
     def show(self):
         system = Systems.get_current()
         if system is not None:
-            bodies = [body for body in system.astro_bodies]
+            bodies = [body for body in system.planets]
             self.populate(bodies)
 
         super().show()

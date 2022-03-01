@@ -3,19 +3,16 @@ from engine.backend import EventHandler, Systems, material_densities
 from engine.equations.satellite import major_moon_by_composition
 from engine.frontend.widgets.values import ValueText
 from engine.frontend.widgets.meta import Meta
+from .common import TextButton, ColoredBody
 from ..object_type import ObjectType
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
-from .common import TextButton
 from pygame import Surface
 from ..pie import PieChart
 from itertools import cycle
 
 
 class SatellitePanel(BasePanel):
-    curr_x = 0
-    curr_y = 0
-
     mass_number = None
     last_idx = None
 
@@ -23,13 +20,14 @@ class SatellitePanel(BasePanel):
         super().__init__('Satellite', parent, modes=3)
         self.current = SatelliteType(self)
         r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 132, 200])
-        self.area_satellites = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 200))
-        self.curr_x = self.area_satellites.x + 3
-        self.curr_y = self.area_satellites.y + 21
+        self.area_buttons = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 200))
+        self.curr_x = self.area_buttons.x + 3
+        self.curr_y = self.area_buttons.y - 11
+        self.default_x = self.area_buttons.x + 3
         f1 = self.crear_fuente(16, underline=True)
         f2 = self.crear_fuente(13, underline=True)
         r = self.write('Composition', f1, COLOR_AREA, topleft=(18, 420))
-        self.write('Satellites', f2, COLOR_AREA, x=self.area_satellites.x + 3, y=self.area_satellites.y)
+        self.write('Satellites', f2, COLOR_AREA, x=self.area_buttons.x + 3, y=self.area_buttons.y)
         self.properties = Group()
         self.mass_number = ShownMass(self)
         self.button_add = AddMoonButton(self, ANCHO - 13, 398)
@@ -37,7 +35,7 @@ class SatellitePanel(BasePanel):
         self.copy_button = CopyCompositionButton(self, r.centerx, r.bottom + 6)
         txt = 'Copy the values from a selected planet'
         self.f3 = self.crear_fuente(11)
-        self.txt_a = self.write2(txt, self.f3, 130, COLOR_AREA, centerx=r.centerx, y=self.area_satellites.y + 50, j=1)
+        self.txt_a = self.write2(txt, self.f3, 130, COLOR_AREA, centerx=r.centerx, y=self.area_buttons.y + 50, j=1)
         self.properties.add(self.button_add, self.button_del, self.copy_button, self.mass_number)
         self.satellites = Group()
         self.moons = []
@@ -70,29 +68,15 @@ class SatellitePanel(BasePanel):
             data[moon.id] = moon_data
             EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Satellites": data})
 
-    def sort_buttons(self):
-        x, y = self.curr_x, self.curr_y
-        for bt in self.satellites.get_widgets_from_layer(Systems.get_current().id):
-            bt.move(x, y)
-            if not self.area_satellites.contains(bt.rect):
-                bt.hide()
-            else:
-                bt.show()
-            if x + bt.rect.w + 10 < self.rect.w - bt.rect.w + 10:
-                x += bt.rect.w + 10
-            else:
-                x = 3
-                y += 32
-
     def show_current(self, idx):
         for button in self.satellites.widgets():
             button.hide()
         for button in self.satellites.get_widgets_from_layer(idx):
             button.show()
-        self.sort_buttons()
+        self.sort_buttons(self.satellites.get_widgets_from_layer(Systems.get_current().id))
 
     def add_button(self, moon):
-        button = SatelliteButton(self.current, moon, self.curr_x, self.curr_y)
+        button = SatelliteButton(self.current, moon, str(moon), self.curr_x, self.curr_y)
         if moon.system_id is not None:
             layer_number = moon.system_id
         else:
@@ -103,7 +87,7 @@ class SatellitePanel(BasePanel):
         self.satellites.add(button, layer=layer_number)
         self.properties.add(button)
         if self.is_visible:
-            self.sort_buttons()
+            self.sort_buttons(self.satellites.get_widgets_from_layer(Systems.get_current().id))
             self.current.erase()
         self.button_add.disable()
 
@@ -111,7 +95,7 @@ class SatellitePanel(BasePanel):
         button = [i for i in self.satellites.widgets() if i.object_data == satellite][0]
         self.moons.remove(satellite)
         self.satellites.remove(button)
-        self.sort_buttons()
+        self.sort_buttons(self.satellites.get_widgets_from_layer(Systems.get_current().id))
         self.properties.remove(button)
         self.button_del.disable()
 
@@ -340,28 +324,14 @@ class DelMoonButton(TextButton):
             self.parent.current.destroy_button()
 
 
-class SatelliteButton(Meta):
+class SatelliteButton(ColoredBody):
     enabled = True
-
-    def __init__(self, parent, satellite, x, y):
-        super().__init__(parent)
-        self.object_data = satellite
-        self.f1 = self.crear_fuente(13)
-        self.f2 = self.crear_fuente(13, bold=True)
-        self.img_uns = self.f1.render(str(satellite), True, satellite.color, COLOR_AREA)
-        self.img_sel = self.f2.render(str(satellite), True, satellite.color, COLOR_AREA)
-        self.w = self.img_sel.get_width()
-        self.image = self.img_uns
-        self.rect = self.image.get_rect(topleft=(x, y))
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
             self.parent.show_current(self.object_data)
             self.parent.parent.select_one(self)
             self.parent.parent.button_del.enable()
-
-    def move(self, x, y):
-        self.rect.topleft = x, y
 
 
 class CopyCompositionButton(Meta):
