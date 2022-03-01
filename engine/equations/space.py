@@ -27,12 +27,13 @@ class Universe:
 
         cls.astro_bodies = []
 
-    def get_astrobody_by(self, tag_identifier, tag_type='name', silenty=False):
+    @classmethod
+    def get_astrobody_by(cls, tag_identifier, tag_type='name', silenty=False):
         astrobody = None
         if tag_type == 'name':
-            astrobody = [body for body in self.astro_bodies if body.name == tag_identifier]
+            astrobody = [body for body in cls.astro_bodies if body.name == tag_identifier]
         elif tag_type == 'id':
-            astrobody = [body for body in self.astro_bodies if body.id == tag_identifier]
+            astrobody = [body for body in cls.astro_bodies if body.id == tag_identifier]
 
         if not silenty:
             assert len(astrobody), 'the ID "{}" is invalid'.format(tag_identifier)
