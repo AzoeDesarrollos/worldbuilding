@@ -13,6 +13,8 @@ class ListedArea(BaseWidget):
 
     offset = 0
 
+    stored_objects = None
+
     def __init__(self, parent, x, y, w, h):
         super().__init__(parent)
         self.image = Surface((w, h))
@@ -20,24 +22,26 @@ class ListedArea(BaseWidget):
         self.rect = self.image.get_rect(topleft=(x, y))
         self.shown_area = Rect(self.rect.x, self.rect.y + 10, self.rect.w, self.rect.h - 10)
         self.listed_objects = Group()
+        self.stored_objects = {}
 
         self.f = self.crear_fuente(14, underline=True)
         self.write(self.name, self.f, midtop=(self.rect.w / 2, 0), bg=COLOR_AREA)
 
-    def populate(self, population, layer=None):
-        listed = []
-        for listed_ob in self.listed_objects.widgets():
-            listed_ob.kill()
-        self.listed_objects.empty()
+    def populate(self, population, layer):
+        if layer not in self.stored_objects:
+            self.stored_objects[layer] = {}
+
         for i, obj in enumerate(population):
             x = self.rect.x + 3
             y = i * 18 + self.rect.y + 21
-            listed.append(self.listed_type(self, obj, str(obj), x, y))
+            listed_obj = self.listed_type(self, obj, str(obj), x, y)
+            if obj.id not in self.stored_objects[layer]:
+                self.stored_objects[layer][obj.id] = listed_obj
 
-        if layer is None:
-            layer = Systems.get_current().id
-
+        listed = [self.stored_objects[layer][idx] for idx in self.stored_objects[layer]]
         self.listed_objects.add(*listed, layer=layer)
+        if self.last_idx is None and layer is not None:
+            self.last_idx = layer
         self.sort()
 
     def hide(self):
@@ -65,7 +69,9 @@ class ListedArea(BaseWidget):
         self.sort()
 
     def sort(self):
-        by_mass = sorted(self.listed_objects.widgets(), key=lambda b: b.object_data.mass.to('earth_mass').m, reverse=1)
+        layer = self.last_idx
+        widgets = self.listed_objects.get_widgets_from_layer(layer)
+        by_mass = sorted(widgets, key=lambda b: b.object_data.mass.to('earth_mass').m, reverse=1)
         for i, listed in enumerate(by_mass):
             listed.rect.y = i * 16 + self.rect.y + self.offset + 21
 

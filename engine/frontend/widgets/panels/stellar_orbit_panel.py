@@ -908,10 +908,10 @@ class AvailablePlanets(ListedArea):
     name = 'Planets'
 
     def show(self):
-        system = Systems.get_current()
-        if system is not None:
+        for system in Systems.get_systems():
+            idx = system.id
             population = [i for i in system.planets + system.asteroids if i.orbit is None]
-            self.populate(population)
+            self.populate(population, layer=idx)
         super().show()
 
 

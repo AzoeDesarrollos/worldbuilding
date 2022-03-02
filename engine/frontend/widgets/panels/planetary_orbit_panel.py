@@ -478,10 +478,10 @@ class AvailablePlanets(ListedArea):
     listed_type = OrbitableObject
 
     def show(self):
-        system = Systems.get_current()
-        if system is not None:
+        for system in Systems.get_systems():
+            idx = system.id
             bodies = [body for body in system.astro_bodies if body.hill_sphere != 0]
-            self.populate(bodies)
+            self.populate(bodies, layer=idx)
         super().show()
 
     def delete_objects(self, astronomical_object):

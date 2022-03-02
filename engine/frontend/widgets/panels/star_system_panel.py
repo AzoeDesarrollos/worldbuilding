@@ -267,12 +267,12 @@ class AvailableStars(ListedArea):
     listed_type = ListedStar
 
     def show(self):
-        self.populate(Systems.loose_stars, layer=0)
+        self.populate(Systems.loose_stars, layer='one')
         super().show()
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
-        self.show_current(0)
+        self.show_current('one')
 
 
 class SetupButton(TextButton):

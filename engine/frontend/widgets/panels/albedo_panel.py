@@ -214,10 +214,10 @@ class AvailablePlanets(ListedArea):
     listed_type = UnbondedBody
 
     def show(self):
-        system = Systems.get_current()
-        if system is not None:
+        for system in Systems.get_systems():
+            idx = system.id
             bodies = [body for body in system.planets]
-            self.populate(bodies)
+            self.populate(bodies, layer=idx)
 
         super().show()
 

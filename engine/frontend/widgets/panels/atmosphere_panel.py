@@ -674,10 +674,10 @@ class AvailablePlanets(ListedArea):
     listed_type = ListedPlanet
 
     def show(self):
-        system = Systems.get_current()
-        if system is not None:
+        for system in Systems.get_systems():
+            idx = system.id
             pop = [planet for planet in system.planets if planet.orbit is not None or planet.rogue is True]
-            self.populate(pop)
+            self.populate(pop, layer=idx)
         super().show()
 
     def on_mousebuttondown(self, event):

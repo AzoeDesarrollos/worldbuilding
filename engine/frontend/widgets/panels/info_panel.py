@@ -1,5 +1,5 @@
 from engine.equations.tides import major_tides, minor_tides, is_tidally_locked
-from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, Group
 from engine.equations.planetary_system import RoguePlanets
 from .common import ListedArea, ColoredBody, TextButton
 from engine.backend import generate_id, Systems, q
@@ -224,11 +224,11 @@ class AvailablePlanets(ListedArea):
     listed_type = Astrobody
 
     def show(self):
-        system = Systems.get_current()
-        if system is not None:
+        for system in Systems.get_systems():
+            idx = system.id
             bodies = [body for body in system.astro_bodies]
             bodies = [body for body in bodies if body.orbit is not None or body.rogue is True]
-            self.populate(bodies)
+            self.populate(bodies, layer=idx)
         else:
             self.parent.show_no_system_error()
         super().show()
@@ -236,15 +236,6 @@ class AvailablePlanets(ListedArea):
     def on_mousebuttondown(self, event):
         super().on_mousebuttondown(event)
         self.parent.clear()
-
-    def update(self):
-        self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
-        idx = Systems.get_current_id(self)
-        if idx != self.last_idx:
-            self.parent.clear()
-            self.show()
-            self.last_idx = idx
-        self.show_current(idx)
 
 
 class PrintButton(TextButton):

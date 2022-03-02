@@ -51,24 +51,10 @@ class MultipleStarsPanel(BaseWidget):
             self.systems.append(system_data)
             self.system_buttons.add(button)
             self.properties.add(button)
-            self.sort_buttons()
+            self.sort_buttons(self.system_buttons)
             Systems.set_system(system_data)
             self.current.enable()
             return button
-
-    def sort_buttons(self):
-        x, y = self.curr_x, self.curr_y
-        for bt in self.system_buttons.widgets():
-            bt.move(x, y)
-            if not self.area_buttons.contains(bt.rect) or not self.is_visible:
-                bt.hide()
-            else:
-                bt.show()
-            if x + bt.rect.w + 10 < self.rect.w - bt.rect.w + 10:
-                x += bt.rect.w + 10
-            else:
-                x = 3
-                y += 32
 
     def show_current(self, star):
         self.current.erase()
@@ -84,7 +70,7 @@ class MultipleStarsPanel(BaseWidget):
         button = [i for i in self.system_buttons.widgets() if i.object_data == system][0]
         self.systems.remove(system)
         self.system_buttons.remove(button)
-        self.sort_buttons()
+        self.sort_buttons(self.system_buttons)
         self.properties.remove(button)
         self.dissolve_button.disable()
         if system in self.systems:
@@ -165,6 +151,6 @@ class AvailableSystems(ListedArea):
             if system_or_star.is_a_system:
                 if system_or_star.star_system.system not in population:
                     population.append(system_or_star.star_system.system)
-        population.sort(key=lambda s: s.mass, reverse=True)
-        if len(population):
-            self.populate(population)
+                    population.sort(key=lambda s: s.mass, reverse=True)
+                    if len(population):
+                        self.populate(population, layer='two')

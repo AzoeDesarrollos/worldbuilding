@@ -198,7 +198,7 @@ class RoguePlanets:
     has_name = True
     name = 'Rogue Planets'
 
-    id = 0
+    id = 'rogues'
 
     is_a_system = False
 
