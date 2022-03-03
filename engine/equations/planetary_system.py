@@ -206,6 +206,8 @@ class RoguePlanets:
 
     is_a_system = False
 
+    letter = None
+
     @classmethod
     def init(cls):
         cls.star_system = cls

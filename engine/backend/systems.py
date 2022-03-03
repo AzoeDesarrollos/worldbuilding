@@ -155,22 +155,24 @@ class Systems:
             if star.id == id_number:
                 return star
         for system in cls._systems:
-            if id_number == system.id:
-                return system.star_system
-            else:
-                for star in system:
-                    if star.id == id_number:
-                        return star
+            if system is not cls.rogue:
+                if id_number == system.id:
+                    return system.star_system
+                else:
+                    for star in system:
+                        if star.id == id_number:
+                            return star
 
     @classmethod
     def get_system_by_star(cls, star):
-        star = cls.find_parent(star)
-        for system in cls._systems:
-            if hasattr(system, 'letter'):
-                if any([body == star for body in system.star_system.composition()]):
+        if star is not None:
+            star = cls.find_parent(star)
+            for system in cls._systems:
+                if hasattr(system, 'letter'):
+                    if any([body == star for body in system.star_system.composition()]):
+                        return system
+                elif system.star_system == star:
                     return system
-            elif system.star_system == star:
-                return system
 
     @classmethod
     def find_parent(cls, body):
