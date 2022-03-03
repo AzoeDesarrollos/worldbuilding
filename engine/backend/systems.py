@@ -168,7 +168,7 @@ class Systems:
         if star is not None:
             star = cls.find_parent(star)
             for system in cls._systems:
-                if hasattr(system, 'letter'):
+                if hasattr(system, 'letter') and system.letter is not None:
                     if any([body == star for body in system.star_system.composition()]):
                         return system
                 elif system.star_system == star:
@@ -240,9 +240,9 @@ class Systems:
         cls.universe.add_astro_obj(star)
         if star not in cls.loose_stars:
             cls.loose_stars.append(star)
-        for system in cls._systems:
-            for body in system.astro_bodies:
-                system.visibility_of_stars(body)
+        astro_bodies = [i for i in cls.universe.astro_bodies if i.celestial_type != 'star']
+        for body in astro_bodies:
+            cls.universe.visibility_of_stars(body)
 
     @classmethod
     def remove_star(cls, star):
@@ -291,7 +291,7 @@ class Systems:
 
                 if system is not None:
                     body = system.get_astrobody_by(idx, tag_type='id')
-                    if body.flagged:
+                    if body is not False and body.flagged:
                         del data[key][idx]
 
         guardar_json(ruta, data)

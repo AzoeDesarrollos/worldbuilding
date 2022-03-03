@@ -268,6 +268,12 @@ class RoguePlanets:
         elif tag_type == 'id':
             astrobody = [body for body in cls.astro_bodies if body.id == tag_identifier]
 
+        if not(len(astrobody)):
+            astrobody = [body for body in Universe.astro_bodies if body.id == tag_identifier]
+            if len(astrobody):
+                if astrobody[0] in Universe.stars or astrobody[0].rogue is False:
+                    return False
+
         if not silenty:
             assert len(astrobody), 'the ID "{}" is invalid'.format(tag_identifier)
             return astrobody[0]
