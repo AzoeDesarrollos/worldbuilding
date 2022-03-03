@@ -88,8 +88,8 @@ class BaseWidget(Sprite):
         return self.image.blit(render, render_rect)
 
     @staticmethod
-    def write3(text, fuente, width, bg=COLOR_BOX):
-        render = render_textrect(text, fuente, width, COLOR_TEXTO, bg)
+    def write3(text, fuente, width, bg=COLOR_BOX, j=0):
+        render = render_textrect(text, fuente, width, COLOR_TEXTO, bg, justification=j)
         return render
 
     def show_no_system_error(self):

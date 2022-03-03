@@ -1,5 +1,5 @@
 from engine.frontend.globales import COLOR_AREA, ANCHO, COLOR_TEXTO, COLOR_DISABLED, COLOR_SELECTED, Group
-from engine.backend import EventHandler, Systems, material_densities
+from engine.backend import EventHandler, Systems, material_densities, roll
 from engine.equations.satellite import major_moon_by_composition
 from engine.frontend.widgets.values import ValueText
 from engine.frontend.widgets.meta import Meta
@@ -7,9 +7,10 @@ from .common import TextButton, ColoredBody
 from ..object_type import ObjectType
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
-from pygame import Surface
-from ..pie import PieChart
+from pygame import Surface, Rect
 from itertools import cycle
+from ..pie import PieChart
+from random import choice
 
 
 class SatellitePanel(BasePanel):
@@ -32,11 +33,17 @@ class SatellitePanel(BasePanel):
         self.mass_number = ShownMass(self)
         self.button_add = AddMoonButton(self, ANCHO - 13, 398)
         self.button_del = DelMoonButton(self, ANCHO - 13, 416)
-        self.copy_button = CopyCompositionButton(self, r.centerx, r.bottom + 6)
-        txt = 'Copy the values from a selected planet'
         self.f3 = self.crear_fuente(11)
-        self.txt_a = self.write2(txt, self.f3, 130, COLOR_AREA, centerx=r.centerx, y=self.area_buttons.y + 50, j=1)
-        self.properties.add(self.button_add, self.button_del, self.copy_button, self.mass_number)
+
+        self.copy_button = CopyCompositionButton(self, r.left, r.bottom + 6, r.centerx)
+        self.random_button = RandomCompositionButton(self, r.right, r.bottom + 6, r.centerx)
+
+        self.name_rect = Rect(0, 0, r.w, self.f3.get_height())
+        self.name_rect.centerx = r.centerx
+        self.name_rect.top = self.copy_button.text_rect.bottom
+
+        self.properties.add(self.button_add, self.button_del, self.copy_button,
+                            self.mass_number, self.random_button, layer=1)
         self.satellites = Group()
         self.moons = []
         EventHandler.register(self.load_satellites, 'LoadData')
@@ -140,9 +147,15 @@ class SatellitePanel(BasePanel):
             self.last_idx = idx
 
     def write_name(self, planet):
-        self.image.fill(COLOR_AREA, [0, 498, 130, 14])
+        r = self.image.fill(COLOR_AREA, [0, 498, 130, 14])
         text = f'[{str(planet)}]'
-        self.write(text, self.f3, COLOR_AREA, top=self.txt_a.bottom, centerx=self.txt_a.centerx)
+        self.write(text, self.f3, COLOR_AREA, top=self.name_rect.y, centerx=r.centerx)
+
+    def clear_name(self):
+        self.image.fill(COLOR_AREA, [0, 498, 130, 14])
+
+    def write_button_desc(self, button):
+        self.image.blit(button.text_render, button.text_rect)
 
 
 class SatelliteType(ObjectType):
@@ -340,7 +353,7 @@ class CopyCompositionButton(Meta):
 
     last_idx = None
 
-    def __init__(self, parent, x, y):
+    def __init__(self, parent, x, y, text_center_x):
         super().__init__(parent)
         self.f1 = self.crear_fuente(12)
         self.f2 = self.crear_fuente(12, bold=True)
@@ -349,11 +362,15 @@ class CopyCompositionButton(Meta):
         self.img_dis = self.crear(self.f1, COLOR_DISABLED)
         self.image = self.img_uns
         self.rect = self.image.get_rect(y=y)
-        self.rect.centerx = x
+        self.rect.left = x
         self.rocky_planets = {}
         self.current_cycler = None
         self.cyclers = {}
         EventHandler.register(self.manage_rocky_planets, 'RockyPlanet')
+
+        self.text = 'Copy the values from a selected planet'
+        self.text_render = self.write3(self.text, self.parent.f3, 130, bg=COLOR_AREA, j=1)
+        self.text_rect = self.text_render.get_rect(top=self.rect.bottom, centerx=text_center_x)
 
     def manage_rocky_planets(self, event):
         planet = event.data['planet']
@@ -411,6 +428,9 @@ class CopyCompositionButton(Meta):
             self.parent.current.paste_composition(d)
             self.parent.write_name(self.current)
 
+    def on_mouseover(self):
+        self.parent.write_button_desc(self)
+
     def update(self):
         super().update()
         if len(self.rocky_planets) and self.parent.enabled:
@@ -422,7 +442,63 @@ class CopyCompositionButton(Meta):
         idx = Systems.get_current().id
         if idx != self.last_idx:
             self.last_idx = idx
-            self.current_cycler = self.cyclers[idx]
+            self.current_cycler = self.cyclers[idx] if len(self.cyclers) else None
 
     def __repr__(self):
         return f'Copy Composition Button of {self.parent.name}'
+
+
+class RandomCompositionButton(Meta):
+    enabled = True
+
+    def __init__(self, parent, x, y, text_center_x):
+        super().__init__(parent)
+        self.f1 = self.crear_fuente(12)
+        self.f2 = self.crear_fuente(12, bold=True)
+        self.img_uns = self.crear(self.f1, COLOR_TEXTO)
+        self.img_sel = self.crear(self.f2, COLOR_SELECTED)
+        self.img_dis = self.crear(self.f1, COLOR_DISABLED)
+        self.image = self.img_uns
+        self.rect = self.image.get_rect(y=y)
+        self.rect.right = x
+
+        self.text = 'Generate a random composition'
+        self.text_render = self.write3(self.text, self.parent.f3, 130, bg=COLOR_AREA, j=1)
+        self.text_rect = self.text_render.get_rect(top=self.rect.bottom, centerx=text_center_x)
+
+    @staticmethod
+    def crear(fuente, fg):
+        render = fuente.render('Random', True, fg, COLOR_AREA)
+        rect = render.get_rect()
+        canvas = Surface(rect.inflate(+6, +6).size)
+        canvas.fill(fg)
+        canvas_rect = canvas.get_rect()
+        canvas.fill(COLOR_AREA, [1, 1, canvas_rect.w - 2, canvas_rect.h - 2])
+        rect.center = canvas_rect.center
+        canvas.blit(render, rect)
+        return canvas
+
+    def on_mouseover(self):
+        self.parent.write_button_desc(self)
+
+    def on_mousebuttondown(self, event):
+        self.parent.clear_name()
+        d = {}
+        if event.button == 1 and self.enabled:
+            materials = ['silicates', 'water ice', 'iron']
+            primary = choice(materials)
+            materials.remove(primary)
+            value = round(roll(0.0, 100.0), 2)
+            new_max = value
+            d[primary] = value
+
+            delta = 100-value
+            secondary = choice(materials)
+            materials.remove(secondary)
+            value = round(roll(0.0, delta), 2)
+            new_max += value
+            d[secondary] = value
+
+            tertiary = materials[0]
+            d[tertiary] = 100-new_max
+            self.parent.current.paste_composition(d)

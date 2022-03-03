@@ -1,5 +1,5 @@
+from engine.frontend.widgets.panels.satellite_panel import CopyCompositionButton, RandomCompositionButton
 from engine.frontend.globales import COLOR_AREA, ANCHO, COLOR_TEXTO, COLOR_BOX, Group
-from engine.frontend.widgets.panels.satellite_panel import CopyCompositionButton
 from engine.backend import EventHandler, Systems, material_densities, q
 from engine.equations.satellite import minor_moon_by_composition
 from engine.frontend.widgets.basewidget import BaseWidget
@@ -9,6 +9,7 @@ from .planet_panel import ShownMass
 from .base_panel import BasePanel
 from ..values import ValueText
 from ..pie import PieChart
+from pygame import Rect
 
 
 class AsteroidPanel(BasePanel):
@@ -29,12 +30,18 @@ class AsteroidPanel(BasePanel):
         self.default_x = self.area_buttons.x + 3
         self.button_add = AddAsteroidButton(self, ANCHO - 13, 398)
         self.button_del = DelAsteroidButton(self, ANCHO - 13, 416)
-        self.copy_button = CopyCompositionButton(self, ro.centerx,  ro.bottom + 6)
-        txt = 'Copy the values from a selected planet'
         self.f3 = self.crear_fuente(11)
-        self.txt_a = self.write2(txt, self.f3, 130, COLOR_AREA, centerx=ro.centerx, y=self.area_buttons.y + 50, j=1)
+
+        self.copy_button = CopyCompositionButton(self, ro.left, ro.bottom + 6, ro.centerx)
+        self.random_button = RandomCompositionButton(self, ro.right, ro.bottom + 6, ro.centerx)
+
+        self.name_rect = Rect(0, 0, r.w, self.f3.get_height())
+        self.name_rect.centerx = r.centerx
+        self.name_rect.top = self.copy_button.text_rect.bottom
+
         self.mass_number = ShownMass(self)
-        self.properties.add(self.current, self.mass_number, self.button_add, self.button_del, self.copy_button, layer=1)
+        self.properties.add(self.current, self.mass_number, self.button_add,
+                            self.random_button, self.button_del, self.copy_button, layer=1)
         self.asteroids = Group()
         self.moons = []
         EventHandler.register(self.load_satellites, 'LoadData')
@@ -146,9 +153,15 @@ class AsteroidPanel(BasePanel):
             button.deselect()
 
     def write_name(self, planet):
-        self.image.fill(COLOR_AREA, [0, 498, 130, 14])
+        r = self.image.fill(COLOR_AREA, [0, 498, 130, 14])
         text = f'[{str(planet)}]'
-        self.write(text, self.f3, COLOR_AREA, top=self.txt_a.bottom, centerx=self.txt_a.centerx)
+        self.write(text, self.f3, COLOR_AREA, top=self.name_rect.y, centerx=r.centerx)
+
+    def clear_name(self):
+        self.image.fill(COLOR_AREA, [0, 498, 130, 14])
+
+    def write_button_desc(self, button):
+        self.image.blit(button.text_render, button.text_rect)
 
 
 class AsteroidType(BaseWidget):

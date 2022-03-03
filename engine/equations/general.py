@@ -5,9 +5,19 @@ from pygame import Rect
 
 class Flagable:
     flagged = False
+    _position = None
 
     def flag(self):
         self.flagged = True
+
+    @property
+    def position(self):
+        return self._position
+
+    @position.setter
+    def position(self, values):
+        x, y, z = values
+        self._position = x, y, z
 
 
 class StarSystemBody(Flagable):
@@ -43,20 +53,10 @@ class BodyInHydrostaticEquilibrium(StarSystemBody):
     satellites = None
 
     rogue = False  # Bodies created outside a system are rogue planets by definition.
-    _position = None
 
     def set_rogue(self):
         self.rogue = True
         self._position = roll(-100, 100), roll(-100, 100), roll(-100, 100)
-
-    @property
-    def position(self):
-        return self._position
-
-    @position.setter
-    def position(self, values):
-        x, y, z = values
-        self._position = x, y, z
 
     @staticmethod
     def calculate_circumference(r):
