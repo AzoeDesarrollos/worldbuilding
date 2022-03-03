@@ -78,6 +78,10 @@ class StarPanel(BasePanel):
             self.current.current = self.star_buttons[0].object_data
             self.current.enable()
 
+    def deselect_buttons(self):
+        for button in self.star_buttons:
+            button.deselect()
+
     def show(self):
         super().show()
         self.sort_buttons(self.star_buttons)
@@ -85,6 +89,8 @@ class StarPanel(BasePanel):
             obj.show()
         if self.current.has_values:
             self.current.current.sprite.show()
+        else:
+            self.deselect_buttons()
 
     def hide(self):
         super().hide()
@@ -192,6 +198,7 @@ class StarType(ObjectType):
     def clear(self, event):
         if event.data['panel'] is self.parent:
             self.erase()
+            self.parent.deselect_buttons()
             self.parent.button_del.disable()
             self.parent.button_add.disable()
 
@@ -236,7 +243,7 @@ class StarType(ObjectType):
         new = StarSprite(self, self.current, 460, 100)
         if new.is_distict(self.current.sprite):
             self.current.sprite = new
-            self.properties.add(self.current.sprite)
+            self.properties.add(self.current.sprite, layer=3)
 
         self.current.sprite.show()
         self.parent.age_bar.enable()
