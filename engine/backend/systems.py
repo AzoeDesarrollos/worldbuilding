@@ -187,7 +187,8 @@ class Systems:
             system = next(cls._system_cycler)
             if panel_name == 'Orbit' and not system.is_a_system:
                 cls.cycle_systems(panel_name)
-                raise AssertionError()
+                warning = 'Rogue Planets, by definition, do not have orbits so they are unable to exist in this panel.'
+                raise AssertionError(warning)
             cls._current = system
 
     @classmethod
