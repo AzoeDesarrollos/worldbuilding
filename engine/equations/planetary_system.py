@@ -79,7 +79,9 @@ class PlanetarySystem(Flagable):
             group.append(astro_obj)
             self.astro_bodies.append(astro_obj)
             if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
-                EventHandler.trigger('RockyPlanet', self, {'planet': astro_obj, 'operation': 'add'})
+                EventHandler.trigger('RockyPlanet', self, {'system_id': self.id,
+                                                           'planet': astro_obj,
+                                                           'operation': 'add'})
             return True
 
         return False
@@ -94,7 +96,9 @@ class PlanetarySystem(Flagable):
         astro_obj.flag()
         self.astro_bodies.remove(astro_obj)
         if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
-            EventHandler.trigger('RockyPlanet', self, {'planet': astro_obj, 'operation': 'remove'})
+            EventHandler.trigger('RockyPlanet', self, {'system_id': self.id,
+                                                       'planet': astro_obj,
+                                                       'operation': 'remove'})
         return True
 
     def _get_astro_group(self, astro_obj):
@@ -222,7 +226,9 @@ class RoguePlanets:
             astro_obj.temperature = q(2.7, 'kelvin')
             Universe.visibility_by_albedo()
             if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
-                EventHandler.trigger('RockyPlanet', 'RoguePlanets', {'planet': astro_obj, 'operation': 'add'})
+                EventHandler.trigger('RockyPlanet', 'RoguePlanets', {'system_id': cls.id,
+                                                                     'planet': astro_obj,
+                                                                     'operation': 'add'})
             return True
 
         return False
@@ -235,7 +241,9 @@ class RoguePlanets:
         astro_obj.flag()
         cls.astro_bodies.remove(astro_obj)
         if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
-            EventHandler.trigger('RockyPlanet', 'RoguePlanets', {'planet': astro_obj, 'operation': 'remove'})
+            EventHandler.trigger('RockyPlanet', 'RoguePlanets', {'system_id': cls.id,
+                                                                 'planet': astro_obj,
+                                                                 'operation': 'remove'})
         return True
 
     @classmethod

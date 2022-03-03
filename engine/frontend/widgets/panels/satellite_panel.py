@@ -338,6 +338,8 @@ class CopyCompositionButton(Meta):
     enabled = True
     current = None
 
+    last_idx = None
+
     def __init__(self, parent, x, y):
         super().__init__(parent)
         self.f1 = self.crear_fuente(12)
@@ -348,17 +350,29 @@ class CopyCompositionButton(Meta):
         self.image = self.img_uns
         self.rect = self.image.get_rect(y=y)
         self.rect.centerx = x
-        self.rocky_planets = []
-        self.rocky_cycler = cycle(self.rocky_planets)
+        self.rocky_planets = {}
+        self.current_cycler = None
+        self.cyclers = {}
         EventHandler.register(self.manage_rocky_planets, 'RockyPlanet')
 
     def manage_rocky_planets(self, event):
+        planet = event.data['planet']
+        id = event.data['system_id']
+        if id not in self.rocky_planets:
+            self.rocky_planets[id] = []
+
         if event.data['operation'] == 'add':
-            self.rocky_planets.append(event.data['planet'])
-            if len(self.rocky_planets) == 1:
-                self.current = next(self.rocky_cycler)
+            self.rocky_planets[id].append(planet)
+            if id not in self.cyclers:
+                self.cyclers[id] = cycle(self.rocky_planets[id])
         elif event.data['operation'] == 'remove':
-            self.rocky_planets.remove(event.data['planet'])
+            self.rocky_planets[id].remove(event.data['planet'])
+            if not len(self.rocky_planets[id]):
+                del self.rocky_planets[id]
+                del self.cyclers[id]
+
+        if self.current_cycler is None:
+            self.current_cycler = self.cyclers[id]
 
     @staticmethod
     def crear(fuente, fg):
@@ -390,12 +404,12 @@ class CopyCompositionButton(Meta):
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
+            self.current = next(self.current_cycler)
             d = {'water ice': 0, 'silicates': 0, 'iron': 0}
             for element in d:
                 d[element] = self.current.composition[element]
             self.parent.current.paste_composition(d)
             self.parent.write_name(self.current)
-            self.current = next(self.rocky_cycler)
 
     def update(self):
         super().update()
@@ -404,3 +418,11 @@ class CopyCompositionButton(Meta):
                 self.enable()
         elif self.enabled:
             self.disable()
+
+        idx = Systems.get_current().id
+        if idx != self.last_idx:
+            self.last_idx = idx
+            self.current_cycler = self.cyclers[idx]
+
+    def __repr__(self):
+        return f'Copy Composition Button of {self.parent.name}'
