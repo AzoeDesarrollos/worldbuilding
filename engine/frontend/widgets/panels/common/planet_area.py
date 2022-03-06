@@ -64,7 +64,9 @@ class ListedArea(BaseWidget):
                 self.offset -= 16
 
     def delete_objects(self, astronomical_object):
-        listed = [i for i in self.listed_objects.widgets() if i.object_data is astronomical_object]
+        layer = self.last_idx
+        widgets = self.listed_objects.get_widgets_from_layer(layer)
+        listed = [i for i in widgets if i.object_data is astronomical_object]
         if len(listed):
             listed[0].kill()
             self.listed_objects.remove(listed[0])
@@ -99,6 +101,7 @@ class ListedArea(BaseWidget):
 
     def remove_listed(self, listed):
         self.listed_objects.remove(listed)
+        self.sort()
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))

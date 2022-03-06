@@ -35,6 +35,17 @@ class Group:
         else:
             return []
 
+    def get_widgets_from_layers(self, *layers):
+        widgets = []
+        for layer in layers:
+            widgets.extend(self.get_widgets_from_layer(layer))
+
+        return list(set(widgets))
+
+    @property
+    def layers(self):
+        return self._d.keys()
+
     def change_layer(self, sprite, layer):
         self.remove(sprite)
         self.add(sprite, layer=layer)

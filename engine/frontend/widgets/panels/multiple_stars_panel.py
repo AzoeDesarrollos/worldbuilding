@@ -98,7 +98,7 @@ class SystemsType(SystemType):
         # avg_sep = 1200 and 60000 au
         # ecc = between 0.4 and 0.7
 
-    def set_star(self, star):
+    def set_bodies(self, star):
         if str(self.primary.value) == '':
             self.primary.value = star
             self.has_values = True
@@ -131,7 +131,7 @@ class ListedSystem(ListedBody):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
-            self.parent.parent.current.set_star(self.object_data)
+            self.parent.parent.current.set_bodies(self.object_data)
             self.parent.remove_listed(self)
             self.kill()
             self.parent.sort()

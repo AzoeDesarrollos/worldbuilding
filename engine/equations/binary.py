@@ -4,9 +4,7 @@ from .general import Flagable
 from math import sqrt
 
 
-class BinarySystem(Flagable):
-    celestial_type = 'system'
-
+class AbstractBinary(Flagable):
     primary = None
     secondary = None
     average_separation = 0
@@ -15,6 +13,43 @@ class BinarySystem(Flagable):
     inner_forbbiden_zone = 0
     outer_forbbiden_zone = 0
     ecc_p, ecc_s = 0, 0
+
+    def __init__(self, primary, secondary, avgsep, ep=0, es=0, unit='au'):
+        if secondary.mass <= primary.mass:
+            self.primary = primary
+            self.secondary = secondary
+        else:
+            self.primary = secondary
+            self.secondary = primary
+
+        self.primary.set_parent(self)
+        self.secondary.set_parent(self)
+        self.ecc_p = q(ep)
+        self.ecc_s = q(es)
+        self.average_separation = q(avgsep, unit)
+        self.barycenter = q(avgsep * (self.secondary.mass.m / (self.primary.mass.m + self.secondary.mass.m)), unit)
+        self.primary_distance = round(self.barycenter, 2)
+        self.secondary_distance = round(self.average_separation - self.primary_distance, 2)
+
+        assert 0.4 <= ep <= 0.7, 'Primary eccentricity must be between 0.4 and 0.7'
+        max_sep_p, min_sep_p = self.calculate_distances(ep, self.primary_distance.m, unit)
+
+        assert 0.4 <= es <= 0.7, 'Secondary eccentricity must be between 0.4 and 0.7'
+        max_sep_s, min_sep_s = self.calculate_distances(es, self.secondary_distance.m, unit)
+
+        self.max_sep = max_sep_p + max_sep_s
+        self.min_sep = min_sep_p + min_sep_s
+
+    @staticmethod
+    def calculate_distances(e, ref, unit):
+        max_sep = q((1 + e) * round(ref, 2), unit)
+        min_sep = q((1 - e) * round(ref, 2), unit)
+        return max_sep, min_sep
+
+
+class BinarySystem(AbstractBinary):
+    celestial_type = 'system'
+
     letter = ''
     system_name = ''
     has_name = False
@@ -26,28 +61,13 @@ class BinarySystem(Flagable):
     parent = None
 
     def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, id=None):
-        if secondary.mass <= primary.mass:
-            self.primary = primary
-            self.secondary = secondary
-        else:
-            self.primary = secondary
-            self.secondary = primary
-
-        self.primary.set_parent(self)
-        self.secondary.set_parent(self)
+        super().__init__(primary, secondary, avgsep, ep=ep, es=es)
 
         if name is None:
             self.has_name = False
         else:
             self.name = name
             self.has_name = True
-
-        self.ecc_p = q(ep)
-        self.ecc_s = q(es)
-        self.average_separation = q(avgsep, 'au')
-        self.barycenter = q(avgsep * (self.secondary.mass.m / (self.primary.mass.m + self.secondary.mass.m)), 'au')
-        self.primary_distance = round(self.barycenter, 2)
-        self.secondary_distance = round(self.average_separation - self.primary_distance, 2)
 
         self.primary.orbit = BinaryStarOrbit(self.primary, self.secondary, self.primary_distance, self.ecc_p)
         self.secondary.orbit = BinaryStarOrbit(self.secondary, self.primary, self.secondary_distance, self.ecc_s)
@@ -56,12 +76,6 @@ class BinarySystem(Flagable):
 
         # ID values make each system unique, even if they have the same stars and separation.
         self.id = id if id is not None else generate_id()
-
-    @staticmethod
-    def calculate_distances(e, ref):
-        max_sep = q((1 + e) * round(ref, 2), 'au')
-        min_sep = q((1 - e) * round(ref, 2), 'au')
-        return max_sep, min_sep
 
     def __str__(self):
         return self.letter + '-Type #{}'.format(self.idx)
@@ -127,14 +141,6 @@ class PTypeSystem(BinarySystem):
     def __init__(self, primary, secondary, avgsep, ep=0, es=0, pos=None, id=None, name=None):
         super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
 
-        assert 0.4 <= ep <= 0.7, 'Primary eccentricity must be between 0.4 and 0.7'
-        max_sep_p, min_sep_p = self.calculate_distances(ep, self.primary_distance.m)
-
-        assert 0.4 <= es <= 0.7, 'Secondary eccentricity must be between 0.4 and 0.7'
-        max_sep_s, min_sep_s = self.calculate_distances(es, self.secondary_distance.m)
-
-        self.max_sep = max_sep_p + max_sep_s
-        self.min_sep = min_sep_p + min_sep_s
         assert self.min_sep.m > 0.1, "Stars will merge at {:~} minimum distance".format(self.min_sep)
 
         self._mass = primary.mass + secondary.mass
@@ -181,14 +187,6 @@ class STypeSystem(BinarySystem):
     def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
         super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
 
-        assert 0.4 <= ep <= 0.7, 'Primary eccentricity must be between 0.4 and 0.7'
-        max_sep_p, min_sep_p = self.calculate_distances(ep, self.average_separation.m)
-
-        assert 0.4 <= es <= 0.7, 'Secondary eccentricity must be between 0.4 and 0.7'
-        max_sep_s, min_sep_s = self.calculate_distances(es, self.average_separation.m)
-
-        self.max_sep = max_sep_p + max_sep_s
-        self.min_sep = min_sep_p + min_sep_s
         self.shared_mass = primary.mass + secondary.mass
         self.primary.position[0] = self.primary_distance
         self.secondary.position[0] = -self.secondary_distance
@@ -204,6 +202,10 @@ class STypeSystem(BinarySystem):
                 inner = self.inner_forbbiden_zone
                 outer = self.outer_forbbiden_zone
                 star.inherit(self, inner, outer, self.shared_mass)
+
+
+class PlanetaryPTypeSystem(AbstractBinary):
+    pass
 
 
 def system_type(separation):

@@ -11,6 +11,7 @@ from .info_panel import InformationPanel
 from .multiple_stars_panel import MultipleStarsPanel
 from .albedo_panel import AlbedoPanel
 from .start_panel import StartPanel
+from .double_planets_panel import DoublePlanetsPanel
 
 panels = [
     StartPanel,
@@ -18,6 +19,7 @@ panels = [
     StarSystemPanel,
     MultipleStarsPanel,
     PlanetPanel,
+    DoublePlanetsPanel,
     SatellitePanel,
     AsteroidPanel,
     AlbedoPanel,

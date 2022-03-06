@@ -258,7 +258,7 @@ class NumberArea(BaseArea, IncrementalValue):
                 if self.great_grandparent.name == 'Star':
                     self.grandparent.set_star({self.parent.text.lower(): float(self.value)})
 
-                elif self.great_grandparent.name in ['Star System', 'Orbit', 'Multiple Stars']:
+                elif self.great_grandparent.name in ['Star System', 'Orbit', 'Multiple Stars', 'Double Planets']:
                     self.grandparent.fill()
 
                 elif self.great_grandparent.name in ['Satellite', 'Asteroid']:

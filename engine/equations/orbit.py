@@ -325,6 +325,22 @@ class BinaryStarOrbit(Orbit):
         self.velocity = q(sqrt(main_body_mass / self._a), 'earth_orbital_velocity').to('kilometer per second')
 
 
+class BinaryPlanetOrbit(Orbit):
+    primary = 'Star'
+
+    def __init__(self, star, other, a, e):
+        super().__init__(a, e, q(0, 'degrees'), 'au')
+        self.reset_period_and_speed(star.mass.m + other.mass.m)
+
+    def reset_period_and_speed(self, main):
+        if main.letter is None:
+            main_body_mass = main.mass.m
+        else:
+            main_body_mass = main.shared_mass.m
+        self.period = q(sqrt(pow(self._a, 3) / main_body_mass), 'year')
+        self.velocity = q(sqrt(main_body_mass / self._a), 'earth_orbital_velocity').to('kilometer per second')
+
+
 class GalacticStellarOrbit(Orbit):
     def __init__(self, a, e):
         super().__init__(a, e, q(0, 'degrees'), unit='kpc')
