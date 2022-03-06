@@ -142,6 +142,8 @@ class AsteroidPanel(BasePanel):
     def update(self):
         idx = Systems.get_current_id(self)
         if idx != self.last_idx:
+            self.image.fill(COLOR_AREA, [0, 498, 130, 14])
+            self.current.pie.set_values()
             self.show_current(idx)
             self.last_idx = idx
 
@@ -253,7 +255,7 @@ class AsteroidType(BaseWidget):
         self.current = None
         self.has_values = False
         self.parent.clear()
-        for vt in self.properties.get_widgets_from_layer(2)+self.properties.get_widgets_from_layer(3):
+        for vt in self.properties.get_widgets_from_layer(2) + self.properties.get_widgets_from_layer(3):
             vt.text_area.set_value('')
         for vt in self.properties.get_widgets_from_layer(4):
             vt.value = self.pie.get_default_value(vt.text.lower())

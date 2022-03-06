@@ -143,6 +143,8 @@ class SatellitePanel(BasePanel):
         idx = Systems.get_current_id(self)
 
         if idx != self.last_idx:
+            self.image.fill(COLOR_AREA, [0, 498, 130, 14])
+            self.current.pie.set_values()
             self.show_current(idx)
             self.last_idx = idx
 
