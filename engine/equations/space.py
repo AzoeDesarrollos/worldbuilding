@@ -116,7 +116,8 @@ class Universe:
         to_see = [i for i in to_see if i.orbit is not None or i.rogue is True]
         for i, body in enumerate(to_see):
             if body.orbit is not None:
-                luminosity = body.orbit.star.luminosity.to('watt').m
+                star = body.find_topmost_parent(body)
+                luminosity = star.luminosity.to('watt').m
             else:
                 luminosity = 0
             if body.id not in cls.aparent_brightness:

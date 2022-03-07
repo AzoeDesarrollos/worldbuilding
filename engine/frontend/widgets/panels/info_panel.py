@@ -1,8 +1,8 @@
 from engine.equations.tides import major_tides, minor_tides, is_tidally_locked
+from engine.backend import generate_id, Systems, q, generate_diagram
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, Group
 from engine.equations.planetary_system import RoguePlanets
 from .common import ListedArea, ColoredBody, TextButton
-from engine.backend import generate_id, Systems, q
 from engine.equations.space import Universe
 from ..basewidget import BaseWidget
 from pygame import Surface, Rect
@@ -34,7 +34,8 @@ class InformationPanel(BaseWidget):
 
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.print_button = PrintButton(self, *self.planet_area.rect.midbottom)
-        self.properties.add(self.planet_area, self.print_button, layer=2)
+        self.diagram_button = GenerateDiagramButton(self, *self.planet_area.rect.midbottom)
+        self.properties.add(self.planet_area, self.print_button, self.diagram_button, layer=2)
         self.perceptions_rect = Rect(3, 250, 380, ALTO)
         self.info_rect = Rect(3, self.perceptions_rect.bottom, 380, ALTO - (self.perceptions_rect.h + 380 + 21))
 
@@ -211,6 +212,7 @@ class InformationPanel(BaseWidget):
         self.image.fill(COLOR_BOX, self.info_rect)
         self.image.blit(self.render, self.render_rect)
         self.print_button.enable()
+        self.diagram_button.enable()
 
 
 class Astrobody(ColoredBody):
@@ -239,7 +241,6 @@ class AvailablePlanets(ListedArea):
 
 
 class PrintButton(TextButton):
-    enabled = False
 
     def __init__(self, parent, x, y):
         super().__init__(parent, 'Print Info', x, y)
@@ -255,3 +256,23 @@ class PrintButton(TextButton):
                 for line in self.parent.text.splitlines(keepends=True):
                     file.write(line)
             self.disable()
+
+
+class GenerateDiagramButton(TextButton):
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent, 'Generate Diagram', x, y)
+        self.rect.midtop = x, y
+        self.rect.y += 30
+
+    def on_mousebuttondown(self, event):
+        if event.button == 1 and self.enabled:
+            ruta = os.path.join(os.getcwd(), 'exports')
+            if not os.path.exists(ruta):
+                os.mkdir(ruta)
+
+            system = Systems.get_current()
+            if system is not RoguePlanets:
+                generate_diagram(ruta, system.star_system, system.planets)
+                text = f'A diagram was generated and is located in exports/{system.id}.png'
+                raise AssertionError(text)

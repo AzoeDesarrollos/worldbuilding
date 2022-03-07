@@ -30,7 +30,9 @@ class StarSystemBody(Flagable):
         self.parent = parent
 
     def is_orbiting_a_star(self):
-        return self.parent.parent is None
+        if hasattr(self.parent, 'parent'):
+            return self.parent.parent is None
+        return False
 
     def set_name(self, name):
         self.name = name
@@ -38,7 +40,7 @@ class StarSystemBody(Flagable):
 
     @staticmethod
     def find_topmost_parent(this):
-        if this.parent.is_orbiting_a_star():
+        if this.is_orbiting_a_star():
             return this.parent
         else:
             return this.find_topmost_parent(this.parent)
