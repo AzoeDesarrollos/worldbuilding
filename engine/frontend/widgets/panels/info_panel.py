@@ -212,7 +212,6 @@ class InformationPanel(BaseWidget):
         self.image.fill(COLOR_BOX, self.info_rect)
         self.image.blit(self.render, self.render_rect)
         self.print_button.enable()
-        self.diagram_button.enable()
 
 
 class Astrobody(ColoredBody):
@@ -226,11 +225,13 @@ class AvailablePlanets(ListedArea):
     listed_type = Astrobody
 
     def show(self):
-        for system in Systems.get_systems():
-            idx = system.id
-            bodies = [body for body in system.astro_bodies]
-            bodies = [body for body in bodies if body.orbit is not None or body.rogue is True]
-            self.populate(bodies, layer=idx)
+        systems = Systems.get_systems()
+        if len(systems):
+            for system in systems:
+                idx = system.id
+                bodies = [body for body in system.astro_bodies]
+                bodies = [body for body in bodies if body.orbit is not None or body.rogue is True]
+                self.populate(bodies, layer=idx)
         else:
             self.parent.show_no_system_error()
         super().show()
@@ -259,6 +260,7 @@ class PrintButton(TextButton):
 
 
 class GenerateDiagramButton(TextButton):
+    enabled = True
 
     def __init__(self, parent, x, y):
         super().__init__(parent, 'Generate Diagram', x, y)
@@ -273,6 +275,6 @@ class GenerateDiagramButton(TextButton):
 
             system = Systems.get_current()
             if system is not RoguePlanets:
-                generate_diagram(ruta, system.star_system, system.planets)
-                text = f'A diagram was generated and is located in exports/{system.id}.png'
+                generate_diagram(ruta, system)
+                text = f'A diagram was generated and is located in exports/...{system.id.split("-")[1]}.png'
                 raise AssertionError(text)

@@ -141,6 +141,14 @@ class PlanetarySystem(Flagable):
             else:
                 return astrobody[0]
 
+    def get_bodies_in_orbit_by_types(self, *types):
+        bodies = []
+        for tipo in types:
+            for body in self.astro_bodies:
+                if body.clase == tipo and body.orbit is not None:
+                    bodies.append(body)
+        return bodies
+
     def is_habitable(self, planet) -> bool:
         pln_orbit = planet.orbit.semi_major_axis
         star = self.star_system

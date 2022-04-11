@@ -3,7 +3,6 @@ from engine.frontend.widgets.basewidget import BaseWidget
 from .common import ListedArea, ColoredBody, TextButton
 from engine.backend import EventHandler, Systems
 from engine.equations.binary import system_type
-from engine.frontend.widgets.meta import Meta
 from ..values import ValueText
 from pygame import Surface
 
@@ -305,21 +304,12 @@ class DissolveButton(TextButton):
             self.parent.current.destroy()
 
 
-class SystemButton(Meta):
+class SystemButton(ColoredBody):
     enabled = True
 
     def __init__(self, parent, system_data, idx, x, y):
-        super().__init__(parent)
+        super().__init__(parent, system_data, str(system_data), x, y)
         system_data.idx = idx
-        self.object_data = system_data
-        name = str(system_data)
-        self.f1 = self.crear_fuente(13)
-        self.f2 = self.crear_fuente(13, bold=True)
-        self.img_uns = self.f1.render(name, True, COLOR_TEXTO, COLOR_AREA)
-        self.img_sel = self.f2.render(name, True, COLOR_TEXTO, COLOR_AREA)
-        self.w = self.img_sel.get_width()
-        self.image = self.img_uns
-        self.rect = self.image.get_rect(topleft=(x, y))
 
     def on_mousebuttondown(self, event):
         if event.button == 1:

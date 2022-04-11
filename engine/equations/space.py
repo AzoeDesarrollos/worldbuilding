@@ -89,16 +89,16 @@ class Universe:
 
             for star in stars:
                 if body.orbit is not None and star.id not in cls.aparent_brightness[body.id]:
-                    if star == body.orbit.star:
-                        if body.parent == star:
-                            ab = round(q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs'), 3)
-                            cls.distances[body.id][star.id] = body.orbit.a
-                        else:
-                            parent = body.find_topmost_parent(body)
-                            ab = round(q(star.luminosity.m / pow(parent.orbit.a.m, 2), 'Vs'), 3)
-                            cls.distances[body.id][star.id] = parent.orbit.a
+                    if star == body.find_topmost_parent(body):
+                        ab = round(q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs'), 3)
+                        cls.distances[body.id][star.id] = body.orbit.a
+
+                        # else:
+                        #     parent = body.find_topmost_parent(body)
+                        #     ab = round(q(star.luminosity.m / pow(parent.orbit.a.m, 2), 'Vs'), 3)
+                        #     cls.distances[body.id][star.id] = parent.orbit.a
                     else:
-                        x1, y1, z1 = body.orbit.star.position
+                        x1, y1, z1 = body.find_topmost_parent(body).position
                         x2, y2, z2 = star.position
                         d = q(sqrt(pow(abs(x2 - x1), 2) + pow(abs(y2 - y1), 2) + pow(abs(z2 - z1), 2)), 'lightyears')
                         cls.distances[body.id][star.id] = round(d)
@@ -108,7 +108,8 @@ class Universe:
                         d = cls.distances[body.id][star.id]
                         value = small_angle_aproximation(star, d.to('km').m)
                         cls.relative_sizes[body.id][star.id] = value
-                    cls.aparent_brightness[body.id][star.id] = ab
+                        cls.aparent_brightness[body.id][star.id] = ab
+
 
     @classmethod
     def visibility_by_albedo(cls):

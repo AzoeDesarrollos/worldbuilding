@@ -75,7 +75,7 @@ class StarPanel(BasePanel):
                     systems.append(star.id)
 
         if len(self.star_buttons):
-            self.current.current = self.star_buttons[0].object_data
+            # self.current.current = self.star_buttons[0].object_data
             self.current.enable()
 
     def deselect_buttons(self):
