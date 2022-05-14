@@ -27,7 +27,7 @@ class ObjectType(BaseWidget):
         self.relatives = Group()
         self.absolutes = Group()
         for i, button in enumerate(relative_names+absolute_names):
-            vt = ValueText(self, button, 50, 40 + i * 14 * 2)
+            vt = ValueText(self, button, 50, 40 + i * 13 * 2)
             if button in relative_names:
                 self.relatives.add(vt)
             elif button in absolute_names:
@@ -94,6 +94,8 @@ class ObjectType(BaseWidget):
         for i, elemento in enumerate(self.absolutes.widgets()):
             arg = self.absolute_args[i]
             got_attr = getattr(self.current, arg)
+            if self.parent.mode == 1 and arg in tos[self.parent.mode]:
+                got_attr = got_attr.to(tos[self.parent.mode][arg])
             attr = q(str(round(got_attr.m, 3)), got_attr.u) if type(got_attr) is not str else got_attr
             elemento.value = attr
             elemento.text_area.show()

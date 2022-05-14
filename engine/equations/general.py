@@ -77,7 +77,7 @@ class BodyInHydrostaticEquilibrium(StarSystemBody):
         v = cls.calculate_volume(r)
         return m / v
 
-    def update_everything(self):
+    def update_everything(self, *args, **kwargs):
         return NotImplemented
 
     def set_value(self, key, value):
