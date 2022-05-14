@@ -105,14 +105,14 @@ def gasgraph_loop(limit_mass=None):
     if Systems.restricted_mode and Systems.get_current().is_a_system:
         markers = Systems.bodies_markers[Systems.get_current().id]['gasgraph']
         marcadores = Group()
-        for planet in Systems.get_current().planets:
-            if planet.planet_type == 'gaseous':
-                mass = planet.mass.m
-                radius = planet.radius.m
-
-                x = find_and_interpolate(mass, mass_keys, yes)
-                y = find_and_interpolate(radius, radius_keys, exes)
-                markers.append([x, y])
+        # for planet in Systems.get_current().planets:
+        #     if planet.planet_type == 'gaseous':
+        #         mass = planet.mass.m
+        #         radius = planet.radius.m
+        #
+        #         x = find_and_interpolate(mass, mass_keys, yes)
+        #         y = find_and_interpolate(radius, radius_keys, exes)
+        #         markers.append([x, y])
 
         for x, y in markers:
             marcadores.add(BodyMarker(x, y))
