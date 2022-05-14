@@ -444,7 +444,7 @@ class CopyCompositionButton(Meta):
         idx = Systems.get_current().id
         if idx != self.last_idx:
             self.last_idx = idx
-            self.current_cycler = self.cyclers[idx] if len(self.cyclers) else None
+            self.current_cycler = self.cyclers[idx] if idx in self.cyclers else None
 
     def __repr__(self):
         return f'Copy Composition Button of {self.parent.name}'

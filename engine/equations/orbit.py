@@ -5,7 +5,6 @@ from .general import Ellipse, Flagable
 from engine.backend import q
 from decimal import Decimal
 from .space import Universe
-from pygame import draw
 
 
 class RawOrbit:
@@ -155,11 +154,6 @@ class Orbit(Flagable, Ellipse):
         elif 90 < self._i < 180:
             self.direction = 'retrograde'
             self.motion = self.direction
-
-    def draw(self, surface):
-        screen_rect_center = surface.get_rect().center
-        rect = self.get_rect(*screen_rect_center)
-        draw.ellipse(surface, (255, 255, 255), rect, width=1)
 
     def __repr__(self):
         return 'Orbit @' + str(round(self.semi_major_axis.m, 3))

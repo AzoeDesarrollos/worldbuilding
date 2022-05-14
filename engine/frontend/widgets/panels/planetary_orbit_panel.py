@@ -250,24 +250,6 @@ class PlanetaryOrbitPanel(BaseWidget):
             else:
                 marker.show()
 
-    # def sort_buttons(self, system_id):
-    #     x, y = 3, 441
-    #     self.image.fill(COLOR_AREA, self.area_buttons)
-    #     for button in self.buttons.widgets():
-    #         button.hide()
-    #
-    #     for bt in self.buttons.get_widgets_from_layer(system_id):
-    #         bt.move(x, y)
-    #         if x + bt.rect.w + 10 < self.rect.w - bt.rect.w + 10:
-    #             x += bt.rect.w + 10
-    #         else:
-    #             x = 3
-    #             y += 32
-    #         if not self.area_buttons.contains(bt.rect):
-    #             bt.hide()
-    #         else:
-    #             bt.show()
-
     def create_roches_marker(self, obj):
         obj_density = obj.density.to('earth_density').m
         roches = self.current.set_roche(obj_density)
@@ -519,7 +501,7 @@ class ObjectButton(ColoredBody):
         self.img_uns = self.f1.render(obj, True, self.color, COLOR_AREA)
         self.img_sel = self.f2.render(obj, True, self.color, COLOR_AREA)
         self.img_dis = self.img_uns
-        self.w = self.img_sel.get_width()
+        self.max_w = self.img_sel.get_width()
         self.image = self.img_uns
         self.rect.size = self.image.get_size()
         if self.info is None:

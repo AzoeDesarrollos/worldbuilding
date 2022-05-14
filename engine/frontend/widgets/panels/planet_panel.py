@@ -158,9 +158,10 @@ class PlanetType(ObjectType):
     def __init__(self, parent):
         rel_props = ['Mass', 'Radius', 'Surface gravity', 'Escape velocity']
         rel_args = ['mass', 'radius', 'gravity', 'escape_velocity']
-        abs_args = ['density', 'volume', 'surface', 'circumference', 'tilt', 'spin', 'albedo', 'greenhouse', 'clase']
-        abs_props = ['Density', 'Volume', 'Surface area', 'Circumference', 'Axial tilt', 'Spin', 'Albedo (bond)',
-                     'Greenhouse effect', 'Class']
+        abs_args = ['density', 'volume', 'surface', 'circumference',
+                    'tilt', 'spin', 'rotation', 'albedo', 'greenhouse', 'clase']
+        abs_props = ['Density', 'Volume', 'Surface area', 'Circumference',
+                     'Axial tilt', 'Spin', 'Rotation Rate', 'Albedo (bond)', 'Greenhouse effect', 'Class']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
         self.set_modifiables('relatives', 0, 1)
         self.set_modifiables('absolutes', 4, 6)
@@ -306,7 +307,9 @@ class PlanetType(ObjectType):
                 'mass': 'kg',
                 'radius': 'km',
                 'gravity': 'm/s**2',
-                'escape_velocity': 'km/s'}
+                'escape_velocity': 'km/s',
+                'rotation': 'hours/day'
+            }
         }
         super().fill(tos)
 

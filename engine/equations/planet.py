@@ -3,6 +3,7 @@ from .orbit import PlanetOrbit, SatelliteOrbit, from_satellite_resonance
 from .general import BodyInHydrostaticEquilibrium
 from .lagrange import get_lagrange_points
 from math import sqrt, pi, pow, sin, cos
+from .day_lenght import aprox_day_leght
 from pygame import Color
 
 
@@ -42,6 +43,9 @@ class Planet(BodyInHydrostaticEquilibrium):
     _albedo = 29
     _surface_coverage = None
 
+    _age = -1
+    _rotation = -1
+
     def __init__(self, data):
         mass = data.get('mass', False)
         radius = data.get('radius', False)
@@ -62,6 +66,9 @@ class Planet(BodyInHydrostaticEquilibrium):
         self._radius = None if not radius else radius
         self._gravity = None if not gravity else gravity
         self._temperature = 0
+
+        rotation = data.get('rotation', 1)
+        self._rotation = rotation
 
         if not self._gravity:
             self._gravity = mass / pow(radius, 2)
@@ -140,6 +147,27 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.spin = spin
 
     @property
+    def age(self):
+        return self._age
+
+    @age.setter
+    def age(self, new):
+        self._age = new
+        self.set_qs(self.unit)
+
+    @property
+    def rotation(self):
+        return self._rotation
+
+    @rotation.setter
+    def rotation(self, new):
+        if type(self._rotation) is int:
+            self._rotation = new.to(self.unit + '_rotation')
+        else:
+            now = self.age.to('years').m-46*(10**8)
+            self._rotation = q(aprox_day_leght(self, now), self.unit + '_rotation')
+
+    @property
     def greenhouse(self):
         return q(self.global_warming())
 
@@ -155,6 +183,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.surface = self.calculate_surface_area(self.radius.to('kilometers'))
         self.circumference = self.calculate_circumference(self.radius.to('kilometers'))
         self.escape_velocity = q(sqrt(self.mass.m / self.radius.m), unit + '_escape_velocity')
+        self.rotation = q(self._rotation, unit + '_rotation')
 
     def set_habitability(self, tilt):
         mass = self.mass
@@ -390,7 +419,7 @@ class Planet(BodyInHydrostaticEquilibrium):
                 effect += (self.atmosphere[symbol] / 100) * gas['GWP']
         return effect
 
-    def update_everything(self):
+    def update_everything(self, age=None):
         if self.orbit is not None:
             star = self.orbit.star
             orbit = self.orbit
@@ -401,6 +430,8 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.set_qs(self.unit)
             self.set_habitability(self.tilt)
             self.set_orbit(star, [a, e, i, loan, aop])
+
+        self.age = age
 
     def __eq__(self, other):
         a = (self.mass.m, self.radius.m, self.clase, self.unit, self.name, self.id)
@@ -539,11 +570,11 @@ class AxialTilt:
         return q(round(self._cycle, 3), 'years')
 
     def precess(self, year):
-        t = self._value
-        c = self._cycle
-        b = (2 * pi) / c
-        self.x = round(t * cos(year * b), 3)
-        self.y = round(t * sin(year * b), 3)
+        t = self._value  # "t" es el axial tilt del planeta.
+        c = self._cycle  # "c" es el ciclo en años
+        b = (2 * pi) / c  # "b" es la amplitud, un ciclo (2pi) cada "c" años
+        self.x = round(t * cos(year * b), 3)  # inclinación en el eje x
+        self.y = round(t * sin(year * b), 3)  # inclinación en el eje y
 
     def __int__(self):
         return self._value

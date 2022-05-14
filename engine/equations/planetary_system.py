@@ -78,6 +78,7 @@ class PlanetarySystem(Flagable):
                 self.body_mass -= minus_mass
             group.append(astro_obj)
             self.astro_bodies.append(astro_obj)
+            astro_obj.age = self.star_system.age
             if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
                 EventHandler.trigger('RockyPlanet', self, {'system_id': self.id,
                                                            'planet': astro_obj,
@@ -140,6 +141,14 @@ class PlanetarySystem(Flagable):
                 return False
             else:
                 return astrobody[0]
+
+    def get_bodies_in_orbit_by_types(self, *types):
+        bodies = []
+        for tipo in types:
+            for body in self.astro_bodies:
+                if body.clase == tipo and body.orbit is not None:
+                    bodies.append(body)
+        return bodies
 
     def is_habitable(self, planet) -> bool:
         pln_orbit = planet.orbit.semi_major_axis

@@ -39,12 +39,14 @@ class InformationPanel(BaseWidget):
         self.info_rect = Rect(3, self.perceptions_rect.bottom, 380, ALTO - (self.perceptions_rect.h + 380 + 21))
 
     def on_mousebuttondown(self, event):
+        self.image.fill(COLOR_BOX, self.render_rect)
         if event.button == 4:
             if self.render_rect.top + 12 <= 250:
                 self.render_rect.move_ip(0, +12)
         elif event.button == 5:
             if self.render_rect.bottom - 12 >= 589:
                 self.render_rect.move_ip(0, -12)
+        self.image.blit(self.render, self.render_rect)
 
     def show_name(self, astrobody):
         self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
@@ -207,7 +209,8 @@ class InformationPanel(BaseWidget):
         final_text = '\n'.join(text_lines)
         self.text = final_text
         self.render = self.write3(final_text, self.f2, 380)
-        self.render_rect = self.render.get_rect(topleft=[3, 250])
+        if self.render_rect is None:
+            self.render_rect = self.render.get_rect(topleft=[3, 250])
         self.image.fill(COLOR_BOX, self.info_rect)
         self.image.blit(self.render, self.render_rect)
         self.print_button.enable()
@@ -224,11 +227,13 @@ class AvailablePlanets(ListedArea):
     listed_type = Astrobody
 
     def show(self):
-        for system in Systems.get_systems():
-            idx = system.id
-            bodies = [body for body in system.astro_bodies]
-            bodies = [body for body in bodies if body.orbit is not None or body.rogue is True]
-            self.populate(bodies, layer=idx)
+        systems = Systems.get_systems()
+        if len(systems):
+            for system in systems:
+                idx = system.id
+                bodies = [body for body in system.astro_bodies]
+                bodies = [body for body in bodies if body.orbit is not None or body.rogue is True]
+                self.populate(bodies, layer=idx)
         else:
             self.parent.show_no_system_error()
         super().show()
@@ -239,7 +244,6 @@ class AvailablePlanets(ListedArea):
 
 
 class PrintButton(TextButton):
-    enabled = False
 
     def __init__(self, parent, x, y):
         super().__init__(parent, 'Print Info', x, y)

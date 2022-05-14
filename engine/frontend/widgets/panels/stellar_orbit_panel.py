@@ -700,6 +700,8 @@ class OrbitType(BaseWidget, Intertwined):
         for prop in self.properties.widgets():
             prop.kill()
 
+        self.properties.empty()
+
     def show(self):
         self.create()
 
@@ -1155,9 +1157,8 @@ class Recomendation(BaseWidget):
                 data.update({'e': e})
 
         elif planet.clase == 'Dwarf Planet' or planet.celestial_type == 'asteroid':
-            gas_giants = [pln for pln in Systems.get_current().astro_bodies if
-                          pln.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant')]
-            terrestial_planets = [pln for pln in Systems.get_current().astro_bodies if pln.clase == 'Terrestial']
+            gas_giants = Systems.get_current().get_bodies_in_orbit_by_types('Gas Giant', 'Super Jupiter', 'Puffy Giant')
+            terrestial_planets = Systems.get_current().get_bodies_in_orbit_by_types('Terrestial')
             gas_giants.sort(key=lambda g: g.orbit.a.m, reverse=True)
             terrestial_planets.sort(key=lambda g: g.orbit.a.m, reverse=True)
             lim_min, lim_max = 0, orbit.a.m + 10
@@ -1187,8 +1188,7 @@ class Recomendation(BaseWidget):
         self.format = data
 
     def append_subclases(self, orbit, star):
-        gas_giants = [pln for pln in Systems.get_current().astro_bodies if
-                      pln.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant')]
+        gas_giants = Systems.get_current().get_bodies_in_orbit_by_types('Gas Giant', 'Super Jupiter', 'Puffy Giant')
         gas_giants.sort(key=lambda g: g.orbit.a.m, reverse=True)
         lim_min = 0
         if len(gas_giants):

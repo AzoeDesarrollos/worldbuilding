@@ -75,7 +75,7 @@ class StarPanel(BasePanel):
                     systems.append(star.id)
 
         if len(self.star_buttons):
-            self.current.current = self.star_buttons[0].object_data
+            # self.current.current = self.star_buttons[0].object_data
             self.current.enable()
 
     def deselect_buttons(self):
@@ -99,8 +99,8 @@ class StarPanel(BasePanel):
         if self.add_on_exit or not len(self.stars):
             self.parent.set_skippable('Star System', True)
             self.parent.set_skippable('Multiple Stars', True)
-            if len(self.stars):
-                Systems.set_system(self.current.current)
+            if len(self.stars) == 1:
+                Systems.set_system(self.stars[0])
         else:
             self.parent.set_skippable('Star System', False)
 
@@ -257,7 +257,7 @@ class StarType(ObjectType):
             if system is not None:
                 system.age = age
                 for astrobody in system.astro_bodies:
-                    astrobody.update_everything()
+                    astrobody.update_everything(age)
 
 
 class AddStarButton(TextButton):
