@@ -51,9 +51,9 @@ class Universe:
             group.append(astro_obj)
             cls.astro_bodies.append(astro_obj)
         if hasattr(astro_obj, 'clase'):
-            astro_obj.idx = len([i for i in group if i.clase == astro_obj.clase])-1
+            astro_obj.idx = len([i for i in group if i.clase == astro_obj.clase]) - 1
         elif hasattr(astro_obj, 'cls'):
-            astro_obj.idx = len([i for i in group if i.cls == astro_obj.cls])-1
+            astro_obj.idx = len([i for i in group if i.cls == astro_obj.cls]) - 1
 
     @classmethod
     def remove_astro_obj(cls, astro_obj):
@@ -89,15 +89,18 @@ class Universe:
 
             for star in stars:
                 if body.orbit is not None and star.id not in cls.aparent_brightness[body.id]:
-                    if star == body.find_topmost_parent(body):
+                    # this chunk is for binary pairs or single stars
+                    if star == body.find_topmost_parent(body):  # primary star
                         ab = round(q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs'), 3)
                         cls.distances[body.id][star.id] = body.orbit.a
-
-                        # else:
-                        #     parent = body.find_topmost_parent(body)
-                        #     ab = round(q(star.luminosity.m / pow(parent.orbit.a.m, 2), 'Vs'), 3)
-                        #     cls.distances[body.id][star.id] = parent.orbit.a
-                    else:
+                    elif star in body.orbit.star:  # primary star's companion (in case of an S-Type System)
+                        x1, y1, z1 = body.find_topmost_parent(body).position
+                        x1 = body.orbit.a.m  # chapuza
+                        x2, y2, z2 = star.position
+                        d = q(sqrt(pow(abs(x2 - x1), 2) + pow(abs(y2 - y1), 2) + pow(abs(z2 - z1), 2)), 'au')
+                        cls.distances[body.id][star.id] = round(d)
+                        ab = q(star.luminosity.m / pow(d.to('au').m, 2), 'Vs')
+                    else:  # Other stars in the universe
                         x1, y1, z1 = body.find_topmost_parent(body).position
                         x2, y2, z2 = star.position
                         d = q(sqrt(pow(abs(x2 - x1), 2) + pow(abs(y2 - y1), 2) + pow(abs(z2 - z1), 2)), 'lightyears')
@@ -109,7 +112,6 @@ class Universe:
                         value = small_angle_aproximation(star, d.to('km').m)
                         cls.relative_sizes[body.id][star.id] = value
                         cls.aparent_brightness[body.id][star.id] = ab
-
 
     @classmethod
     def visibility_by_albedo(cls):
@@ -129,8 +131,8 @@ class Universe:
                 cls.distances[body.id] = {}
 
             others = to_see[:i] + to_see[i + 1:]
-            cls.visibility_of_stars(body)
             if body.orbit is not None:
+                cls.visibility_of_stars(body)
                 stars = [star for star in body.orbit.star]
                 x = body.orbit.a.to('m').m  # position of the Observer's planet
             else:

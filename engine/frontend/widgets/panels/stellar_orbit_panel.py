@@ -700,6 +700,8 @@ class OrbitType(BaseWidget, Intertwined):
         for prop in self.properties.widgets():
             prop.kill()
 
+        self.properties.empty()
+
     def show(self):
         self.create()
 

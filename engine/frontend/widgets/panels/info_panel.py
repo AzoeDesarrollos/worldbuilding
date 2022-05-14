@@ -1,8 +1,8 @@
 from engine.equations.tides import major_tides, minor_tides, is_tidally_locked
-from engine.backend import generate_id, Systems, q, generate_diagram
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, Group
 from engine.equations.planetary_system import RoguePlanets
 from .common import ListedArea, ColoredBody, TextButton
+from engine.backend import generate_id, Systems, q
 from engine.equations.space import Universe
 from ..basewidget import BaseWidget
 from pygame import Surface, Rect
@@ -34,18 +34,19 @@ class InformationPanel(BaseWidget):
 
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.print_button = PrintButton(self, *self.planet_area.rect.midbottom)
-        self.diagram_button = GenerateDiagramButton(self, *self.planet_area.rect.midbottom)
-        self.properties.add(self.planet_area, self.print_button, self.diagram_button, layer=2)
+        self.properties.add(self.planet_area, self.print_button, layer=2)
         self.perceptions_rect = Rect(3, 250, 380, ALTO)
         self.info_rect = Rect(3, self.perceptions_rect.bottom, 380, ALTO - (self.perceptions_rect.h + 380 + 21))
 
     def on_mousebuttondown(self, event):
+        self.image.fill(COLOR_BOX, self.render_rect)
         if event.button == 4:
             if self.render_rect.top + 12 <= 250:
                 self.render_rect.move_ip(0, +12)
         elif event.button == 5:
             if self.render_rect.bottom - 12 >= 589:
                 self.render_rect.move_ip(0, -12)
+        self.image.blit(self.render, self.render_rect)
 
     def show_name(self, astrobody):
         self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
@@ -208,7 +209,8 @@ class InformationPanel(BaseWidget):
         final_text = '\n'.join(text_lines)
         self.text = final_text
         self.render = self.write3(final_text, self.f2, 380)
-        self.render_rect = self.render.get_rect(topleft=[3, 250])
+        if self.render_rect is None:
+            self.render_rect = self.render.get_rect(topleft=[3, 250])
         self.image.fill(COLOR_BOX, self.info_rect)
         self.image.blit(self.render, self.render_rect)
         self.print_button.enable()
@@ -257,24 +259,3 @@ class PrintButton(TextButton):
                 for line in self.parent.text.splitlines(keepends=True):
                     file.write(line)
             self.disable()
-
-
-class GenerateDiagramButton(TextButton):
-    enabled = True
-
-    def __init__(self, parent, x, y):
-        super().__init__(parent, 'Generate Diagram', x, y)
-        self.rect.midtop = x, y
-        self.rect.y += 30
-
-    def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
-            ruta = os.path.join(os.getcwd(), 'exports')
-            if not os.path.exists(ruta):
-                os.mkdir(ruta)
-
-            system = Systems.get_current()
-            if system is not RoguePlanets:
-                generate_diagram(ruta, system)
-                text = f'A diagram was generated and is located in exports/...{system.id.split("-")[1]}.png'
-                raise AssertionError(text)

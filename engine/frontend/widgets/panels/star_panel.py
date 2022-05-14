@@ -99,8 +99,8 @@ class StarPanel(BasePanel):
         if self.add_on_exit or not len(self.stars):
             self.parent.set_skippable('Star System', True)
             self.parent.set_skippable('Multiple Stars', True)
-            if len(self.stars):
-                Systems.set_system(self.current.current)
+            if len(self.stars) == 1:
+                Systems.set_system(self.stars[0])
         else:
             self.parent.set_skippable('Star System', False)
 

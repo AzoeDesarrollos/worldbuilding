@@ -133,7 +133,7 @@ class AlbedoPanel(BaseWidget):
                 total_albedo += ((min_v + max_v) / Dc(2)) * self.total_coverage(coverage, local_name)
 
         value = (round(total_albedo, 2) * Dc(100))
-        self.current.albedo = value
+        self.current.albedo = float(value)
         self.albedo_vt.text_area.set_value(q(float(value)), is_percentage=True)
 
     def total_coverage(self, global_title: str, title: str):
