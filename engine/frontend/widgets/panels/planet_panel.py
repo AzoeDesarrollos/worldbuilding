@@ -118,6 +118,8 @@ class PlanetPanel(BasePanel):
         if self.last_idx is not None:
             self.show_current(self.last_idx)
         self.enable_buttons()
+        if self.current.has_values:
+            self.current.fill()
 
     def hide(self):
         super().hide()
@@ -195,6 +197,8 @@ class PlanetType(ObjectType):
             for id in event.data['Planets']:
                 planet_data = event.data['Planets'][id]
                 planet_data['id'] = id
+                system = Systems.get_system_by_id(planet_data['system'])
+                planet_data['parent'] = system
                 planet = Planet(planet_data)
                 if planet not in self.parent.planets:
                     btn = self.create_button(planet)
@@ -281,10 +285,10 @@ class PlanetType(ObjectType):
             attrs['unit'] = 'jupiter' if unit == 'gas giant' else 'earth'
             if composition is not None:
                 attrs['composition'] = composition
-            self.current = Planet(attrs)
-            # self.current.idx = len([i for i in Systems.get_current().planets if i.clase == self.current.clase])
-            self.toggle_habitable()
             system = Systems.get_current()
+            attrs['parent'] = system.star_system
+            self.current = Planet(attrs)
+            self.toggle_habitable()
             if system.get_available_mass() == 'Unlimited' or self.current.mass <= system.body_mass:
                 self.parent.button_add.enable()
                 self.parent.mass_number.mass_color = COLOR_TEXTO

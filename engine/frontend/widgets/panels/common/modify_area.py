@@ -28,6 +28,7 @@ class ModifyArea(BaseWidget):
         self.marker = marker
         self.color_ready()
         self.ready = True
+        mouse.set_pos(self.rect.center)
 
     def unlink(self):
         self.marker = None

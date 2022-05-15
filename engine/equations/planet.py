@@ -3,7 +3,7 @@ from .orbit import PlanetOrbit, SatelliteOrbit, from_satellite_resonance
 from .general import BodyInHydrostaticEquilibrium
 from .lagrange import get_lagrange_points
 from math import sqrt, pi, pow, sin, cos
-from .day_lenght import aprox_day_leght
+
 from pygame import Color
 
 
@@ -61,7 +61,8 @@ class Planet(BodyInHydrostaticEquilibrium):
         unit = data.get('unit', "earth")
         self.unit = unit
         self.idx = data.get('idx', 0)
-
+        if 'parent' in data and data['parent'].is_a_system:
+            self.set_parent(data['parent'])
         self._mass = None if not mass else mass
         self._radius = None if not radius else radius
         self._gravity = None if not gravity else gravity
@@ -145,27 +146,6 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     def set_spin(self, spin):
         self.spin = spin
-
-    @property
-    def age(self):
-        return self._age
-
-    @age.setter
-    def age(self, new):
-        self._age = new
-        self.set_qs(self.unit)
-
-    @property
-    def rotation(self):
-        return self._rotation
-
-    @rotation.setter
-    def rotation(self, new):
-        if type(self._rotation) is int:
-            self._rotation = new.to(self.unit + '_rotation')
-        else:
-            now = self.age.to('years').m-46*(10**8)
-            self._rotation = q(aprox_day_leght(self, now), self.unit + '_rotation')
 
     @property
     def greenhouse(self):
@@ -431,7 +411,7 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.set_habitability(self.tilt)
             self.set_orbit(star, [a, e, i, loan, aop])
 
-        self.age = age
+        super().update_everything(age)
 
     def __eq__(self, other):
         a = (self.mass.m, self.radius.m, self.clase, self.unit, self.name, self.id)

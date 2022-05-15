@@ -78,7 +78,6 @@ class PlanetarySystem(Flagable):
                 self.body_mass -= minus_mass
             group.append(astro_obj)
             self.astro_bodies.append(astro_obj)
-            astro_obj.age = self.star_system.age
             if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
                 EventHandler.trigger('RockyPlanet', self, {'system_id': self.id,
                                                            'planet': astro_obj,

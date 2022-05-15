@@ -1,4 +1,5 @@
 ﻿from math import log, trunc
+from engine.backend import q
 
 
 def aprox_day_leght(planet, bya):
@@ -6,15 +7,17 @@ def aprox_day_leght(planet, bya):
 
     where:
     h = the duration of the day in modern times.
-    bya = billions of years (10^8) ago. (ex x=-46*10**8 = -4.600.000.000)
+    bya = billion years (10^8) ago. (ex x=-46*10**8 = -4.600.000.000)
     bya can be positive or negative. It is internally turned negative.
     """
     if bya > 0:
-        bya = -bya/(10**8)
+        bya *= -1
+    if abs(bya) / (10 ** 8) > 0:
+        bya /= (10 ** 8)
 
-    day_leght = round(planet.rotation.to('hours/day').m, 3) / (1.03 ** -bya)
-    what_bya(planet, day_leght)
-    return day_leght/24
+    day_leght = q(planet.reference_rotation / (1.03 ** -bya), 'hour/day')
+    in_history(planet, day_leght.m)
+    return day_leght
 
 
 def what_bya(planet, t):
@@ -25,16 +28,13 @@ def what_bya(planet, t):
     h = the duration of the day in modern times.
     """
     assert in_history(planet, t), "Moment in time is outside of the planet's history"
-    bya = log(round(planet.rotation.to('hours/day').m, 3) / t) / log(1 / 1.03)  # natural logarithms.
+    bya = log(planet.reference_rotation / t) / log(1 / 1.03)  # natural logarithms.
     return bya
 
 
 def in_history(planet, t):
-    if not hasattr(planet, 'formation'):
-        planet.formation = 46  # 46 because Earth formed 4.6 billions years ago, this value is arbitrary.
-
-    p = round(planet.rotation.to('hours/day').m, 3) / (1.03 ** planet.formation)
-    return p <= t <= round(planet.rotation.to('hours/day').m, 3)
+    p = planet.reference_rotation / (1.03 ** -planet.formation.m)
+    return p <= t <= planet.reference_rotation
 
 
 def twenty_four_hour_day_moment(planet):

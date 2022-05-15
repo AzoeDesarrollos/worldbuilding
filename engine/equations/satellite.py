@@ -25,6 +25,8 @@ class Satellite(StarSystemBody, Flagable):
 
     relative_size = 'Small'
 
+    unit = 'earth'
+
     @staticmethod
     def calculate_density(ice, silicate, iron):
         comp = {'water ice': ice / 100, 'silicates': silicate / 100, 'iron': iron / 100}
@@ -88,9 +90,6 @@ class Satellite(StarSystemBody, Flagable):
             return self.id == other.id
         else:
             return False
-
-    def update_everything(self):
-        pass
 
 
 class Major(Satellite, BodyInHydrostaticEquilibrium):
