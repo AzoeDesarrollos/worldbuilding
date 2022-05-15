@@ -176,7 +176,7 @@ class AsteroidType(BaseWidget):
         self.properties = Group()
 
         EventHandler.register(self.clear, 'ClearData')
-        self.relative_args = ['density', 'mass', 'volume']
+        self.relative_args = ['mass', 'density', 'volume']
 
         names = sorted(material_densities.keys())
         d = {names[0]: 33, names[1]: 33, names[2]: 34}
@@ -184,12 +184,12 @@ class AsteroidType(BaseWidget):
         for obj in self.pie.chart.widgets():
             self.properties.add(obj, layer=5)
 
-        for i, prop in enumerate(["Density", "Mass", "Volume"]):
-            vt = ValueText(self, prop, 50, 64 + i * 48, COLOR_TEXTO, COLOR_BOX)
+        for i, prop in enumerate(["Mass", "Density",  "Volume", 'Age' 'Axial tilt', 'Spin', 'Rotation Rate']):
+            vt = ValueText(self, prop, 50, 40 + i * 35, COLOR_TEXTO, COLOR_BOX)
             self.properties.add(vt, layer=2)
 
-        for i, prop in enumerate(["A Axis", "B Axis", "C Axis", "Shape"], start=4):
-            vt = ValueText(self, prop, 50, 52 + i * 40, COLOR_TEXTO, COLOR_BOX)
+        for i, prop in enumerate(["A Axis", "B Axis", "C Axis", "Shape"], start=6):
+            vt = ValueText(self, prop, 50, 40 + i * 35, COLOR_TEXTO, COLOR_BOX)
             self.properties.add(vt, layer=3)
             vt.modifiable = True
 

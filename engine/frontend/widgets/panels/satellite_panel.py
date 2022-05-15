@@ -163,17 +163,18 @@ class SatellitePanel(BasePanel):
 class SatelliteType(ObjectType):
 
     def __init__(self, parent):
-        rel_props = ['Radius', 'Mass', 'Surface Gravity', 'Escape velocity']
-        rel_args = ['radius', 'mass', 'gravity', 'escape_velocity']
-        abs_args = ['density', 'volume', 'surface', 'circumference', 'clase']
-        abs_props = ['Density', 'Volume', 'Surface Area', 'Circumference', 'Clase']
+        rel_props = ['Mass', 'Radius', 'Surface Gravity', 'Escape velocity']
+        rel_args = ['mass', 'radius', 'gravity', 'escape_velocity']
+        abs_args = ['density', 'volume', 'surface', 'circumference', 'age', 'tilt', 'spin', 'rotation', 'clase']
+        abs_props = ['Density', 'Volume', 'Surface Area', 'Circumference',
+                     'Age', 'Axial tilt', 'Spin', 'Rotation Rate', 'Class']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
-        self.set_modifiables('relatives', 0)
+        self.set_modifiables('relatives', 1)
         self.show_layers.append(3)
 
-        for item in self.relatives.widgets() + self.absolutes.widgets():
-            item.rect.y += 50
-            item.text_area.rect.y += 50
+        for i, item in enumerate(self.relatives.widgets() + self.absolutes.widgets()):
+            item.rect.y += i*4
+            item.text_area.rect.y += i*1
 
         names = sorted(material_densities.keys())
         d = {names[0]: 33, names[1]: 33, names[2]: 34}
@@ -244,7 +245,7 @@ class SatelliteType(ObjectType):
         self.calculate()
 
     def enable(self):
-        widgets = self.properties.get_widgets_from_layer(1)[0:1]
+        widgets = [self.properties.get_widgets_from_layer(1)[1]]
         widgets += self.properties.get_widgets_from_layer(2)
         for arg in widgets:
             arg.enable()

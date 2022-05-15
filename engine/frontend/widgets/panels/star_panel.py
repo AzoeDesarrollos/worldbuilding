@@ -34,8 +34,9 @@ class StarPanel(BasePanel):
         self.age_bar = AgeBar(self, 50, 420 - 32)
         self.properties.add(self.age_bar, layer=1)
         f2 = self.crear_fuente(10)
-        self.write('start', f2, centerx=self.age_bar.rect.left, top=self.age_bar.rect.bottom + 1)
-        self.write('end', f2, centerx=self.age_bar.rect.right, top=self.age_bar.rect.bottom + 1)
+        self.write('past', f2, centerx=self.age_bar.rect.left, top=self.age_bar.rect.bottom + 1)
+        self.write('present', f2, centerx=234, top=self.age_bar.rect.bottom + 1)
+        self.write('future', f2, centerx=self.age_bar.rect.right, top=self.age_bar.rect.bottom + 1)
 
     @property
     def star_buttons(self):
@@ -251,13 +252,17 @@ class StarType(ObjectType):
 
     def set_age(self, age_percent):
         if self.has_values:
-            age = self.current.set_age(age_percent)
-            self.fill()
+            self.current.set_age(age_percent)
             system = Systems.get_system_by_star(self.current)
             if system is not None:
-                system.age = age
-                for astrobody in system.astro_bodies:
-                    astrobody.update_everything(age)
+                system.age = self.current.age
+            self.fill()
+
+    def propagate_age_changes(self):
+        system = Systems.get_system_by_star(self.current)
+        if system is not None:
+            for astrobody in system.astro_bodies:
+                astrobody.update_everything(system.age)
 
 
 class AddStarButton(TextButton):
@@ -314,9 +319,8 @@ class AgeBar(Meta):
         self.rect = self.image.get_rect(topleft=[x, y])
         self.image.fill(COLOR_BOX, [0, 0, 400, 7])
         draw.aaline(self.image, COLOR_TEXTO, [0, 3], [self.rect.w, 3])
-        for i in range(11):
-            dx = round((i / 10) * self.rect.w)
-            draw.aaline(self.image, COLOR_TEXTO, [dx, 0], [dx, 7])
+        draw.aaline(self.image, COLOR_TEXTO, [0, 0], [0, 7])
+        draw.aaline(self.image, COLOR_TEXTO, [184, 0], [184, 7])
         self.cursor = AgeCursor(self, self.rect.centery)
 
     def on_mousebuttonup(self, event):
@@ -352,7 +356,7 @@ class AgeCursor(Meta):
         self.img_dis = self.crear(5, COLOR_TEXTO)
         self.image = self.img_uns
         self.rect = self.image.get_rect(centery=y)
-        self.center = self.rect.centerx
+        self.centerx = self.rect.centerx
 
     @staticmethod
     def crear(w, color):
@@ -362,11 +366,11 @@ class AgeCursor(Meta):
 
     def select(self):
         super().select()
-        self.rect = self.image.get_rect(centerx=self.center)
+        self.rect = self.image.get_rect(centerx=self.centerx)
 
     def deselect(self):
         super().deselect()
-        self.rect = self.image.get_rect(centerx=self.center)
+        self.rect = self.image.get_rect(centerx=self.centerx)
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
@@ -375,6 +379,7 @@ class AgeCursor(Meta):
     def on_mousebuttonup(self, event):
         if event.button == 1:
             self.pressed = False
+            self.parent.parent.current.propagate_age_changes()
 
     def on_movement(self, x: int):
         self.parent.parent.current.set_age((x - 50) / 400)

@@ -39,3 +39,6 @@ moon_mass = 7.342e+22 kg = Mm
 moon_radius = 1738.1 km = Rm
 moon_escape_velocity = 2.38 km/s = EVm
 moon_gravity = 1.62092 m/s ** 2 = Gm
+
+billion = 10**8
+trillion = 10**12
