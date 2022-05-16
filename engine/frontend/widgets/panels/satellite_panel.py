@@ -20,21 +20,21 @@ class SatellitePanel(BasePanel):
     def __init__(self, parent):
         super().__init__('Satellite', parent, modes=3)
         self.current = SatelliteType(self)
-        r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 132, 200])
-        self.area_buttons = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 200))
-        self.curr_x = self.area_buttons.x + 3
-        self.curr_y = self.area_buttons.y - 11
-        self.default_x = self.area_buttons.x + 3
         f1 = self.crear_fuente(16, underline=True)
         f2 = self.crear_fuente(13, underline=True)
-        r = self.write('Composition', f1, COLOR_AREA, topleft=(18, 420))
-        self.write('Satellites', f2, COLOR_AREA, x=self.area_buttons.x + 3, y=self.area_buttons.y)
+        r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 132, 178])
+        self.area_buttons = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 178))
+        ra = self.write('Satellites', f2, COLOR_AREA, x=self.area_buttons.x + 3, y=self.area_buttons.y)
+        self.curr_x = self.area_buttons.x + 3
+        self.curr_y = self.area_buttons.y + ra.h
+
         self.properties = Group()
         self.mass_number = ShownMass(self)
         self.button_add = AddMoonButton(self, ANCHO - 13, 398)
         self.button_del = DelMoonButton(self, ANCHO - 13, 416)
         self.f3 = self.crear_fuente(11)
 
+        r = self.write('Composition', f1, COLOR_AREA, topleft=(18, 420))
         self.copy_button = CopyCompositionButton(self, r.left, r.bottom + 6, r.centerx)
         self.random_button = RandomCompositionButton(self, r.right, r.bottom + 6, r.centerx)
 
@@ -230,7 +230,8 @@ class SatelliteType(ObjectType):
 
         self.has_values = True
         system = Systems.get_current()
-        data['parent'] = system.star_system
+        if system.is_a_system:
+            data['parent'] = system.star_system
         moon = major_moon_by_composition(data)
         if moon.idx is None:
             moon.idx = len([i for i in system.satellites if i.cls == moon.cls])

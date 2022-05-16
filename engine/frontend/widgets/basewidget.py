@@ -13,7 +13,6 @@ class BaseWidget(Sprite):
     curr_x = 3
     curr_y = 440
 
-    default_x = 3
     default_spacing = 5
     area_buttons = None
 
@@ -102,7 +101,9 @@ class BaseWidget(Sprite):
     def sort_buttons(self, buttons, overriden=False):
         x, y = self.curr_x, self.curr_y
         for i, bt in enumerate(buttons):
-            if bt.max_w+x+self.default_spacing < self.area_buttons.w or bt.max_w+x < self.area_buttons.w:
+            a = bt.max_w * i + x + self.default_spacing
+            b = bt.max_w * i + x
+            if a < self.area_buttons.right or b < self.area_buttons.right:
                 bt.move(x, y)
             else:
                 y += NUEVA_LINEA
