@@ -109,7 +109,7 @@ class PlanetPanel(BasePanel):
                 elif event.button == 5 and last_is_hidden:
                     self.curr_y -= 32
                 planets = self.planet_buttons.get_widgets_from_layer(Systems.get_current().id)
-                self.sort_buttons(planets)
+                self.sort_buttons(planets, overriden=True)
 
     def show(self):
         super().show()
@@ -286,7 +286,7 @@ class PlanetType(ObjectType):
             if composition is not None:
                 attrs['composition'] = composition
             system = Systems.get_current()
-            attrs['parent'] = system.star_system
+            attrs['parent'] = system
             self.current = Planet(attrs)
             self.toggle_habitable()
             if system.get_available_mass() == 'Unlimited' or self.current.mass <= system.body_mass:

@@ -2,8 +2,7 @@ from engine.backend.util import generate_id, molecular_weight, q, albedos
 from .orbit import PlanetOrbit, SatelliteOrbit, from_satellite_resonance
 from .general import BodyInHydrostaticEquilibrium
 from .lagrange import get_lagrange_points
-from math import sqrt, pi, pow, sin, cos
-
+from math import sqrt, pi, pow
 from pygame import Color
 
 
@@ -24,11 +23,6 @@ class Planet(BodyInHydrostaticEquilibrium):
     atmosphere = None
 
     lagrange_points = None
-    hill_sphere = 0
-    roches_limit = None
-
-    _tilt = 'Not set'
-    spin = 'N/A'
 
     sprite = None
 
@@ -42,9 +36,6 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     _albedo = 29
     _surface_coverage = None
-
-    _age = -1
-    _rotation = -1
 
     def __init__(self, data):
         mass = data.get('mass', False)
@@ -132,20 +123,6 @@ class Planet(BodyInHydrostaticEquilibrium):
     @albedo.setter
     def albedo(self, value):
         self._albedo = q(value)
-
-    @property
-    def tilt(self):
-        return self._tilt
-
-    @tilt.setter
-    def tilt(self, value):
-        if type(value) is not str:
-            self._tilt = AxialTilt(self, value)
-        else:
-            self._tilt = value
-
-    def set_spin(self, spin):
-        self.spin = spin
 
     @property
     def greenhouse(self):
@@ -512,55 +489,6 @@ def albedo_by_lat(material: str, lat: float) -> float:
     n = y1 - m * dx
 
     return round(m * lat + n, 2)
-
-
-class AxialTilt:
-    _value = 0
-    _cycle = 0
-    x, y = 0, 0
-
-    def __init__(self, parent, inclination):
-        self.parent = parent
-        if type(inclination) is q:
-            inclination = inclination.m
-        if 0 <= inclination < 90:
-            self.parent.set_spin('pograde')
-        elif 90 <= inclination <= 180:
-            self.parent.set_spin('retrograde')
-        self._value = inclination
-        self.parent.set_habitability(self)
-        self.x = inclination
-        self._cycle = -7.095217823187172 * pow(self._value, 2) + 1277.139208333333 * self._value
-
-    @property
-    def a(self):
-        # to be able to write tilt.a.m as with orbits
-        return q(self._value, 'degree')
-
-    @property
-    def u(self):
-        return 'degree'
-
-    @property
-    def m(self):
-        return self._value
-
-    @property
-    def cycle_lenght(self):
-        return q(round(self._cycle, 3), 'years')
-
-    def precess(self, year):
-        t = self._value  # "t" es el axial tilt del planeta.
-        c = self._cycle  # "c" es el ciclo en años
-        b = (2 * pi) / c  # "b" es la amplitud, un ciclo (2pi) cada "c" años
-        self.x = round(t * cos(year * b), 3)  # inclinación en el eje x
-        self.y = round(t * sin(year * b), 3)  # inclinación en el eje y
-
-    def __int__(self):
-        return self._value
-
-    def update(self, year):
-        self.precess(year)
 
 
 class Ring:

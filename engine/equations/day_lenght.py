@@ -8,10 +8,9 @@ def aprox_day_leght(planet, bya):
     where:
     h = the duration of the day in modern times.
     bya = billion years (10^8) ago. (ex x=-46*10**8 = -4.600.000.000)
-    bya can be positive or negative. It is internally turned negative.
+    bya can be positive or negative.
     """
-    if bya > 0:
-        bya *= -1
+
     if abs(bya) / (10 ** 8) > 0:
         bya /= (10 ** 8)
 
@@ -68,6 +67,11 @@ def cells_per_hemisphere(planet):
 
 
 def to_hours_mins_secs(sample):
+    if sample > 24:
+        dias = trunc(sample/24)
+        sample = ((sample/24) - dias)*24
+    else:
+        dias = 0
     horas = trunc(sample)
 
     sample = (sample - horas) * 60
@@ -76,7 +80,7 @@ def to_hours_mins_secs(sample):
     sample = (sample - minutos) * 60
     segundos = trunc(sample)
 
-    return horas, minutos, segundos
+    return dias, horas, minutos, segundos
 
 
 if __name__ == '__main__':

@@ -99,16 +99,21 @@ class BaseWidget(Sprite):
         render = render_textrect(text, f, rect.w, (0, 0, 0), COLOR_BOX)
         self.image.blit(render, rect)
 
-    def sort_buttons(self, buttons):
+    def sort_buttons(self, buttons, overriden=False):
         x, y = self.curr_x, self.curr_y
         for i, bt in enumerate(buttons):
-            bt.move(x, y)
-            x += bt.max_w + self.default_spacing
-            if bt.rect.right > self.area_buttons.w:
-                x = self.default_x
-                y += 32
+            if bt.max_w+x < self.area_buttons.w:
                 bt.move(x, y)
-            if not self.area_buttons.contains(bt.rect):
-                bt.hide()
             else:
+                y += 32
+                x = 3
+                bt.move(x, y)
+            x += bt.max_w
+            if self.area_buttons.contains(bt.rect):
                 bt.show()
+            else:
+                bt.hide()
+
+        if len(buttons) and not buttons[-1].is_visible and not overriden:
+            self.curr_y -= 32
+            self.sort_buttons(buttons)

@@ -165,16 +165,16 @@ class SatelliteType(ObjectType):
     def __init__(self, parent):
         rel_props = ['Mass', 'Radius', 'Surface Gravity', 'Escape velocity']
         rel_args = ['mass', 'radius', 'gravity', 'escape_velocity']
-        abs_args = ['density', 'volume', 'surface', 'circumference', 'age', 'tilt', 'spin', 'rotation', 'clase']
+        abs_args = ['density', 'volume', 'surface', 'circumference', 'tilt', 'spin', 'rotation', 'clase']
         abs_props = ['Density', 'Volume', 'Surface Area', 'Circumference',
-                     'Age', 'Axial tilt', 'Spin', 'Rotation Rate', 'Class']
+                     'Axial tilt', 'Spin', 'Rotation Rate', 'Class']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
         self.set_modifiables('relatives', 1)
         self.show_layers.append(3)
 
         for i, item in enumerate(self.relatives.widgets() + self.absolutes.widgets()):
             item.rect.y += i*4
-            item.text_area.rect.y += i*1
+            item.text_area.rect.y += i*4
 
         names = sorted(material_densities.keys())
         d = {names[0]: 33, names[1]: 33, names[2]: 34}
@@ -204,11 +204,20 @@ class SatelliteType(ObjectType):
                     data['composition'][material.text.lower()] = float(text)
 
         for item in self.properties.get_widgets_from_layer(1):
-            text = item.text_area.value
+            text: str = item.text_area.value
+            arg = ''
+            if item in self.relatives:
+                idx = self.relatives.widgets().index(item)
+                arg = self.relative_args[idx]
+            elif item in self.absolutes:
+                idx = self.absolutes.widgets().index(item)
+                arg = self.absolute_args[idx]
+
             try:
-                data[item.text.lower()] = float(text)
+                data[arg] = float(text)
             except ValueError:
-                data[item.text.lower()] = text
+                if text != '':
+                    data[arg] = text
 
         if self.current is not None:
             data['radius'] = self.current.radius.m
@@ -220,23 +229,30 @@ class SatelliteType(ObjectType):
             data['orbit'] = self.current.orbit
 
         self.has_values = True
-
+        system = Systems.get_current()
+        data['parent'] = system.star_system
         moon = major_moon_by_composition(data)
         if moon.idx is None:
-            moon.idx = len([i for i in Systems.get_current().satellites if i.cls == moon.cls])
+            moon.idx = len([i for i in system.satellites if i.cls == moon.cls])
         if self.current is None:
-            if Systems.get_current().add_astro_obj(moon):
+            if system.add_astro_obj(moon):
                 self.current = moon
         else:
-            Systems.get_current().remove_astro_obj(self.current)
-            if Systems.get_current().add_astro_obj(moon):
+            system.remove_astro_obj(self.current)
+            if system.add_astro_obj(moon):
                 self.current = moon
 
         if self.current.system_id is None:
-            self.current.system_id = Systems.get_current().id
+            self.current.system_id = system.id
 
         if self.current not in self.parent.moons:
             self.parent.button_add.enable()
+        self.fill()
+
+    def update_value(self, button, data):
+        idx = self.absolutes.widgets().index(button)
+        attr = self.absolute_args[idx]
+        setattr(self.current, attr, data)
         self.fill()
 
     def show_current(self, satellite):

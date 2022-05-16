@@ -184,14 +184,22 @@ class AsteroidType(BaseWidget):
         for obj in self.pie.chart.widgets():
             self.properties.add(obj, layer=5)
 
-        for i, prop in enumerate(["Mass", "Density",  "Volume", 'Age' 'Axial tilt', 'Spin', 'Rotation Rate']):
-            vt = ValueText(self, prop, 50, 40 + i * 35, COLOR_TEXTO, COLOR_BOX)
-            self.properties.add(vt, layer=2)
+        names = ["Mass", "Density",  "Volume", 'Axial tilt', 'Spin',
+                 'Rotation Rate', "A Axis", "B Axis", "C Axis", "Shape"]
+        for i, prop in enumerate(names, start=0):
+            vt = ValueText(self, prop, 50, 40 + i * 36, COLOR_TEXTO, COLOR_BOX)
+            if i in (0, 1, 2):
+                layer = 2
+            elif i in (6, 7, 8):
+                layer = 3
+                vt.modifiable = True
+            elif i in (3, 4, 5):
+                layer = 6
+            else:
+                # "Shape" is not directly modifiable.
+                layer = 3
 
-        for i, prop in enumerate(["A Axis", "B Axis", "C Axis", "Shape"], start=6):
-            vt = ValueText(self, prop, 50, 40 + i * 35, COLOR_TEXTO, COLOR_BOX)
-            self.properties.add(vt, layer=3)
-            vt.modifiable = True
+            self.properties.add(vt, layer=layer)
 
         for i, name in enumerate(sorted(material_densities)):
             a = ValueText(self, name.capitalize(), 3, 500 + 30 + i * 21, bg=COLOR_AREA)
@@ -257,10 +265,13 @@ class AsteroidType(BaseWidget):
         self.parent.clear()
         for vt in self.properties.get_widgets_from_layer(2) + self.properties.get_widgets_from_layer(3):
             vt.text_area.set_value('')
+            vt.disable()
         for vt in self.properties.get_widgets_from_layer(4):
             vt.value = self.pie.get_default_value(vt.text.lower())
+
         if not replace:
             self.pie.set_values()
+        self.enable()
 
     def enable(self):
         widgets = self.properties.get_widgets_from_layer(3)[:3]

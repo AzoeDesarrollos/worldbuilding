@@ -1,5 +1,6 @@
 from engine.frontend.graphs import dwarfgraph_loop, gasgraph_loop, graph_loop
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, COLOR_DISABLED
+from engine.equations.day_lenght import to_hours_mins_secs
 from engine.frontend.graphs.axial_tilt import axial_loop
 from engine.equations.planet import GasDwarf, Terrestial
 from engine.frontend import Renderer, WidgetHandler
@@ -86,12 +87,12 @@ class ValueText(BaseWidget):
         not_enough_mass = 'There is not enough mass in the system to create new bodies of this type.'
         if event.button == 1:
             p = self.parent
-            if p.parent.name == 'Planet' and p.parent.enabled:
+            if p.parent.name == 'Planet' and p.parent.enabled and not p.has_values:
                 data = None
                 system = Systems.get_current()
                 self.active = True
                 available_mass = system.get_available_mass()  # if the "system" is Rogue Planets, mass is a str.
-                if p.parent.unit.name == 'Habitable' and not p.has_values:
+                if p.parent.unit.name == 'Habitable':
                     m_low, m_high, r_low, r_high = Terrestial
                     if type(available_mass) is q:
                         available_mass = available_mass.to('earth_mass').m
@@ -100,7 +101,7 @@ class ValueText(BaseWidget):
                         assert available_mass > 0.1, not_enough_mass
                     data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
                                       radius_lower_limit=r_low, radius_upper_limit=r_high)
-                elif p.parent.unit.name == 'Terrestial' and not p.has_values:
+                elif p.parent.unit.name == 'Terrestial':
                     m_high = 10
                     if type(available_mass) is q:
                         available_mass = available_mass.to('earth_mass').m
@@ -108,7 +109,7 @@ class ValueText(BaseWidget):
                             m_high = available_mass
                         assert m_high > 0.1, not_enough_mass
                     data = graph_loop(mass_upper_limit=m_high)
-                elif p.parent.unit.name == 'Gas Dwarf' and not p.has_values:
+                elif p.parent.unit.name == 'Gas Dwarf':
                     m_low, m_high, r_low, r_high = GasDwarf
                     if type(available_mass) is q:
                         if available_mass.to('earth_mass').m < m_high:
@@ -117,13 +118,13 @@ class ValueText(BaseWidget):
                     data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
                                       radius_lower_limit=r_low, radius_upper_limit=r_high,
                                       is_gas_drwaf=True)
-                elif p.parent.unit.name == 'Gas Giant' and not p.has_values:
+                elif p.parent.unit.name == 'Gas Giant':
                     m_high = None
                     if type(available_mass) is q:
                         assert available_mass.m >= 0.03, not_enough_mass
                         m_high = round(available_mass.m, 2)
                     data = gasgraph_loop(m_high)
-                elif p.parent.unit.name == 'Dwarf Planet' and not p.has_values:
+                elif p.parent.unit.name == 'Dwarf Planet':
                     m_high = None
                     if type(available_mass) is q:
                         available_mass = round(available_mass.to('earth_mass').m, 4)
@@ -147,10 +148,10 @@ class ValueText(BaseWidget):
                             elemento.text_area.show()
                     self.parent.check_values(data.get('composition', None))
 
-                elif self.text == 'Axial tilt':
-                    planet = self.parent.current
-                    data = axial_loop(planet)
-                    self.parent.update_value(self, data)
+            elif self.text == 'Axial tilt' and self.enabled:
+                planet = self.parent.current
+                data = axial_loop(planet)
+                self.parent.update_value(self, data)
 
             elif p.parent.name == 'Orbit' and p.has_values:
                 text = self.text_area
@@ -168,9 +169,25 @@ class ValueText(BaseWidget):
                 p.parent.set_current(self)
                 self.active = True
                 self.text_area.enable()
+            elif self.text == 'Rotation Rate' and p.has_values:
+                if self.parent.parent.mode == 1:
+                    if self.modifiable:
+                        rot = self.parent.current.rotation.to('h/d')
+                        d, h, m, s = to_hours_mins_secs(round(rot.m, 3))
+                        if d <= 0:
+                            self.text_area.value = f'{h} hours {m} mins {s} segs per cicle'
+                        else:
+                            self.text_area.value = f'{d} days {h} hours {m} mins {s} segs per cicle'
+                        self.modifiable = False
+                    else:
+                        rot = self.parent.current.rotation.to('h/d')
+                        self.text_area.set_value(rot)
+                        self.modifiable = True
+
             elif self.modifiable:
                 self.active = True
                 self.text_area.enable()
+
             return self.text
 
     def on_mousebuttonup(self, event):
@@ -351,7 +368,7 @@ class NumberArea(BaseArea, IncrementalValue):
         elif self.unit != "%":
             value = str(self.value)
         else:
-            value = str(self.value)+self.unit
+            value = str(self.value) + self.unit
         self.image = self.f.render(value, True, self.fg, self.bg)
         self.rect = self.image.get_rect(topleft=self.rect.topleft)
 
