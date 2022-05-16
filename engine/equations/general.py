@@ -36,8 +36,8 @@ class StarSystemBody(Flagable):
     reference_rotation = None
     unit = ''
 
-    hill_sphere = 0
-    roches_limit = 0
+    hill_sphere = None
+    roches_limit = None
 
     habitable = False
 

@@ -250,7 +250,8 @@ class PlanetType(ObjectType):
     def destroy_button(self):
         destroyed = Systems.get_system_by_id(self.current.system_id).remove_astro_obj(self.current)
         if destroyed:
-            self.parent.image.fill(COLOR_BOX, self.hab_rect)
+            self.current.sprite.kill()
+            self.parent.image.fill(COLOR_BOX, self.uhb_rect)
             self.parent.del_button(self.current)
             self.erase()
 
@@ -433,7 +434,6 @@ class DelPlanetButton(TextButton):
 
 
 class CreatedPlanet(ColoredBody):
-    enabled = False
 
     def disable(self):
         self.enabled = False
@@ -445,6 +445,10 @@ class CreatedPlanet(ColoredBody):
         return self
 
     def update(self):
+        if self.object_data.habitable is True:
+            self.set_color(self.object_data)
+            self.crear(str(self.object_data))
+            self.image = self.img_sel
         super().update()
         if self.object_data.flagged:
             self.kill()

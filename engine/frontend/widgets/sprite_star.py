@@ -16,7 +16,7 @@ class StarSprite(BaseWidget):
 
         if self.radius % 2 == 0:
             self.radius += 1
-        self.color = star.color
+        self.color = star.star_color
         self.image = self.create()
         self.rect = self.image.get_rect(center=(x, y))
         self.centerx, self.centery = [self.radius - 1] * 2

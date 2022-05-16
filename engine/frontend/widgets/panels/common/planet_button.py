@@ -6,6 +6,12 @@ from .listed_body import ListedBody
 
 class ColoredBody(ListedBody):
     def __init__(self, parent, astro, name, x, y):
+        self._color = self.set_color(astro)
+        super().__init__(parent, astro, name, x, y)
+
+        self.name = 'Button of '+str(self.object_data)
+
+    def set_color(self, astro):
         color = COLOR_TEXTO
         if astro.celestial_type not in ('star', 'system'):
             if astro.clase == 'Terrestial Planet':
@@ -28,9 +34,8 @@ class ColoredBody(ListedBody):
             elif astro.comp == 'Iron':
                 color = COLOR_IRONMOON
 
-        super().__init__(parent, astro, name, x, y, fg_color=color)
-
-        self.name = 'Button of '+str(self.object_data)
+        self._color = color
+        return color
 
     def on_mousebuttondown(self, event):
         raise NotImplementedError()
