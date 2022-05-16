@@ -374,6 +374,7 @@ class AgeCursor(Meta):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
+            EventHandler.trigger('DeselectOthers', self, {})
             self.pressed = True
 
     def on_mousebuttonup(self, event):

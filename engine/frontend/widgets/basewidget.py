@@ -1,4 +1,4 @@
-from engine.frontend.globales import WidgetHandler, Renderer, COLOR_BOX, COLOR_TEXTO, render_textrect
+from engine.frontend.globales import WidgetHandler, Renderer, COLOR_BOX, COLOR_TEXTO, render_textrect, NUEVA_LINEA
 from pygame.sprite import Sprite
 from pygame import font, Rect
 
@@ -102,10 +102,10 @@ class BaseWidget(Sprite):
     def sort_buttons(self, buttons, overriden=False):
         x, y = self.curr_x, self.curr_y
         for i, bt in enumerate(buttons):
-            if bt.max_w+x < self.area_buttons.w:
+            if bt.max_w+x+self.default_spacing < self.area_buttons.w or bt.max_w+x < self.area_buttons.w:
                 bt.move(x, y)
             else:
-                y += 32
+                y += NUEVA_LINEA
                 x = 3
                 bt.move(x, y)
             x += bt.max_w

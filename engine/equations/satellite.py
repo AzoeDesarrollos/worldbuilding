@@ -117,7 +117,7 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         self.title = 'Major'
         self.albedo = q(13.6)
 
-        self.rotation = data.get('rotation', 1)
+        self.rotation = q(data.get('rotation', 1), 'earth_rotation')
 
         self.satellites = [] if 'satellites' not in data else [i for i in data['satellites']]
         self.orbit = None if 'orbit' not in data else data['orbit']

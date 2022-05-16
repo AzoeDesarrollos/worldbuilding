@@ -7,11 +7,11 @@ from engine.frontend import Renderer, WidgetHandler
 from engine.backend import EventHandler, Systems, q
 from .incremental_value import IncrementalValue
 from engine.backend.util import add_decimal
-from .basewidget import BaseWidget
+from .meta import Meta, BaseWidget
 from pygame import Surface
 
 
-class ValueText(BaseWidget):
+class ValueText(Meta):
     do_round = True
     editable = False
 
@@ -29,6 +29,7 @@ class ValueText(BaseWidget):
         self.image = self.img_uns
         self.rect = self.image.get_rect(topleft=(x, y))
         EventHandler.register(self.clear_selection, 'ClearData')
+        EventHandler.register(self.only_select_me, 'DeselectOthers')
 
         if kind == 'digits':
             self.text_area = NumberArea(self, text, self.rect.right + 3, self.rect.y, fg, bg, size=size)
@@ -188,14 +189,18 @@ class ValueText(BaseWidget):
                 self.active = True
                 self.text_area.enable()
 
+            EventHandler.trigger('DeselectOthers', self, {})
             return self.text
 
     def on_mousebuttonup(self, event):
         if event.button == 1:
             EventHandler.trigger('Clear', self)
 
-    def on_mouseover(self):
-        self.select()
+    def only_select_me(self, event):
+        if event.origin is not self:
+            self.deselect()
+        else:
+            self.select()
 
     def clear_selection(self, event):
         if event.origin is not self:
@@ -207,14 +212,10 @@ class ValueText(BaseWidget):
         self.text_area.clear()
 
     def update(self):
-        if self.selected and self.enabled:
-            self.image = self.img_sel
-        elif not self.enabled:
+        super().update()
+        if not self.enabled:
             self.image = self.img_dis
-        else:
-            self.image = self.img_uns
 
-        self.deselect()
         self.text_area.update()
 
     def __repr__(self):
@@ -272,6 +273,7 @@ class NumberArea(BaseArea, IncrementalValue):
                     self.value = self.value[0:len(str(self.value)) - 1]
 
             elif event.tipo == 'Fin' and len(str(self.value)):
+                self.parent.deselect()
                 if self.great_grandparent.name == 'Star':
                     self.grandparent.set_star({self.parent.text.lower(): float(self.value)})
 
