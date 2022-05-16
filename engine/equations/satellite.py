@@ -12,8 +12,7 @@ class Satellite(StarSystemBody, Flagable):
 
     cls = None
     orbit = None
-    hill_sphere = 0
-    roches_limit = 0
+
     temperature = 'N/A'
     comp = ''
     lagrange_points = None
@@ -83,7 +82,7 @@ class Satellite(StarSystemBody, Flagable):
         return self.cls
 
     def __str__(self):
-        return "{} #{}".format(self.cls, self.idx)
+        return f"{self.cls} #{self.idx}"
 
     def __eq__(self, other):
         if other is not None:
@@ -117,6 +116,8 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
         self.cls = self.comp + ' Major'
         self.title = 'Major'
         self.albedo = q(13.6)
+
+        self.rotation = q(data.get('rotation', 1), 'earth_rotation')
 
         self.satellites = [] if 'satellites' not in data else [i for i in data['satellites']]
         self.orbit = None if 'orbit' not in data else data['orbit']
@@ -188,6 +189,7 @@ class Minor(Satellite, StarSystemBody):
 
     def set_rogue(self):
         self.rogue = True
+        self.random_position()
 
 
 class RockyMoon(Satellite):

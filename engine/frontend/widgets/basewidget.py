@@ -1,4 +1,4 @@
-from engine.frontend.globales import WidgetHandler, Renderer, COLOR_BOX, COLOR_TEXTO, render_textrect
+from engine.frontend.globales import WidgetHandler, Renderer, COLOR_BOX, COLOR_TEXTO, render_textrect, NUEVA_LINEA
 from pygame.sprite import Sprite
 from pygame import font, Rect
 
@@ -13,7 +13,6 @@ class BaseWidget(Sprite):
     curr_x = 3
     curr_y = 440
 
-    default_x = 3
     default_spacing = 5
     area_buttons = None
 
@@ -99,16 +98,23 @@ class BaseWidget(Sprite):
         render = render_textrect(text, f, rect.w, (0, 0, 0), COLOR_BOX)
         self.image.blit(render, rect)
 
-    def sort_buttons(self, buttons):
+    def sort_buttons(self, buttons, overriden=False):
         x, y = self.curr_x, self.curr_y
         for i, bt in enumerate(buttons):
-            bt.move(x, y)
-            x += bt.max_w + self.default_spacing
-            if bt.rect.right > self.area_buttons.w:
-                x = self.default_x
-                y += 32
+            a = bt.max_w + x + self.default_spacing
+            b = bt.max_w + x
+            if a < self.area_buttons.right or b < self.area_buttons.right:
                 bt.move(x, y)
-            if not self.area_buttons.contains(bt.rect):
-                bt.hide()
             else:
+                y += NUEVA_LINEA
+                x = 3
+                bt.move(x, y)
+            x += bt.max_w
+            if self.area_buttons.contains(bt.rect):
                 bt.show()
+            else:
+                bt.hide()
+
+        if len(buttons) and not buttons[-1].is_visible and not overriden:
+            self.curr_y -= 32
+            self.sort_buttons(buttons)

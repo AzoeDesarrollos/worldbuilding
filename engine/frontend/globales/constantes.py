@@ -4,6 +4,8 @@ from pygame import Color
 ALTO = 630
 ANCHO = 590
 
+NUEVA_LINEA = 30
+
 # Colores de fondo y texto plano
 COLOR_FONDO = Color(10, 10, 10)
 COLOR_TEXTO = Color(0, 0, 0)
@@ -54,6 +56,8 @@ __all__ = [
     # Tamaño de la ventana
     'ALTO',
     'ANCHO',
+
+    'NUEVA_LINEA',
 
     # Colores de fondo
     'COLOR_BOX',

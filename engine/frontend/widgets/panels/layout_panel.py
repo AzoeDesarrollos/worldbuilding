@@ -137,13 +137,20 @@ class SaveButton(BaseButton):
 class LoadButton(BaseButton):
     def __init__(self, parent, x, y):
         super().__init__(parent, x, y, 'Load')
+        if self.check_data() is None:
+            self.disable()
+
+    @staticmethod
+    def check_data():
+        ruta = join(getcwd(), 'data', 'savedata.json')
+        if exists(ruta):
+            data = abrir_json(ruta)
+            if any([data[item] for item in data]):
+                return data
 
     def on_mousebuttondown(self, event):
-        ruta = join(getcwd(), 'data', 'savedata.json')
-        if event.button == 1 and exists(ruta):
-            data = abrir_json(ruta)
-            if len(data):
-                EventHandler.trigger('LoadData', 'LoadButton', data)
+        data = self.check_data()
+        EventHandler.trigger('LoadData', 'LoadButton', data)
 
 
 class NewButton(BaseButton):

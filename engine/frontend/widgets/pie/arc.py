@@ -125,8 +125,9 @@ class Arc(BaseWidget):
                 rotation = False
                 self._finished = True
                 draw.circle(image, self.selected_color, [self.radius, self.radius], self.radius)
-                self.adjust(self.handle_a)
-                self.adjust(self.handle_b)
+                if self.using_handlers:
+                    self.adjust(self.handle_a)
+                    self.adjust(self.handle_b)
 
         except ValueError:
             if self.arc_lenght < 1:

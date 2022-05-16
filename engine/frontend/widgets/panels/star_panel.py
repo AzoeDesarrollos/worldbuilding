@@ -262,7 +262,7 @@ class StarType(ObjectType):
         system = Systems.get_system_by_star(self.current)
         if system is not None:
             for astrobody in system.astro_bodies:
-                astrobody.update_everything(system.age)
+                astrobody.update_everything()
 
 
 class AddStarButton(TextButton):
@@ -374,6 +374,7 @@ class AgeCursor(Meta):
 
     def on_mousebuttondown(self, event):
         if event.button == 1:
+            EventHandler.trigger('DeselectOthers', self, {})
             self.pressed = True
 
     def on_mousebuttonup(self, event):

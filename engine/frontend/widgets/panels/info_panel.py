@@ -149,8 +149,12 @@ class InformationPanel(BaseWidget):
             text = f'{str(self.current)} is a rogue planet.'
         elif is_tidally_locked(lunar_tides, system.age.m / 10 ** 9, mass):
             text = f'{str(self.current)} is tidally locked to its {primary}.'
+            self.current.rotation = 'Tidally locked'
+            self.current.spin = 'Locked'
         elif is_tidally_locked(stellar_tides, system.age.m / 10 ** 9, mass):
             text = f'{str(self.current)} is tidally locked to its {primary}.'
+            self.current.rotation = 'Tidally locked'
+            self.current.spin = 'Locked'
         else:
             text = f'{str(self.current)} is not tidally locked.'
 

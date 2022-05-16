@@ -83,7 +83,7 @@ class Star(BodyInHydrostaticEquilibrium):
 
         self.classification = self.stellar_classification(mass)
         self.cls = self.classification
-        self.color = self.true_color(self.temperature)
+        self.star_color = self.true_color(self.temperature)
         self.peak_light = LightWave(self.peak_lightwave_frequency(self.temperature))
 
         # ID values make each star unique, even if they have the same mass and name.
@@ -277,7 +277,7 @@ class Star(BodyInHydrostaticEquilibrium):
     def validate_orbit(self, orbit):
         return self._inner_boundry < orbit < self._outer_boundry
 
-    def update_everything(self):
+    def update_everything(self, **kwargs):
         if self.mass != self._mass:
             self._mass = self.mass.m
             self._luminosity = pow(self._mass, 3.5)
@@ -297,7 +297,7 @@ class Star(BodyInHydrostaticEquilibrium):
 
         self.classification = self.stellar_classification(self._mass)
         self.cls = self.classification
-        self.color = self.true_color(self.temperature)
+        self.star_color = self.true_color(self.temperature)
 
     def compare(self, other):
         if hasattr(other, 'cls'):

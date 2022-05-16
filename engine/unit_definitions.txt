@@ -42,3 +42,4 @@ moon_gravity = 1.62092 m/s ** 2 = Gm
 
 billion = 10**8
 trillion = 10**12
+degree = π / 180 * radian = °

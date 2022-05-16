@@ -1,4 +1,4 @@
-from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, ANCHO, ALTO, Group
+from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, ANCHO, ALTO, Group, NUEVA_LINEA
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.sprite_star import PlanetSprite
 from engine.equations.planetary_system import RoguePlanets
@@ -105,11 +105,11 @@ class PlanetPanel(BasePanel):
                 last_is_hidden = not buttons[-1].is_visible
                 first_is_hidden = not buttons[0].is_visible
                 if event.button == 4 and first_is_hidden:
-                    self.curr_y += 32
+                    self.curr_y += NUEVA_LINEA
                 elif event.button == 5 and last_is_hidden:
-                    self.curr_y -= 32
+                    self.curr_y -= NUEVA_LINEA
                 planets = self.planet_buttons.get_widgets_from_layer(Systems.get_current().id)
-                self.sort_buttons(planets)
+                self.sort_buttons(planets, overriden=True)
 
     def show(self):
         super().show()
@@ -250,7 +250,8 @@ class PlanetType(ObjectType):
     def destroy_button(self):
         destroyed = Systems.get_system_by_id(self.current.system_id).remove_astro_obj(self.current)
         if destroyed:
-            self.parent.image.fill(COLOR_BOX, self.hab_rect)
+            self.current.sprite.kill()
+            self.parent.image.fill(COLOR_BOX, self.uhb_rect)
             self.parent.del_button(self.current)
             self.erase()
 
@@ -286,7 +287,7 @@ class PlanetType(ObjectType):
             if composition is not None:
                 attrs['composition'] = composition
             system = Systems.get_current()
-            attrs['parent'] = system.star_system
+            attrs['parent'] = system
             self.current = Planet(attrs)
             self.toggle_habitable()
             if system.get_available_mass() == 'Unlimited' or self.current.mass <= system.body_mass:
@@ -433,7 +434,6 @@ class DelPlanetButton(TextButton):
 
 
 class CreatedPlanet(ColoredBody):
-    enabled = False
 
     def disable(self):
         self.enabled = False
@@ -445,6 +445,10 @@ class CreatedPlanet(ColoredBody):
         return self
 
     def update(self):
+        if self.object_data.habitable is True:
+            self.set_color(self.object_data)
+            self.crear(str(self.object_data))
+            self.image = self.img_sel
         super().update()
         if self.object_data.flagged:
             self.kill()

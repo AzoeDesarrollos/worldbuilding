@@ -1,7 +1,7 @@
+from math import pi, sqrt, asin, sin, cos
 from engine.backend.util import roll, q
-from math import pi, sqrt, asin
-from pygame import Rect
 from .day_lenght import aprox_day_leght
+from pygame import Rect
 
 
 class Flagable:
@@ -17,8 +17,10 @@ class Flagable:
 
     @position.setter
     def position(self, values):
-        x, y, z = values
-        self._position = x, y, z
+        self._position = values
+
+    def random_position(self):
+        self.position = roll(-100, 100), roll(-100, 100), roll(-100, 100)
 
 
 class StarSystemBody(Flagable):
@@ -31,8 +33,13 @@ class StarSystemBody(Flagable):
     _rotation = -1
 
     formation = 0
-    reference_rotation = q(24, 'hours/day')
+    reference_rotation = None
     unit = ''
+
+    hill_sphere = None
+    roches_limit = None
+
+    habitable = False
 
     def set_parent(self, parent):
         self.parent = parent
@@ -71,12 +78,28 @@ class StarSystemBody(Flagable):
     def rotation(self, new: q):
         if type(self._rotation) in (int, q):
             self._rotation = new.to(self.unit + '_rotation')
-            self.reference_rotation = round(new.to('hours/day').m, 3)
+            if self.reference_rotation is None:
+                self.reference_rotation = round(new.to('hours/day').m, 3)
         else:
             self.reset_rotation()
 
     def reset_rotation(self):
-        now = -self.formation.to('years').m - self.age.to('years').m
+        formation = self.formation.to('years').m
+        age = self.age.to('years').m
+        if age > formation:
+            'the future'
+            'formation is possitive, age is possitve but more than formation'
+            now = age
+        elif age < formation:
+            'the past'
+            'formation is possitive'
+            'age is also possitive, but less than formation'
+            'then it is a point in the past, after formation but before now'
+            now = -(formation - age)
+
+        else:
+            'age equals formation, so it is the present'
+            now = 0
         self._rotation = q(aprox_day_leght(self, now), self.unit + '_rotation')
 
     def update_everything(self, age=None):
@@ -95,9 +118,12 @@ class BodyInHydrostaticEquilibrium(StarSystemBody):
 
     rogue = False  # Bodies created outside a system are rogue planets by definition.
 
+    _tilt = 'Not set'
+    spin = 'N/A'
+
     def set_rogue(self):
         self.rogue = True
-        self._position = roll(-100, 100), roll(-100, 100), roll(-100, 100)
+        self.random_position()
 
     @staticmethod
     def calculate_circumference(r):
@@ -120,6 +146,26 @@ class BodyInHydrostaticEquilibrium(StarSystemBody):
         if hasattr(self, key):
             setattr(self, key, value)
             self.update_everything()
+
+    def set_habitability(self, tilt):
+        self.habitable = False
+        return NotImplemented
+
+    @property
+    def tilt(self):
+        return self._tilt
+
+    @tilt.setter
+    def tilt(self, value):
+        if type(value) is not str:
+            tilt = AxialTilt(self, value)
+            self._tilt = tilt
+            self.set_habitability(tilt)
+        else:
+            self._tilt = value
+
+    def set_spin(self, spin):
+        self.spin = spin
 
 
 class Ellipse:
@@ -158,8 +204,59 @@ class OblateSpheroid(Ellipse, BodyInHydrostaticEquilibrium):
     def calculate_volume(self, r):
         return 4 / 3 * pi * (self._a ** 2) * self._b
 
+    def set_habitability(self, tilt):
+        raise NotImplementedError
+
 
 class Point:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+
+
+class AxialTilt:
+    _value = 0
+    _cycle = 0
+    x, y = 0, 0
+
+    def __init__(self, parent, inclination):
+        self.parent = parent
+        if type(inclination) is q:
+            inclination = inclination.m
+        if 0 <= inclination < 90:
+            self.parent.set_spin('pograde')
+        elif 90 <= inclination <= 180:
+            self.parent.set_spin('retrograde')
+        self._value = inclination
+        self.x = inclination
+        self._cycle = -7.095217823187172 * pow(self._value, 2) + 1277.139208333333 * self._value
+
+    @property
+    def a(self):
+        # to be able to write tilt.a.m as with orbits
+        return q(self._value, 'degree')
+
+    @property
+    def u(self):
+        return 'degree'
+
+    @property
+    def m(self):
+        return self._value
+
+    @property
+    def cycle_lenght(self):
+        return q(round(self._cycle, 3), 'years')
+
+    def precess(self, year):
+        t = self._value  # "t" es el axial tilt del planeta.
+        c = self._cycle  # "c" es el ciclo en años
+        b = (2 * pi) / c  # "b" es la amplitud, un ciclo (2pi) cada "c" años
+        self.x = round(t * cos(year * b), 3)  # inclinación en el eje x
+        self.y = round(t * sin(year * b), 3)  # inclinación en el eje y
+
+    def __int__(self):
+        return self._value
+
+    def update(self, year):
+        self.precess(year)
