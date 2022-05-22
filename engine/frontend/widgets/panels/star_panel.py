@@ -5,6 +5,7 @@ from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.sprite_star import StarSprite
 from engine.backend import EventHandler, Systems
 from engine.frontend.widgets.meta import Meta
+from engine.equations.space import Universe
 from pygame import Surface, mouse, draw
 from engine.equations.star import Star
 from .common import ColoredBody
@@ -63,17 +64,16 @@ class StarPanel(BasePanel):
             star_data = event.data['Stars'][id]
             star_data.update({'id': id})
             star = Star(star_data)
-            star.idx = len([i for i in self.stars if i.cls == star.cls])
-            Systems.add_star(star)
             if star not in self.stars:
                 self.stars.append(star)
                 self.add_button(star)
                 Renderer.update()
-            for id_p in event.data['Stellar Orbits']:
-                orbit_data = event.data['Stellar Orbits'][id_p]
-                if orbit_data['star_id'] == id and star.id not in systems:
-                    Systems.set_system(star)
-                    systems.append(star.id)
+            for keyword in ['Planets', 'Satellites', 'Asteroids']:
+                for id_p in event.data[keyword]:
+                    data = event.data[keyword][id_p]
+                    if data['system'] == id and star.id not in systems:
+                        Systems.set_system(star)
+                        systems.append(star.id)
 
         if len(self.star_buttons):
             # self.current.current = self.star_buttons[0].object_data
@@ -106,9 +106,10 @@ class StarPanel(BasePanel):
             self.parent.set_skippable('Star System', False)
 
     def add_button(self, star):
+        Universe.add_astro_obj(star)
+        Systems.add_star(star)
         button = StarButton(self.current, star, str(star), self.curr_x, self.curr_y)
         self.properties.add(button, layer=2)
-        Systems.add_star(star)
         if star not in self.stars:
             self.stars.append(star)
         if self.is_visible:
@@ -120,11 +121,13 @@ class StarPanel(BasePanel):
     def del_button(self, star):
         button = [i for i in self.star_buttons if i.object_data == star][0]
         self.properties.remove(button)
-        if self.is_visible:
-            self.sort_buttons(self.star_buttons)
         self.button_del.disable()
         self.stars.remove(button.object_data)
         Systems.remove_star(star)
+        button.kill()
+
+        if self.is_visible:
+            self.sort_buttons(self.star_buttons)
 
     def select_one(self, btn):
         for button in self.star_buttons:
@@ -174,9 +177,7 @@ class StarType(ObjectType):
         self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right - 10, y=self.parent.rect.y + 50)
 
     def set_star(self, star_data):
-        cls = Star.get_class(star_data['mass'])
         star = Star(star_data)
-        star.idx = len([s for s in self.parent.stars if s.cls == cls])
         self.parent.button_add.enable()
         if self.current is not None:
             self.current.sprite.kill()
@@ -186,7 +187,7 @@ class StarType(ObjectType):
         self.parent.age_bar.cursor.set_x(star)
 
     def destroy_button(self):
-        Systems.remove_star(self.current)
+        # Systems.remove_star(self.current)
         self.parent.del_button(self.current)
         self.erase()
 

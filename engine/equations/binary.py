@@ -1,5 +1,5 @@
+from .orbit import BinaryStarOrbit, BinaryPlanetOrbit
 from engine.backend.util import roll, generate_id, q
-from .orbit import BinaryStarOrbit
 from .general import Flagable
 from math import sqrt
 
@@ -22,8 +22,6 @@ class AbstractBinary(Flagable):
             self.primary = secondary
             self.secondary = primary
 
-        self.primary.set_parent(self)
-        self.secondary.set_parent(self)
         self.ecc_p = q(ep)
         self.ecc_s = q(es)
         self.average_separation = q(avgsep, unit)
@@ -60,6 +58,8 @@ class BinarySystem(AbstractBinary):
 
     parent = None
 
+    _orbit_type = BinaryStarOrbit
+
     def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, id=None):
         super().__init__(primary, secondary, avgsep, ep=ep, es=es)
 
@@ -69,8 +69,8 @@ class BinarySystem(AbstractBinary):
             self.name = name
             self.has_name = True
 
-        self.primary.orbit = BinaryStarOrbit(self.primary, self.secondary, self.primary_distance, self.ecc_p)
-        self.secondary.orbit = BinaryStarOrbit(self.secondary, self.primary, self.secondary_distance, self.ecc_s)
+        self.primary.orbit = self._orbit_type(self.primary, self.secondary, self.primary_distance, self.ecc_p)
+        self.secondary.orbit = self._orbit_type(self.secondary, self.primary, self.secondary_distance, self.ecc_s)
 
         self.system_name = self.__repr__()
 
@@ -142,7 +142,8 @@ class PTypeSystem(BinarySystem):
         super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
 
         assert self.min_sep.m > 0.1, "Stars will merge at {:~} minimum distance".format(self.min_sep)
-
+        self.primary.set_parent(self)
+        self.secondary.set_parent(self)
         self._mass = primary.mass + secondary.mass
         self._radius = max([primary.radius, secondary.radius]).m
         self._luminosity = primary.luminosity + secondary.luminosity
@@ -186,7 +187,8 @@ class STypeSystem(BinarySystem):
 
     def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
         super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
-
+        self.primary.set_parent(self)
+        self.secondary.set_parent(self)
         self.shared_mass = primary.mass + secondary.mass
         self.primary.position[0] = self.primary_distance
         self.secondary.position[0] = -self.secondary_distance
@@ -204,8 +206,18 @@ class STypeSystem(BinarySystem):
                 star.inherit(self, inner, outer, self.shared_mass)
 
 
-class PlanetaryPTypeSystem(AbstractBinary):
-    pass
+class PlanetaryPTypeSystem(BinarySystem):
+    celestial_type = 'system'  # not really, but is a system of planets, that ocuppies the orbit of a planet, etc.
+    letter = 'P'
+    _orbit_type = BinaryPlanetOrbit
+
+    def __init__(self, primary, secondary, avg, ep=0, es=0):
+        super().__init__('None', primary, secondary, avg, ep, es)
+        # self.primary.set_parent(self)
+        # self.secondary.set_parent(self)
+
+    def __repr__(self):
+        return 'P-Type Planetary System'
 
 
 def system_type(separation):

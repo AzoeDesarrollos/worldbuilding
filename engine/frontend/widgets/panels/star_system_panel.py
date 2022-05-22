@@ -53,8 +53,7 @@ class StarSystemPanel(BaseWidget):
 
     def create_button(self, system_data):
         if system_data not in self.systems:
-            idx = len([s for s in self.systems if system_data.compare(s) is True])
-            button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
+            button = SystemButton(self, system_data, self.curr_x, self.curr_y)
             self.systems.append(system_data)
             self.system_buttons.add(button)
             self.properties.add(button)
@@ -307,9 +306,8 @@ class DissolveButton(TextButton):
 class SystemButton(ColoredBody):
     enabled = True
 
-    def __init__(self, parent, system_data, idx, x, y):
+    def __init__(self, parent, system_data, x, y):
         super().__init__(parent, system_data, str(system_data), x, y)
-        system_data.idx = idx
 
     def on_mousebuttondown(self, event):
         if event.button == 1:

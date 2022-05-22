@@ -68,9 +68,11 @@ class ValueText(Meta):
             if returned is not None:
                 self.text_area.set_value(returned, is_percentage=True if unit == '%' else False)
 
-    def set_min_and_max(self, min_v, max_v):
-        self.text_area.min = min_v
-        self.text_area.max = max_v
+    def set_min_and_max(self, min_v=None, max_v=None):
+        if min_v is not None:
+            self.text_area.min = min_v
+        if max_v is not None:
+            self.text_area.max = max_v
 
     def disable(self):
         super().disable()

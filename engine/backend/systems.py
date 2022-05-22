@@ -238,7 +238,6 @@ class Systems:
 
     @classmethod
     def add_star(cls, star):
-        cls.universe.add_astro_obj(star)
         if star not in cls.loose_stars:
             cls.loose_stars.append(star)
         astro_bodies = [i for i in cls.universe.astro_bodies if i.celestial_type != 'star']

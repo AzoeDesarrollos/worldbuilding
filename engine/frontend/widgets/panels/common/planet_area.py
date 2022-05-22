@@ -110,5 +110,13 @@ class ListedArea(BaseWidget):
             self.last_idx = idx
         self.show_current(idx)
 
+    def lock(self):
+        for listed in self.listed_objects.widgets():
+            listed.disable()
+
+    def unlock(self):
+        for listed in self.listed_objects.widgets():
+            listed.enable()
+
     def __len__(self):
         return len(self.listed_objects)

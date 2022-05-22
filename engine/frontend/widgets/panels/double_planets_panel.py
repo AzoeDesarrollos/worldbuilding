@@ -1,11 +1,10 @@
 from engine.frontend.widgets.panels.common import ListedBody, ListedArea, ColoredBody, TextButton
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.backend import Systems, q
 from engine.equations.binary import PlanetaryPTypeSystem
-from .star_system_panel import SystemType
+from .star_system_panel import SystemType, SystemButton
+from engine.backend import Systems, q
 from pygame import Surface
-from random import choice
 
 
 class DoublePlanetsPanel(BaseWidget):
@@ -13,6 +12,9 @@ class DoublePlanetsPanel(BaseWidget):
     skip = False
 
     last_idx = None
+
+    curr_s_x = None
+    curr_s_y = None
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -26,13 +28,17 @@ class DoublePlanetsPanel(BaseWidget):
         self.planets_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.systems_area = self.image.fill(COLOR_AREA, [0, 280, 380, 130])
+        self.curr_s_x = self.systems_area.x
+        self.curr_s_y = self.systems_area.y+21
+        self.system_buttons = Group()
+        self.systems = []
         self.planet_buttons = Group()
         self.properties = Group()
         self.primary_planets = {}
         self.setup_button = SetupButton(self, 484, 416)
         self.undo_button = UndoButton(self, self.setup_button.rect.left-50, 416)
         self.f2 = self.crear_fuente(14, underline=True)
-        self.write('Potential Planets', self.f2, COLOR_AREA, x=self.area_buttons.x+3, y=self.area_buttons.y+2)
+        self.write('Potential Planets', self.f2, COLOR_AREA, x=self.area_buttons.x+3, y=self.area_buttons.y)
         self.write('Double Planets', self.f2, COLOR_AREA, x=self.systems_area.x + 3, y=self.systems_area.y + 2)
 
         self.properties.add(self.planets_area, self.undo_button, self.setup_button, layer=1)
@@ -81,12 +87,23 @@ class DoublePlanetsPanel(BaseWidget):
         button = CreatedPlanet(self, planet, str(planet), self.curr_x, self.curr_y)
         self.planet_buttons.add(button, layer=layer)
         self.properties.add(button, layer=3)
-        self.image.fill(COLOR_AREA, self.area_buttons)
+        self.image.fill(COLOR_AREA, [0, 441, self.rect.w, 189])
         return button
 
     def hide_buttons(self):
         for button in self.planet_buttons.widgets():
             button.hide()
+
+    def create_system_button(self, system_data):
+        if system_data not in self.systems:
+            button = SystemButton(self, system_data, self.curr_s_x, self.curr_s_y)
+            self.systems.append(system_data)
+            self.system_buttons.add(button)
+            self.properties.add(button)
+            # self.sort_buttons(self.system_buttons.widgets())
+            # Systems.set_system(system_data)
+            # self.current.enable()
+            # return button
 
     def suggest(self):
         primary = self.current.primary.value
@@ -105,9 +122,10 @@ class DoublePlanetsPanel(BaseWidget):
             if primary_r < primary_distance and secondary_r < secondary_distance:
                 choices.append(avg_sep)
 
-        chosen = q(choice(choices), 'earth_radius')
+        chosen = q(max(choices), 'earth_radius')
         vt = self.current.properties.get_widget(2)
         vt.text_area.set_value(chosen)
+        vt.set_min_and_max(min_v=chosen.m)
 
     def update(self):
         idx = Systems.get_current_id(self)
@@ -134,7 +152,7 @@ class DoublesType(SystemType):
     def fill(self):
         if all([str(vt.value) != '' for vt in self.properties.widgets()[0:5]]):
             if self.current is None:
-                self.current = PlanetaryPTypeSystem(*self.get_determinants(), unit='earth_radius')
+                self.current = PlanetaryPTypeSystem(*self.get_determinants())
             props = ['average_separation', 'ecc_p', 'ecc_s', 'barycenter', 'max_sep', 'min_sep']
             for i, attr in enumerate(props, start=2):
                 value = getattr(self.current, attr)
@@ -156,6 +174,15 @@ class PotentialPlanet(ListedBody):
                 self.parent.delete_objects(pln)
             self.kill()
             self.parent.sort()
+            self.parent.lock()
+
+    def disable(self):
+        """Se dispara en parent.lock()"""
+        self.enabled = False
+
+    def enable(self):
+        """Se dispara en parent.unlock()"""
+        self.enabled = True
 
 
 class AvailablePlanets(ListedArea):
@@ -212,8 +239,8 @@ class SetupButton(TextButton):
 
     def on_mousebuttondown(self, event):
         if event.button == 1 and self.enabled:
-            pass
-            # sistema = self.parent.current.current
-            # self.parent.create_button(sistema)
-            # self.parent.current.erase()
-            # self.disable()
+            self.parent.planets_area.unlock()
+            sistema = self.parent.current.current
+            self.parent.create_system_button(sistema)
+            self.parent.current.erase()
+            self.disable()

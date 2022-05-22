@@ -98,8 +98,7 @@ class BaseWidget(Sprite):
         render = render_textrect(text, f, rect.w, (0, 0, 0), COLOR_BOX)
         self.image.blit(render, rect)
 
-    def sort_buttons(self, buttons, overriden=False):
-        x, y = self.curr_x, self.curr_y
+    def sort_buttons(self, buttons, overriden=False, x=3, y=437):
         for i, bt in enumerate(buttons):
             a = bt.max_w + x + self.default_spacing
             b = bt.max_w + x
@@ -117,4 +116,4 @@ class BaseWidget(Sprite):
 
         if len(buttons) and not buttons[-1].is_visible and not overriden:
             self.curr_y -= 32
-            self.sort_buttons(buttons)
+            self.sort_buttons(buttons, y=self.curr_y)

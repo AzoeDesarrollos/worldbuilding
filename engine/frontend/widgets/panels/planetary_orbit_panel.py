@@ -65,8 +65,12 @@ class PlanetaryOrbitPanel(BaseWidget):
         EventHandler.register(self.load_orbits, 'LoadData')
 
     def load_orbits(self, event):
-        idxs = list(event.data['Planetary Orbits'].keys())
-        bodies = [Systems.get_current().get_astrobody_by(idx, tag_type='id') for idx in idxs]
+        bodies = []
+        for idx in event.data['Planetary Orbits']:
+            system_id = event.data['Planetary Orbits'][idx]['star_id']
+            system = Systems.get_system_by_id(system_id)
+            bodies.append(system.get_astrobody_by(idx, tag_type='id'))
+
         bodies.sort(key=lambda b: b.mass, reverse=True)
         # sorting by mass may not be the best way to sort, but it is unlikely that a body orbits another body if the
         # parent body is less massive than the child one.
