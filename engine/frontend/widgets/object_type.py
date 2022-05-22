@@ -62,11 +62,11 @@ class ObjectType(BaseWidget):
         return NotImplemented
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             self.active = True
 
     def on_mousebuttonup(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             EventHandler.trigger('Clear', self)
 
     def elevate_changes(self, key, new_value):

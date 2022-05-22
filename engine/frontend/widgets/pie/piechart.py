@@ -111,7 +111,7 @@ class PieChart(BaseWidget):
             a = b
 
     def on_mousebuttonup(self, event):
-        if self.is_visible:
+        if self.is_visible and event.origin == self:
             for handle in self.chart.get_widgets_from_layer(2):
                 if handle.pressed:
                     handle.on_mousebuttonup(event)

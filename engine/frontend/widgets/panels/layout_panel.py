@@ -98,8 +98,8 @@ class Arrow(Meta):
         return image
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
-            if self.rect.collidepoint(event.pos):
+        if event.data['button'] == 1 and event.origin == self:
+            if self.rect.collidepoint(event.data['pos']):
                 if self.enabled:
                     if self.direccion == 'forward':
                         self.parent.cycle(+1)
@@ -129,7 +129,7 @@ class SaveButton(BaseButton):
         super().__init__(parent, x, y, 'Save')
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             EventHandler.trigger('Save', 'SaveButton', {})
             self.parent.load_button.enable()
 
@@ -149,8 +149,9 @@ class LoadButton(BaseButton):
                 return data
 
     def on_mousebuttondown(self, event):
-        data = self.check_data()
-        EventHandler.trigger('LoadData', 'LoadButton', data)
+        if event.origin == self:
+            data = self.check_data()
+            EventHandler.trigger('LoadData', 'LoadButton', data)
 
 
 class NewButton(BaseButton):
@@ -159,7 +160,7 @@ class NewButton(BaseButton):
         super().__init__(parent, x, y, 'New')
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             EventHandler.trigger('ClearData', 'NewButton', {'panel': self.parent.current})
 
 
@@ -179,7 +180,7 @@ class SwapSystem(Meta):
         self.system_image = SystemName(self, left=self.rect.right+6, y=2)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             Systems.cycle_systems(self.parent.current.name)
 
     def update(self):

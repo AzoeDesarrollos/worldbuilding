@@ -39,14 +39,15 @@ class InformationPanel(BaseWidget):
         self.info_rect = Rect(3, self.perceptions_rect.bottom, 380, ALTO - (self.perceptions_rect.h + 380 + 21))
 
     def on_mousebuttondown(self, event):
-        self.image.fill(COLOR_BOX, self.render_rect)
-        if event.button == 4:
-            if self.render_rect.top + 12 <= 250:
-                self.render_rect.move_ip(0, +12)
-        elif event.button == 5:
-            if self.render_rect.bottom - 12 >= 589:
-                self.render_rect.move_ip(0, -12)
-        self.image.blit(self.render, self.render_rect)
+        if event.origin == self:
+            self.image.fill(COLOR_BOX, self.render_rect)
+            if event.data['button'] == 4:
+                if self.render_rect.top + 12 <= 250:
+                    self.render_rect.move_ip(0, +12)
+            elif event.data['button'] == 5:
+                if self.render_rect.bottom - 12 >= 589:
+                    self.render_rect.move_ip(0, -12)
+            self.image.blit(self.render, self.render_rect)
 
     def show_name(self, astrobody):
         self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
@@ -223,8 +224,9 @@ class InformationPanel(BaseWidget):
 class Astrobody(ColoredBody):
 
     def on_mousebuttondown(self, event):
-        self.parent.select_one(self)
-        self.parent.parent.show_selected(self.object_data)
+        if event.origin == self:
+            self.parent.select_one(self)
+            self.parent.parent.show_selected(self.object_data)
 
 
 class AvailablePlanets(ListedArea):
@@ -243,8 +245,9 @@ class AvailablePlanets(ListedArea):
         super().show()
 
     def on_mousebuttondown(self, event):
-        super().on_mousebuttondown(event)
-        self.parent.clear()
+        if event.origin == self:
+            super().on_mousebuttondown(event)
+            self.parent.clear()
 
 
 class PrintButton(TextButton):
@@ -255,7 +258,7 @@ class PrintButton(TextButton):
         self.rect.y += 10
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             ruta = os.path.join(os.getcwd(), 'exports')
             if not os.path.exists(ruta):
                 os.mkdir(ruta)

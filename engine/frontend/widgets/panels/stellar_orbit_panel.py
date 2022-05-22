@@ -222,37 +222,37 @@ class OrbitPanel(BaseWidget):
             self.prepare_and_sort()
 
     def on_mousebuttondown(self, event):
+        if event.origin == self:
+            if self.area_markers.collidepoint(event.data['pos']) and self.markers is not None:
+                last_is_hidden = not self.markers[-1].is_visible
+                if len(self.markers) >= 8 and event.data['button'] in (4, 5):
+                    if event.data['button'] == 4 and self.offset < 0:
+                        self.offset += 20
+                    elif event.data['button'] == 5 and last_is_hidden:
+                        self.offset -= 20
 
-        if self.area_markers.collidepoint(event.pos) and self.markers is not None:
-            last_is_hidden = not self.markers[-1].is_visible
-            if len(self.markers) >= 8 and event.button in (4, 5):
-                if event.button == 4 and self.offset < 0:
-                    self.offset += 20
-                elif event.button == 5 and last_is_hidden:
-                    self.offset -= 20
+                    self.sort_markers()
 
-                self.sort_markers()
+            elif self.area_buttons.collidepoint(event.data['pos']) and self.buttons is not None and len(self.buttons):
+                self.buttons.sort(key=lambda b: b.get_value().m)
+                last_is_hidden = not self.buttons[-1].is_visible
+                first_is_hidden = not self.buttons[0].is_visible
+                if event.data['button'] == 4 and first_is_hidden:
+                    self.curr_y += 32
+                elif event.data['button'] == 5 and last_is_hidden:
+                    self.curr_y -= 32
+                self.prepare_and_sort()
 
-        elif self.area_buttons.collidepoint(event.pos) and self.buttons is not None and len(self.buttons):
-            self.buttons.sort(key=lambda b: b.get_value().m)
-            last_is_hidden = not self.buttons[-1].is_visible
-            first_is_hidden = not self.buttons[0].is_visible
-            if event.button == 4 and first_is_hidden:
-                self.curr_y += 32
-            elif event.button == 5 and last_is_hidden:
-                self.curr_y -= 32
-            self.prepare_and_sort()
+            elif self.area_recomendation.collidepoint(event.data['pos']):
+                if event.data['button'] == 4:
+                    pass
+                elif event.data['button'] == 5:
+                    pass
 
-        elif self.area_recomendation.collidepoint(event.pos):
-            if event.button == 4:
-                pass
-            elif event.button == 5:
-                pass
-
-        elif event.button == 1 and self.markers is not None:
-            for marker in self.markers:
-                marker.deselect()
-                marker.enable()
+            elif event.data['button'] == 1 and self.markers is not None:
+                for marker in self.markers:
+                    marker.deselect()
+                    marker.enable()
 
     def prepare_and_sort(self):
         listed = sorted(self.buttons, key=lambda b: b.get_value().m)
@@ -781,28 +781,27 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
         self.enabled = False
 
     def on_mousebuttondown(self, event):
-        pressed = pyg_key.get_pressed()
-        ctrl_pressed = pressed[K_RCTRL] or pressed[K_LCTRL]
-        if event.button == 1:
-            self.parent.sort_markers()
-            if ctrl_pressed:
-                self.parent.set_resonance_mode(self.linked_astrobody)
-            else:
-                self.parent.unset_resonance_mode()
+        if event.origin == self:
+            pressed = pyg_key.get_pressed()
+            ctrl_pressed = pressed[K_RCTRL] or pressed[K_LCTRL]
+            if event.data['button'] == 1:
+                self.parent.sort_markers()
+                if ctrl_pressed:
+                    self.parent.set_resonance_mode(self.linked_astrobody)
+                else:
+                    self.parent.unset_resonance_mode()
 
-            if not self.locked and not self.completed:
-                self.parent.anchor_maker(self)
-                self.parent.recomendation.update_suggestion(self, self.linked_astrobody, self.orbit)
-            else:
-                self.parent.recomendation.hide()
+                if not self.locked and not self.completed:
+                    self.parent.anchor_maker(self)
+                    self.parent.recomendation.update_suggestion(self, self.linked_astrobody, self.orbit)
+                else:
+                    self.parent.recomendation.hide()
 
-        elif event.button == 3:
-            self.parent.delete_marker(self)
+            elif event.data['button'] == 3:
+                self.parent.delete_marker(self)
 
-        elif event.button in (4, 5):
-            self.parent.on_mousebuttondown(event)
-
-        return self
+            elif event.data['button'] in (4, 5):
+                self.parent.on_mousebuttondown(event)
 
     def tune_value(self, delta):
         if not self.locked:
@@ -877,7 +876,7 @@ class OrbitButton(Meta, Intertwined):
         self.locked = False
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             if self.parent.visible_markers:
                 self.parent.toggle_stellar_orbits()
             self.parent.on_orbit_button_press()
@@ -896,7 +895,7 @@ class OrbitButton(Meta, Intertwined):
 class RoguePlanet(ColoredBody):
     # "rogue" because it doesn't have an orbit yet
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.parent.parent.visible_markers and self.enabled:
+        if event.data['button'] == 1 and self.parent.parent.visible_markers and self.enabled and event.origin == self:
             self.enabled = False
             if self.parent.parent.resonance_mode is False:
                 self.parent.parent.link_astrobody_to_stellar_orbit(self.object_data)
@@ -930,7 +929,7 @@ class SetOrbitButton(TextButton):
         self.disable()
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             if self.linked_marker.orbit.stable:
                 self.parent.recomendation.notify()
                 self.parent.develop_orbit(self.linked_marker)
@@ -981,7 +980,7 @@ class AddResonanceButton(TextButton):
         self.parent.unset_resonance_mode()
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             assert self.resonant is not None, "Select a rogue planet to be resonant first."
             star = self.parent.current
             order = self.parent.ratios_to_string()
@@ -1337,12 +1336,13 @@ class Recomendation(BaseWidget):
         self.show()
 
     def on_mousebuttondown(self, event):
-        if event.button == 4:
-            if self.rendered_rect.top + 12 <= 17:
-                self.rendered_rect.move_ip(0, +12)
-        elif event.button == 5:
-            if self.rendered_rect.bottom - 6 >= self.rect.h - 3:
-                self.rendered_rect.move_ip(0, -12)
+        if event.origin == self:
+            if event.data['button'] == 4:
+                if self.rendered_rect.top + 12 <= 17:
+                    self.rendered_rect.move_ip(0, +12)
+            elif event.data['button'] == 5:
+                if self.rendered_rect.bottom - 6 >= self.rect.h - 3:
+                    self.rendered_rect.move_ip(0, -12)
 
     def update_suggestion(self, marker, astro_body, astro_orbit):
         if not self.notified:

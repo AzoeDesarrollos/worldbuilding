@@ -168,7 +168,7 @@ class SystemType(BaseWidget):
         for idx, attr in enumerate(attrs):
             setattr(self, attr, self.properties.get_widget(idx))
 
-    def set_bodies(self, star):
+    def set_star(self, star):
         if str(self.primary.value) == '':
             self.primary.value = star
             self.has_values = True
@@ -203,8 +203,8 @@ class SystemType(BaseWidget):
             self.parent.setup_button.enable()
 
     def reset(self, system_data):
-        self.set_bodies(system_data.primary)
-        self.set_bodies(system_data.secondary)
+        self.set_star(system_data.primary)
+        self.set_star(system_data.secondary)
         self.separation.value = system_data.average_separation
         self.ecc_p.value = system_data.ecc_p
         self.ecc_s.value = system_data.ecc_s
@@ -247,8 +247,8 @@ class ListedStar(ColoredBody):
     enabled = True
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
-            self.parent.parent.current.set_bodies(self.object_data)
+        if event.data['button'] == 1 and event.origin == self:
+            self.parent.parent.current.set_star(self.object_data)
             self.parent.remove_listed(self)
             self.kill()
             self.parent.sort()
@@ -281,7 +281,7 @@ class SetupButton(TextButton):
         super().__init__(parent, name, x, y)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             sistema = self.parent.current.current
             self.parent.create_button(sistema)
             self.parent.current.erase()
@@ -296,7 +296,7 @@ class DissolveButton(TextButton):
         super().__init__(parent, name, x, y)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.orign == self:
             system = self.parent.current.current
             Systems.dissolve_system(system)
             self.parent.stars_area.show()
@@ -310,7 +310,7 @@ class SystemButton(ColoredBody):
         super().__init__(parent, system_data, str(system_data), x, y)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             if self.object_data.letter is not None:
                 self.parent.show_current(self.object_data)
             else:
@@ -331,5 +331,6 @@ class UndoButton(TextButton):
         super().__init__(parent, name, x, y)
 
     def on_mousebuttondown(self, event):
-        self.parent.current.unset_stars()
-        self.disable()
+        if event.origin == self:
+            self.parent.current.unset_stars()
+            self.disable()

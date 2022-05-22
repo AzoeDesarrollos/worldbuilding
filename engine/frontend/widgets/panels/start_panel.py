@@ -1,6 +1,7 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, Group
 from engine.frontend.widgets import BaseWidget
 from engine.backend.systems import Systems
+from engine.backend.config import Config
 from pygame import Surface, Rect
 from .common import RadioButton
 
@@ -50,10 +51,25 @@ class StartPanel(BaseWidget):
         self.write2(text_a, f2, rect_a.w - 10, x=3, y=self.button_a.rect.bottom + 5, j=True)
         self.write2(text_b, f2, rect_a.w - 10, x=rect_b.x + 10, y=self.button_b.rect.bottom + 5, j=True)
 
+        mode = Config.get('mode')
+        selected = None
+        if mode == 0:
+            selected = self.button_a
+        elif mode == 1:
+            selected = self.button_b
+
+        if selected is not None:
+            self.select_one(selected)
+
     def on_mousebuttondown(self, event):
-        if any([self.button_a.on, self.button_b.on]):
-            self.hide()
-            self.parent.cycle(+1)
+        if event.origin == self:
+            if any([self.button_a.on, self.button_b.on]):
+                if self.button_a.on:
+                    Config.set('mode', 0)
+                elif self.button_b.on:
+                    Config.set('mode', 1)
+                self.hide()
+                self.parent.cycle(+1)
 
     def hide(self):
         super().hide()

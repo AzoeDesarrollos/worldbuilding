@@ -200,14 +200,16 @@ class AlbedoPanel(BaseWidget):
     def conclude(self, event):
         if hasattr(event.origin, 'parent'):
             if event.origin.parent.parent is self:
-                self.total_albedo()
+                if self.current is not None:
+                    self.total_albedo()
 
 
 class UnbondedBody(ColoredBody):
     # because their "bond" albedo hasn't been set yet.
     def on_mousebuttondown(self, event):
-        self.parent.select_one(self)
-        self.parent.parent.set_planet(self.object_data)
+        if event.origin == self:
+            self.parent.select_one(self)
+            self.parent.parent.set_planet(self.object_data)
 
 
 class AvailablePlanets(ListedArea):
@@ -222,5 +224,6 @@ class AvailablePlanets(ListedArea):
         super().show()
 
     def on_mousebuttondown(self, event):
-        super().on_mousebuttondown(event)
-        self.parent.clear()
+        if event.origin == self:
+            super().on_mousebuttondown(event)
+            self.parent.clear()

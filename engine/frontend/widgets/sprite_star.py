@@ -107,8 +107,9 @@ class PlanetSprite(BaseWidget):
         return image
 
     def on_mousebuttondown(self, event):
-        comp = self.composition
-        if event.button == 1:
-            text = 'Compostition:\n\n'
-            text += '\n'.join([e.capitalize()+': {:n}%'.format(round(comp[e], 2)) for e in comp if comp[e] > 0])
-            raise AssertionError(text)
+        if event.origin == self:
+            comp = self.composition
+            if event.data['button'] == 1:
+                text = 'Compostition:\n\n'
+                text += '\n'.join([e.capitalize()+': {:n}%'.format(round(comp[e], 2)) for e in comp if comp[e] > 0])
+                raise AssertionError(text)

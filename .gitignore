@@ -11,3 +11,4 @@ __pycache__
 /install.nsi
 /changelog.txt
 /LICENSE.txt
+/data/config.json

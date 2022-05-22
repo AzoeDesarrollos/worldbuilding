@@ -37,6 +37,8 @@ class ValueText(Meta):
         elif kind == 'letters':
             self.text_area = TextArea(self, text, self.rect.right + 3, self.rect.y, fg, bg, size=size)
 
+        self.kind = kind
+
     def kill(self) -> None:
         super().kill()
         self.text_area.kill()
@@ -88,7 +90,7 @@ class ValueText(Meta):
 
     def on_mousebuttondown(self, event):
         not_enough_mass = 'There is not enough mass in the system to create new bodies of this type.'
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             p = self.parent
             if p.parent.name == 'Planet' and p.parent.enabled and not p.has_values:
                 data = None
@@ -192,10 +194,10 @@ class ValueText(Meta):
                 self.text_area.enable()
 
             EventHandler.trigger('DeselectOthers', self, {})
-            return self.text
+            EventHandler.trigger('SetOrigin', self, {'origin': self.text_area})
 
     def on_mousebuttonup(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             EventHandler.trigger('Clear', self)
 
     def only_select_me(self, event):
@@ -251,6 +253,9 @@ class BaseArea(BaseWidget):
     def clear(self):
         raise NotImplementedError
 
+    def __repr__(self):
+        return f'TextArea Type {self.parent.kind} of {self.parent.name}'
+
 
 class NumberArea(BaseArea, IncrementalValue):
     value = None
@@ -262,7 +267,7 @@ class NumberArea(BaseArea, IncrementalValue):
         EventHandler.register(self.get_value, 'SetValue')
 
     def input(self, event):
-        if self.enabled and not self.grandparent.locked and event.origin == self.name:
+        if self.enabled and not self.grandparent.locked and event.origin == self:
             assert self.modifiable, 'This value is a derivated value. It is not directly modifiable.'
             if event.data is not None:
                 char = event.data['value']
@@ -290,7 +295,8 @@ class NumberArea(BaseArea, IncrementalValue):
                     self.grandparent.fill()
 
                 elif self.grandparent.name == 'Albedo':
-                    self.grandparent.total_albedo()
+                    if self.grandparent.current is not None:
+                        self.grandparent.total_albedo()
 
     def set_value(self, quantity, is_percentage=False):
         if type(quantity) is q and not is_percentage:
@@ -322,19 +328,20 @@ class NumberArea(BaseArea, IncrementalValue):
             self.set_value(value, is_percentage=True)
 
     def on_mousebuttondown(self, event):
-        self.increment = self.update_increment()
-        b = event.button
-        assert self.modifiable, 'This is a derivated value. It is not directly modifiable.'
-        if not type(self.value) is str:
-            if b == 5 and (self.max is None or float(self.value) + self.increment <= self.max):  # rueda abajo
-                self.value += self.increment
-            elif b == 4 and float(self.value) - self.increment >= self.min:  # rueda arriba
-                self.value += -self.increment
+        if event.origin == self:
+            self.increment = self.update_increment()
+            b = event.data['button']
+            assert self.modifiable, 'This is a derivated value. It is not directly modifiable.'
+            if not type(self.value) is str:
+                if b == 5 and (self.max is None or float(self.value) + self.increment <= self.max):  # rueda abajo
+                    self.value += self.increment
+                elif b == 4 and float(self.value) - self.increment >= self.min:  # rueda arriba
+                    self.value += -self.increment
 
-            if event.button in (4, 5):
-                self.increment = 0
-                self.value = round(self.value, 4)
-                self.parent.elevate_changes(self.value, self.unit)
+                if event.data['button'] in (4, 5):
+                    self.increment = 0
+                    self.value = round(self.value, 4)
+                    self.parent.elevate_changes(self.value, self.unit)
 
     def clear(self):
         self.value = ''

@@ -52,16 +52,17 @@ class ListedArea(BaseWidget):
         super().hide()
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
-            self.deselect_all()
-        elif len(self.listed_objects.widgets()):
-            buttons = self.listed_objects.widgets()
-            last_is_hidden = not buttons[-1].is_visible
-            first_is_hidden = not buttons[0].is_visible
-            if event.button == 4 and first_is_hidden:
-                self.offset += 16
-            elif event.button == 5 and last_is_hidden:
-                self.offset -= 16
+        if event.origin == self:
+            if event.data['button'] == 1:
+                self.deselect_all()
+            elif len(self.listed_objects.widgets()):
+                buttons = self.listed_objects.widgets()
+                last_is_hidden = not buttons[-1].is_visible
+                first_is_hidden = not buttons[0].is_visible
+                if event.data['button'] == 4 and first_is_hidden:
+                    self.offset += 16
+                elif event.data['button'] == 5 and last_is_hidden:
+                    self.offset -= 16
 
     def delete_objects(self, astronomical_object):
         layer = self.last_idx
