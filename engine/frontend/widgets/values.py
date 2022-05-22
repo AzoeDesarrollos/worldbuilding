@@ -37,6 +37,8 @@ class ValueText(Meta):
         elif kind == 'letters':
             self.text_area = TextArea(self, text, self.rect.right + 3, self.rect.y, fg, bg, size=size)
 
+        self.kind = kind
+
     def kill(self) -> None:
         super().kill()
         self.text_area.kill()
@@ -190,7 +192,7 @@ class ValueText(Meta):
                 self.text_area.enable()
 
             EventHandler.trigger('DeselectOthers', self, {})
-            EventHandler.trigger('SetOrigin', self, {'origin': self.text})
+            EventHandler.trigger('SetOrigin', self, {'origin': self.text_area})
 
     def on_mousebuttonup(self, event):
         if event.data['button'] == 1 and event.origin == self:
@@ -249,6 +251,9 @@ class BaseArea(BaseWidget):
     def clear(self):
         raise NotImplementedError
 
+    def __repr__(self):
+        return f'TextArea Type {self.parent.kind} of {self.parent.name}'
+
 
 class NumberArea(BaseArea, IncrementalValue):
     value = None
@@ -260,7 +265,7 @@ class NumberArea(BaseArea, IncrementalValue):
         EventHandler.register(self.get_value, 'SetValue')
 
     def input(self, event):
-        if self.enabled and not self.grandparent.locked and event.origin == self.name:
+        if self.enabled and not self.grandparent.locked and event.origin == self:
             assert self.modifiable, 'This value is a derivated value. It is not directly modifiable.'
             if event.data is not None:
                 char = event.data['value']
@@ -288,7 +293,8 @@ class NumberArea(BaseArea, IncrementalValue):
                     self.grandparent.fill()
 
                 elif self.grandparent.name == 'Albedo':
-                    self.grandparent.total_albedo()
+                    if self.grandparent.current is not None:
+                        self.grandparent.total_albedo()
 
     def set_value(self, quantity, is_percentage=False):
         if type(quantity) is q and not is_percentage:

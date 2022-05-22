@@ -45,7 +45,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.add_orbits_button = SetOrbitButton(self, ANCHO - 94, 394)
         self.area_modify = ModifyArea(self, ANCHO - 201, 374)
-        self.show_markers_button = ToggleSatellitesButton(self, 'Satellites', self.toggle_stellar_orbits, 3, 421)
+        self.show_markers_button = ToggleSatellitesButton(self, 'Satellites', None, 3, 421)
         self.show_markers_button.disable()
         self.resonances_button = AddResonanceButton(self, ANCHO - 150, 416)
         self.order_f = self.crear_fuente(14)
@@ -124,25 +124,6 @@ class PlanetaryOrbitPanel(BaseWidget):
             d['AoP'] = aop.m if hasattr(aop, 'm') else aop
         return d
 
-    def toggle_stellar_orbits(self):
-        if self.visible_markers:
-            self.area_modify.color_alert()
-            self.add_orbits_button.disable()
-            for marker in self.markers:
-                marker.hide()
-        else:
-            for button in self.buttons.widgets():
-                button.deselect()
-
-            self.hide_orbit_types()
-            if self.current is not None:
-                for marker in self.markers:
-                    marker.show()
-            self.show_markers_button.disable()
-            self.area_modify.color_standby()
-        self.visible_markers = not self.visible_markers
-        self.area_modify.visible_markers = self.visible_markers
-
     def hide_orbit_types(self):
         for orbit_type in self.orbit_descriptions.widgets():
             orbit_type.hide()
@@ -160,7 +141,6 @@ class PlanetaryOrbitPanel(BaseWidget):
             marker.show()
 
         self.create_hill_marker(planet)
-        self.sort_markers()
 
     def add_objects(self):
         system = Systems.get_current()
@@ -207,7 +187,8 @@ class PlanetaryOrbitPanel(BaseWidget):
                 self.planet_area.select_by_data(planet)
             self.hide_everything()
             self.current = planet
-            self.populate()
+            if not len(self.markers):
+                self.populate()
             if planet.id not in self.satellites:
                 self.satellites[planet.id] = []
         for button in self.buttons.widgets():
@@ -215,11 +196,12 @@ class PlanetaryOrbitPanel(BaseWidget):
             button.deselect()
 
         self.visible_markers = True
-        sats = self.satellites[planet.id]
-        densest = sorted(sats, key=lambda i: i.density.to('earth_density').m, reverse=True)
-        if len(densest):
-            self.create_roches_marker(densest[0])
-        self.add_orbits_button.disable()
+        if not force:
+            sats = self.satellites[planet.id]
+            densest = sorted(sats, key=lambda i: i.density.to('earth_density').m, reverse=True)
+            if len(densest):
+                self.create_roches_marker(densest[0])
+            self.add_orbits_button.disable()
         self.sort_markers()
 
     def select_one(self, button):
@@ -409,11 +391,6 @@ class PlanetaryOrbitPanel(BaseWidget):
             for button in self.buttons.widgets():
                 button.disable()
 
-    def get_sorted_satellites(self):
-        self.sort_markers()
-        markers = [marker.obj for marker in self.markers if marker.obj is not None]
-        return markers
-
     def set_current_digit(self, idx):
         self.curr_digit = self.ratios.index(idx)
 
@@ -463,7 +440,7 @@ class AvailablePlanets(ListedArea):
     def show(self):
         for system in Systems.get_systems():
             idx = system.id
-            bodies = [body for body in system.astro_bodies if body.hill_sphere != 0]
+            bodies = [body for body in system.astro_bodies if body.hill_sphere is not None]
             self.populate(bodies, layer=idx)
         super().show()
 
@@ -519,6 +496,7 @@ class ObjectButton(ColoredBody):
                 self.parent.buttons.change_layer(self, self.parent.current.id)
                 self.create_type(orbit)
                 self.link_marker(marker)
+                self.disable()
             else:
                 self.parent.on_button_press(self.object_data)
                 self.info.link_marker(self.linked_marker)
@@ -734,4 +712,3 @@ class ToggleSatellitesButton(ToggleableButton):
         if event.origin == self:
             if self.parent.current is not None:
                 self.parent.select_planet(self.parent.current, force=True)
-            super().on_mousebuttondown(event)

@@ -31,7 +31,7 @@ class Handle(Meta):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.pressed = True
             self.parent.set_active(self)
-        EventHandler.trigger('SetOrigin', self, {'origin': self})
+            EventHandler.trigger('SetOrigin', self, {'origin': self})
 
     def on_mousebuttonup(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:

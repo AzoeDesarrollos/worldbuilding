@@ -200,7 +200,8 @@ class AlbedoPanel(BaseWidget):
     def conclude(self, event):
         if hasattr(event.origin, 'parent'):
             if event.origin.parent.parent is self:
-                self.total_albedo()
+                if self.current is not None:
+                    self.total_albedo()
 
 
 class UnbondedBody(ColoredBody):
