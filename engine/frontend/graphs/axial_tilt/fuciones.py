@@ -73,10 +73,10 @@ def set_latitude(events, panel, x, y, latitude):
 
     for event in events:
         if event.type == MOUSEMOTION:
-            px, py = event.pos
+            px, py = event.data['pos']
             if area_rect.collidepoint(px, 170 + py - (y + text_rect.bottom + 3)):
                 mouse.set_pos(px, area_rect.centery + 330)
-                latitude = event.pos[0] - 20
+                latitude = event.data['pos'][0] - 20
 
     if latitude is not None:
         panel.fill(COLOR_BOX, number_rect)

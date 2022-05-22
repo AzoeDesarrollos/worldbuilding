@@ -132,22 +132,23 @@ class StarPanel(BasePanel):
         btn.select()
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
-            super().on_mousebuttondown(event)
+        if event.origin == self:
+            if event.data['button'] == 1:
+                super().on_mousebuttondown(event)
 
-        elif event.button in (4, 5):
-            buttons = self.star_buttons
-            if self.area_buttons.collidepoint(event.pos) and len(buttons):
-                last_is_hidden = not buttons[-1].is_visible
-                first_is_hidden = not buttons[0].is_visible
-                if event.button == 4 and first_is_hidden:
-                    self.curr_y += 32
-                elif event.button == 5 and last_is_hidden:
-                    self.curr_y -= 32
-                self.sort_buttons(self.star_buttons)
+            elif event.data['button'] in (4, 5):
+                buttons = self.star_buttons
+                if self.area_buttons.collidepoint(event.data['pos']) and len(buttons):
+                    last_is_hidden = not buttons[-1].is_visible
+                    first_is_hidden = not buttons[0].is_visible
+                    if event.data['button'] == 4 and first_is_hidden:
+                        self.curr_y += 32
+                    elif event.data['button'] == 5 and last_is_hidden:
+                        self.curr_y -= 32
+                    self.sort_buttons(self.star_buttons)
 
     def on_mousebuttonup(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             self.age_bar.on_mousebuttonup(event)
 
     def update(self):
@@ -271,7 +272,7 @@ class AddStarButton(TextButton):
         self.rect.right = x
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled and self.parent.current.has_values:
+        if event.data['button'] == 1 and self.enabled and self.parent.current.has_values and event.origin == self:
             star = self.parent.current.current
             self.parent.add_button(star)
             self.disable()
@@ -285,7 +286,7 @@ class DelStarButton(TextButton):
         self.rect.right = x
 
     def on_mousebuttondown(self, event):
-        if self.enabled and event.button == 1:
+        if self.enabled and event.data['button'] == 1 and event.origin == self:
             self.parent.current.destroy_button()
 
 
@@ -293,15 +294,16 @@ class StarButton(ColoredBody):
     enabled = True
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
-            self.parent.show_current(self.object_data)
-            if not self.object_data.sprite.is_visible:
-                self.object_data.sprite.show()
-            self.parent.parent.select_one(self)
-            self.parent.parent.button_del.enable()
-            self.parent.toggle_habitable()
-        elif event.button in (4, 5):
-            self.parent.parent.on_mousebuttondown(event)
+        if event.origin == self:
+            if event.data['button'] == 1:
+                self.parent.show_current(self.object_data)
+                if not self.object_data.sprite.is_visible:
+                    self.object_data.sprite.show()
+                self.parent.parent.select_one(self)
+                self.parent.parent.button_del.enable()
+                self.parent.toggle_habitable()
+            elif event.data['button'] in (4, 5):
+                self.parent.parent.on_mousebuttondown(event)
 
     def hide(self):
         super().hide()
@@ -324,7 +326,7 @@ class AgeBar(Meta):
         self.cursor = AgeCursor(self, self.rect.centery)
 
     def on_mousebuttonup(self, event):
-        if self.cursor is not None:
+        if self.cursor is not None and event.origin == self:
             self.cursor.pressed = False
 
     def on_mousemotion(self, rel):
@@ -373,12 +375,12 @@ class AgeCursor(Meta):
         self.rect = self.image.get_rect(centerx=self.centerx)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             EventHandler.trigger('DeselectOthers', self, {})
             self.pressed = True
 
     def on_mousebuttonup(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             self.pressed = False
             self.parent.parent.current.propagate_age_changes()
 

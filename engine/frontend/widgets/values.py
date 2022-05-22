@@ -86,7 +86,7 @@ class ValueText(Meta):
 
     def on_mousebuttondown(self, event):
         not_enough_mass = 'There is not enough mass in the system to create new bodies of this type.'
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             p = self.parent
             if p.parent.name == 'Planet' and p.parent.enabled and not p.has_values:
                 data = None
@@ -190,10 +190,10 @@ class ValueText(Meta):
                 self.text_area.enable()
 
             EventHandler.trigger('DeselectOthers', self, {})
-            return self.text
+            EventHandler.trigger('SetOrigin', self, {'origin': self.text})
 
     def on_mousebuttonup(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             EventHandler.trigger('Clear', self)
 
     def only_select_me(self, event):
@@ -320,19 +320,20 @@ class NumberArea(BaseArea, IncrementalValue):
             self.set_value(value, is_percentage=True)
 
     def on_mousebuttondown(self, event):
-        self.increment = self.update_increment()
-        b = event.button
-        assert self.modifiable, 'This is a derivated value. It is not directly modifiable.'
-        if not type(self.value) is str:
-            if b == 5 and (self.max is None or float(self.value) + self.increment <= self.max):  # rueda abajo
-                self.value += self.increment
-            elif b == 4 and float(self.value) - self.increment >= self.min:  # rueda arriba
-                self.value += -self.increment
+        if event.origin == self:
+            self.increment = self.update_increment()
+            b = event.data['button']
+            assert self.modifiable, 'This is a derivated value. It is not directly modifiable.'
+            if not type(self.value) is str:
+                if b == 5 and (self.max is None or float(self.value) + self.increment <= self.max):  # rueda abajo
+                    self.value += self.increment
+                elif b == 4 and float(self.value) - self.increment >= self.min:  # rueda arriba
+                    self.value += -self.increment
 
-            if event.button in (4, 5):
-                self.increment = 0
-                self.value = round(self.value, 4)
-                self.parent.elevate_changes(self.value, self.unit)
+                if event.data['button'] in (4, 5):
+                    self.increment = 0
+                    self.value = round(self.value, 4)
+                    self.parent.elevate_changes(self.value, self.unit)
 
     def clear(self):
         self.value = ''

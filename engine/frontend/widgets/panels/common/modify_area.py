@@ -13,12 +13,12 @@ class ModifyArea(BaseWidget):
         self.rect = self.image.get_rect(topleft=(x, y))
 
     def on_mousebuttondown(self, event):
-        if event.button in (4, 5) and self.ready:
+        if event.data['button'] in (4, 5) and self.ready and event.origin == self:
             mouse.set_pos(self.rect.center)
         delta = 0
-        if event.button == 4:
+        if event.data['button'] == 4:
             delta = -1
-        elif event.button == 5:
+        elif event.data['button'] == 5:
             delta = +1
 
         if self.marker is not None and self.parent.visible_markers:

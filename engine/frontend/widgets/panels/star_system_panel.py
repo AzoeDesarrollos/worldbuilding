@@ -248,7 +248,7 @@ class ListedStar(ColoredBody):
     enabled = True
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             self.parent.parent.current.set_star(self.object_data)
             self.parent.remove_listed(self)
             self.kill()
@@ -282,7 +282,7 @@ class SetupButton(TextButton):
         super().__init__(parent, name, x, y)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             sistema = self.parent.current.current
             self.parent.create_button(sistema)
             self.parent.current.erase()
@@ -297,7 +297,7 @@ class DissolveButton(TextButton):
         super().__init__(parent, name, x, y)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.orign == self:
             system = self.parent.current.current
             Systems.dissolve_system(system)
             self.parent.stars_area.show()
@@ -312,7 +312,7 @@ class SystemButton(ColoredBody):
         system_data.idx = idx
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             if self.object_data.letter is not None:
                 self.parent.show_current(self.object_data)
             else:
@@ -333,5 +333,6 @@ class UndoButton(TextButton):
         super().__init__(parent, name, x, y)
 
     def on_mousebuttondown(self, event):
-        self.parent.current.unset_stars()
-        self.disable()
+        if event.origin == self:
+            self.parent.current.unset_stars()
+            self.disable()

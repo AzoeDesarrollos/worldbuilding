@@ -368,7 +368,7 @@ class AddAsteroidButton(TextButton):
         self.rect.right = x
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.add_button()
 
 
@@ -378,7 +378,7 @@ class DelAsteroidButton(TextButton):
         self.rect.right = x
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.current.destroy_button()
 
 
@@ -386,7 +386,7 @@ class AsteroidButton(ColoredBody):
     enabled = True
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             self.parent.show_current(self.object_data)
             self.parent.parent.select_one(self)
             self.parent.parent.button_del.enable()

@@ -1,4 +1,5 @@
 from pygame import Surface, transform, SRCALPHA, Color
+from engine.backend.eventhandler import EventHandler
 from math import sin, cos, radians, sqrt
 from ..meta import Meta
 
@@ -27,13 +28,13 @@ class Handle(Meta):
         return transform.rotate(image, 45.0)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.pressed = True
             self.parent.set_active(self)
-        return self
+        EventHandler.trigger('SetOrigin', self, {'origin': self})
 
     def on_mousebuttonup(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.pressed = False
             self.parent.set_active()
 

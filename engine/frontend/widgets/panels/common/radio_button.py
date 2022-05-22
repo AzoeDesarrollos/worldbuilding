@@ -26,7 +26,7 @@ class RadioButton(BaseWidget):
         return img
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.select_one(self)
 
     def select(self):

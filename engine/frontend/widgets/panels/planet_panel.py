@@ -96,20 +96,21 @@ class PlanetPanel(BasePanel):
             btn.select()
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
-            super().on_mousebuttondown(event)
+        if event.origin == self:
+            if event.data['button'] == 1:
+                super().on_mousebuttondown(event)
 
-        elif event.button in (4, 5):
-            buttons = self.planet_buttons.widgets()
-            if self.area_buttons.collidepoint(event.pos) and len(buttons):
-                last_is_hidden = not buttons[-1].is_visible
-                first_is_hidden = not buttons[0].is_visible
-                if event.button == 4 and first_is_hidden:
-                    self.curr_y += NUEVA_LINEA
-                elif event.button == 5 and last_is_hidden:
-                    self.curr_y -= NUEVA_LINEA
-                planets = self.planet_buttons.get_widgets_from_layer(Systems.get_current().id)
-                self.sort_buttons(planets, overriden=True)
+            elif event.data['button'] in (4, 5):
+                buttons = self.planet_buttons.widgets()
+                if self.area_buttons.collidepoint(event.data['pos']) and len(buttons):
+                    last_is_hidden = not buttons[-1].is_visible
+                    first_is_hidden = not buttons[0].is_visible
+                    if event.data['button'] == 4 and first_is_hidden:
+                        self.curr_y += NUEVA_LINEA
+                    elif event.data['button'] == 5 and last_is_hidden:
+                        self.curr_y -= NUEVA_LINEA
+                    planets = self.planet_buttons.get_widgets_from_layer(Systems.get_current().id)
+                    self.sort_buttons(planets, overriden=True)
 
     def show(self):
         super().show()
@@ -346,11 +347,12 @@ class Unit(Meta):
         self.create()
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
-            self.cycle(+1)
+        if event.origin == self:
+            if event.data['button'] == 1:
+                self.cycle(+1)
 
-        elif event.button == 3:
-            self.cycle(-1)
+            elif event.data['button'] == 3:
+                self.cycle(-1)
 
     def cycle(self, delta):
         self.curr_idx += delta
@@ -380,7 +382,7 @@ class ShownMass(BaseWidget):
         self.mass_rect = Rect(self.rect.right + 3, self.rect.y, 150, 15)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             self.show_jovian_mass = not self.show_jovian_mass
 
     def show_mass(self):
@@ -418,7 +420,7 @@ class AddPlanetButton(TextButton):
         self.rect.right = x
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.current.create_button()
             self.parent.enable_buttons()
 
@@ -429,7 +431,7 @@ class DelPlanetButton(TextButton):
         self.rect.right = x
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.current.destroy_button()
 
 
@@ -439,10 +441,10 @@ class CreatedPlanet(ColoredBody):
         self.enabled = False
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.set_planet(self.object_data)
             self.parent.parent.select_one(self)
-        return self
+        # return self
 
     def update(self):
         if self.object_data.habitable is True:

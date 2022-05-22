@@ -1,4 +1,5 @@
 from engine.frontend.globales import WidgetHandler, Renderer, COLOR_BOX, COLOR_TEXTO, render_textrect, NUEVA_LINEA
+from engine.backend.eventhandler import EventHandler
 from pygame.sprite import Sprite
 from pygame import font, Rect
 
@@ -21,6 +22,8 @@ class BaseWidget(Sprite):
         self.parent = parent
         if self.parent is not None:
             self.layer = self.parent.layer + 1
+        EventHandler.register(self.on_mousebuttondown, 'onMouseButtonDown')
+        EventHandler.register(self.on_mousebuttonup, 'onMouseButtonUp')
 
     @staticmethod
     def crear_fuente(size, underline=False, bold=False):

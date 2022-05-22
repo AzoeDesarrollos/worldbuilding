@@ -436,22 +436,23 @@ class PercentageCell(BaseWidget, IncrementalValue):
         return self.grandparent
 
     def on_mousebuttondown(self, event):
-        self.increment = self.update_increment()
-        value = 0
-        if event.button == 1 and self.enabled:
-            for element in self.grandparent.elements:
-                element.percent.deselect()
-            self.enabled = True
-            self.select()
-            self.grandparent.set_current(self.parent)
-            return self.__repr__()
-        elif event.button == 5 and float(self.value) + self.increment <= 100:
-            value = round(float(self.value) + self.increment, 3)
-        elif event.button == 4 and float(self.value) - self.increment >= 0:
-            value = round(float(self.value) - self.increment, 3)
-        if event.button in (4, 5):
-            self.value = str(value)
-            self.increment = 0
+        if event.origin == self:
+            self.increment = self.update_increment()
+            value = 0
+            if event.data['button'] == 1 and self.enabled:
+                for element in self.grandparent.elements:
+                    element.percent.deselect()
+                self.enabled = True
+                self.select()
+                self.grandparent.set_current(self.parent)
+                return self.__repr__()
+            elif event.data['button'] == 5 and float(self.value) + self.increment <= 100:
+                value = round(float(self.value) + self.increment, 3)
+            elif event.data['button'] == 4 and float(self.value) - self.increment >= 0:
+                value = round(float(self.value) - self.increment, 3)
+            if event.data['button'] in (4, 5):
+                self.value = str(value)
+                self.increment = 0
 
     def show(self):
         super().show()
@@ -577,39 +578,40 @@ class Atmograph(BaseWidget):
         self.parent.show_pressure.update_text(pressure)
 
     def on_mousebuttondown(self, event):
-        delta_y = 0
-        n2 = self.parent.elements.widgets()[9]
-        n2_value = n2.percent.get_value()
-        vol_n2 = interpolacion_lineal(float(n2_value))
-        if vol_n2 != self.vol_n2:
-            self.reached = False
-        self.vol_n2 = interpolacion_lineal(float(n2_value))
+        if event.origin == self:
+            delta_y = 0
+            n2 = self.parent.elements.widgets()[9]
+            n2_value = n2.percent.get_value()
+            vol_n2 = interpolacion_lineal(float(n2_value))
+            if vol_n2 != self.vol_n2:
+                self.reached = False
+            self.vol_n2 = interpolacion_lineal(float(n2_value))
 
-        warning_text = 'Pressure at sea level depends on Nitrogen concentration.' \
-                       ' Please, fill its value before proceeding.'
-        assert n2_value, warning_text
-        max_pressure, min_pressure = atmo(float(n2_value), self.rect)
+            warning_text = 'Pressure at sea level depends on Nitrogen concentration.' \
+                           ' Please, fill its value before proceeding.'
+            assert n2_value, warning_text
+            max_pressure, min_pressure = atmo(float(n2_value), self.rect)
 
-        if event.button == 1 and not self.reached:
-            selected_pressure = (max_pressure + min_pressure) // 2
-            self.draw_on_canvas(min_pressure, max_pressure, selected_pressure)
+            if event.data['button'] == 1 and not self.reached:
+                selected_pressure = (max_pressure + min_pressure) // 2
+                self.draw_on_canvas(min_pressure, max_pressure, selected_pressure)
 
-        elif self.reached:
-            selected_pressure = self.pressure
-            self.draw_on_canvas(min_pressure, max_pressure, selected_pressure)
+            elif self.reached:
+                selected_pressure = self.pressure
+                self.draw_on_canvas(min_pressure, max_pressure, selected_pressure)
 
-        elif event.button == 4:
-            if self.max_p < (self.pressure - 1) < self.min_p:
-                delta_y = -1
+            elif event.data['button'] == 4:
+                if self.max_p < (self.pressure - 1) < self.min_p:
+                    delta_y = -1
 
-        elif event.button == 5:
-            if self.max_p < (self.pressure + 1) < self.min_p:
-                delta_y = +1
+            elif event.data['button'] == 5:
+                if self.max_p < (self.pressure + 1) < self.min_p:
+                    delta_y = +1
 
-        if event.button in (4, 5) and delta_y:
-            self.pressure += delta_y
+            if event.data['button'] in (4, 5) and delta_y:
+                self.pressure += delta_y
 
-        return self.name
+            # return self.name
 
     def on_keydown(self, event):
         if event.origin == self.name:
@@ -663,7 +665,7 @@ class Atmograph(BaseWidget):
 
 class ListedPlanet(ColoredBody):
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1  and event.origin == self:
             if 'pressure_at_sea_level' not in self.object_data.atmosphere:
                 self.parent.parent.show_pressure.clear()
             self.parent.select_one(self)
@@ -681,9 +683,10 @@ class AvailablePlanets(ListedArea):
         super().show()
 
     def on_mousebuttondown(self, event):
-        super().on_mousebuttondown(event)
-        self.parent.curr_planet = None
-        self.parent.show_name()
+        if event.origin == self:
+            super().on_mousebuttondown(event)
+            self.parent.curr_planet = None
+            self.parent.show_name()
 
 
 class ShownPressure(BaseWidget):
@@ -706,7 +709,7 @@ class ShownPressure(BaseWidget):
         self.finished_text = ''
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and not self.locked:
+        if event.data['button'] == 1 and not self.locked and event.origin == self:
             self.update_text('')
 
         return self

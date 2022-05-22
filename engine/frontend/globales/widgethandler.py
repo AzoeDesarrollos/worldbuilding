@@ -21,6 +21,7 @@ class WidgetHandler:
         cls.contents = LayeredUpdates()
         cls.clock = time.Clock()
         EventHandler.register(cls.switch_mode, 'SwitchMode')
+        EventHandler.register(cls.set_origin, 'SetOrigin')
 
     @classmethod
     def add_widget(cls, widget):
@@ -42,9 +43,8 @@ class WidgetHandler:
         cls.locked = False
 
     @classmethod
-    def set_origin(cls, widget):
-        if widget is not None:
-            cls.origin = widget
+    def set_origin(cls, e):
+        cls.origin = e.data['origin']
 
     @classmethod
     def set_active(cls, widget=None):
@@ -99,7 +99,7 @@ class WidgetHandler:
                 widgets = [i for i in cls.contents.sprites() if i.rect.collidepoint(e.pos)]
                 widgets.sort(key=lambda o: o.layer, reverse=True)
                 if not cls.locked or widgets[0] is cls.the_one or widgets[0] is cls.active:
-                    cls.set_origin(widgets[0].on_mousebuttondown(e))
+                    EventHandler.trigger('onMouseButtonDown', widgets[0], {'button': e.button, 'pos': e.pos})
                 else:
                     cls.the_one.blink()
 
@@ -107,9 +107,9 @@ class WidgetHandler:
                 widgets = [i for i in cls.contents.sprites() if i.rect.collidepoint(e.pos)]
                 widgets.sort(key=lambda o: o.layer, reverse=True)
                 if cls.active is None:
-                    widgets[0].on_mousebuttonup(e)
+                    EventHandler.trigger('onMouseButtonUp', widgets[0], {'button': e.button, 'pos': e.pos})
                 else:
-                    cls.active.on_mousebuttonup(e)
+                    EventHandler.trigger('onMouseButtonUp', cls.active, {'button': e.button, 'pos': e.pos})
 
             elif e.type == MOUSEMOTION:
                 x, y = e.pos

@@ -451,9 +451,10 @@ class PlanetaryOrbitPanel(BaseWidget):
 
 class OrbitableObject(ColoredBody):
     def on_mousebuttondown(self, event):
-        self.parent.parent.hide_orbit_types()
-        self.parent.select_one(self)
-        self.parent.parent.select_planet(self.object_data)
+        if event.origin == self:
+            self.parent.parent.hide_orbit_types()
+            self.parent.select_one(self)
+            self.parent.parent.select_planet(self.object_data)
 
 
 class AvailablePlanets(ListedArea):
@@ -498,8 +499,8 @@ class ObjectButton(ColoredBody):
         else:
             name = str(self.object_data)
         obj: str = name + ' @{:~}'.format(orbit)
-        self.img_uns = self.f1.render(obj, True, self.color, COLOR_AREA)
-        self.img_sel = self.f2.render(obj, True, self.color, COLOR_AREA)
+        self.img_uns = self.f1.render(obj, True, self._color, COLOR_AREA)
+        self.img_sel = self.f2.render(obj, True, self._color, COLOR_AREA)
         self.img_dis = self.img_uns
         self.max_w = self.img_sel.get_width()
         self.image = self.img_uns
@@ -511,7 +512,7 @@ class ObjectButton(ColoredBody):
             self.parent.orbit_descriptions.add(self.info)
 
     def on_mousebuttondown(self, event):
-        if self.enabled:
+        if self.enabled and event.origin == self:
             self.parent.select_one(self)
             if not self.parent.is_added(self.object_data) and self.parent.current is not None:
                 orbit, marker = self.parent.add_new(self.object_data)
@@ -604,9 +605,9 @@ class Marker(Meta, IncrementalValue):
             self.parent.anchor_maker(self)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             self.force_selection()
-        return self
+        EventHandler.trigger('SetOrigin', self, {'origin': self})
 
     def tune_value(self, delta):
         if not self.locked:
@@ -690,7 +691,7 @@ class SetOrbitButton(TextButton):
         self.disable()
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.link_satellite_to_planet(self.linked_marker)
 
     def link(self, marker):
@@ -702,7 +703,7 @@ class AddResonanceButton(TextButton):
         super().__init__(parent, 'Set to Resonance', x, y)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             assert self.parent.selected_marker.obj is not None, "The orbit is empty."
             satellite = self.parent.selected_marker.obj
             planet = self.parent.current
@@ -730,6 +731,7 @@ class AddResonanceButton(TextButton):
 
 class ToggleSatellitesButton(ToggleableButton):
     def on_mousebuttondown(self, event):
-        if self.parent.current is not None:
-            self.parent.select_planet(self.parent.current, force=True)
-        super().on_mousebuttondown(event)
+        if event.origin == self:
+            if self.parent.current is not None:
+                self.parent.select_planet(self.parent.current, force=True)
+            super().on_mousebuttondown(event)

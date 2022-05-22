@@ -343,7 +343,7 @@ class AddMoonButton(TextButton):
         self.rect.right = x
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.add_button(self.parent.current.current)
 
 
@@ -353,7 +353,7 @@ class DelMoonButton(TextButton):
         self.rect.right = x
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.current.destroy_button()
 
 
@@ -361,7 +361,7 @@ class SatelliteButton(ColoredBody):
     enabled = True
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             self.parent.show_current(self.object_data)
             self.parent.parent.select_one(self)
             self.parent.parent.button_del.enable()
@@ -440,7 +440,7 @@ class CopyCompositionButton(Meta):
         self.rect = self.image.get_rect(center=self.rect.center)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.current = next(self.current_cycler)
             d = {'water ice': 0, 'silicates': 0, 'iron': 0}
             for element in d:
@@ -502,23 +502,24 @@ class RandomCompositionButton(Meta):
         self.parent.write_button_desc(self)
 
     def on_mousebuttondown(self, event):
-        self.parent.clear_name()
-        d = {}
-        if event.button == 1 and self.enabled:
-            materials = ['silicates', 'water ice', 'iron']
-            primary = choice(materials)
-            materials.remove(primary)
-            value = round(roll(0.0, 100.0), 2)
-            new_max = value
-            d[primary] = value
+        if event.origin == self:
+            self.parent.clear_name()
+            d = {}
+            if event.data['button'] == 1 and self.enabled:
+                materials = ['silicates', 'water ice', 'iron']
+                primary = choice(materials)
+                materials.remove(primary)
+                value = round(roll(0.0, 100.0), 2)
+                new_max = value
+                d[primary] = value
 
-            delta = 100-value
-            secondary = choice(materials)
-            materials.remove(secondary)
-            value = round(roll(0.0, delta), 2)
-            new_max += value
-            d[secondary] = value
+                delta = 100-value
+                secondary = choice(materials)
+                materials.remove(secondary)
+                value = round(roll(0.0, delta), 2)
+                new_max += value
+                d[secondary] = value
 
-            tertiary = materials[0]
-            d[tertiary] = 100-new_max
-            self.parent.current.paste_composition(d)
+                tertiary = materials[0]
+                d[tertiary] = 100-new_max
+                self.parent.current.paste_composition(d)

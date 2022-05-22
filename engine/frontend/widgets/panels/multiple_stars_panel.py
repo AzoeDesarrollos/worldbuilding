@@ -130,7 +130,7 @@ class SystemsType(SystemType):
 class ListedSystem(ListedBody):
 
     def on_mousebuttondown(self, event):
-        if event.button == 1:
+        if event.data['button'] == 1 and event.origin == self:
             self.parent.parent.current.set_star(self.object_data)
             self.parent.remove_listed(self)
             self.kill()

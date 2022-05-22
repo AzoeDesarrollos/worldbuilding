@@ -17,5 +17,5 @@ class ToggleableButton(Meta):
         self.method = method
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.method()
