@@ -55,7 +55,7 @@ def interactive_loop(tilt):
             drawn = False
 
     drawn = False
-    for i in range(planet.top - 50, planet.bottom + 50, 14):  # orbital plane
+    for i in range(planet.top - 50, planet.bottom + 50, 14):  # the line perpendicular to the orbital plane
         if not drawn:
             draw.line(frame, gris, [planet.centerx, i], [planet.centerx, i + 14], width=1)
             drawn = True
@@ -168,12 +168,11 @@ def axial_loop(planet):
             tilt = 0
 
         tilt += delta/mod
-        tilt = tilt if planet.tilt == 'Not set' else planet.tilt.m
         screen.fill(COLOR_BOX)
         panel.fill(COLOR_BOX)
         interactive_loop(tilt)
         graph_seasonal_var(panel, tilt)
-        print_info(panel, planet, 165, 0, 410)
+        print_info(panel, planet, round(tilt, 3), 165, 0, 410)
         screen.blit(panel, panel_rect)
         display.update()
     return q(tilt, 'degree')

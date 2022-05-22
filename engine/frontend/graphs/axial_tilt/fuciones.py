@@ -87,13 +87,16 @@ def set_latitude(events, panel, x, y, latitude):
     return latitude
 
 
-def print_info(panel, planet, x, y, w):
+def print_info(panel, planet, tilt, x, y, w):
     f = font.SysFont('Verdana', 15)
     if planet.tilt == 'Not set':
-        text = f"The planet {str(planet)}'s axial tilt has not been set yet.\n\n"
-        text += "Set the axial tilt using the Up and Down keys. Hold Ctrl to increase precision."
+        text = f"The planet {str(planet)}'s axial tilt has not been set yet. It's current tilt is {tilt}°"
+    elif planet.tilt.m == tilt:
+        text = f'The planet {str(planet)} had an axial tilt of {planet.tilt.m}°.\nIt is now being reseted.'
     else:
-        text = f'The planet {str(planet)} has an axial tilt of {planet.tilt.m}°.'
+        text = f'The planet {str(planet)} had an axial tilt of {planet.tilt.m}°.\nIt is now of {tilt}°.'
+
+    text += "\n\nSet the axial tilt using the Up and Down keys. Hold Ctrl to increase precision."
 
     render = render_textrect(text, f, w, COLOR_SELECTED, COLOR_BOX)
     render_rect = render.get_rect(topleft=(x, y))
