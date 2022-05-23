@@ -46,8 +46,7 @@ class MultipleStarsPanel(BaseWidget):
 
     def create_button(self, system_data):
         if system_data not in self.systems:
-            idx = len([s for s in self.systems if system_data.compare(s) is True])
-            button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
+            button = SystemButton(self, system_data, self.curr_x, self.curr_y)
             self.systems.append(system_data)
             self.system_buttons.add(button)
             self.properties.add(button)

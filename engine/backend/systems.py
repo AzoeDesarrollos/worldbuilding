@@ -278,8 +278,10 @@ class Systems:
 
         copy_data = data.copy()
         for key in keys:
-            for idx in copy_data[key]:
+            idxs = [i for i in copy_data[key]]
+            for idx in idxs:
                 datos = copy_data[key][idx]
+                star = None
                 if 'system' in datos:
                     system = cls.get_system_by_id(datos['system'])
                 elif 'star_id' in copy_data[key][idx]:
@@ -293,6 +295,8 @@ class Systems:
                     body = system.get_astrobody_by(idx, tag_type='id')
                     if body is not False and body.flagged:
                         del data[key][idx]
+                elif star is None or star.flagged:
+                    del data[key][idx]
 
         guardar_json(ruta, data)
 

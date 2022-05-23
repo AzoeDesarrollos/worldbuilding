@@ -29,16 +29,16 @@ class DoublePlanetsPanel(BaseWidget):
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.systems_area = self.image.fill(COLOR_AREA, [0, 280, 380, 130])
         self.curr_s_x = self.systems_area.x
-        self.curr_s_y = self.systems_area.y+21
+        self.curr_s_y = self.systems_area.y + 21
         self.system_buttons = Group()
         self.systems = []
         self.planet_buttons = Group()
         self.properties = Group()
         self.primary_planets = {}
         self.setup_button = SetupButton(self, 484, 416)
-        self.undo_button = UndoButton(self, self.setup_button.rect.left-50, 416)
+        self.undo_button = UndoButton(self, self.setup_button.rect.left - 50, 416)
         self.f2 = self.crear_fuente(14, underline=True)
-        self.write('Potential Planets', self.f2, COLOR_AREA, x=self.area_buttons.x+3, y=self.area_buttons.y)
+        self.write('Potential Planets', self.f2, COLOR_AREA, x=self.area_buttons.x + 3, y=self.area_buttons.y)
         self.write('Double Planets', self.f2, COLOR_AREA, x=self.systems_area.x + 3, y=self.systems_area.y + 2)
 
         self.properties.add(self.planets_area, self.undo_button, self.setup_button, layer=1)
@@ -166,7 +166,7 @@ class PotentialPlanet(ListedBody):
     enabled = True
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.parent.current.set_bodies(self.object_data)
             created = self.parent.parent.create_buttons(self.object_data)
             self.parent.remove_listed(self)
@@ -206,7 +206,7 @@ class CreatedPlanet(ColoredBody):
         self.enabled = False
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.current.set_bodies(self.object_data)
             self.parent.suggest()
         return self
@@ -226,8 +226,9 @@ class UndoButton(TextButton):
         self.rect.right = x
 
     def on_mousebuttondown(self, event):
-        self.parent.current.unset_planets()
-        self.disable()
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
+            self.parent.current.unset_planets()
+            self.disable()
 
 
 class SetupButton(TextButton):
@@ -238,7 +239,7 @@ class SetupButton(TextButton):
         super().__init__(parent, name, x, y)
 
     def on_mousebuttondown(self, event):
-        if event.button == 1 and self.enabled:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.planets_area.unlock()
             sistema = self.parent.current.current
             self.parent.create_system_button(sistema)
