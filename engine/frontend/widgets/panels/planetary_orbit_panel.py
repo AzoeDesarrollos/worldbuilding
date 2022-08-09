@@ -589,7 +589,7 @@ class Marker(Meta, IncrementalValue):
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and event.origin == self:
             self.force_selection()
-        EventHandler.trigger('SetOrigin', self, {'origin': self})
+            EventHandler.trigger('SetOrigin', self, {'origin': self})
 
     def tune_value(self, delta):
         if not self.locked:

@@ -76,12 +76,15 @@ class StarSystemBody(Flagable):
 
     @rotation.setter
     def rotation(self, new: q):
-        if type(self._rotation) in (int, q):
-            self._rotation = new.to(self.unit + '_rotation')
-            if self.reference_rotation is None:
-                self.reference_rotation = round(new.to('hours/day').m, 3)
+        if type(new) is q:
+            if type(self._rotation) in (int, q):
+                self._rotation = new.to(self.unit + '_rotation')
+                if self.reference_rotation is None:
+                    self.reference_rotation = round(new.to('hours/day').m, 3)
+            else:
+                self.reset_rotation()
         else:
-            self.reset_rotation()
+            self._rotation = new
 
     def reset_rotation(self):
         formation = self.formation.to('years').m
@@ -176,7 +179,7 @@ class Ellipse:
     focus = None
 
     def __init__(self, a, e):
-        assert 0 <= e < 1, 'eccentricity has to be greater than 0\nbut less than 1.'
+        assert 0 <= float(e.m) < 1, 'eccentricity has to be greater than 0\nbut less than 1.'
         self._a = float(a.m)
         self._e = float(e.m)
         self._b = self._a * sqrt(1 - (self._e ** 2))

@@ -2,8 +2,9 @@
   "texts":{
     "text": "You {verb} a{n} {planet_type}.{orbit}\n\nIts orbital eccentricity value should be {e}.\n\nIts orbital inclination should be {i}. {extra}",
     "tno": "You {verb} a{extra}Kupier Belt object.{orbit}",
-    "belt": "You {verb} a Small Solar System Body. {orbit}"
-    },
+    "belt": "You {verb} a Small Solar System Body. {orbit}",
+    "binary": "You {verb} a Binary Planet System. {orbit}"
+  },
  "classical":{
    "n": "Classical",
    "e": "lower than 0.2",

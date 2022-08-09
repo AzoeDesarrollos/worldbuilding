@@ -282,11 +282,12 @@ class OrbitPanel(BaseWidget):
         body_a = a.linked_astrobody
         body_b = b.linked_astrobody
 
-        if main_body.clase == 'Dwarf Planet' or main_body.celestial_type == 'asteroid':
-            if body_a.clase == 'Dwarf Planet' or body_a.celestial_type == 'asteroid':
-                valid_a = True
-            if body_b.clase == 'Dwarf Planet' or body_b.celestial_type == 'asteroid':
-                valid_b = True
+        if main_body.celestial_type != 'system':
+            if main_body.clase == 'Dwarf Planet' or main_body.celestial_type == 'asteroid':
+                if body_a.clase == 'Dwarf Planet' or body_a.celestial_type == 'asteroid':
+                    valid_a = True
+                if body_b.clase == 'Dwarf Planet' or body_b.celestial_type == 'asteroid':
+                    valid_b = True
 
         return valid_a, valid_b
 
@@ -911,7 +912,7 @@ class AvailablePlanets(ListedArea):
     def show(self):
         for system in Systems.get_systems():
             idx = system.id
-            population = [i for i in system.planets + system.asteroids if i.orbit is None]
+            population = [i for i in system.planets + system.asteroids + system.binary_planets if i.orbit is None]
             self.populate(population, layer=idx)
         super().show()
 
@@ -1141,48 +1142,50 @@ class Recomendation(BaseWidget):
         data = {'extra': ''}
         planets_in_system = len(Systems.get_current().planets)
         e = round(0.584 * pow(planets_in_system, -1.2), 3) if planets_in_system > 1 else None
-        if planet.habitable and orbit.temperature == 'habitable':
-            data.update(self.recomendation['habitable'].copy())
-            if hasattr(star, 'habitable_orbit'):
-                # though this may never come into play.
-                if orbit.a.m <= star.habitable_orbit:
-                    data = self.recomendation['inner'].copy()
-            if e is not None and e <= 0.2:
-                data.update({'e': e})
+        if planet.celestial_type == 'planet':
+            if planet.habitable and orbit.temperature == 'habitable':
+                data.update(self.recomendation['habitable'].copy())
+                if hasattr(star, 'habitable_orbit'):
+                    # though this may never come into play.
+                    if orbit.a.m <= star.habitable_orbit:
+                        data = self.recomendation['inner'].copy()
+                if e is not None and e <= 0.2:
+                    data.update({'e': e})
 
-        elif planet.clase == 'Terrestial Planet':
-            data.update(self.recomendation['inner'].copy())
-            if e is not None and e <= 0.2:
-                data.update({'e': e})
+            elif planet.clase == 'Terrestial Planet':
+                data.update(self.recomendation['inner'].copy())
+                if e is not None and e <= 0.2:
+                    data.update({'e': e})
 
-        elif planet.clase == 'Dwarf Planet' or planet.celestial_type == 'asteroid':
-            gas_giants = Systems.get_current().get_bodies_in_orbit_by_types('Gas Giant', 'Super Jupiter', 'Puffy Giant')
-            terrestial_planets = Systems.get_current().get_bodies_in_orbit_by_types('Terrestial')
-            gas_giants.sort(key=lambda g: g.orbit.a.m, reverse=True)
-            terrestial_planets.sort(key=lambda g: g.orbit.a.m, reverse=True)
-            lim_min, lim_max = 0, orbit.a.m + 10
-            lim_terra = 0
-            if len(gas_giants):
-                last_gas_giant = gas_giants[0]
-                first_gas_giant = gas_giants[-1]
-                lim_min = last_gas_giant.orbit.a.m
-                lim_max = first_gas_giant.orbit.a.m
-            if len(terrestial_planets):
-                last_terrestial = terrestial_planets[0]
-                lim_terra = last_terrestial.orbit.a.m
+            elif planet.clase == 'Dwarf Planet' or planet.celestial_type == 'asteroid':
+                giant_types = ['Gas Giant', 'Super Jupiter', 'Puffy Giant']
+                gas_giants = Systems.get_current().get_bodies_in_orbit_by_types(*giant_types)
+                terrestial_planets = Systems.get_current().get_bodies_in_orbit_by_types('Terrestial')
+                gas_giants.sort(key=lambda g: g.orbit.a.m, reverse=True)
+                terrestial_planets.sort(key=lambda g: g.orbit.a.m, reverse=True)
+                lim_min, lim_max = 0, orbit.a.m + 10
+                lim_terra = 0
+                if len(gas_giants):
+                    last_gas_giant = gas_giants[0]
+                    first_gas_giant = gas_giants[-1]
+                    lim_min = last_gas_giant.orbit.a.m
+                    lim_max = first_gas_giant.orbit.a.m
+                if len(terrestial_planets):
+                    last_terrestial = terrestial_planets[0]
+                    lim_terra = last_terrestial.orbit.a.m
 
-            if lim_min <= orbit.a.m < star.outer_boundry.m:
-                data = self.recomendation['texts']['tno']
-            elif lim_terra <= orbit.a.m < lim_max:
-                data = self.recomendation['texts']['belt']
+                if lim_min <= orbit.a.m < star.outer_boundry.m:
+                    data = self.recomendation['texts']['tno']
+                elif lim_terra <= orbit.a.m < lim_max:
+                    data = self.recomendation['texts']['belt']
 
-        elif planet.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant', 'Gas Dwarf'):
-            data = self.recomendation['giant'].copy()
-            data.update(**self.analyze_giants(planet, orbit, star, e))
-            if data.get('eccentric', False):
-                data['orbit'] = ' Eccentric Jupiters can orbit anywhere in the system.'
-            elif e is not None and 0.001 <= e <= 0.09:
-                data.update({'e': e})
+            elif planet.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant', 'Gas Dwarf'):
+                data = self.recomendation['giant'].copy()
+                data.update(**self.analyze_giants(planet, orbit, star, e))
+                if data.get('eccentric', False):
+                    data['orbit'] = ' Eccentric Jupiters can orbit anywhere in the system.'
+                elif e is not None and 0.001 <= e <= 0.09:
+                    data.update({'e': e})
 
         self.format = data
 
@@ -1300,19 +1303,22 @@ class Recomendation(BaseWidget):
 
     def create_suggestion(self, planet, temperature):
         if not type(self.format) is str:
-            base_text = self.recomendation['texts']['text']
-            if planet.habitable is True and temperature == 'habitable':
-                p = 'Habitable Planet'
-            else:
-                p = planet.clase
-            if 'planet_type' not in self.format:
-                self.format.update({'planet_type': p})
+            if planet.celestial_type != 'system':
+                base_text = self.recomendation['texts']['text']
+                if planet.habitable is True and temperature == 'habitable':
+                    p = 'Habitable Planet'
+                else:
+                    p = planet.clase
+                if 'planet_type' not in self.format:
+                    self.format.update({'planet_type': p})
 
-            vocals = 'AEIOU'
-            if self.format['planet_type'][0] in vocals:
-                self.format['n'] = 'n'
+                vocals = 'AEIOU'
+                if self.format['planet_type'][0] in vocals:
+                    self.format['n'] = 'n'
+                else:
+                    self.format['n'] = ''
             else:
-                self.format['n'] = ''
+                base_text = self.recomendation['texts']['binary']
 
             return base_text.format(**self.format) + self.resonance_text
         else:
@@ -1344,17 +1350,17 @@ class Recomendation(BaseWidget):
                 if self.rendered_rect.bottom - 6 >= self.rect.h - 3:
                     self.rendered_rect.move_ip(0, -12)
 
-    def update_suggestion(self, marker, astro_body, astro_orbit):
+    def update_suggestion(self, marker, a_body, astro_orbit):
         if not self.notified:
             self.tense = 'seem to be building'
         self._marker = marker
-        self._astro = astro_body
+        self._astro = a_body
         self._orbit = astro_orbit
-        self.suggest(astro_body, astro_orbit, Systems.get_current_star())
+        self.suggest(a_body, astro_orbit, Systems.get_current_star())
         self.analyze_orbits(marker)
-        if astro_body.clase == 'Dwarf Planet' or astro_body.celestial_type == 'asteroid':
+        if a_body.celestial_type != 'system' and a_body.clase == 'Dwarf Planet' or a_body.celestial_type == 'asteroid':
             self.append_subclases(astro_orbit, Systems.get_current_star())
-        self.show_suggestion(astro_body, astro_orbit.temperature)
+        self.show_suggestion(a_body, astro_orbit.temperature)
 
     def notify(self):
         self.notified = True

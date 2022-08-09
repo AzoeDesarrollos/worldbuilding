@@ -131,7 +131,7 @@ class SaveButton(BaseButton):
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and event.origin == self:
             EventHandler.trigger('Save', 'SaveButton', {})
-            self.parent.load_button.enable()
+            self.parent.load_button.reset()
 
 
 class LoadButton(BaseButton):
@@ -148,8 +148,12 @@ class LoadButton(BaseButton):
             if any([data[item] for item in data]):
                 return data
 
+    def reset(self):
+        if self.check_data() is not None:
+            self.enable()
+
     def on_mousebuttondown(self, event):
-        if event.origin == self:
+        if event.origin == self and self.enabled:
             data = self.check_data()
             EventHandler.trigger('LoadData', 'LoadButton', data)
 

@@ -1,6 +1,8 @@
-from .orbit import BinaryStarOrbit, BinaryPlanetOrbit
+from .orbit import BinaryStarOrbit, BinaryPlanetOrbit, PlanetOrbit
 from engine.backend.util import roll, generate_id, q
 from .general import Flagable
+from .space import Universe
+from .planet import Planet
 from math import sqrt
 
 
@@ -38,6 +40,9 @@ class AbstractBinary(Flagable):
         self.max_sep = max_sep_p + max_sep_s
         self.min_sep = min_sep_p + min_sep_s
 
+        self.primary_max_sep = max_sep_p
+        self.secondary_max_sep = max_sep_s
+
     @staticmethod
     def calculate_distances(e, ref, unit):
         max_sep = q((1 + e) * round(ref, 2), unit)
@@ -60,17 +65,14 @@ class BinarySystem(AbstractBinary):
 
     _orbit_type = BinaryStarOrbit
 
-    def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, id=None):
-        super().__init__(primary, secondary, avgsep, ep=ep, es=es)
+    def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, unit='au', id=None):
+        super().__init__(primary, secondary, avgsep, ep=ep, es=es, unit=unit)
 
         if name is None:
             self.has_name = False
         else:
             self.name = name
             self.has_name = True
-
-        self.primary.orbit = self._orbit_type(self.primary, self.secondary, self.primary_distance, self.ecc_p)
-        self.secondary.orbit = self._orbit_type(self.secondary, self.primary, self.secondary_distance, self.ecc_s)
 
         self.system_name = self.__repr__()
 
@@ -140,6 +142,8 @@ class PTypeSystem(BinarySystem):
 
     def __init__(self, primary, secondary, avgsep, ep=0, es=0, pos=None, id=None, name=None):
         super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
+        self.primary.orbit = self._orbit_type(self.primary, self.secondary, self.primary_max_sep, self.ecc_p)
+        self.secondary.orbit = self._orbit_type(self.secondary, self.primary, self.secondary_max_sep, self.ecc_s)
 
         assert self.min_sep.m > 0.1, "Stars will merge at {:~} minimum distance".format(self.min_sep)
         self.primary.set_parent(self)
@@ -187,6 +191,8 @@ class STypeSystem(BinarySystem):
 
     def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
         super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
+        self.primary.orbit = self._orbit_type(self.primary, self.secondary, self.primary_max_sep, self.ecc_p)
+        self.secondary.orbit = self._orbit_type(self.secondary, self.primary, self.secondary_max_sep, self.ecc_s)
         self.primary.set_parent(self)
         self.secondary.set_parent(self)
         self.shared_mass = primary.mass + secondary.mass
@@ -206,18 +212,38 @@ class STypeSystem(BinarySystem):
                 star.inherit(self, inner, outer, self.shared_mass)
 
 
-class PlanetaryPTypeSystem(BinarySystem):
+class PlanetaryPTypeSystem(BinarySystem, Planet):
     celestial_type = 'system'  # not really, but is a system of planets, that ocuppies the orbit of a planet, etc.
     letter = 'P'
     _orbit_type = BinaryPlanetOrbit
+    orbit = None
+    relative_size = ''
 
-    def __init__(self, primary, secondary, avg, ep=0, es=0):
-        super().__init__('None', primary, secondary, avg, ep, es)
-        # self.primary.set_parent(self)
-        # self.secondary.set_parent(self)
+    def __init__(self, star, primary, secondary, avg, ep=0, es=0):
+        super().__init__('Not Set', primary, secondary, avg, ep, es, unit='earth_radius')
+
+        # this is Planet.set_orbit(), not PlanetaryPTypeSystem.set_orbit()
+        self.primary.set_orbit(star, [secondary, self.primary_max_sep, self.ecc_p], abnormal=True)
+        self.secondary.set_orbit(star, [primary, self.secondary_max_sep, self.ecc_s], abnormal=True)
+
+        self._mass = primary.mass + secondary.mass
+        self.shared_mass = q(self._mass.m, 'earth_mass')
+        if primary.relative_size == secondary.relative_size:
+            self.relative_size = primary.relative_size
 
     def __repr__(self):
         return 'P-Type Planetary System'
+
+    def set_orbit(self, star, orbital_parameters, abnormal=False):
+        # the orbit of the whole system is a planetary orbit since it orbits a star, presumably
+        self.orbit = PlanetOrbit(star, *orbital_parameters)
+        self.temperature = 'undefined'
+        self.orbit.set_astrobody(star, self)
+        self.primary.parent = self
+        self.secondary.parent = self
+        self.parent = star
+        Universe.visibility_by_albedo()
+        return self.orbit
 
 
 def system_type(separation):

@@ -392,7 +392,7 @@ class TextArea(BaseArea):
         EventHandler.register(self.input, 'Typed', 'BackSpace', 'Fin', 'Key')
 
     def input(self, tecla):
-        if self.enabled and tecla.origin == self.name:
+        if self.enabled and tecla.origin == self:
             if tecla.tipo == 'Typed' or tecla.tipo == 'Key':
                 self.value += tecla.data['value']
 

@@ -1,8 +1,8 @@
 from engine.frontend.widgets.panels.common import ListedBody, ListedArea, ColoredBody, TextButton
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
+from .star_system_panel import SystemType, SystemButton, DissolveButton
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.binary import PlanetaryPTypeSystem
-from .star_system_panel import SystemType, SystemButton
 from engine.backend import Systems, q
 from pygame import Surface
 
@@ -37,11 +37,12 @@ class DoublePlanetsPanel(BaseWidget):
         self.primary_planets = {}
         self.setup_button = SetupButton(self, 484, 416)
         self.undo_button = UndoButton(self, self.setup_button.rect.left - 50, 416)
+        self.dissolve_button = DissolveSystemsButton(self, self.undo_button.rect.x, self.planets_area.rect.bottom + 21)
         self.f2 = self.crear_fuente(14, underline=True)
         self.write('Potential Planets', self.f2, COLOR_AREA, x=self.area_buttons.x + 3, y=self.area_buttons.y)
         self.write('Double Planets', self.f2, COLOR_AREA, x=self.systems_area.x + 3, y=self.systems_area.y + 2)
 
-        self.properties.add(self.planets_area, self.undo_button, self.setup_button, layer=1)
+        self.properties.add(self.planets_area, self.undo_button, self.setup_button, self.dissolve_button, layer=1)
 
     def populate(self, *planets, layer: str):
         if layer not in self.primary_planets:
@@ -90,20 +91,39 @@ class DoublePlanetsPanel(BaseWidget):
         self.image.fill(COLOR_AREA, [0, 441, self.rect.w, 189])
         return button
 
+    def del_button(self, system):
+        button = [i for i in self.system_buttons.widgets() if i.object_data == system][0]
+        self.systems.remove(system)
+        self.system_buttons.remove(button)
+        button.kill()
+        self.sort_buttons(self.system_buttons.widgets(), y=self.systems_area.y + 21, area=self.systems_area)
+        self.properties.remove(button)
+        self.dissolve_button.disable()
+
     def hide_buttons(self):
         for button in self.planet_buttons.widgets():
             button.hide()
 
     def create_system_button(self, system_data):
         if system_data not in self.systems:
+            Systems.get_current().add_astro_obj(system_data)
             button = SystemButton(self, system_data, self.curr_s_x, self.curr_s_y)
             self.systems.append(system_data)
             self.system_buttons.add(button)
             self.properties.add(button)
-            # self.sort_buttons(self.system_buttons.widgets())
-            # Systems.set_system(system_data)
-            # self.current.enable()
+            self.sort_buttons(self.system_buttons.widgets(), y=self.systems_area.y + 21, area=self.systems_area)
+            self.current.enable()
             # return button
+
+    def show_current(self, system):
+        self.current.erase()
+        self.current.current = system
+        self.current.reset(system)
+
+    def select_one(self, btn):
+        for button in self.system_buttons.widgets():
+            button.deselect()
+        btn.select()
 
     def suggest(self):
         primary = self.current.primary.value
@@ -149,10 +169,15 @@ class DoublesType(SystemType):
         self.erase()
         self.parent.hide_buttons()
 
+    def destroy(self):
+        self.parent.del_button(self.current)
+        self.erase()
+
     def fill(self):
         if all([str(vt.value) != '' for vt in self.properties.widgets()[0:5]]):
             if self.current is None:
-                self.current = PlanetaryPTypeSystem(*self.get_determinants())
+                star = Systems.get_current_star()
+                self.current = PlanetaryPTypeSystem(star, *self.get_determinants())
             props = ['average_separation', 'ecc_p', 'ecc_s', 'barycenter', 'max_sep', 'min_sep']
             for i, attr in enumerate(props, start=2):
                 value = getattr(self.current, attr)
@@ -245,3 +270,13 @@ class SetupButton(TextButton):
             self.parent.create_system_button(sistema)
             self.parent.current.erase()
             self.disable()
+
+
+class DissolveSystemsButton(DissolveButton):
+
+    def on_mousebuttondown(self, event):
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
+            system = self.parent.current.current
+            Systems.get_current().remove_astro_obj(system)
+            self.parent.planets_area.show()
+            self.parent.current.destroy()

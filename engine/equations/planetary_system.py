@@ -9,6 +9,7 @@ class PlanetarySystem(Flagable):
     satellites = None
     asteroids = None
     stars = None
+    binary_planets = None
     id = None
 
     aparent_brightness = None
@@ -25,6 +26,7 @@ class PlanetarySystem(Flagable):
         self.satellites = []
         self.asteroids = []
         self.astro_bodies = []
+        self.binary_planets = []
         self.star_system = star_system
         self.id = star_system.id
         if Systems.restricted_mode:
@@ -71,13 +73,14 @@ class PlanetarySystem(Flagable):
         group = self._get_astro_group(astro_obj)
 
         if astro_obj not in group:
-            if Systems.restricted_mode:
+            if Systems.restricted_mode and astro_obj.celestial_type != 'system':
                 minus_mass = astro_obj.mass.to('jupiter_mass')
                 text = 'There is not enough mass in the system to create new bodies of this type.'
                 assert minus_mass <= self.body_mass, text
                 self.body_mass -= minus_mass
             group.append(astro_obj)
-            self.astro_bodies.append(astro_obj)
+            if astro_obj.celestial_type != 'system':
+                self.astro_bodies.append(astro_obj)
             if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
                 EventHandler.trigger('RockyPlanet', self, {'system_id': self.id,
                                                            'planet': astro_obj,
@@ -89,12 +92,13 @@ class PlanetarySystem(Flagable):
     def remove_astro_obj(self, astro_obj):
         Universe.remove_astro_obj(astro_obj)
         group = self._get_astro_group(astro_obj)
-        if Systems.restricted_mode:
+        if Systems.restricted_mode and astro_obj.celestial_type != 'system':
             plus_mass = astro_obj.mass.to('jupiter_mass')
             self.body_mass += plus_mass
         group.remove(astro_obj)
         astro_obj.flag()
-        self.astro_bodies.remove(astro_obj)
+        if astro_obj.celestial_type != 'system':
+            self.astro_bodies.remove(astro_obj)
         if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
             EventHandler.trigger('RockyPlanet', self, {'system_id': self.id,
                                                        'planet': astro_obj,
@@ -109,6 +113,8 @@ class PlanetarySystem(Flagable):
             group = self.satellites
         elif astro_obj.celestial_type == 'asteroid':
             group = self.asteroids
+        elif astro_obj.celestial_type == 'system':
+            group = self.binary_planets
 
         return group
 
@@ -206,6 +212,7 @@ class RoguePlanets:
     satellites = []
     asteroids = []
     astro_bodies = []
+    binary_planets = []
 
     has_name = True
     name = 'Rogue Planets'
@@ -231,9 +238,11 @@ class RoguePlanets:
 
         if astro_obj not in group:
             group.append(astro_obj)
-            cls.astro_bodies.append(astro_obj)
             astro_obj.set_rogue()
-            astro_obj.temperature = q(2.7, 'kelvin')
+            if astro_obj.celestial_type != 'system':
+                cls.astro_bodies.append(astro_obj)
+            else:
+                astro_obj.temperature = q(2.7, 'kelvin')
             Universe.visibility_by_albedo()
             if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
                 EventHandler.trigger('RockyPlanet', 'RoguePlanets', {'system_id': cls.id,
@@ -276,7 +285,7 @@ class RoguePlanets:
         elif tag_type == 'id':
             astrobody = [body for body in cls.astro_bodies if body.id == tag_identifier]
 
-        if not(len(astrobody)):
+        if not (len(astrobody)):
             astrobody = [body for body in Universe.astro_bodies if body.id == tag_identifier]
             if len(astrobody):
                 if astrobody[0] in Universe.stars or astrobody[0].rogue is False:

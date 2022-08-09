@@ -14,6 +14,8 @@ class Universe:
 
     astro_bodies = None
 
+    binary_planets = None
+
     @classmethod
     def init(cls):
         cls.planets = []
@@ -26,6 +28,8 @@ class Universe:
         cls.distances = {}
 
         cls.astro_bodies = []
+
+        cls.binary_planets = []
 
     @classmethod
     def get_astrobody_by(cls, tag_identifier, tag_type='name', silenty=False):
@@ -49,11 +53,14 @@ class Universe:
         group = cls._get_astro_group(astro_obj)
         if astro_obj not in group:
             group.append(astro_obj)
-            cls.astro_bodies.append(astro_obj)
+            if astro_obj.celestial_type != 'system':
+                cls.astro_bodies.append(astro_obj)
         if hasattr(astro_obj, 'clase'):
             astro_obj.idx = len([i for i in group if i.clase == astro_obj.clase]) - 1
         elif hasattr(astro_obj, 'cls'):
             astro_obj.idx = len([i for i in group if i.cls == astro_obj.cls]) - 1
+        elif group == cls.binary_planets:
+            astro_obj.idx = len(group) - 1
 
     @classmethod
     def remove_astro_obj(cls, astro_obj):
@@ -71,6 +78,8 @@ class Universe:
             group = cls.asteroids
         elif astro_obj.celestial_type == 'star':
             group = cls.stars
+        elif astro_obj.celestial_type == 'system':
+            group = cls.binary_planets
 
         return group
 
@@ -92,7 +101,10 @@ class Universe:
                     # this chunk is for binary pairs or single stars
                     if star == body.find_topmost_parent(body):  # primary star
                         ab = round(q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs'), 3)
-                        cls.distances[body.id][star.id] = body.orbit.a
+                        if body.orbit.subtype != 'PlanetaryBinary':
+                            cls.distances[body.id][star.id] = body.orbit.a
+                        else:
+                            cls.distances[body.id][star.id] = body.parent.orbit.a
                     elif star in body.orbit.star:  # primary star's companion (in case of an S-Type System)
                         x1, y1, z1 = body.find_topmost_parent(body).position
                         x1 = body.orbit.a.m  # chapuza
@@ -115,7 +127,7 @@ class Universe:
 
     @classmethod
     def visibility_by_albedo(cls):
-        to_see = cls.planets + cls.satellites + cls.asteroids
+        to_see = cls.planets + cls.satellites + cls.asteroids  # + cls.binary_planets
         to_see = [i for i in to_see if i.orbit is not None or i.rogue is True]
         for i, body in enumerate(to_see):
             if body.orbit is not None:
@@ -134,7 +146,11 @@ class Universe:
             if body.orbit is not None:
                 cls.visibility_of_stars(body)
                 stars = [star for star in body.orbit.star]
-                x = body.orbit.a.to('m').m  # position of the Observer's planet
+                # position of the Observer's planet
+                if body.orbit.subtype != 'PlanetaryBinary':
+                    x = body.orbit.a.to('m').m
+                else:
+                    x = body.parent.orbit.a.to('m').m
             else:
                 stars = Systems.get_only_stars()
                 x = body.position[0]

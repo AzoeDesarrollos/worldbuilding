@@ -46,7 +46,7 @@ class PlanetPanel(BasePanel):
                         'atmosphere': planet.atmosphere,
                         'composition': planet.composition,
                         'clase': planet.clase,
-                        'system': system.id,
+                        'system': system.id,  # the ID of the system is the same as the its star's ID
                         'albedo': planet.albedo.m,
                         'tilt': planet.tilt.m if type(planet.tilt) is not str else planet.tilt
                     }

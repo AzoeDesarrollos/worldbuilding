@@ -1,8 +1,9 @@
+from .orbit import PlanetOrbit, SatelliteOrbit, from_satellite_resonance, BinaryPlanetOrbit
 from engine.backend.util import generate_id, molecular_weight, q, albedos
-from .orbit import PlanetOrbit, SatelliteOrbit, from_satellite_resonance
 from .general import BodyInHydrostaticEquilibrium
 from .lagrange import get_lagrange_points
 from math import sqrt, pi, pow
+from .space import Universe
 from pygame import Color
 
 
@@ -53,7 +54,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.unit = unit
         self.idx = data.get('idx', 0)
         if 'parent' in data and data['parent'].is_a_system:
-            self.set_parent(data['parent'])
+            self.set_parent(data['parent'].star_system)
         self._mass = None if not mass else mass
         self._radius = None if not radius else radius
         self._gravity = None if not gravity else gravity
@@ -160,22 +161,28 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.temperature = q(self._temperature, 'earth_temperature').to('celsius')
         return t
 
-    def get_temperature(self):
-        if self.rogue is False:
-            star = self.orbit.star
-            orbit = self.orbit.a
-            t = planet_temperature(star.mass.m, orbit.m, float(self.albedo.m), self.greenhouse.m)
-            return t
-        else:
-            return q(2.7, 'Kelvin')  # temperature of the vacuum of space.
+    # def get_temperature(self):
+    #     if self.rogue is False:
+    #         star = self.orbit.star
+    #         orbit = self.orbit.a
+    #         t = planet_temperature(star.mass.m, orbit.m, float(self.albedo.m), self.greenhouse.m)
+    #         return t
+    #     else:
+    #         return q(2.7, 'Kelvin')  # temperature of the vacuum of space.
 
-    def set_orbit(self, star, orbital_parameters):
-        if star.celestial_type in ('star', 'system'):
-            self.orbit = PlanetOrbit(star, *orbital_parameters)
-            temp = star.temperature_mass
+    def set_orbit(self, star, orbital_parameters, abnormal=False):
+        if self.celestial_type != 'system' and not abnormal:
+            if star.celestial_type in ('star', 'system'):
+                self.orbit = PlanetOrbit(star, *orbital_parameters)
+                temp = star.temperature_mass
+            else:
+                self.orbit = SatelliteOrbit(*orbital_parameters)
+                temp = star.parent.temperature_mass
+            Universe.visibility_by_albedo()
         else:
-            self.orbit = SatelliteOrbit(*orbital_parameters)
-            temp = star.parent.temperature_mass
+            other = orbital_parameters.pop(0)
+            self.orbit = BinaryPlanetOrbit(self, other, *orbital_parameters)
+            temp = star.temperature_mass
 
         self.temperature = self.set_temperature(temp, self.orbit.semi_minor_axis.m)
         self.orbit.set_astrobody(star, self)

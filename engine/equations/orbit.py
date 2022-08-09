@@ -17,6 +17,8 @@ class RawOrbit:
 
     stability_overriten = False
 
+    subtype = 'Raw'
+
     def __init__(self, star, a):
         self._unit = a.u
         self.a = a
@@ -78,6 +80,8 @@ class PseudoOrbit:
 
     stability_overriten = False
 
+    subtype = 'Incomplete'
+
     def __init__(self, orbit):
         self.semi_major_axis = orbit.semi_major_axis
         self.temperature = orbit.temperature
@@ -133,13 +137,15 @@ class Orbit(Flagable, Ellipse):
     stability_overriten = False
     migrated = False
 
+    subtype = 'Orbit'
+
     def __init__(self, a, e, i, unit):
         super().__init__(a, e)
         self._unit = unit
         assert 0 <= float(i.m) <= 180, 'inclination values range from 0 to 180 degrees.'
         self._i = float(i.m)
-        self._Q = self._a * (1 + self._e)
-        self._q = -self._a * (1 - self._e)
+        self._Q = abs(self._a * (1 + self._e))
+        self._q = abs(self._a * (1 - self._e))
 
         if self._i in (0, 180):
             self.motion = 'equatorial'
@@ -166,8 +172,6 @@ class Orbit(Flagable, Ellipse):
 
         if main.celestial_type == "planet" or main.celestial_type == 'asteroid':
             self.reset_period_and_speed(main)
-
-        Universe.visibility_by_albedo()
 
     def get_planet_position(self):
         x = self._a * cos(self.true_anomaly.m)
@@ -198,8 +202,8 @@ class Orbit(Flagable, Ellipse):
     def semi_major_axis(self, quantity):
         self._a = float(quantity.m)
         self._b = self._a * sqrt(1 - pow(self._e, 2))
-        self._Q = self._a * (1 + self._e)
-        self._q = self._a * (1 - self._e)
+        self._Q = abs(self._a * (1 + self._e))
+        self._q = abs(self._a * (1 - self._e))
         if self.temperature != 'N/A':
             self._temperature = self.astrobody.set_temperature(self._star.mass.m, self._a)
         self.reset_period_and_speed(self._star)
@@ -264,6 +268,8 @@ class Orbit(Flagable, Ellipse):
 class PlanetOrbit(Orbit):
     primary = 'Star'
 
+    subtype = 'Planetary'
+
     def __init__(self, star, a, e, i, loan=None, aop=None):
         super().__init__(a, e, i, 'au')
         self.reset_period_and_speed(star)
@@ -289,6 +295,8 @@ class PlanetOrbit(Orbit):
 class SatelliteOrbit(Orbit):
     primary = 'Planet'
 
+    subtype = 'Satellital'
+
     def __init__(self, a, e, i, loan=None, aop=None):
         super().__init__(a, e, i, 'earth_radius')
         if loan is None and aop is None:
@@ -310,6 +318,8 @@ class SatelliteOrbit(Orbit):
 
 
 class BinaryStarOrbit(Orbit):
+    subtype = 'StellarBinary'
+
     def __init__(self, star, other, a, e):
         super().__init__(a, e, q(0, 'degrees'), 'au')
         self.reset_period_and_speed(star.mass.m + other.mass.m)
@@ -322,6 +332,8 @@ class BinaryStarOrbit(Orbit):
 class BinaryPlanetOrbit(Orbit):
     primary = 'Star'
 
+    subtype = 'PlanetaryBinary'
+
     def __init__(self, planet, other, a, e):
         super().__init__(a, e, q(0, 'degrees'), 'earth_radius')
         self.reset_period_and_speed(planet.mass.m + other.mass.m)
@@ -332,6 +344,8 @@ class BinaryPlanetOrbit(Orbit):
 
 
 class GalacticStellarOrbit(Orbit):
+    subtype = 'Galatic'
+
     def __init__(self, a, e):
         super().__init__(a, e, q(0, 'degrees'), unit='kpc')
         age = self.star.age.m

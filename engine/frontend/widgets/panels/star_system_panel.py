@@ -168,12 +168,12 @@ class SystemType(BaseWidget):
         for idx, attr in enumerate(attrs):
             setattr(self, attr, self.properties.get_widget(idx))
 
-    def set_star(self, star):
+    def set_bodies(self, obj):
         if str(self.primary.value) == '':
-            self.primary.value = star
+            self.primary.value = obj
             self.has_values = True
         else:
-            self.secondary.value = star
+            self.secondary.value = obj
             self.parent.undo_button.enable()
             self.has_values = True
 
@@ -203,8 +203,8 @@ class SystemType(BaseWidget):
             self.parent.setup_button.enable()
 
     def reset(self, system_data):
-        self.set_star(system_data.primary)
-        self.set_star(system_data.secondary)
+        self.set_bodies(system_data.primary)
+        self.set_bodies(system_data.secondary)
         self.separation.value = system_data.average_separation
         self.ecc_p.value = system_data.ecc_p
         self.ecc_s.value = system_data.ecc_s
@@ -296,7 +296,7 @@ class DissolveButton(TextButton):
         super().__init__(parent, name, x, y)
 
     def on_mousebuttondown(self, event):
-        if event.data['button'] == 1 and self.enabled and event.orign == self:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             system = self.parent.current.current
             Systems.dissolve_system(system)
             self.parent.stars_area.show()
@@ -317,7 +317,8 @@ class SystemButton(ColoredBody):
                 self.parent.current.current = self.object_data
             self.parent.setup_button.disable()
             self.parent.select_one(self)
-            self.parent.dissolve_button.enable()
+            if hasattr(self.parent, 'dissolve_button'):
+                self.parent.dissolve_button.enable()
 
     def move(self, x, y):
         self.rect.topleft = x, y
