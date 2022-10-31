@@ -178,7 +178,6 @@ class Planet(BodyInHydrostaticEquilibrium):
             else:
                 self.orbit = SatelliteOrbit(*orbital_parameters)
                 temp = star.parent.temperature_mass
-            Universe.visibility_by_albedo()
         else:
             other = orbital_parameters.pop(0)
             self.orbit = BinaryPlanetOrbit(self, other, *orbital_parameters)
@@ -186,6 +185,7 @@ class Planet(BodyInHydrostaticEquilibrium):
 
         self.temperature = self.set_temperature(temp, self.orbit.semi_minor_axis.m)
         self.orbit.set_astrobody(star, self)
+        Universe.visibility_by_albedo()
         if hasattr(star, 'letter') and star.letter == 'P':
             self.lagrange_points = get_lagrange_points(self.orbit.a.m, star.shared_mass.m, self.mass.m)
         else:
