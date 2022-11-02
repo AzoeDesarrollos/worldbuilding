@@ -81,13 +81,3 @@ def to_hours_mins_secs(sample):
     segundos = trunc(sample)
 
     return dias, horas, minutos, segundos
-
-
-if __name__ == '__main__':
-    hours = 30
-    ano = twenty_four_hour_day_moment(hours)
-    result = aprox_day_leght(hours, ano)
-    print(ano)
-
-    print(to_hours_mins_secs(round(result, 3)))
-    print(cells_per_hemisphere(float(round(result, 3))))
