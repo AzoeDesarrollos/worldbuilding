@@ -1,16 +1,25 @@
 ﻿from math import pi, acos, sin, cos, floor
+from engine.backend import q
 
 
 class GalacticCharacteristics:
     radius = 0
+    inner = None
+    outer = None
 
-    def __init__(self, radius):
-        self.radius = radius
-        self.inner = round((radius * 0.47), 0)
-        self.outer = round((radius * 0.6), 0)
+    def __init__(self, parent):
+        self.parent = parent
+
+    def set_radius(self, radius):
+        self.radius = q(radius, 'ly')
+        self.inner = q(round((radius * 0.47), 0), 'ly')
+        self.outer = q(round((radius * 0.6), 0), 'ly')
 
     def validate_position(self, location=2580):  # ly
-        assert self.inner <= location <= self.outer, "Neighbourhood is uninhabitable."
+        if self.inner is not None and self.outer is not None:
+            assert self.inner <= q(location, 'ly') <= self.outer, "Neighbourhood is uninhabitable."
+        else:
+            raise AssertionError('Galactic Characteristics are not set.')
 
 
 class StellarNeighbourhood:
@@ -33,12 +42,18 @@ class StellarNeighbourhood:
     _triple = 0
     _multiple = 0
 
-    def __init__(self, radius, density=0.48):
-        self.radius = radius
-        self._calculate(density, radius)
+    radius = None
+
+    def __init__(self, parent):
+        self.parent = parent
+
+    def set_radius(self, radius, density=0.004):
+        assert radius < 500, 'Stellar Neighbourhood will pop out of the galatic disk'
+        self.radius = q(radius, 'ly')
+        self._calculate(density, self.radius.m)
 
     def recalculate(self, density):
-        self._calculate(density, self.radius)
+        self._calculate(density, self.radius.m)
 
     def _calculate(self, density, radius):
         stellar_factor = density * ((4 / 3) * pi * radius ** 3)
@@ -125,19 +140,19 @@ class StellarNeighbourhood:
         distances = []
         for i in range(1, self.totals('systems') - 1):
             p_raw = constant * r_raw % divisor
-            q_raw = constant * p_raw % divisor
-            r_raw = constant * q_raw % divisor
+            w_raw = constant * p_raw % divisor
+            r_raw = constant * w_raw % divisor
 
             p_normal = p_raw / divisor
-            q_normal = q_raw / divisor
+            w_normal = w_raw / divisor
             r_normal = r_raw / divisor
 
-            p = p_normal ** (1 / 3) * self.radius
-            q = q_normal * 2 * pi
+            p = p_normal ** (1 / 3) * self.radius.m
+            w = w_normal * 2 * pi
             r = acos(2 * r_normal - 1)
 
-            x = round(p * sin(r) * cos(q), 2)
-            y = round(p * sin(r) * sin(q), 2)
+            x = round(p * sin(r) * cos(w), 2)
+            y = round(p * sin(r) * sin(w), 2)
             z = round(p * cos(r), 2)
 
             distances.append({'configuration': systems[i], 'pos': [x, y, z], 'distance': round(p, 2)})

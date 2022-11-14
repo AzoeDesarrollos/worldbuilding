@@ -294,7 +294,7 @@ class Element(BaseWidget):
     def atomic_weight(self):
         value = self.value()
         if value:
-            return value*self.weight
+            return value * self.weight
         return 0
 
     def value(self):
@@ -665,7 +665,7 @@ class Atmograph(BaseWidget):
 
 class ListedPlanet(ColoredBody):
     def on_mousebuttondown(self, event):
-        if event.data['button'] == 1  and event.origin == self:
+        if event.data['button'] == 1 and event.origin == self:
             if 'pressure_at_sea_level' not in self.object_data.atmosphere:
                 self.parent.parent.show_pressure.clear()
             self.parent.select_one(self)

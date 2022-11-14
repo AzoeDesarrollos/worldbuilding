@@ -11,9 +11,11 @@ from .info_panel import InformationPanel
 from .multiple_stars_panel import MultipleStarsPanel
 from .albedo_panel import AlbedoPanel
 from .start_panel import StartPanel
+from .neighbourhood_panel import NeighbourhoodPanel
 
 panels = [
     StartPanel,
+    NeighbourhoodPanel,
     StarPanel,
     StarSystemPanel,
     MultipleStarsPanel,
