@@ -7,6 +7,7 @@ class Universe:
     satellites = None
     asteroids = None
     stars = None
+    galaxies = None
 
     aparent_brightness = None
     relative_sizes = None
@@ -20,6 +21,7 @@ class Universe:
         cls.satellites = []
         cls.asteroids = []
         cls.stars = []
+        cls.galaxies = []
 
         cls.aparent_brightness = {}
         cls.relative_sizes = {}

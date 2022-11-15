@@ -29,6 +29,12 @@ class Group:
         self._list.remove(item)
         self._leght -= 1
 
+    def clear_layer(self, layer):
+        for item in self._d[layer]:
+            self._list.remove(item)
+            self._leght -= 1
+        del self._d[layer]
+
     def get_widgets_from_layer(self, layer):
         if layer in self._d:
             return self._d[layer]

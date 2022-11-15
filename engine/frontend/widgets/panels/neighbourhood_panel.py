@@ -1,8 +1,7 @@
-from engine.frontend.widgets import BaseWidget, Meta
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, Group, COLOR_AREA, COLOR_TEXTO
+from engine.frontend.widgets import ValueText, BaseWidget, Meta
 from engine.equations.stellar_neighbourhood import *
 from pygame import Surface, draw, Rect
-from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, Group, COLOR_AREA
-from engine.frontend.widgets import ValueText
 
 
 class NeighbourhoodPanel(BaseWidget):
@@ -19,11 +18,17 @@ class NeighbourhoodPanel(BaseWidget):
         self.rect = self.image.get_rect()
         self.properties = Group()
 
-        self.properties.add(Dice(self, 3, 10), layer=3)
+        self.dice = Dice(self, 3, 10)
+        self.properties.add(self.dice, layer=3)
         self.galaxy = GalaxyType(self)
         self.neighbourhood = NeighbourhoodType(self)
 
-        texts = ['Galactic Radius', 'Galactic Habitable Zone inner limit', 'Galactic Habitable Zone inner outer']
+        self.area_buttons = Rect(0, 435, self.parent.rect.w, 163)
+        self.image.fill(COLOR_AREA, self.area_buttons)
+
+        self.current = None
+
+        texts = ['Galactic Radius', 'Galactic Habitable Zone inner limit', 'Galactic Habitable Zone outer limit']
         for i, text in enumerate(texts):
             value = ValueText(self.galaxy, text, 3, i * 20 + 60)
             if i == 0:
@@ -40,6 +45,20 @@ class NeighbourhoodPanel(BaseWidget):
             value.modifiable = True
             self.properties.add(value, layer=2)
 
+    def select_one(self, selected):
+        for button in self.properties.get_widgets_from_layer(5):
+            button.deselect()
+        selected.select()
+        self.current = selected
+
+    def kill_buttons(self):
+        for button in self.properties.get_widgets_from_layer(5):
+            button.kill()
+        self.properties.clear_layer(5)
+
+        self.current = None
+        self.image.fill(COLOR_AREA, self.area_buttons)
+
     def show(self):
         super().show()
         for prop in self.properties.widgets():
@@ -54,6 +73,8 @@ class NeighbourhoodPanel(BaseWidget):
 class GalaxyType(BaseWidget):
     locked = False
 
+    has_values = False
+
     def __init__(self, parent):
         super().__init__(parent)
         self.characteristics = GalacticCharacteristics(self)
@@ -66,16 +87,19 @@ class GalaxyType(BaseWidget):
         widgets[1].value = self.characteristics.inner
         widgets[2].value = self.characteristics.outer
 
+        widget = self.parent.properties.get_widgets_from_layer(2)[0]
+        widget.set_min_and_max(self.characteristics.inner.m, self.characteristics.outer.m)
+
 
 class NeighbourhoodType(BaseWidget):
     locked = False
     location_valid, radius_valid = False, False
 
+    has_values = False
+
     def __init__(self, parent):
         super().__init__(parent)
         self.characteristics = StellarNeighbourhood(self)
-        self.systems_area = Rect(0, 435, self.parent.rect.w, 163)
-        self.parent.image.fill(COLOR_AREA, self.systems_area)
 
     def fill(self):
         widgets = self.parent.properties.get_widgets_from_layer(2)
@@ -93,8 +117,10 @@ class NeighbourhoodType(BaseWidget):
 
         if self.location_valid and self.radius_valid:
             self.populate()
+            self.has_values = True
 
     def populate(self):
+        positions = self.characteristics.system_positions(self.parent.dice.seed)
         types = 'o,b,a,f,g,k,m,wd,bd,black hole'.split(',')
 
         for i, cls in enumerate(types):
@@ -121,6 +147,29 @@ class NeighbourhoodType(BaseWidget):
         self.parent.properties.add(value_text, layer=4)
         value_text.show()
 
+        comps = ['single', 'binary', 'triple', 'multiple']
+        singles = [x['pos'] for x in positions if x['configuration'] == 'Single']
+        binaries = [x['pos'] for x in positions if x['configuration'] == 'Binary']
+        triples = [x['pos'] for x in positions if x['configuration'] == 'Triple']
+        multiples = [x['pos'] for x in positions if x['configuration'] == 'Multiple']
+        d = {'single': singles, 'binary': binaries, 'triple': triples, 'multiple': multiples}
+        for i, comp in enumerate(comps):
+            name = f'{comp.title()} Star Systems'
+            quantity = self.characteristics.systems(comp)
+
+            value_text = ValueText(self, name, 230, i * 50 + 200)
+            value_text.value = str(quantity) if quantity > 0 else 'None'
+            self.parent.properties.add(value_text, layer=4)
+            value_text.show()
+            for each in range(quantity):
+                pos = d[comp][each]
+                system = SystemButton(self.parent, comp.title(), pos)
+                self.parent.properties.add(system, layer=5)
+                system.show()
+
+        systems = self.parent.properties.get_widgets_from_layer(5)
+        self.parent.sort_buttons(systems)
+
         total_systems = self.characteristics.totals('systems')
         value_text = ValueText(self, 'Total Systems', 230, len(types) * 20 + 210)
         value_text.value = str(int(total_systems)) if total_systems > 0 else 'None'
@@ -130,6 +179,7 @@ class NeighbourhoodType(BaseWidget):
 
 class Dice(Meta):
     enabled = True
+    seed = 1
 
     def __init__(self, parent, x, y):
         super().__init__(parent)
@@ -167,3 +217,44 @@ class Dice(Meta):
         draw.aaline(canvas, lineas, f, g)
 
         return canvas
+
+    def on_mousebuttondown(self, event):
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
+            self.seed += 1
+            if self.parent.neighbourhood.has_values:
+                self.parent.kill_buttons()
+                self.parent.neighbourhood.fill()
+
+
+class SystemButton(Meta):
+    enabled = True
+
+    def __init__(self, parent, name, pos):
+        super().__init__(parent)
+        self.f1 = self.crear_fuente(16)
+        self.f2 = self.crear_fuente(16, bold=True)
+        self.img_dis = self.f1.render(name, True, COLOR_TEXTO)
+        self.img_uns = self.f1.render(name, True, COLOR_TEXTO)
+        self.img_sel = self.f2.render(name, True, COLOR_TEXTO)
+
+        self.image = self.img_dis
+        self.rect = self.image.get_rect()
+        self.max_w = self.img_sel.get_width()
+
+        self.position = pos
+        self.name = name
+
+    def on_mousebuttondown(self, event):
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
+            x, y, z = self.position
+            if x == 0 and y == 0 and z == 0:
+                sub = 'Home'
+            else:
+                sub = self.name
+            raise AssertionError(f'{sub} Star System @\n ({x}, {y}, {z})')
+
+    def move(self, x, y):
+        self.rect.topleft = x, y
+
+    def __repr__(self):
+        return f'{self.name} Button @ {self.position}'

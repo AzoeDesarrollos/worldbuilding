@@ -129,7 +129,7 @@ class StellarNeighbourhood:
 
     def system_positions(self, seed=1):
         assert seed > 0, 'the seed must be greater than 0'
-        systems = ['Single'] * (self.systems('single') - 1) + ['Binary'] * self.systems('binary')
+        systems = ['Single'] * (self.systems('single')) + ['Binary'] * self.systems('binary')
         systems += ['Triple'] * self.systems('triple') + ['Multiple'] * self.systems('multiple')
 
         divisor = 2 ** 31 - 1
@@ -138,7 +138,7 @@ class StellarNeighbourhood:
         initial_value = (constant * seed) % divisor
         r_raw = initial_value
         distances = []
-        for i in range(1, self.totals('systems') - 1):
+        for i in range(1, self.totals('systems')):
             p_raw = constant * r_raw % divisor
             w_raw = constant * p_raw % divisor
             r_raw = constant * w_raw % divisor
@@ -156,5 +156,7 @@ class StellarNeighbourhood:
             z = round(p * cos(r), 2)
 
             distances.append({'configuration': systems[i], 'pos': [x, y, z], 'distance': round(p, 2)})
+
+        distances.append({'configuration': 'Single', 'pos': [0, 0, 0], 'distance': 'N/A'})
 
         return distances
