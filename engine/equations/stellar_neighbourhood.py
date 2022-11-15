@@ -1,5 +1,6 @@
 ﻿from math import pi, acos, sin, cos, floor
 from engine.backend import q
+from random import uniform
 
 
 class GalacticCharacteristics:
@@ -44,16 +45,23 @@ class StellarNeighbourhood:
 
     radius = None
 
+    location = None
+    density = None
+
     def __init__(self, parent):
         self.parent = parent
 
-    def set_radius(self, radius, density=0.004):
+    def set_location(self, location):
+
+        if location != self.location or self.density is None:
+            self.density = uniform(0.003, 0.012)
+        self.location = location
+        return self.density
+
+    def set_radius(self, radius):
         assert radius < 500, 'Stellar Neighbourhood will pop out of the galatic disk'
         self.radius = q(radius, 'ly')
-        self._calculate(density, self.radius.m)
-
-    def recalculate(self, density):
-        self._calculate(density, self.radius.m)
+        self._calculate(self.density, self.radius.m)
 
     def _calculate(self, density, radius):
         stellar_factor = density * ((4 / 3) * pi * radius ** 3)
@@ -138,7 +146,7 @@ class StellarNeighbourhood:
         initial_value = (constant * seed) % divisor
         r_raw = initial_value
         distances = []
-        for i in range(1, self.totals('systems')):
+        for i in range(self.totals('systems')):
             p_raw = constant * r_raw % divisor
             w_raw = constant * p_raw % divisor
             r_raw = constant * w_raw % divisor
@@ -155,8 +163,6 @@ class StellarNeighbourhood:
             y = round(p * sin(r) * sin(w), 2)
             z = round(p * cos(r), 2)
 
-            distances.append({'configuration': systems[i], 'pos': [x, y, z], 'distance': round(p, 2)})
-
-        distances.append({'configuration': 'Single', 'pos': [0, 0, 0], 'distance': 'N/A'})
+            distances.append({'configuration': systems[i], 'pos': [x, y, z]})
 
         return distances

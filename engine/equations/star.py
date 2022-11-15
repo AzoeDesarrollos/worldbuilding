@@ -1,4 +1,4 @@
-from engine.backend import decimal_round, roll, generate_id,  q
+from engine.backend import decimal_round, roll, generate_id, q, turn_into_roman
 from .general import BodyInHydrostaticEquilibrium
 from bisect import bisect_right
 from math import sqrt, pow
@@ -45,6 +45,8 @@ class Star(BodyInHydrostaticEquilibrium):
     age = 0
 
     evolution_id = None
+
+    sub_classification = 0
 
     def __init__(self, data):
         mass = data.get('mass', False)
@@ -148,6 +150,7 @@ class Star(BodyInHydrostaticEquilibrium):
         self.outer_boundry = q(self._outer_boundry, 'au')
         self.frost_line = q(self._frost_line, 'au')
         self.age = q(self._age, 'years')
+        self.extend_classification()
 
     @staticmethod
     def stellar_classification(mass):
@@ -155,7 +158,7 @@ class Star(BodyInHydrostaticEquilibrium):
         masses = [0.08, 0.45, 0.8, 1.04, 1.4, 2.1, 16]
         classes = ["M", "K", "G", "F", "A", "B", "O"]
         idx = bisect_right(masses, mass)
-        return classes[idx - 1:idx][0]
+        return classes[idx - 1]
 
     def luminosity_at_age(self, age=None):
         lum = self.base_lum
@@ -277,6 +280,19 @@ class Star(BodyInHydrostaticEquilibrium):
     def validate_orbit(self, orbit):
         return self._inner_boundry < orbit < self._outer_boundry
 
+    def extend_classification(self):
+        t = decimal_round(self.temperature.to('kelvin').m)
+        temps = {"M": [2000, 1700],
+                 "K": [3700, 1500],
+                 "G": [5200, 800],
+                 "F": [6000, 1500],
+                 "A": [7500, 2500],
+                 "B": [10000, 23000],
+                 "O": [33000, 62000]}
+        a, b = temps[self.classification]
+
+        self.sub_classification = (round((1 - (t - a) / b) * 10, 1))
+
     def update_everything(self, **kwargs):
         if self.mass != self._mass:
             self._mass = self.mass.m
@@ -309,7 +325,7 @@ class Star(BodyInHydrostaticEquilibrium):
         if self.has_name:
             return self.name
         else:
-            return "{}-Star #{}".format(self.cls, self.idx)
+            return f"{self.cls}{self.sub_classification}{turn_into_roman(self.idx)}"
 
     def __repr__(self):
         if self.has_name is False:
