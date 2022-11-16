@@ -12,6 +12,8 @@ class StarSystemPanel(BaseWidget):
     skip = False
     skippable = True
 
+    show_swawp_system_button = False
+
     def __init__(self, parent):
         super().__init__(parent)
         self.name = 'Star System'

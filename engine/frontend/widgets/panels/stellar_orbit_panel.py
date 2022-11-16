@@ -34,6 +34,8 @@ class OrbitPanel(BaseWidget):
 
     skip = False
 
+    show_swawp_system_button = True
+
     def __init__(self, parent):
         super().__init__(parent)
         self.name = 'Orbit'

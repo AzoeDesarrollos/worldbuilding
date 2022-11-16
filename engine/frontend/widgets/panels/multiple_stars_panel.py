@@ -14,6 +14,8 @@ class MultipleStarsPanel(BaseWidget):
     curr_x = 0
     curr_y = 440
 
+    show_swawp_system_button = False
+
     def __init__(self, parent):
         self.name = 'Multiple Stars'
         super().__init__(parent)

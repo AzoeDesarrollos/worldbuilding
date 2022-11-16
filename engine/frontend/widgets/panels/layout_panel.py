@@ -185,7 +185,7 @@ class SwapSystem(Meta):
 
     def update(self):
         super().update()
-        if not self.enabled and 'Star' not in self.parent.current.name:
+        if not self.enabled and self.parent.current.show_swawp_system_button is True:
             self.enable()
 
     def show(self):
@@ -209,7 +209,7 @@ class SystemName(BaseWidget):
         self.rect = self._rect.copy()
 
     def get_name(self):
-        if 'Star' in self.parent.parent.current.name:
+        if self.parent.parent.current.show_swawp_system_button is False:
             name = None
         else:
             star = Systems.get_current_star()

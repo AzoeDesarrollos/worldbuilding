@@ -15,6 +15,8 @@ class StarPanel(BasePanel):
 
     add_on_exit = False
 
+    show_swawp_system_button = False
+
     def __init__(self, parent):
         super().__init__('Star', parent)
         self.properties = Group()

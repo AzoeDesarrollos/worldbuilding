@@ -15,6 +15,8 @@ class NamingPanel(BaseWidget):
     no_system_error = False
     all_named_error = False
 
+    show_swawp_system_button = True
+
     def __init__(self, parent):
         self.name = 'Naming'
         super().__init__(parent)

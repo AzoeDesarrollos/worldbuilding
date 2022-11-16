@@ -24,6 +24,8 @@ class PlanetaryOrbitPanel(BaseWidget):
     added = None
     visible_markers = True
 
+    show_swawp_system_button = True
+
     def __init__(self, parent):
         super().__init__(parent)
         self.name = 'Planetary Orbit'

@@ -14,6 +14,8 @@ class AlbedoPanel(BaseWidget):
     current = None
     locked = False
 
+    show_swawp_system_button = True
+
     def __init__(self, parent):
         self.name = 'Albedo'
         super().__init__(parent)
