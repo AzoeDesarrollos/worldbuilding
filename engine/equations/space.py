@@ -9,6 +9,7 @@ class Universe:
     stars = None
     galaxies = None
     bubbles = None
+    systems = None
 
     aparent_brightness = None
     relative_sizes = None
@@ -24,6 +25,7 @@ class Universe:
         cls.stars = []
         cls.galaxies = []
         cls.bubbles = []
+        cls.systems = []
 
         cls.aparent_brightness = {}
         cls.relative_sizes = {}
@@ -79,6 +81,8 @@ class Universe:
             group = cls.galaxies
         elif astro_obj.celestial_type == 'stellar bubble':
             group = cls.bubbles
+        elif astro_obj.celestial_type == 'system':
+            group = cls.systems
 
         return group
 

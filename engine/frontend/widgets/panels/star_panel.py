@@ -419,6 +419,7 @@ class PotentialStars(ListedArea):
 
     def show(self):
         super().show()
+        self.clear()
         galaxy = Universe.get_astrobody_by('Galaxy')
         pop = [star for star in galaxy.proto_stars]
         self.populate(pop, layer=galaxy.id)

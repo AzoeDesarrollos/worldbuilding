@@ -15,6 +15,9 @@ class NeighbourhoodPanel(BaseWidget):
 
     show_swawp_system_button = False
 
+    current = None
+    current_nei = None
+
     def __init__(self, parent):
         super().__init__(parent)
         self.name = 'Neighbourhood'
@@ -33,6 +36,7 @@ class NeighbourhoodPanel(BaseWidget):
         self.write('Systems', subtitle_font, COLOR_AREA, x=3, top=self.area_buttons.top)
 
         self.current = None
+        self.current_nei = None
 
         self.text_size = 16
 
@@ -62,6 +66,8 @@ class NeighbourhoodPanel(BaseWidget):
 
         EventHandler.register(self.clear, 'ClearData')
 
+        self.neighbourhood_s = []
+
     def on_mousebuttondown(self, event):
         if event.origin == self:
             if event.data['button'] in (4, 5):
@@ -80,13 +86,34 @@ class NeighbourhoodPanel(BaseWidget):
             button.deselect()
         selected.select()
         self.current = selected
+        self.current_nei = selected.object_data
 
     def create_button(self):
         widgets = self.properties.get_widgets_from_layer(2)
         location = widgets[0].value
         radius = widgets[1].value
-        data = {'location': location, 'radius': radius}
+        data = {'location': location, 'radius': radius, 'systems': []}
+
+        comps = ['single', 'binary', 'triple', 'multiple']
+        positions = self.neighbourhood.characteristics.system_positions()
+        singles = [x['pos'] for x in positions if x['configuration'] == 'Single']
+        binaries = [x['pos'] for x in positions if x['configuration'] == 'Binary']
+        triples = [x['pos'] for x in positions if x['configuration'] == 'Triple']
+        multiples = [x['pos'] for x in positions if x['configuration'] == 'Multiple']
+        d = {'single': singles, 'binary': binaries, 'triple': triples, 'multiple': multiples}
+        for i, comp in enumerate(comps):
+            quantity = self.neighbourhood.characteristics.systems(comp)
+            for each in range(quantity):
+                system_position = d[comp][each]
+                system_data = {'composition': comp, 'location': system_position, 'idx': i}
+                system_object = ProtoSystem(system_data)
+                data['systems'].append(system_object)
+                Universe.add_astro_obj(system_object)
+
         object_data = DefinedNeighbourhood(data)
+        object_data.idx = len(self.neighbourhood_s)
+        self.neighbourhood_s.append(object_data)
+        self.current_nei = object_data
         button = NeighbourhoodButton(self, object_data)
         self.properties.add(button, layer=5)
         self.sort_buttons(self.properties.get_widgets_from_layer(5))
@@ -100,10 +127,11 @@ class NeighbourhoodPanel(BaseWidget):
         self.neighbourhood.fill()
 
     def create_neighbourhood(self):
-        buttons = self.neighbourhood.characteristics.individual_stars
+        neighbourhood = self.neighbourhood.characteristics
+        stars = neighbourhood.individual_stars
         galaxy = self.galaxy.characteristics
-        galaxy.add_proto_stars(buttons)
         self.create_button()
+        galaxy.add_proto_stars(stars, self.current_nei.idx)
 
     def clear(self, event=None):
         if event is None or event.data['panel'] is self:
@@ -217,15 +245,24 @@ class NeighbourhoodType(BaseWidget):
             value_text.show()
 
         total_stars = self.characteristics.totals('stars')
-        if 'Total Stars' not in self.values:
-            value_text = ValueText(self, 'Total Stars', 230, 8 * 20 + rect_stars.bottom, size=15)
-            self.values['Total Stars'] = value_text
-            value_text.value = ''
-        else:
-            value_text = self.values['Total Stars']
-            value_text.value = str(int(total_stars))
-        self.parent.properties.add(value_text, layer=4)
-        value_text.show()
+        main_seq = self.characteristics.totals('main sequence')
+        for i, title in enumerate(['Total Stars', 'Main Sequence Stars'], start=7):
+            if title not in self.values:
+                value_text = ValueText(self, title, 230, i * 20 + rect_stars.bottom, size=15)
+                self.values[title] = value_text
+                value_text.value = ''
+                write = False
+            else:
+                write = True
+                value_text = self.values[title]
+
+            if i == 7 and write:
+                value_text.value = str(int(total_stars))
+            elif i == 8 and write:
+                value_text.value = str(int(main_seq))
+
+            self.parent.properties.add(value_text, layer=4)
+            value_text.show()
 
         comps = ['single', 'binary', 'triple', 'multiple']
         for i, comp in enumerate(comps):

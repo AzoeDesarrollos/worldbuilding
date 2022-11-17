@@ -48,6 +48,8 @@ class Star(BodyInHydrostaticEquilibrium):
 
     sub_classification = 0
 
+    neighbourhood_idx = None
+
     def __init__(self, data):
         mass = data.get('mass', False)
         luminosity = data.get('luminosity', False)

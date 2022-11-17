@@ -1,6 +1,5 @@
 from engine.backend import q, generate_id, turn_into_roman
 from .space import Universe
-from random import uniform
 from time import sleep
 
 
@@ -25,8 +24,9 @@ class Galaxy:
         self.proto_stars = []
         self.id = data['id'] if 'id' in data else generate_id()
 
-    def add_proto_stars(self, list_of_dicts):
+    def add_proto_stars(self, list_of_dicts, neighbourhood_idx):
         for data in list_of_dicts:
+            data.update({'neighbourhood_idx': neighbourhood_idx})
             star = ProtoStar(data)
             self.proto_stars.append(star)
             # Este sleep es necesario porque de otro modo todas las ProtoStars tienen el mismo ID.
@@ -60,27 +60,29 @@ class ProtoStar:
         self.cls = data['class']
         self.id = generate_id()
         self.idx = data['idx']
+        self.neighbourhood_idx = data['neighbourhood_idx']
 
         mass = 0
+        b = self.idx + self.neighbourhood_idx
         if self.cls.startswith('O'):
-            mass = uniform(16.0, 120.0)
+            mass += 16.0+b/10
         elif self.cls.startswith('B'):
-            mass = uniform(2.1, 16.0)
+            mass += 2.1+b/10
         elif self.cls.startswith('A'):
-            mass = uniform(1.4, 2.1)
+            mass += 1.4+b/10
         elif self.cls.startswith('F'):
-            mass = uniform(1.04, 1.4)
+            mass += 1.04+b/10
         elif self.cls.startswith('G'):
-            mass = uniform(0.8, 1.04)
+            mass += 0.8+b/10
         elif self.cls.startswith('K'):
-            mass = uniform(0.45, 0.8)
+            mass += 0.45+b/10
         elif self.cls.startswith('M'):
-            mass = uniform(0.08, 0.45)
+            mass += 0.08+b/100
 
         self.mass = q(mass, 'sol_mass')
 
     def __str__(self):
-        return f'{self.cls}_{turn_into_roman(self.idx+1)}'
+        return f'{self.cls}_{turn_into_roman(self.idx+1)}_{turn_into_roman(self.neighbourhood_idx+1)}'
 
     def __repr__(self):
         return f"ProtoStar {self.cls} #{self.idx}"

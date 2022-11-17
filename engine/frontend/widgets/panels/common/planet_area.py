@@ -59,8 +59,9 @@ class ListedArea(BaseWidget):
                 self.deselect_all()
             elif len(self.listed_objects.widgets()):
                 buttons = self.listed_objects.widgets()
-                last_is_hidden = not buttons[-1].is_visible
-                first_is_hidden = not buttons[0].is_visible
+                by_mass = sorted(buttons, key=lambda b: b.object_data.mass.to('earth_mass').m, reverse=1)
+                last_is_hidden = not by_mass[-1].is_visible
+                first_is_hidden = not by_mass[0].is_visible
                 if event.data['button'] == 4 and first_is_hidden:
                     self.offset += 16
                 elif event.data['button'] == 5 and last_is_hidden:
@@ -84,6 +85,10 @@ class ListedArea(BaseWidget):
         self.deselect_all()
         self.current = it
         it.select()
+
+    def clear(self):
+        self.listed_objects.clear()
+        self.stored_objects.clear()
 
     def deselect_all(self):
         self.image.fill(COLOR_AREA, [0, 21, self.rect.w, self.rect.h])

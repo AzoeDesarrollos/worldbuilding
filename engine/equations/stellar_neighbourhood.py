@@ -31,6 +31,8 @@ class StellarNeighbourhood:
 
     celestial_type = 'stellar bubble'
 
+    main_sequence_stars = 0
+
     def __init__(self, parent):
         self.parent = parent
         self.galaxy = self.parent.parent.galaxy.characteristics
@@ -69,6 +71,9 @@ class StellarNeighbourhood:
 
         self._total_stars = sum([self._o_stars, self._b_stars, self._a_stars, self._f_stars, self._g_stars,
                                  self._k_stars, self._m_stars, self._w_dwarfs, self._b_dwarfs, self._other])
+
+        self.main_sequence_stars = sum([self._o_stars, self._b_stars, self._a_stars, self._f_stars, self._g_stars,
+                                        self._k_stars, self._m_stars])
 
         self._binary = int(round(((self._total_stars / 1.58) * 0.33), 0))
         self._triple = int(round(((self._total_stars / 1.58) * 0.08), 0))
@@ -130,6 +135,8 @@ class StellarNeighbourhood:
             return self._total_stars
         elif kind == 'systems':
             return self._total_systems
+        elif kind == 'main sequence':
+            return self.main_sequence_stars
         else:
             raise ValueError(f'Kind "{kind}" is unrecognizable.')
 
@@ -169,6 +176,26 @@ class StellarNeighbourhood:
 class DefinedNeighbourhood:
     # this is the actual object. The class above is just a collection of functions
     # and it may be disassembled in the future.
+
+    idx = None
+
     def __init__(self, data):
         self.location = data['location']
         self.radius = data['radius']
+        self.systems = data['systems']
+
+    def __repr__(self):
+        return 'Neighbourhood Object'
+
+
+class ProtoSystem:
+    celestial_type = 'system'
+    name = None
+
+    def __init__(self, data):
+        self.composition = data['composition']
+        self.location = data['location']
+        self.idx = data['idx']
+
+    def __repr__(self):
+        return f'{self.composition.title()} ProtoSystem'
