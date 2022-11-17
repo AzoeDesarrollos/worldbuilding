@@ -185,9 +185,6 @@ class StarType(ObjectType):
         idx = self.parent.proto_stars.current.object_data.idx
         star.idx = idx
         self.parent.button_add.enable()
-
-        # if self.current is not None:
-        #     self.current.sprite.kill()
         self.current = star
         self.fill()
         self.toggle_habitable()
@@ -223,7 +220,6 @@ class StarType(ObjectType):
 
     def erase(self):
         if self.has_values:
-            # self.current.sprite.kill()
             self.parent.image.fill(COLOR_BOX, self.hab_rect)
             self.parent.age_bar.cursor.hide()
         super().erase()
@@ -248,13 +244,7 @@ class StarType(ObjectType):
         system = Systems.get_current()
         if system is not None:
             system.update()
-        #
-        # new = StarSprite(self, self.current, 460, 100)
-        # if new.is_distict(self.current.sprite):
-        #     self.current.sprite = new
-        #     self.properties.add(self.current.sprite, layer=3)
-        #
-        # self.current.sprite.show()
+
         self.parent.age_bar.enable()
         self.parent.enable()
 
@@ -304,18 +294,11 @@ class StarButton(ColoredBody):
         if event.origin == self:
             if event.data['button'] == 1:
                 self.parent.show_current(self.object_data)
-                # if not self.object_data.sprite.is_visible:
-                #     self.object_data.sprite.show()
                 self.parent.parent.select_one(self)
                 self.parent.parent.button_del.enable()
                 self.parent.toggle_habitable()
             elif event.data['button'] in (4, 5):
                 self.parent.parent.on_mousebuttondown(event)
-
-    def hide(self):
-        super().hide()
-        if self.object_data.sprite is not None:
-            self.object_data.sprite.hide()
 
 
 class AgeBar(Meta):

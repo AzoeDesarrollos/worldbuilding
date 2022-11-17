@@ -1,5 +1,5 @@
-﻿from engine.backend import q, turn_into_roman
-from math import pi, acos, sin, cos, floor
+﻿from math import pi, acos, sin, cos, floor
+from engine.backend import q
 from .space import Universe
 from random import uniform
 
@@ -164,3 +164,11 @@ class StellarNeighbourhood:
             distances.append({'configuration': systems[i], 'pos': [x, y, z]})
 
         return distances
+
+
+class DefinedNeighbourhood:
+    # this is the actual object. The class above is just a collection of functions
+    # and it may be disassembled in the future.
+    def __init__(self, data):
+        self.location = data['location']
+        self.radius = data['radius']
