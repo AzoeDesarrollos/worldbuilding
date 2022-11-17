@@ -32,6 +32,7 @@ class Group:
     def clear_layer(self, layer):
         if layer in self._d:
             for item in self._d[layer]:
+                item.kill()
                 self._list.remove(item)
                 self._leght -= 1
             del self._d[layer]

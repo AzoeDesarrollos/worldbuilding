@@ -1,26 +1,7 @@
-﻿from math import pi, acos, sin, cos, floor
-from engine.backend import q
+﻿from engine.backend import q, turn_into_roman
+from math import pi, acos, sin, cos, floor
+from .space import Universe
 from random import uniform
-
-
-class GalacticCharacteristics:
-    radius = 0
-    inner = None
-    outer = None
-
-    def __init__(self, parent):
-        self.parent = parent
-
-    def set_radius(self, radius):
-        self.radius = q(radius, 'ly')
-        self.inner = q(round((radius * 0.47), 0), 'ly')
-        self.outer = q(round((radius * 0.6), 0), 'ly')
-
-    def validate_position(self, location=2580):  # ly
-        if self.inner is not None and self.outer is not None:
-            assert self.inner <= q(location, 'ly') <= self.outer, "Neighbourhood is uninhabitable."
-        else:
-            raise AssertionError('Galactic Characteristics are not set.')
 
 
 class StellarNeighbourhood:
@@ -48,14 +29,23 @@ class StellarNeighbourhood:
     location = None
     density = None
 
+    celestial_type = 'stellar bubble'
+
     def __init__(self, parent):
         self.parent = parent
+        self.galaxy = self.parent.parent.galaxy.characteristics
+
+    def add_to_galaxy(self):
+        Universe.add_astro_obj(self)
 
     def set_location(self, location):
-
-        if location != self.location or self.density is None:
-            self.density = uniform(0.003, 0.012)
+        density = self.galaxy.get_density_at_location(location)
         self.location = location
+        if density is None:
+            self.density = uniform(0.003, 0.012)
+            self.galaxy.record_density_at_location(location, self.density)
+        else:
+            self.density = density
         return self.density
 
     def set_radius(self, radius):
@@ -86,6 +76,14 @@ class StellarNeighbourhood:
         self._single = int(self._total_stars - ((self._binary * 2) + (self._triple * 3) + (self._multiple * 4)))
 
         self._total_systems = int(sum([self._single, self._binary, self._triple, self._multiple]))
+
+        self.individual_stars = [{'class': 'O', 'idx': i} for i in range(int(self._o_stars))]
+        self.individual_stars += [{'class': 'B', 'idx': i} for i in range(int(self._b_stars))]
+        self.individual_stars += [{'class': 'A', 'idx': i} for i in range(int(self._a_stars))]
+        self.individual_stars += [{'class': 'F', 'idx': i} for i in range(int(self._f_stars))]
+        self.individual_stars += [{'class': 'G', 'idx': i} for i in range(int(self._g_stars))]
+        self.individual_stars += [{'class': 'K', 'idx': i} for i in range(int(self._k_stars))]
+        self.individual_stars += [{'class': 'M', 'idx': i} for i in range(int(self._m_stars))]
 
     def stars(self, spectral_type: str = 'g') -> int:
 

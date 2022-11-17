@@ -175,6 +175,9 @@ def turn_into_roman(number):
     unidades = number
     roman_string += _additive_notation(unidades, 1, roman)
 
+    if roman_string.endswith('N') and len(roman_string) >= 2:
+        roman_string = roman_string[:-1]
+
     return roman_string
 
 

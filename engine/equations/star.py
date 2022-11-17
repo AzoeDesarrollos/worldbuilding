@@ -325,11 +325,11 @@ class Star(BodyInHydrostaticEquilibrium):
         if self.has_name:
             return self.name
         else:
-            return f"{self.cls}{self.sub_classification}{turn_into_roman(self.idx)}"
+            return f"{self.cls}{self.sub_classification}{turn_into_roman(self.idx+1)}"
 
     def __repr__(self):
         if self.has_name is False:
-            return "Star " + self.name + ' {}'.format(self.mass.m)
+            return f"Star {self.name} {self.mass.m}"
         else:
             return self.name
 

@@ -2,12 +2,12 @@ from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, ANCHO, COLOR_BOX, 
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.panels.common import TextButton
 from engine.frontend.widgets.object_type import ObjectType
-from engine.frontend.widgets.sprite_star import StarSprite
 from engine.backend import EventHandler, Systems
 from engine.frontend.widgets.meta import Meta
+from .common import ColoredBody, ListedArea
+from engine.equations.space import Universe
 from pygame import Surface, mouse, draw
 from engine.equations.star import Star
-from .common import ColoredBody
 
 
 class StarPanel(BasePanel):
@@ -39,6 +39,9 @@ class StarPanel(BasePanel):
         self.write('past', f2, centerx=self.age_bar.rect.left, top=self.age_bar.rect.bottom + 1)
         self.write('present', f2, centerx=234, top=self.age_bar.rect.bottom + 1)
         self.write('future', f2, centerx=self.age_bar.rect.right, top=self.age_bar.rect.bottom + 1)
+
+        self.proto_stars = PotentialStars(self, ANCHO - 150, 32, 150, 340)
+        self.properties.add(self.proto_stars, layer=1)
 
     @property
     def star_buttons(self):
@@ -110,6 +113,7 @@ class StarPanel(BasePanel):
     def add_button(self, star):
         button = StarButton(self.current, star, str(star), self.curr_x, self.curr_y)
         self.properties.add(button, layer=2)
+        self.proto_stars.delete_objects(self.proto_stars.current.object_data)
         Systems.add_star(star)
         if star not in self.stars:
             self.stars.append(star)
@@ -177,12 +181,13 @@ class StarType(ObjectType):
         self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right - 10, y=self.parent.rect.y + 50)
 
     def set_star(self, star_data):
-        cls = Star.get_class(star_data['mass'])
         star = Star(star_data)
-        star.idx = len([s for s in self.parent.stars if s.cls == cls])
+        idx = self.parent.proto_stars.current.object_data.idx
+        star.idx = idx
         self.parent.button_add.enable()
-        if self.current is not None:
-            self.current.sprite.kill()
+
+        # if self.current is not None:
+        #     self.current.sprite.kill()
         self.current = star
         self.fill()
         self.toggle_habitable()
@@ -218,7 +223,7 @@ class StarType(ObjectType):
 
     def erase(self):
         if self.has_values:
-            self.current.sprite.kill()
+            # self.current.sprite.kill()
             self.parent.image.fill(COLOR_BOX, self.hab_rect)
             self.parent.age_bar.cursor.hide()
         super().erase()
@@ -243,13 +248,13 @@ class StarType(ObjectType):
         system = Systems.get_current()
         if system is not None:
             system.update()
-
-        new = StarSprite(self, self.current, 460, 100)
-        if new.is_distict(self.current.sprite):
-            self.current.sprite = new
-            self.properties.add(self.current.sprite, layer=3)
-
-        self.current.sprite.show()
+        #
+        # new = StarSprite(self, self.current, 460, 100)
+        # if new.is_distict(self.current.sprite):
+        #     self.current.sprite = new
+        #     self.properties.add(self.current.sprite, layer=3)
+        #
+        # self.current.sprite.show()
         self.parent.age_bar.enable()
         self.parent.enable()
 
@@ -299,8 +304,8 @@ class StarButton(ColoredBody):
         if event.origin == self:
             if event.data['button'] == 1:
                 self.parent.show_current(self.object_data)
-                if not self.object_data.sprite.is_visible:
-                    self.object_data.sprite.show()
+                # if not self.object_data.sprite.is_visible:
+                #     self.object_data.sprite.show()
                 self.parent.parent.select_one(self)
                 self.parent.parent.button_del.enable()
                 self.parent.toggle_habitable()
@@ -401,3 +406,40 @@ class AgeCursor(Meta):
             self.has_mouseover = True
             self.rect.x = x if 50 <= x <= 450 else self.rect.x
             self.on_movement(self.rect.x)
+
+
+class ListedStar(ColoredBody):
+    def on_mousebuttondown(self, event):
+        if event.data['button'] == 1 and event.origin == self:
+            text = 'To create this star, input a mass '
+            if self.object_data.cls.startswith('O'):
+                text += 'of 16 solar masses or more.'
+            elif self.object_data.cls.startswith('B'):
+                text += 'between 2.1 and 16 solar masses.'
+            elif self.object_data.cls.startswith('A'):
+                text += 'between 1.4 and 2.1 solar masses.'
+            elif self.object_data.cls.startswith('F'):
+                text += 'between 1.04 and 1.4 solar masses.'
+            elif self.object_data.cls.startswith('G'):
+                text += 'between 0.8 and 1.04 solar masses.'
+            elif self.object_data.cls.startswith('K'):
+                text += 'between 0.45 and 0.8 solar masses.'
+            elif self.object_data.cls.startswith('M'):
+                text += 'between 0.08 and 0.45 solar masses.'
+            self.parent.select_one(self)
+            raise AssertionError(text)
+
+
+class PotentialStars(ListedArea):
+    listed_type = ListedStar
+    name = 'Potential Stars'
+
+    def show(self):
+        super().show()
+        galaxy = Universe.get_astrobody_by('Galaxy')
+        pop = [star for star in galaxy.proto_stars]
+        self.populate(pop, layer=galaxy.id)
+
+    def update(self):
+        self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
+        self.show_current(self.last_idx)

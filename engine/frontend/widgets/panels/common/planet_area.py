@@ -15,6 +15,8 @@ class ListedArea(BaseWidget):
 
     stored_objects = None
 
+    current = None
+
     def __init__(self, parent, x, y, w, h):
         super().__init__(parent)
         self.image = Surface((w, h))
@@ -80,6 +82,7 @@ class ListedArea(BaseWidget):
 
     def select_one(self, it):
         self.deselect_all()
+        self.current = it
         it.select()
 
     def deselect_all(self):

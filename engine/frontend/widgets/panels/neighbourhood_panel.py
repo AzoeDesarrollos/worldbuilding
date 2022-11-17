@@ -1,7 +1,9 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, Group, COLOR_AREA, COLOR_TEXTO, NUEVA_LINEA
 from engine.frontend.widgets import ValueText, BaseWidget, Meta
+from engine.frontend.widgets.panels.common import TextButton
 from engine.equations.stellar_neighbourhood import *
 from pygame import Surface, draw, Rect, SRCALPHA
+from engine.equations.galaxy import Galaxy
 from random import shuffle
 
 
@@ -21,14 +23,16 @@ class NeighbourhoodPanel(BaseWidget):
         self.rect = self.image.get_rect()
         self.properties = Group()
         title_font = self.crear_fuente(16, underline=True)
+        subtitle_font = self.crear_fuente(14, underline=True)
         self.write(self.name + ' Panel', title_font, centerx=(ANCHO // 4) * 1.5, y=0)
         # self.dice = Dice(self, 3, 10)
         # self.properties.add(self.dice, layer=3)
         self.galaxy = GalaxyType(self)
         self.neighbourhood = NeighbourhoodType(self)
 
-        self.area_buttons = Rect(0, 435, self.parent.rect.w, 163)
+        self.area_buttons = Rect(0, 420, self.rect.w, 200)
         self.image.fill(COLOR_AREA, self.area_buttons)
+        self.write('Systems', subtitle_font, COLOR_AREA, x=3, top=self.area_buttons.top)
 
         self.current = None
 
@@ -55,8 +59,11 @@ class NeighbourhoodPanel(BaseWidget):
 
         value = ValueText(self.neighbourhood, 'Density', 400, rect.bottom, size=self.text_size)
         value.enable()
-        value.modifiable = True
+        value.modifiable = False
         self.properties.add(value, layer=2)
+
+        self.button_add = AddNeighbourhoodButton(self, ANCHO - 15, 416)
+        self.properties.add(self.button_add, layer=6)
 
     def on_mousebuttondown(self, event):
         if event.origin == self:
@@ -86,7 +93,8 @@ class NeighbourhoodPanel(BaseWidget):
         self.image.fill(COLOR_AREA, self.area_buttons)
 
     def clear(self):
-        self.image.fill(COLOR_BOX, [3, 141, self.rect.w, 292])
+        pass
+        # self.image.fill(COLOR_BOX, [3, 141, self.rect.w, 292])
 
     def show(self):
         super().show()
@@ -106,7 +114,7 @@ class GalaxyType(BaseWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.characteristics = GalacticCharacteristics(self)
+        self.characteristics = Galaxy()
 
     def fill(self):
         widgets = self.parent.properties.get_widgets_from_layer(1)
@@ -153,6 +161,7 @@ class NeighbourhoodType(BaseWidget):
             self.clear()
             self.populate()
             self.has_values = True
+            self.parent.button_add.enable()
 
     def clear(self):
         self.parent.clear()
@@ -164,7 +173,7 @@ class NeighbourhoodType(BaseWidget):
         rect_stars = self.parent.write('Stars in vicinity', self.title_font, x=3, y=185)
         rect_systems = self.parent.write('Stars Systems in vicinity', self.title_font, x=230, y=185)
 
-        positions = self.characteristics.system_positions(self.parent.dice.seed)
+        positions = self.characteristics.system_positions()
         types = 'o,b,a,f,g,k,m,wd,bd,black hole'.split(',')
 
         for i, cls in enumerate(types):
@@ -191,7 +200,7 @@ class NeighbourhoodType(BaseWidget):
 
         total_stars = self.characteristics.totals('stars')
         if 'Total Stars' not in self.values:
-            value_text = ValueText(self, 'Total Stars', 3, len(types) * 20 + 210, size=15)
+            value_text = ValueText(self, 'Total Stars', 230, 8 * 20 + rect_stars.bottom, size=15)
             self.values['Total Stars'] = value_text
         else:
             value_text = self.values['Total Stars']
@@ -205,11 +214,12 @@ class NeighbourhoodType(BaseWidget):
         triples = [x['pos'] for x in positions if x['configuration'] == 'Triple']
         multiples = [x['pos'] for x in positions if x['configuration'] == 'Multiple']
         d = {'single': singles, 'binary': binaries, 'triple': triples, 'multiple': multiples}
+        self.parent.properties.clear_layer(5)
         for i, comp in enumerate(comps):
             name = f'{comp.title()} Star Systems'
             quantity = self.characteristics.systems(comp)
             if name not in self.values:
-                value_text = ValueText(self, name, 230, i * 50 + rect_systems.bottom, size=14)
+                value_text = ValueText(self, name, 230, i * 35 + rect_systems.bottom, size=14)
                 self.values[name] = value_text
             else:
                 value_text = self.values[name]
@@ -220,22 +230,30 @@ class NeighbourhoodType(BaseWidget):
                 system_position = d[comp][each]
                 system = SystemButton(self.parent, comp.title(), system_position, size=15)
                 self.parent.properties.add(system, layer=5)
-                system.show()
 
         systems = self.parent.properties.get_widgets_from_layer(5)
         for _ in range(5):
             shuffle(systems)
-        self.parent.sort_buttons(systems)
+        if len(systems):
+            self.parent.sort_buttons(systems, True)
 
         total_systems = self.characteristics.totals('systems')
         if 'Total Systems' not in self.values:
-            value_text = ValueText(self, 'Total Systems', 230, len(types) * 20 + 210, size=14)
+            value_text = ValueText(self, 'Total Systems', 230, 9 * 20 + rect_stars.bottom, size=14)
             self.values['Total Systems'] = value_text
         else:
             value_text = self.values['Total Systems']
         value_text.value = str(int(total_systems)) if total_systems > 0 else 'None'
         self.parent.properties.add(value_text, layer=4)
         value_text.show()
+
+    def elevate_changes(self, value_text, new_value):
+        widgets = self.parent.properties.get_widgets_from_layer(2)
+        location_text, radius_text, density_text = widgets
+
+        if location_text is value_text:
+            if location_text.value != new_value:
+                self.fill()
 
 
 class Dice(Meta):
@@ -318,3 +336,15 @@ class SystemButton(Meta):
 
     def __repr__(self):
         return f'{self.name} Button @ {self.position}'
+
+
+class AddNeighbourhoodButton(TextButton):
+    def __init__(self, parent, x, y):
+        super().__init__(parent, 'Set Neighbourhood', x, y)
+        self.rect.right = x
+
+    def on_mousebuttondown(self, event):
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
+            buttons = self.parent.neighbourhood.characteristics.individual_stars
+            galaxy = self.parent.galaxy.characteristics
+            galaxy.add_proto_stars(buttons)
