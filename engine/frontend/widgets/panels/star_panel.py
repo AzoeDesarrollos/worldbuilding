@@ -182,8 +182,10 @@ class StarType(ObjectType):
 
     def set_star(self, star_data):
         star = Star(star_data)
-        idx = self.parent.proto_stars.current.object_data.idx
-        star.idx = idx
+        proto = self.parent.proto_stars.current.object_data
+        galaxy = Universe.get_astrobody_by('Galaxy')
+        galaxy.proto_stars.remove(proto)
+        star.idx = proto.idx
         self.parent.button_add.enable()
         self.current = star
         self.fill()

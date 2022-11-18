@@ -1,5 +1,5 @@
 ﻿from math import pi, acos, sin, cos, floor
-from engine.backend import q
+from engine.backend import q, generate_id
 from .space import Universe
 from random import uniform
 
@@ -192,10 +192,13 @@ class ProtoSystem:
     celestial_type = 'system'
     name = None
 
+    orbit = None
+
     def __init__(self, data):
         self.composition = data['composition']
         self.location = data['location']
         self.idx = data['idx']
+        self.id = generate_id()
 
     def __repr__(self):
         return f'{self.composition.title()} ProtoSystem'

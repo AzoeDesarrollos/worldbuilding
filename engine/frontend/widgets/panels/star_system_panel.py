@@ -3,6 +3,7 @@ from engine.frontend.widgets.basewidget import BaseWidget
 from .common import ListedArea, ColoredBody, TextButton
 from engine.backend import EventHandler, Systems
 from engine.equations.binary import system_type
+from engine.equations.space import Universe
 from ..values import ValueText
 from pygame import Surface
 
@@ -40,6 +41,9 @@ class StarSystemPanel(BaseWidget):
         EventHandler.register(self.load_systems, 'LoadData')
         EventHandler.register(self.name_current, 'NameObject')
 
+        self.remaining = ValueText(self, 'Binary Pairs remaining', 3, self.area_buttons.top - 50, size=14)
+        self.properties.add(self.remaining)
+
     def name_current(self, event):
         if event.data['object'] in self.systems:
             system = event.data['object']
@@ -63,6 +67,7 @@ class StarSystemPanel(BaseWidget):
             self.sort_buttons(self.system_buttons.widgets())
             Systems.set_system(system_data)
             self.current.enable()
+            self.remaining.value = str(int(self.remaining.value)-1)
             return button
 
     def save_systems(self, event):
@@ -116,6 +121,7 @@ class StarSystemPanel(BaseWidget):
             Systems.dissolve_system(system)
 
     def show(self):
+        self.remaining.value = str(len([system for system in Universe.systems if system.composition == 'binary']))
         for system in Systems.get_systems():
             if system.is_a_system:
                 self.create_button(system.star_system)
@@ -179,6 +185,9 @@ class SystemType(BaseWidget):
             self.secondary.value = star
             self.parent.undo_button.enable()
             self.has_values = True
+
+        if star in Systems.loose_stars:
+            Systems.loose_stars.remove(star)
 
         if self.primary.value != '' and self.secondary.value != '':
             for obj in self.properties.get_widgets_from_layer(2):
@@ -268,6 +277,7 @@ class AvailableStars(ListedArea):
     listed_type = ListedStar
 
     def show(self):
+        self.clear()
         self.populate(Systems.loose_stars, layer='one')
         super().show()
 
@@ -299,7 +309,7 @@ class DissolveButton(TextButton):
         super().__init__(parent, name, x, y)
 
     def on_mousebuttondown(self, event):
-        if event.data['button'] == 1 and self.enabled and event.orign == self:
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
             system = self.parent.current.current
             Systems.dissolve_system(system)
             self.parent.stars_area.show()
@@ -310,8 +320,8 @@ class SystemButton(ColoredBody):
     enabled = True
 
     def __init__(self, parent, system_data, idx, x, y):
-        super().__init__(parent, system_data, str(system_data), x, y)
         system_data.idx = idx
+        super().__init__(parent, system_data, str(system_data), x, y)
 
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and event.origin == self:
