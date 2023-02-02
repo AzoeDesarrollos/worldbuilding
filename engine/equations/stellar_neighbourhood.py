@@ -40,9 +40,13 @@ class StellarNeighbourhood:
     def add_to_galaxy(self):
         Universe.add_astro_obj(self)
 
-    def set_location(self, location):
-        density = self.galaxy.get_density_at_location(location)
+    def set_location(self, location, known_density=None):
         self.location = location
+        if known_density is not None:
+            self.galaxy.record_density_at_location(location, known_density)
+            density = known_density
+        else:
+            density = self.galaxy.get_density_at_location(location)
         if density is None:
             self.density = uniform(0.003, 0.012)
             self.galaxy.record_density_at_location(location, self.density)

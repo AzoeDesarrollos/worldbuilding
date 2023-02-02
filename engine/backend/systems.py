@@ -8,6 +8,8 @@ class Systems:
     _systems = None
     loose_stars = None
     save_data = {
+        'Galaxy': {},
+        'Neighbourhoods': {},
         'Asteroids': {},
         'Planets': {},
         'Satellites': {},
@@ -267,35 +269,37 @@ class Systems:
         ruta = join(getcwd(), 'data', 'savedata.json')
         data = abrir_json(ruta)
         read_data = abrir_json(ruta)
-        keys = 'Asteroids', 'Planets', 'Satellites', 'Stars', 'Binary Systems', 'Planetary Orbits', 'Stellar Orbits'
-        for key in keys:
+        keys = 'Galaxy,Neighbourhoods,Asteroids,Planets,Satellites,Stars,Binary Systems,Planetary Orbits,Stellar Orbits'
+        for key in keys.split(','):
             new_data = event.data.get(key, [])
             for item_id in new_data:
                 item_data = new_data[item_id]
-                if item_id in read_data[key]:
+                if item_id in read_data[key] and type(data[key][item_id]) is dict:
                     data[key][item_id].update(item_data)
                 else:
                     data[key][item_id] = item_data
 
         copy_data = data.copy()
-        for key in keys:
-            for idx in copy_data[key]:
-                datos = copy_data[key][idx]
-                if 'system' in datos:
-                    system = cls.get_system_by_id(datos['system'])
-                elif 'star_id' in copy_data[key][idx]:
-                    star = cls.get_star_by_id(datos['star_id'])
-                    system = cls.get_system_by_star(star)
-                else:
-                    star = cls.get_star_by_id(idx)
-                    system = cls.get_system_by_star(star)
+        for key in keys.split(','):
+            if key not in ('Galaxy', 'Neighbourhoods'):
+                for idx in copy_data[key]:
+                    datos = copy_data[key][idx]
+                    if 'system' in datos:
+                        system = cls.get_system_by_id(datos['system'])
+                    elif 'star_id' in copy_data[key][idx]:
+                        star = cls.get_star_by_id(datos['star_id'])
+                        system = cls.get_system_by_star(star)
+                    else:
+                        star = cls.get_star_by_id(idx)
+                        system = cls.get_system_by_star(star)
 
-                if system is not None:
-                    body = system.get_astrobody_by(idx, tag_type='id')
-                    if body is not False and body.flagged:
-                        del data[key][idx]
+                    if system is not None:
+                        body = system.get_astrobody_by(idx, tag_type='id')
+                        if body is not False and body.flagged:
+                            del data[key][idx]
 
-        guardar_json(ruta, data)
+        else:
+            guardar_json(ruta, data)
 
     @classmethod
     def compound_save_data(cls, event):

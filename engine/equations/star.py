@@ -1,4 +1,4 @@
-from engine.backend import decimal_round, roll, generate_id, q, turn_into_roman
+from engine.backend import decimal_round, generate_id, q, turn_into_roman
 from .general import BodyInHydrostaticEquilibrium
 from bisect import bisect_right
 from math import sqrt, pow
@@ -93,9 +93,9 @@ class Star(BodyInHydrostaticEquilibrium):
         # ID values make each star unique, even if they have the same mass and name.
         self.id = data['id'] if 'id' in data else generate_id()
         self.evolution_id = self.id
-        self.position = [round(roll(0, 1000)) if 'x' not in data.get('pos', {}) else data['pos']['x'],
-                         round(roll(0, 1000)) if 'y' not in data.get('pos', {}) else data['pos']['y'],
-                         round(roll(0, 1000)) if 'z' not in data.get('pos', {}) else data['pos']['z']]
+        # self.position = [round(roll(0, 1000)) if 'x' not in data.get('pos', {}) else data['pos']['x'],
+        #                  round(roll(0, 1000)) if 'y' not in data.get('pos', {}) else data['pos']['y'],
+        #                  round(roll(0, 1000)) if 'z' not in data.get('pos', {}) else data['pos']['z']]
 
     @property
     def spin(self):

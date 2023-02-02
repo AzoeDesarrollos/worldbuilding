@@ -59,13 +59,13 @@ class NeighbourhoodPanel(BaseWidget):
             self.properties.add(value, layer=2)
 
         value = ValueText(self.neighbourhood, 'Density', 400, rect.bottom, size=self.text_size)
+        value.do_round = True
         self.properties.add(value, layer=2)
 
         self.button_add = AddNeighbourhoodButton(self, ANCHO - 15, 416)
         self.properties.add(self.button_add, layer=6)
 
         EventHandler.register(self.clear, 'ClearData')
-
         self.neighbourhood_s = []
 
     def on_mousebuttondown(self, event):
@@ -132,6 +132,7 @@ class NeighbourhoodPanel(BaseWidget):
         galaxy = self.galaxy.characteristics
         self.create_button()
         galaxy.add_proto_stars(stars, self.current_nei.idx)
+        self.clear()
 
     def clear(self, event=None):
         if event is None or event.data['panel'] is self:
@@ -159,6 +160,8 @@ class GalaxyType(BaseWidget):
     def __init__(self, parent):
         super().__init__(parent)
         self.characteristics = Galaxy()
+        EventHandler.register(self.save_galaxy, 'Save')
+        EventHandler.register(self.load_galaxy, 'LoadData')
 
     def fill(self):
         widgets = self.parent.properties.get_widgets_from_layer(1)
@@ -174,6 +177,20 @@ class GalaxyType(BaseWidget):
         for widget in widgets:
             widget.enable()
 
+    def save_galaxy(self, event):
+        widget = self.parent.properties.get_widgets_from_layer(1)[0]
+        data = {}
+        if widget.value != '':
+            data["radius"] = widget.value
+
+        EventHandler.trigger(event.tipo + 'Data', 'Galaxy', {'Galaxy': data})
+
+    def load_galaxy(self, event):
+        widget = self.parent.properties.get_widgets_from_layer(1)[0]
+        if 'Galaxy' in event.data:
+            widget.value = str(event.data['Galaxy']['radius'])
+            self.fill()
+
 
 class NeighbourhoodType(BaseWidget):
     locked = False
@@ -185,6 +202,8 @@ class NeighbourhoodType(BaseWidget):
         super().__init__(parent)
         self.characteristics = StellarNeighbourhood(self)
         self.title_font = self.crear_fuente(16, underline=True)
+        EventHandler.register(self.save_neighbourhood, 'Save')
+        EventHandler.register(self.load_neighbourhood, 'LoadData')
         self.values = {}
 
     def fill(self):
@@ -193,11 +212,15 @@ class NeighbourhoodType(BaseWidget):
 
         if type(location_text.value) in (str, float) and location_text.value != '':
             self.parent.galaxy.characteristics.validate_position(float(location_text.value))
-            density = self.characteristics.set_location(float(location_text.value))
+            if type(density_text.value) is float:
+                density = self.characteristics.set_location(float(location_text.value),
+                                                            known_density=density_text.value)
+            else:
+                density = self.characteristics.set_location(float(location_text.value))
             location_text.value = q(location_text.value, 'ly')
             self.location_valid = True
             location_text.editable = False
-            density_text.value = str(round(density, 3))
+            density_text.value = q(density)
 
         if type(radius_text.value) in (str, float) and radius_text.value != '':
             self.characteristics.set_radius(float(radius_text.value))
@@ -209,6 +232,31 @@ class NeighbourhoodType(BaseWidget):
             self.populate()
             self.has_values = True
             self.parent.button_add.enable()
+
+    def save_neighbourhood(self, event):
+        widgets = self.parent.properties.get_widgets_from_layer(2)
+        location_text, radius_text, density_text = widgets
+        data = {}
+        if location_text.value != '':
+            data['location'] = location_text.value
+        if radius_text.value != '':
+            data['radius'] = radius_text.value
+        if density_text.value not in ('', 'Unknown'):
+            data['density'] = density_text.value
+
+        EventHandler.trigger(event.tipo + 'Data', 'Neighbourhood', {"Neighbourhoods": {'Stellar Neighbourhood': data}})
+
+    def load_neighbourhood(self, event):
+        widgets = self.parent.properties.get_widgets_from_layer(2)
+        location_text, radius_text, density_text = widgets
+        for key in event.data['Neighbourhoods']:
+            neighbourhood_data = event.data['Neighbourhoods'][key]
+            location_text.value = q(neighbourhood_data['location'], 'ly')
+            radius_text.value = q(neighbourhood_data['radius'], 'ly')
+            density_text.value = q(neighbourhood_data['density'])
+        self.fill()
+        self.parent.create_neighbourhood()
+        self.clear()
 
     def clear(self):
         for name in self.values:
@@ -339,4 +387,3 @@ class AddNeighbourhoodButton(TextButton):
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.create_neighbourhood()
-            self.parent.clear()

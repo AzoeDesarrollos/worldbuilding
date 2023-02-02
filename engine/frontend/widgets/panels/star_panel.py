@@ -56,8 +56,8 @@ class StarPanel(BasePanel):
                 'name': star.name,
                 'mass': star.mass.m,
                 'spin': star.spin,
-                'age': star.age.m,
-                'pos': dict(zip(['x', 'y', 'z'], star.position))
+                'age': star.age.m
+                # 'pos': dict(zip(['x', 'y', 'z'], star.position))
             }
             data[star.id] = star_data
         EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data})
