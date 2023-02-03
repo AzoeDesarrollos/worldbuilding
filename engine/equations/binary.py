@@ -212,7 +212,7 @@ def system_type(separation):
     elif (120 <= float(separation) <= 600) or (1200 <= float(separation) <= 60000):
         system = STypeSystem
     else:
-        raise AssertionError('The Average Separation is incompatible with\n'
-                             'S-Type (120 to 600 AU) or\n'
+        raise AssertionError('The Average Separation\nis incompatible with\n'
+                             'S-Type (120 to 600 AU)\nor\n'
                              'P-Type (0.15 to 6 AU) systems')
     return system

@@ -3,6 +3,7 @@ from engine.frontend.widgets import ValueText, BaseWidget, Meta
 from engine.frontend.widgets.panels.common import TextButton
 from engine.equations.stellar_neighbourhood import *
 from engine.backend.eventhandler import EventHandler
+from engine.equations.space import Universe
 from engine.equations.galaxy import Galaxy
 from pygame import Surface, draw, Rect
 
@@ -126,8 +127,9 @@ class NeighbourhoodPanel(BaseWidget):
         den_text.value = str(round(denstiy, 3))
         self.neighbourhood.fill()
 
-    def create_neighbourhood(self):
+    def create_neighbourhood(self, data):
         neighbourhood = self.neighbourhood.characteristics
+        neighbourhood.process_data(data)
         stars = neighbourhood.individual_stars
         galaxy = self.galaxy.characteristics
         self.create_button()
@@ -255,7 +257,7 @@ class NeighbourhoodType(BaseWidget):
             radius_text.value = q(neighbourhood_data['radius'], 'ly')
             density_text.value = q(neighbourhood_data['density'])
         self.fill()
-        self.parent.create_neighbourhood()
+        self.parent.create_neighbourhood(event.data)
         self.clear()
 
     def clear(self):

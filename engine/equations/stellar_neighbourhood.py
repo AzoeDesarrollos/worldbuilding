@@ -1,6 +1,5 @@
 ﻿from math import pi, acos, sin, cos, floor
 from engine.backend import q, generate_id
-from .space import Universe
 from random import uniform
 
 
@@ -36,9 +35,20 @@ class StellarNeighbourhood:
     def __init__(self, parent):
         self.parent = parent
         self.galaxy = self.parent.parent.galaxy.characteristics
+        self.pre_processed_system_positions = {
+            "Single": [],
+            "Binary": [],
+            "Triple": [],
+            "Multiple": []
+        }
 
-    def add_to_galaxy(self):
-        Universe.add_astro_obj(self)
+    def process_data(self, data):
+        for system_id in data['Binary Systems']:
+            system_data = data['Binary Systems'][system_id]
+            x = system_data['pos']['x']
+            y = system_data['pos']['y']
+            z = system_data['pos']['z']
+            self.pre_processed_system_positions['Binary'].append((x, y, z))
 
     def set_location(self, location, known_density=None):
         self.location = location
@@ -155,22 +165,25 @@ class StellarNeighbourhood:
         initial_value = (constant * seed) % divisor
         r_raw = initial_value
         distances = []
-        for i in range(self.totals('systems')):
-            p_raw = constant * r_raw % divisor
-            w_raw = constant * p_raw % divisor
-            r_raw = constant * w_raw % divisor
+        for i, system in enumerate(systems):
+            if len(self.pre_processed_system_positions[system]):
+                x, y, z = self.pre_processed_system_positions[system].pop()
+            else:
+                p_raw = constant * r_raw % divisor
+                w_raw = constant * p_raw % divisor
+                r_raw = constant * w_raw % divisor
 
-            p_normal = p_raw / divisor
-            w_normal = w_raw / divisor
-            r_normal = r_raw / divisor
+                p_normal = p_raw / divisor
+                w_normal = w_raw / divisor
+                r_normal = r_raw / divisor
 
-            p = p_normal ** (1 / 3) * self.radius.m
-            w = w_normal * 2 * pi
-            r = acos(2 * r_normal - 1)
+                p = p_normal ** (1 / 3) * self.radius.m
+                w = w_normal * 2 * pi
+                r = acos(2 * r_normal - 1)
 
-            x = round(p * sin(r) * cos(w), 2)
-            y = round(p * sin(r) * sin(w), 2)
-            z = round(p * cos(r), 2)
+                x = round(p * sin(r) * cos(w), 2)
+                y = round(p * sin(r) * sin(w), 2)
+                z = round(p * cos(r), 2)
 
             distances.append({'configuration': systems[i], 'pos': [x, y, z]})
 

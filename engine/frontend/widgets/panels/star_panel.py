@@ -113,7 +113,8 @@ class StarPanel(BasePanel):
     def add_button(self, star):
         button = StarButton(self.current, star, str(star), self.curr_x, self.curr_y)
         self.properties.add(button, layer=2)
-        self.proto_stars.delete_objects(self.proto_stars.current.object_data)
+        if len(self.proto_stars):
+            self.proto_stars.delete_objects(self.proto_stars.current.object_data)
         Systems.add_star(star)
         if star not in self.stars:
             self.stars.append(star)

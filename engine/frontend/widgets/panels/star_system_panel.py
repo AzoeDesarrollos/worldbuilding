@@ -6,6 +6,7 @@ from engine.equations.binary import system_type
 from engine.equations.space import Universe
 from ..values import ValueText
 from pygame import Surface
+from random import choice
 
 
 class StarSystemPanel(BaseWidget):
@@ -58,6 +59,10 @@ class StarSystemPanel(BaseWidget):
         self.current.reset(star)
 
     def create_button(self, system_data):
+        binary_systems = [system for system in Universe.systems if system.composition == 'binary']
+        chosen = choice(binary_systems)
+        Universe.systems.remove(chosen)
+        system_data.position = chosen.location
         if system_data not in self.systems:
             idx = len([s for s in self.systems if system_data.compare(s) is True])
             button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
@@ -89,6 +94,12 @@ class StarSystemPanel(BaseWidget):
         EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': data})
 
     def load_systems(self, event):
+        # this is here because the Universe data
+        binary_systems = [system for system in Universe.systems if system.composition == 'binary']
+        remaining_value = len(binary_systems)
+        self.remaining.value = str(remaining_value)
+        # doesn't exist on __init__() yet.
+
         for id in event.data['Binary Systems']:
             system_data = event.data['Binary Systems'][id]
             avg_s = system_data['avg_s']
@@ -102,8 +113,6 @@ class StarSystemPanel(BaseWidget):
             system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, pos, id=id, name=name)
             button = self.create_button(system)
             button.hide()
-            # Systems.set_system(system)
-        self.sort_buttons(self.system_buttons.widgets())
 
     def select_one(self, btn):
         for button in self.system_buttons.widgets():
@@ -121,10 +130,10 @@ class StarSystemPanel(BaseWidget):
             Systems.dissolve_system(system)
 
     def show(self):
-        self.remaining.value = str(len([system for system in Universe.systems if system.composition == 'binary']))
-        for system in Systems.get_systems():
-            if system.is_a_system:
-                self.create_button(system.star_system)
+        # self.remaining.value = str(len([system for system in Universe.systems if system.composition == 'binary']))
+        # for system in Systems.get_systems():
+        #     if system.is_a_system:
+        #         self.create_button(system.star_system)
         super().show()
         for prop in self.properties.widgets():
             prop.show()
