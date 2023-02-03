@@ -8,7 +8,7 @@ class Systems:
     _systems = None
     loose_stars = None
     save_data = {
-        'Galaxy': {},
+        'Galaxies': {},
         'Neighbourhoods': {},
         'Asteroids': {},
         'Planets': {},
@@ -269,7 +269,8 @@ class Systems:
         ruta = join(getcwd(), 'data', 'savedata.json')
         data = abrir_json(ruta)
         read_data = abrir_json(ruta)
-        keys = 'Galaxy,Neighbourhoods,Asteroids,Planets,Satellites,Stars,Binary Systems,Planetary Orbits,Stellar Orbits'
+        keys = 'Galaxies,Neighbourhoods,Stars,Binary Systems,Stellar Orbits,'
+        keys += 'Planetary Orbits,Asteroids,Planets,Satellites'
         for key in keys.split(','):
             new_data = event.data.get(key, [])
             for item_id in new_data:
@@ -281,7 +282,7 @@ class Systems:
 
         copy_data = data.copy()
         for key in keys.split(','):
-            if key not in ('Galaxy', 'Neighbourhoods'):
+            if key not in ('Galaxies', 'Neighbourhoods'):
                 for idx in copy_data[key]:
                     datos = copy_data[key][idx]
                     if 'system' in datos:

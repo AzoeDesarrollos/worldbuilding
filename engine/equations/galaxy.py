@@ -1,5 +1,5 @@
 from engine.backend import q, generate_id, turn_into_roman
-from .space import Universe
+# from .space import Universe
 from time import sleep
 
 
@@ -17,12 +17,21 @@ class Galaxy:
 
     orbit = None
 
-    def __init__(self, data=None):
-        if data is None:
-            data = {}
+    id = None
+
+    def __init__(self):
         self.density_at_location = {}  # tho this dict may get very large.
         self.proto_stars = []
-        self.id = data['id'] if 'id' in data else generate_id()
+
+    def initialize(self, data=None):
+        if data is None:
+            self.id = generate_id()
+        elif type(data) is dict:
+            self.id = data['id']
+            self.set_radius(data['radius'])
+        elif type(data) is Galaxy:
+            self.id = data.id
+            self.set_radius(data.radius)
 
     def add_proto_stars(self, list_of_dicts, neighbourhood_idx):
         for data in list_of_dicts:
@@ -36,7 +45,6 @@ class Galaxy:
         self.radius = q(radius, 'ly')
         self.inner = q(round((radius * 0.47), 0), 'ly')
         self.outer = q(round((radius * 0.6), 0), 'ly')
-        Universe.add_astro_obj(self)
 
     def record_density_at_location(self, location, density):
         if location not in self.density_at_location:
@@ -51,6 +59,16 @@ class Galaxy:
             assert self.inner <= q(location, 'ly') <= self.outer, "Neighbourhood is uninhabitable."
         else:
             raise AssertionError('Galactic Characteristics are not set.')
+
+    def __repr__(self):
+        return f'Galaxy #{self.id}'
+
+    def __eq__(self, other):
+        is_equal = self.id == other.id
+        is_equal = is_equal and self.radius == other.radius
+        is_equal = is_equal and self.inner == other.inner
+        is_equal = is_equal and self.outer == other.outer
+        return is_equal
 
 
 class ProtoStar:

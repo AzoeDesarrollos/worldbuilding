@@ -34,7 +34,7 @@ class StellarNeighbourhood:
 
     def __init__(self, parent):
         self.parent = parent
-        self.galaxy = self.parent.parent.galaxy.characteristics
+        self.galaxy = self.parent.parent.galaxy.current
         self.pre_processed_system_positions = {
             "Single": [],
             "Binary": [],

@@ -4,6 +4,7 @@ from engine.frontend.widgets.panels.common import TextButton
 from engine.equations.stellar_neighbourhood import *
 from engine.backend.eventhandler import EventHandler
 from engine.equations.space import Universe
+from engine.backend.util import generate_id
 from engine.equations.galaxy import Galaxy
 from pygame import Surface, draw, Rect
 
@@ -120,7 +121,7 @@ class NeighbourhoodPanel(BaseWidget):
         self.sort_buttons(self.properties.get_widgets_from_layer(5))
 
     def get_values(self, location, radius):
-        denstiy = self.galaxy.characteristics.get_density_at_location(location)
+        denstiy = self.galaxy.current.get_density_at_location(location)
         loc_text, rad_text, den_text = self.properties.get_widgets_from_layer(2)
         loc_text.value = str(location)
         rad_text.value = str(radius)
@@ -132,7 +133,7 @@ class NeighbourhoodPanel(BaseWidget):
         if data is not None:
             neighbourhood.process_data(data)
         stars = neighbourhood.individual_stars
-        galaxy = self.galaxy.characteristics
+        galaxy = self.galaxy.current
         self.create_button()
         galaxy.add_proto_stars(stars, self.current_nei.idx)
         self.clear()
@@ -162,23 +163,34 @@ class GalaxyType(BaseWidget):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.characteristics = Galaxy()
+        self.current = None
         EventHandler.register(self.save_galaxy, 'Save')
-        EventHandler.register(self.load_galaxy, 'LoadData')
+        EventHandler.register(self.load_galaxies, 'LoadData')
 
-    def fill(self):
-        widgets = self.parent.properties.get_widgets_from_layer(1)
-        radius_text = widgets[0]
-        self.characteristics.set_radius(float(radius_text.value))
-        widgets[0].value = self.characteristics.radius
-        widgets[1].value = self.characteristics.inner
-        widgets[2].value = self.characteristics.outer
+    def fill(self, data=None):
+        galaxy = Galaxy()
+        galaxy.initialize(data)
+        Universe.add_astro_obj(galaxy)
+        if not self.has_values:
+            self.current = galaxy
+            widgets = self.parent.properties.get_widgets_from_layer(1)
+            if data is None:
+                radius_text = widgets[0]
+                self.current.set_radius(float(radius_text.value))
+            widgets[0].value = galaxy.radius
+            widgets[1].value = galaxy.inner
+            widgets[2].value = galaxy.outer
 
-        widgets = self.parent.properties.get_widgets_from_layer(2)
-        widgets[0].set_min_and_max(self.characteristics.inner.m, self.characteristics.outer.m)
-        widgets[2].value = 'Unknown'
-        for widget in widgets:
-            widget.enable()
+            widgets = self.parent.properties.get_widgets_from_layer(2)
+            widgets[0].set_min_and_max(galaxy.inner.m, galaxy.outer.m)
+            widgets[2].value = 'Unknown'
+            for widget in widgets:
+                widget.enable()
+            self.has_values = True
+
+            swap_galaxy_button = self.parent.parent.properties.widgets()[6]
+            swap_galaxy_button.enable()
+            swap_galaxy_button.current = self.current
 
     def save_galaxy(self, event):
         widget = self.parent.properties.get_widgets_from_layer(1)[0]
@@ -186,13 +198,17 @@ class GalaxyType(BaseWidget):
         if widget.value != '':
             data["radius"] = widget.value
 
-        EventHandler.trigger(event.tipo + 'Data', 'Galaxy', {'Galaxy': data})
+        EventHandler.trigger(event.tipo + 'Data', 'Galaxy', {'Galaxies': {self.current.id: data}})
 
-    def load_galaxy(self, event):
-        widget = self.parent.properties.get_widgets_from_layer(1)[0]
-        if 'Galaxy' in event.data:
-            widget.value = str(event.data['Galaxy']['radius'])
-            self.fill()
+    def load_galaxies(self, event):
+        for key in event.data['Galaxies']:
+            data = {'radius': event.data['Galaxies'][key]['radius'], 'id': key}
+            self.fill(data)
+
+    def switch_current(self, new):
+        self.current = new
+        self.has_values = False
+        self.fill(self.current)
 
 
 class NeighbourhoodType(BaseWidget):
@@ -214,12 +230,8 @@ class NeighbourhoodType(BaseWidget):
         location_text, radius_text, density_text = widgets
 
         if type(location_text.value) in (str, float) and location_text.value != '':
-            self.parent.galaxy.characteristics.validate_position(float(location_text.value))
-            if type(density_text.value) is float:
-                density = self.characteristics.set_location(float(location_text.value),
-                                                            known_density=density_text.value)
-            else:
-                density = self.characteristics.set_location(float(location_text.value))
+            self.parent.galaxy.current.validate_position(float(location_text.value))
+            density = self.characteristics.set_location(float(location_text.value))
             location_text.value = q(location_text.value, 'ly')
             self.location_valid = True
             location_text.editable = False
@@ -246,20 +258,25 @@ class NeighbourhoodType(BaseWidget):
             data['radius'] = radius_text.value
         if density_text.value not in ('', 'Unknown'):
             data['density'] = density_text.value
+        neighbourhood_id = generate_id()
+        galaxy_id = self.parent.galaxy.current.id
 
-        EventHandler.trigger(event.tipo + 'Data', 'Neighbourhood', {"Neighbourhoods": {'Stellar Neighbourhood': data}})
+        if any(data):
+            data = data.update({'galaxy_id': galaxy_id})
+            EventHandler.trigger(event.tipo + 'Data', 'Neighbourhood', {"Neighbourhoods": {neighbourhood_id: data}})
 
     def load_neighbourhood(self, event):
         widgets = self.parent.properties.get_widgets_from_layer(2)
         location_text, radius_text, density_text = widgets
-        for key in event.data['Neighbourhoods']:
-            neighbourhood_data = event.data['Neighbourhoods'][key]
-            location_text.value = q(neighbourhood_data['location'], 'ly')
-            radius_text.value = q(neighbourhood_data['radius'], 'ly')
-            density_text.value = q(neighbourhood_data['density'])
-        self.fill()
-        self.parent.create_neighbourhood(event.data)
-        self.clear()
+        if len(event.data['Neighbourhoods']):
+            for key in event.data['Neighbourhoods']:
+                neighbourhood_data = event.data['Neighbourhoods'][key]
+                location_text.value = q(neighbourhood_data['location'], 'ly')
+                radius_text.value = q(neighbourhood_data['radius'], 'ly')
+                density_text.value = q(neighbourhood_data['density'])
+            self.fill()
+            self.parent.create_neighbourhood(event.data)
+            self.clear()
 
     def clear(self):
         for name in self.values:

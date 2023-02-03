@@ -1,5 +1,6 @@
 from engine.backend import small_angle_aproximation, Systems, q, eucledian_distance
 from math import sqrt
+from itertools import cycle
 
 
 class Universe:
@@ -17,6 +18,9 @@ class Universe:
 
     astro_bodies = None
 
+    galaxy_cycler = None
+    current_galaxy = 0
+
     @classmethod
     def init(cls):
         cls.planets = []
@@ -32,6 +36,9 @@ class Universe:
         cls.distances = {}
 
         cls.astro_bodies = []
+
+        cls.galaxy_cycler = cycle(cls.galaxies)
+        cls.current_galaxy = 0
 
     @classmethod
     def get_astrobody_by(cls, tag_identifier, tag_type='name', silenty=False):
@@ -60,6 +67,8 @@ class Universe:
             astro_obj.idx = len([i for i in group if i.clase == astro_obj.clase]) - 1
         elif hasattr(astro_obj, 'cls'):
             astro_obj.idx = len([i for i in group if i.cls == astro_obj.cls]) - 1
+        elif astro_obj.celestial_type == 'galaxy' and len(group) == 1:
+            next(cls.galaxy_cycler)
 
     @classmethod
     def remove_astro_obj(cls, astro_obj):
@@ -188,6 +197,12 @@ class Universe:
                         elif ab < 1.2e-9:
                             visibility = 'telescope'
                     cls.aparent_brightness[body.id][other.id] = visibility
+
+    @classmethod
+    def cycle_galaxies(cls):
+        galaxy = next(cls.galaxy_cycler)
+        cls.current_galaxy = cls.galaxies.index(galaxy)
+        return galaxy
 
 
 Universe.init()

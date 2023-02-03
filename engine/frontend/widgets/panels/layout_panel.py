@@ -4,6 +4,7 @@ from engine.frontend.globales.constantes import *
 from engine.frontend.globales.group import Group
 from engine.backend import EventHandler, Systems
 from engine.frontend.widgets.meta import Meta
+from engine.equations.space import Universe
 from engine.backend.util import abrir_json
 from os.path import exists, join
 from os import getcwd
@@ -33,20 +34,22 @@ class LayoutPanel(BaseWidget):
         a = Arrow(self, 'backward', 180, self.rect.left + 16, self.rect.bottom)
         b = Arrow(self, 'forward', 0, self.rect.right - 16, self.rect.bottom)
 
-        e = NewButton(self, (self.rect.w//6)*1+32, self.rect.bottom - 26)
-        d = LoadButton(self, (self.rect.w//6)*3, self.rect.bottom - 26)
-        c = SaveButton(self, (self.rect.w//6)*5-32, self.rect.bottom - 26)
+        e = NewButton(self, (self.rect.w // 6) * 1 + 32, self.rect.bottom - 26)
+        d = LoadButton(self, (self.rect.w // 6) * 3, self.rect.bottom - 26)
+        c = SaveButton(self, (self.rect.w // 6) * 5 - 32, self.rect.bottom - 26)
 
-        f = SwapSystem(self, ANCHO - 200, 2)
+        f = SwapSystem(self, ANCHO - 200, 2, 'System')
+        g = SwapGalaxy(self, 0, 2, 'Galaxy')
+        g.always_enabled = True
 
         self.load_button = d
 
-        self.properties.add(a, b, c, d, e, f, layer=1)
+        self.properties.add(a, b, c, d, e, f, g, layer=1)
 
     def cycle(self, delta):
         if self.curr_idx + delta < 0:
-            self.curr_idx = len(self.panels)-1
-        elif self.curr_idx + delta > len(self.panels)-1:
+            self.curr_idx = len(self.panels) - 1
+        elif self.curr_idx + delta > len(self.panels) - 1:
             self.curr_idx = 0
         else:
             self.curr_idx += delta
@@ -166,18 +169,22 @@ class NewButton(BaseButton):
 
 class SwapSystem(Meta):
     enabled = False
+    system_image = None
 
-    def __init__(self, parent, x, y):
+    def __init__(self, parent, x, y, name):
         super().__init__(parent)
         self.layer = 7
         self.f1 = self.crear_fuente(13, bold=True)
         self.f2 = self.crear_fuente(13)
-        self.img_sel = self.f1.render('System: ', True, COLOR_TEXTO, COLOR_BOX)
-        self.img_uns = self.f2.render('System: ', True, COLOR_TEXTO, COLOR_BOX)
-        self.img_dis = self.f1.render('System: ', True, COLOR_DISABLED, COLOR_BOX)
+        self.img_sel = self.f1.render(f'{name}: ', True, COLOR_TEXTO, COLOR_BOX)
+        self.img_uns = self.f2.render(f'{name}: ', True, COLOR_TEXTO, COLOR_BOX)
+        self.img_dis = self.f1.render(f'{name}: ', True, COLOR_DISABLED, COLOR_BOX)
         self.image = self.img_dis
         self.rect = self.image.get_rect(topleft=(x, y))
-        self.system_image = SystemName(self, left=self.rect.right+6, y=2)
+        self.create_img()
+
+    def create_img(self):
+        self.system_image = SystemName(self, left=self.rect.right + 6, y=2)
 
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and event.origin == self:
@@ -190,11 +197,29 @@ class SwapSystem(Meta):
 
     def show(self):
         super().show()
-        self.system_image.show()
+        if self.system_image is not None:
+            self.system_image.show()
 
     def hide(self):
         super().hide()
-        self.system_image.hide()
+        if self.system_image is not None:
+            self.system_image.hide()
+
+
+class SwapGalaxy(SwapSystem):
+    current = None
+
+    def on_mousebuttondown(self, event):
+        if event.data['button'] == 1 and event.origin == self and self.enabled:
+            galaxy = Universe.cycle_galaxies()
+            self.current = galaxy
+            self.parent.current.galaxy.switch_current(galaxy)
+
+    def create_img(self):
+        self.system_image = GalaxyName(self, left=self.rect.right + 6, y=2)
+
+    def update(self):
+        super().update()
 
 
 class SystemName(BaseWidget):
@@ -230,3 +255,11 @@ class SystemName(BaseWidget):
     def update(self):
         self.image = self.f.render(self.get_name(), True, self.color, COLOR_BOX)
         self.rect = self.image.get_rect(topleft=self._rect.topleft)
+
+
+class GalaxyName(SystemName):
+    def get_name(self):
+        if self.parent.current is not None and self.parent.enabled:
+            name = self.parent.current.id.split('-')[1]
+            self.color = COLOR_TEXTO
+            return name
