@@ -127,9 +127,10 @@ class NeighbourhoodPanel(BaseWidget):
         den_text.value = str(round(denstiy, 3))
         self.neighbourhood.fill()
 
-    def create_neighbourhood(self, data):
+    def create_neighbourhood(self, data=None):
         neighbourhood = self.neighbourhood.characteristics
-        neighbourhood.process_data(data)
+        if data is not None:
+            neighbourhood.process_data(data)
         stars = neighbourhood.individual_stars
         galaxy = self.galaxy.characteristics
         self.create_button()

@@ -50,6 +50,8 @@ class Star(BodyInHydrostaticEquilibrium):
 
     neighbourhood_idx = None
 
+    position = None
+
     def __init__(self, data):
         mass = data.get('mass', False)
         luminosity = data.get('luminosity', False)
@@ -93,9 +95,6 @@ class Star(BodyInHydrostaticEquilibrium):
         # ID values make each star unique, even if they have the same mass and name.
         self.id = data['id'] if 'id' in data else generate_id()
         self.evolution_id = self.id
-        # self.position = [round(roll(0, 1000)) if 'x' not in data.get('pos', {}) else data['pos']['x'],
-        #                  round(roll(0, 1000)) if 'y' not in data.get('pos', {}) else data['pos']['y'],
-        #                  round(roll(0, 1000)) if 'z' not in data.get('pos', {}) else data['pos']['z']]
 
     @property
     def spin(self):

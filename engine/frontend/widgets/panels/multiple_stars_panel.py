@@ -3,8 +3,10 @@ from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
 from engine.frontend.widgets.panels.common import ListedBody, ListedArea
 from engine.backend import EventHandler, Systems
 from engine.equations.binary import system_type
+from engine.equations.space import Universe
 from ..basewidget import BaseWidget
 from pygame import Surface
+from random import choice
 
 
 class MultipleStarsPanel(BaseWidget):
@@ -47,13 +49,27 @@ class MultipleStarsPanel(BaseWidget):
             system.set_name(event.data['name'])
 
     def create_button(self, system_data):
+        triple_systems = [system for system in Universe.systems if system.composition == 'triple']
+        multiple_systems = [system for system in Universe.systems if system.composition == 'multiple']
+        primary = system_data.primary
+        secondary = system_data.secondary
+        chosen = None
+        if primary.celestial_type == 'system' and secondary.celestial_type == 'star':
+            chosen = choice(triple_systems)
+        elif primary.celestial_type == 'system' and secondary.celestial_type == 'system':
+            chosen = choice(multiple_systems)
+        elif primary.celestial_type == 'star' and secondary.celestial_type == 'system':
+            chosen = choice(triple_systems)
+        assert chosen is not None, "System is nonsensical"
+        Universe.systems.remove(chosen)
+        system_data.position = chosen.location
         if system_data not in self.systems:
             idx = len([s for s in self.systems if system_data.compare(s) is True])
             button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
             self.systems.append(system_data)
             self.system_buttons.add(button)
             self.properties.add(button)
-            self.sort_buttons(self.system_buttons)
+            self.sort_buttons(self.system_buttons.widgets())
             Systems.set_system(system_data)
             self.current.enable()
             return button
@@ -146,6 +162,8 @@ class AvailableSystems(ListedArea):
     def show(self):
         self.repopulate()
         super().show()
+        for listed in self.listed_objects.widgets():
+            listed.show()
 
     def repopulate(self):
         population = []
@@ -153,6 +171,12 @@ class AvailableSystems(ListedArea):
             if system_or_star.is_a_system:
                 if system_or_star.star_system.system not in population:
                     population.append(system_or_star.star_system.system)
-                    population.sort(key=lambda s: s.mass, reverse=True)
-                    if len(population):
-                        self.populate(population, layer='two')
+
+        if len(population):
+            population.sort(key=lambda s: s.mass, reverse=True)
+            self.populate(population, layer='two')
+
+    def update(self):
+        # this hook is necessary.
+        # otherwise the content of the panel is deleted.
+        pass

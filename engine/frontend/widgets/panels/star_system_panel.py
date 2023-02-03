@@ -108,9 +108,9 @@ class StarSystemPanel(BaseWidget):
             prim = Systems.get_star_by_id(system_data['primary'])
             scnd = Systems.get_star_by_id(system_data['secondary'])
             name = system_data['name']
-            pos = system_data['pos']
+            # pos = system_data['pos']
 
-            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, pos, id=id, name=name)
+            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
             button = self.create_button(system)
             button.hide()
 
@@ -131,9 +131,9 @@ class StarSystemPanel(BaseWidget):
 
     def show(self):
         # self.remaining.value = str(len([system for system in Universe.systems if system.composition == 'binary']))
-        # for system in Systems.get_systems():
-        #     if system.is_a_system:
-        #         self.create_button(system.star_system)
+        for system in Systems.get_systems():
+            if system.is_a_system:
+                self.create_button(system.star_system)
         super().show()
         for prop in self.properties.widgets():
             prop.show()
@@ -144,6 +144,10 @@ class StarSystemPanel(BaseWidget):
             prop.hide()
         for star_widget in self.stars_area.listed_objects.widgets():
             star = star_widget.object_data
+            singles = [system for system in Universe.systems if system.composition == 'single']
+            chosen = choice(singles)
+            Universe.systems.remove(chosen)
+            star.position = chosen.location
             Systems.set_system(star)
 
 

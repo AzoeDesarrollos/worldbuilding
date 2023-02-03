@@ -8,6 +8,7 @@ from .common import ColoredBody, ListedArea
 from engine.equations.space import Universe
 from pygame import Surface, mouse, draw
 from engine.equations.star import Star
+from random import choice
 
 
 class StarPanel(BasePanel):
@@ -106,7 +107,12 @@ class StarPanel(BasePanel):
             self.parent.set_skippable('Star System', True)
             self.parent.set_skippable('Multiple Stars', True)
             if len(self.stars) == 1:
-                Systems.set_system(self.stars[0])
+                star = self.stars[0]
+                singles = [system for system in Universe.systems if system.composition == 'single']
+                chosen = choice(singles)
+                Universe.systems.remove(chosen)
+                star.position = chosen.location
+                Systems.set_system(star)
         else:
             self.parent.set_skippable('Star System', False)
 
