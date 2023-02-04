@@ -102,7 +102,7 @@ class NeighbourhoodPanel(BaseWidget):
             data = {'location': location, 'radius': radius, 'density': density}
 
         object_data = DefinedNeighbourhood(data)
-        object_data.idx = len(self.neighbourhoods)+1
+        object_data.idx = len(self.neighbourhoods) + 1
         self.neighbourhoods.append(object_data)
         self.current_nei = object_data
         button = NeighbourhoodButton(self, object_data)
@@ -258,14 +258,21 @@ class NeighbourhoodType(BaseWidget):
         EventHandler.register(self.load_neighbourhoods, 'LoadData')
         self.values = {}
 
+        f = self.crear_fuente(16, bold=True)
+        self.habitable = f.render('Habitable', True, (0, 255, 0), COLOR_BOX)
+        self.uninhabitable = f.render('Uninhabitable', True, (255, 0, 0), COLOR_BOX)
+        self.hab_rect = self.habitable.get_rect(centerx=460, y=self.parent.rect.y + 160)
+        self.unhab_rect = self.uninhabitable.get_rect(centerx=470, y=self.parent.rect.y + 160)
+        self.eraser = Rect(390, self.parent.rect.y + 160, 150, 24)
+
     def fill(self):
         self.characteristics.set_galaxy()
         widgets = self.parent.properties.get_widgets_from_layer(2)
         location_text, radius_text, density_text = widgets
-        location_valid, radius_valid = False, False
+        location_valid, radius_valid, valid = False, False, False
 
         if type(location_text.value) in (str, float) and location_text.value != '':
-            self.characteristics.galaxy.validate_position(float(location_text.value))
+            valid = self.characteristics.galaxy.validate_position(float(location_text.value))
             density = self.characteristics.set_location(float(location_text.value))
             location_text.value = q(location_text.value, 'ly')
             location_valid = True
@@ -282,6 +289,11 @@ class NeighbourhoodType(BaseWidget):
             self.populate()
             self.has_values = True
             self.parent.button_add.enable()
+
+            if valid:
+                self.parent.image.blit(self.habitable, self.hab_rect)
+            else:
+                self.parent.image.blit(self.uninhabitable, self.unhab_rect)
 
     def save_neighbourhoods(self, event):
         macro_data = {}
@@ -311,6 +323,7 @@ class NeighbourhoodType(BaseWidget):
         for name in self.values:
             value = self.values[name]
             value.clear()
+        self.parent.image.fill(COLOR_BOX, self.eraser)
 
     def populate(self):
         rect_stars = self.parent.write('Stars in vicinity', self.title_font, x=3, y=185)
@@ -436,3 +449,5 @@ class AddNeighbourhoodButton(TextButton):
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.create_neighbourhood()
+            self.parent.clear()
+            self.disable()

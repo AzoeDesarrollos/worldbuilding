@@ -61,9 +61,9 @@ class Galaxy:
         if location in self.density_at_location:
             return self.density_at_location[location]
 
-    def validate_position(self, location=2580):  # ly
+    def validate_position(self, location):  # ly
         if self.inner is not None and self.outer is not None:
-            assert self.inner <= q(location, 'ly') <= self.outer, "Neighbourhood is uninhabitable."
+            return self.inner <= q(location, 'ly') <= self.outer
         else:
             raise AssertionError('Galactic Characteristics are not set.')
 
