@@ -24,9 +24,6 @@ class NamingPanel(BaseWidget):
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
 
-        f1 = self.crear_fuente(16, underline=True)
-        self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5)
-
         self.unnamed = Group()
         self.objects = {}
         self.dummy = DummyType(self)

@@ -32,23 +32,13 @@ class StellarNeighbourhood:
 
     main_sequence_stars = 0
 
+    galaxy = None
+
     def __init__(self, parent):
         self.parent = parent
-        self.galaxy = self.parent.parent.galaxy.current
-        self.pre_processed_system_positions = {
-            "Single": [],
-            "Binary": [],
-            "Triple": [],
-            "Multiple": []
-        }
 
-    def process_data(self, data):
-        for system_id in data['Binary Systems']:
-            system_data = data['Binary Systems'][system_id]
-            x = system_data['pos']['x']
-            y = system_data['pos']['y']
-            z = system_data['pos']['z']
-            self.pre_processed_system_positions['Binary'].append((x, y, z))
+    def set_galaxy(self):
+        self.galaxy = self.parent.parent.galaxy.current
 
     def set_location(self, location, known_density=None):
         self.location = location
@@ -154,7 +144,7 @@ class StellarNeighbourhood:
         else:
             raise ValueError(f'Kind "{kind}" is unrecognizable.')
 
-    def system_positions(self, seed=1):
+    def system_positions(self, current_neighbourhood, seed=1):
         assert seed > 0, 'the seed must be greater than 0'
         systems = ['Single'] * (self.systems('single')) + ['Binary'] * self.systems('binary')
         systems += ['Triple'] * self.systems('triple') + ['Multiple'] * self.systems('multiple')
@@ -166,8 +156,8 @@ class StellarNeighbourhood:
         r_raw = initial_value
         distances = []
         for i, system in enumerate(systems):
-            if len(self.pre_processed_system_positions[system]):
-                x, y, z = self.pre_processed_system_positions[system].pop()
+            if len(current_neighbourhood[system]):
+                x, y, z = current_neighbourhood[system].pop()
             else:
                 p_raw = constant * r_raw % divisor
                 w_raw = constant * p_raw % divisor
@@ -196,13 +186,31 @@ class DefinedNeighbourhood:
 
     idx = None
 
+    pre_processed_system_positions = None
+
     def __init__(self, data):
+        self.id = generate_id()
         self.location = data['location']
         self.radius = data['radius']
-        self.systems = data['systems']
+        self.density = data['density']
+        self.pre_processed_system_positions = {
+            "Single": [],
+            "Binary": [],
+            "Triple": [],
+            "Multiple": []
+        }
 
     def __repr__(self):
         return 'Neighbourhood Object'
+
+    def process_data(self, data):
+        for system_id in data['Binary Systems']:
+            if data['neighbourhood_id'] == self.id:
+                system_data = data['Binary Systems'][system_id]
+                x = system_data['pos']['x']
+                y = system_data['pos']['y']
+                z = system_data['pos']['z']
+                self.pre_processed_system_positions['Binary'].append((x, y, z))
 
 
 class ProtoSystem:

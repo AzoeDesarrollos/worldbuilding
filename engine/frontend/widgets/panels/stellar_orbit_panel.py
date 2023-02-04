@@ -47,10 +47,10 @@ class OrbitPanel(BaseWidget):
         self.area_markers = Rect(3, 32, 380, 20 * 10)
         self.area_modify = ModifyArea(self, ANCHO - 201, 374)
 
-        self.f = self.crear_fuente(16, underline=True)
-        self.f2 = self.crear_fuente(12)
-        self.order_f = self.crear_fuente(14)
-        self.write(self.name + ' Panel', self.f, centerx=(ANCHO // 4) * 1.5, y=0)
+        # self.f = self.crear_fuente(16, underline=True)
+        # self.f2 = self.crear_fuente(12)
+        # self.order_f = self.crear_fuente(14)
+        # self.write(self.name + ' Panel', self.f, centerx=(ANCHO // 4) * 1.5, y=0)
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
 
         self.area_recomendation = Rect(3, 0, 380, 185)

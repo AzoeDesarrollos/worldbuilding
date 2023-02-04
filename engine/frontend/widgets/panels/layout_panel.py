@@ -40,11 +40,11 @@ class LayoutPanel(BaseWidget):
 
         f = SwapSystem(self, ANCHO - 200, 2, 'System')
         g = SwapGalaxy(self, 0, 2, 'Galaxy')
-        g.always_enabled = True
+        h = SwapNeighbourhood(self, 120, 2, 'Neighbourhood')
 
         self.load_button = d
 
-        self.properties.add(a, b, c, d, e, f, g, layer=1)
+        self.properties.add(a, b, c, d, e, f, g, h, layer=1)
 
     def cycle(self, delta):
         if self.curr_idx + delta < 0:
@@ -213,10 +213,21 @@ class SwapGalaxy(SwapSystem):
         if event.data['button'] == 1 and event.origin == self and self.enabled:
             galaxy = Universe.cycle_galaxies()
             self.current = galaxy
-            self.parent.current.galaxy.switch_current(galaxy)
+            EventHandler.trigger('SwitchGalaxy', 'SwapGalaxyButton', {'current': galaxy})
 
     def create_img(self):
         self.system_image = GalaxyName(self, left=self.rect.right + 6, y=2)
+
+    def update(self):
+        super().update()
+
+
+class SwapNeighbourhood(SwapSystem):
+    def on_mousebuttondown(self, event):
+        pass
+
+    def create_img(self):
+        self.system_image = NeighbourhoodName(self, left=self.rect.right + 6, y=12)
 
     def update(self):
         super().update()
@@ -263,3 +274,8 @@ class GalaxyName(SystemName):
             name = self.parent.current.id.split('-')[1]
             self.color = COLOR_TEXTO
             return name
+
+
+class NeighbourhoodName(SystemName):
+    def get_name(self):
+        pass

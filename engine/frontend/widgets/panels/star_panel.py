@@ -58,7 +58,6 @@ class StarPanel(BasePanel):
                 'mass': star.mass.m,
                 'spin': star.spin,
                 'age': star.age.m
-                # 'pos': dict(zip(['x', 'y', 'z'], star.position))
             }
             data[star.id] = star_data
         EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data})
@@ -431,10 +430,13 @@ class PotentialStars(ListedArea):
     def show(self):
         super().show()
         self.clear()
-        galaxy = Universe.get_astrobody_by('Galaxy')
-        pop = [star for star in galaxy.proto_stars]
-        self.populate(pop, layer=galaxy.id)
+        for galaxy in Universe.galaxies:
+            pop = [star for star in galaxy.proto_stars]
+            self.populate(pop, layer=galaxy.id)
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
+        idx = -1 if Universe.current_galaxy is None else Universe.current_galaxy.id
+        if idx != self.last_idx:
+            self.last_idx = idx
         self.show_current(self.last_idx)

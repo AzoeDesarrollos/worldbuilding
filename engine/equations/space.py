@@ -19,7 +19,7 @@ class Universe:
     astro_bodies = None
 
     galaxy_cycler = None
-    current_galaxy = 0
+    current_galaxy = None
 
     @classmethod
     def init(cls):
@@ -38,7 +38,7 @@ class Universe:
         cls.astro_bodies = []
 
         cls.galaxy_cycler = cycle(cls.galaxies)
-        cls.current_galaxy = 0
+        cls.current_galaxy = None
 
     @classmethod
     def get_astrobody_by(cls, tag_identifier, tag_type='name', silenty=False):
@@ -69,6 +69,7 @@ class Universe:
             astro_obj.idx = len([i for i in group if i.cls == astro_obj.cls]) - 1
         elif astro_obj.celestial_type == 'galaxy' and len(group) == 1:
             next(cls.galaxy_cycler)
+            cls.current_galaxy = astro_obj
 
     @classmethod
     def remove_astro_obj(cls, astro_obj):
@@ -201,7 +202,7 @@ class Universe:
     @classmethod
     def cycle_galaxies(cls):
         galaxy = next(cls.galaxy_cycler)
-        cls.current_galaxy = cls.galaxies.index(galaxy)
+        cls.current_galaxy = galaxy
         return galaxy
 
 

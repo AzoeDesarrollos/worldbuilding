@@ -29,10 +29,8 @@ class InformationPanel(BaseWidget):
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
 
-        self.f1 = self.crear_fuente(16, underline=True)
-        self.f2 = self.crear_fuente(14)
-        self.f3 = self.crear_fuente(16)
-        self.write(self.name + ' Panel', self.f1, centerx=(ANCHO // 4) * 1.5, y=0)
+        self.f1 = self.crear_fuente(14)
+        self.f2 = self.crear_fuente(16)
 
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.print_button = PrintButton(self, *self.planet_area.rect.midbottom)
@@ -55,7 +53,7 @@ class InformationPanel(BaseWidget):
         self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
         self.image.fill(COLOR_BOX, (3, 50, self.rect.w, 200))
         text = 'Information about ' + str(astrobody)
-        self.write(text, self.f2, centerx=(ANCHO // 4) * 1.5, y=21)
+        self.write(text, self.f1, centerx=(ANCHO // 4) * 1.5, y=21)
 
     def clear(self):
         # self.image.fill(COLOR_BOX)
@@ -115,7 +113,7 @@ class InformationPanel(BaseWidget):
         neap_high = abs(q((lunar_tides - stellar_tides) * 0.54, 'm'))  # meters
         neap_low = -neap_high if neap_high.m != 0 else abs(neap_high)
 
-        rect = self.write(f'Tides on {str(astrobody)}:', self.f3, x=3, y=50)
+        rect = self.write(f'Tides on {str(astrobody)}:', self.f2, x=3, y=50)
         tides = [
             {'name': 'Standard high', 'value': std_high, 'dy': 4},
             {'name': 'Standard low', 'value': std_low, 'dy': 2},
@@ -135,7 +133,7 @@ class InformationPanel(BaseWidget):
             else:
                 formato = f'{v:.2~P}'
 
-            rect = self.write(f'{name}: {formato}', self.f2, x=3, y=rect.bottom + dy)
+            rect = self.write(f'{name}: {formato}', self.f1, x=3, y=rect.bottom + dy)
 
         mass = None
         if primary != 'rogue':
@@ -161,7 +159,7 @@ class InformationPanel(BaseWidget):
         else:
             text = f'{str(self.current)} is not tidally locked.'
 
-        self.write(text, self.f3, x=3, y=rect.bottom + 12)
+        self.write(text, self.f2, x=3, y=rect.bottom + 12)
 
         self.extra_info(astrobody)
 
@@ -215,7 +213,7 @@ class InformationPanel(BaseWidget):
             text_lines.append(text)
         final_text = '\n'.join(text_lines)
         self.text = final_text
-        self.render = self.write3(final_text, self.f2, 380)
+        self.render = self.write3(final_text, self.f1, 380)
         if self.render_rect is None:
             self.render_rect = self.render.get_rect(topleft=[3, 250])
         self.image.fill(COLOR_BOX, self.info_rect)

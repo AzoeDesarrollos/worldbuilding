@@ -26,12 +26,10 @@ class MultipleStarsPanel(BaseWidget):
         self.rect = self.image.get_rect()
         self.properties = Group()
 
-        f1 = self.crear_fuente(16, underline=True)
-        self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5, y=0)
         self.stars_area = AvailableSystems(self, ANCHO - 200, 32, 200, 340)
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
-        self.f2 = self.crear_fuente(14, underline=True)
-        self.write('Subsystems', self.f2, COLOR_AREA, x=3, y=420)
+        f = self.crear_fuente(14, underline=True)
+        self.write('Subsystems', f, COLOR_AREA, x=3, y=420)
 
         self.system_buttons = Group()
 

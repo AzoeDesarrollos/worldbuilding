@@ -23,8 +23,6 @@ class StarSystemPanel(BaseWidget):
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
-        self.f2 = self.crear_fuente(14, underline=True)
-        self.write('Star Systems', self.f2, COLOR_AREA, x=3, y=420)
         self.properties = Group()
         self.f1 = self.crear_fuente(16, underline=True)
         self.write(self.name + ' Panel', self.f1, centerx=(ANCHO // 4) * 1.5, y=0)
