@@ -110,6 +110,12 @@ class NeighbourhoodPanel(BaseWidget):
         self.properties.add(button, layer=5)
         self.sort_buttons(self.properties.get_widgets_from_layer(5))
 
+        self.neighbourhood.characteristics.set_location(data['location'], known_density=data['density'])
+        self.neighbourhood.characteristics.set_radius(data['radius'])
+
+        stars = self.neighbourhood.characteristics.individual_stars
+        self.current_nei.add_proto_stars(stars)
+
         comps = ['single', 'binary', 'triple', 'multiple']
         positions = self.neighbourhood.characteristics.system_positions(object_data.pre_processed_system_positions)
         singles = [x['pos'] for x in positions if x['configuration'] == 'Single']
@@ -119,6 +125,7 @@ class NeighbourhoodPanel(BaseWidget):
         d = {'single': singles, 'binary': binaries, 'triple': triples, 'multiple': multiples}
         for i, comp in enumerate(comps):
             quantity = self.neighbourhood.characteristics.systems(comp)
+            object_data.set_quantity(comp.title(), quantity)
             for each in range(quantity):
                 system_position = d[comp][each]
                 system_data = {'composition': comp, 'location': system_position, 'idx': i}
@@ -137,15 +144,6 @@ class NeighbourhoodPanel(BaseWidget):
 
     def create_neighbourhood(self, data=None):
         button = self.create_button(data)
-
-        location = button.object_data.location
-        radius = button.object_data.radius
-        density = button.object_data.density
-        self.neighbourhood.characteristics.set_location(location, known_density=density)
-        self.neighbourhood.characteristics.set_radius(radius)
-
-        stars = self.neighbourhood.characteristics.individual_stars
-        self.current_nei.add_proto_stars(stars)
         self.galaxy.current.add_neighbourhood(button.object_data)
         return button
 
@@ -170,6 +168,7 @@ class NeighbourhoodPanel(BaseWidget):
             prop.hide()
         self.parent.swap_galaxy_button.disable()
         self.parent.swap_neighbourhood_button.enable()
+        self.parent.swap_neighbourhood_button.set_current()
 
     def switch_current(self, event):
         self.current_galaxy_id = event.data['current'].id
@@ -291,7 +290,7 @@ class NeighbourhoodType(BaseWidget):
                 'location': neighbourhood.location,
                 'radius': neighbourhood.radius,
                 'density': neighbourhood.density,
-                'galaxy_id': self.parent.galaxy.characteristics.id
+                'galaxy_id': self.parent.galaxy.current.id
             }
             macro_data[neighbourhood.id] = data
 

@@ -80,18 +80,18 @@ class Systems:
                 cls._systems.append(system)
                 if len(cls._systems):
                     cls._current = next(cls._system_cycler)
-            if star.letter is not None:
-                for s in star:
-                    if s in cls.loose_stars:
-                        cls.loose_stars.remove(s)
-                    else:
-                        system = cls.get_system_by_star(s)
-                        if system is not None:
-                            cls._systems.remove(system)
-                            cls.unpopulate(system.id)
-                            s.flag()
-                            for astro in system.astro_bodies:
-                                astro.flag()
+            # if star.letter is not None:
+            #     for s in star:
+            #         if s in cls.loose_stars:
+            #             cls.loose_stars.remove(s)
+            #         else:
+            #             system = cls.get_system_by_star(s)
+            #             if system is not None:
+            #                 cls._systems.remove(system)
+            #                 cls.unpopulate(system.id)
+            #                 s.flag()
+            #                 for astro in system.astro_bodies:
+            #                     astro.flag()
 
     @classmethod
     def populate(cls, star_id):

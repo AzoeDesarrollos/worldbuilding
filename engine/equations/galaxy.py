@@ -41,7 +41,7 @@ class Galaxy:
         if new not in self.stellar_neighbourhoods:
             self.stellar_neighbourhoods.append(new)
             if len(self.stellar_neighbourhoods) == 1:
-                next(self.neighbourhood_cycler)
+                self.cycle_neighbourhoods()
 
     def cycle_neighbourhoods(self):
         new = next(self.neighbourhood_cycler)

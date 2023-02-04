@@ -239,6 +239,9 @@ class SwapNeighbourhood(SwapSystem):
             self.current = neighbourhood
             EventHandler.trigger('SwitchNeighbourhood', 'SwapNeighbourhoodButton', {'current': neighbourhood})
 
+    def set_current(self):
+        self.current = Universe.current_galaxy.current_neighbourhood
+
     def lock(self):
         self.locked = True
         self.disable()

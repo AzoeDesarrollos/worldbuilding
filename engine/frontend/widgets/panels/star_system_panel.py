@@ -38,6 +38,9 @@ class StarSystemPanel(BaseWidget):
         EventHandler.register(self.load_systems, 'LoadData')
         EventHandler.register(self.name_current, 'NameObject')
 
+        f = self.crear_fuente(14, underline=True)
+        self.write('Systems', f, COLOR_AREA, x=3, y=420)
+
         self.remaining = ValueText(self, 'Binary Pairs remaining', 3, self.area_buttons.top - 50, size=14)
         self.properties.add(self.remaining)
 
@@ -83,19 +86,16 @@ class StarSystemPanel(BaseWidget):
                     'ecc_p': current.ecc_p.m,
                     "ecc_s": current.ecc_s.m,
                     "name": current.name,
-                    'pos': dict(zip(['x', 'y', 'z'], current.position))
                 }
                 data[current.id] = d
 
         EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': data})
 
-    def load_systems(self, event):
-        # this is here because the Universe data
-        binary_systems = [system for system in Universe.systems if system.composition == 'binary']
-        remaining_value = len(binary_systems)
-        self.remaining.value = str(remaining_value)
-        # doesn't exist on __init__() yet.
+    def load_universe_data(self):
+        binary_systems = Universe.current_galaxy.current_neighbourhood.quantities['Binary']
+        self.remaining.value = str(binary_systems)
 
+    def load_systems(self, event):
         for id in event.data['Binary Systems']:
             system_data = event.data['Binary Systems'][id]
             avg_s = system_data['avg_s']
@@ -104,7 +104,6 @@ class StarSystemPanel(BaseWidget):
             prim = Systems.get_star_by_id(system_data['primary'])
             scnd = Systems.get_star_by_id(system_data['secondary'])
             name = system_data['name']
-            # pos = system_data['pos']
 
             system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
             button = self.create_button(system)
@@ -133,6 +132,7 @@ class StarSystemPanel(BaseWidget):
         super().show()
         for prop in self.properties.widgets():
             prop.show()
+        self.load_universe_data()
 
     def hide(self):
         super().hide()

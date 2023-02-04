@@ -5,6 +5,7 @@ from engine.backend import EventHandler, Systems
 from engine.equations.binary import system_type
 from engine.equations.space import Universe
 from ..basewidget import BaseWidget
+from ..values import ValueText
 from pygame import Surface
 from random import choice
 
@@ -41,6 +42,17 @@ class MultipleStarsPanel(BaseWidget):
         self.properties.add(self.current, self.stars_area, self.undo_button, self.setup_button, self.dissolve_button)
         EventHandler.register(self.name_current, 'NameObject')
 
+        t = " Systems remaining"
+        self.triple_remaining = ValueText(self, 'Triple Star'+t, 3, self.area_buttons.top - 70, size=14)
+        self.multiple_remaining = ValueText(self, 'Multiple Star'+t, 3, self.area_buttons.top - 50, size=14)
+        self.properties.add(self.triple_remaining, self.multiple_remaining)
+
+    def load_universe_data(self):
+        triple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Triple']
+        multiple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Multiple']
+        self.triple_remaining.value = str(triple_systems)
+        self.multiple_remaining.value = str(multiple_systems)
+
     def name_current(self, event):
         if event.data['object'] in self.systems:
             system = event.data['object']
@@ -51,16 +63,21 @@ class MultipleStarsPanel(BaseWidget):
         multiple_systems = [system for system in Universe.systems if system.composition == 'multiple']
         primary = system_data.primary
         secondary = system_data.secondary
-        chosen = None
+        chosen, kind = None, None
         if primary.celestial_type == 'system' and secondary.celestial_type == 'star':
             chosen = choice(triple_systems)
+            kind = 'Triple'
         elif primary.celestial_type == 'system' and secondary.celestial_type == 'system':
             chosen = choice(multiple_systems)
+            kind = 'Multiple'
         elif primary.celestial_type == 'star' and secondary.celestial_type == 'system':
             chosen = choice(triple_systems)
+            kind = 'Triple'
         assert chosen is not None, "System is nonsensical"
         Universe.systems.remove(chosen)
         system_data.position = chosen.location
+        Universe.current_galaxy.current_neighbourhood.quantities[kind] -= 1
+        self.load_universe_data()
         if system_data not in self.systems:
             idx = len([s for s in self.systems if system_data.compare(s) is True])
             button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
@@ -97,6 +114,7 @@ class MultipleStarsPanel(BaseWidget):
         for prop in self.properties.widgets():
             prop.show()
         self.parent.swap_neighbourhood_button.unlock()
+        self.load_universe_data()
 
     def hide(self):
         super().hide()

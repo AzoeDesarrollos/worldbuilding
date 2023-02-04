@@ -192,6 +192,8 @@ class DefinedNeighbourhood:
 
     proto_stars = None
 
+    quantities = None
+
     def __init__(self, data):
         self.id = generate_id()
         self.location = data['location']
@@ -204,6 +206,15 @@ class DefinedNeighbourhood:
             "Triple": [],
             "Multiple": []
         }
+        self.quantities = {
+            "Single": 0,
+            "Binary": 0,
+            "Triple": 0,
+            "Multiple": 0
+        }
+
+    def set_quantity(self, key, quantity):
+        self.quantities[key] = quantity
 
     def __repr__(self):
         return f'{turn_into_roman(self.idx)}@{str(self.location)}'
@@ -216,10 +227,6 @@ class DefinedNeighbourhood:
                 y = system_data['pos']['y']
                 z = system_data['pos']['z']
                 self.pre_processed_system_positions['Binary'].append((x, y, z))
-
-    def add_proto_star(self, star):
-        if star not in self.proto_stars:
-            self.proto_stars.append(star)
 
     def add_proto_stars(self, list_of_dicts):
         for data in list_of_dicts:

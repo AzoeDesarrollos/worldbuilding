@@ -67,9 +67,7 @@ class StarPanel(BasePanel):
         for id in event.data['Stars']:
             star_data = event.data['Stars'][id]
             star_data.update({'id': id})
-            star = Star(star_data)
-            star.idx = len([i for i in self.stars if i.cls == star.cls])
-            Systems.add_star(star)
+            star = self.current.set_star(star_data, inactive=True)
             if star not in self.stars:
                 self.stars.append(star)
                 self.add_button(star)
@@ -81,7 +79,6 @@ class StarPanel(BasePanel):
                     systems.append(star.id)
 
         if len(self.star_buttons):
-            # self.current.current = self.star_buttons[0].object_data
             self.current.enable()
 
     def deselect_buttons(self):
@@ -117,9 +114,6 @@ class StarPanel(BasePanel):
     def add_button(self, star):
         button = StarButton(self.current, star, str(star), self.curr_x, self.curr_y)
         self.properties.add(button, layer=2)
-        if len(self.proto_stars):
-            self.proto_stars.delete_objects(self.proto_stars.current.object_data)
-        Systems.add_star(star)
         if star not in self.stars:
             self.stars.append(star)
         if self.is_visible:
@@ -185,19 +179,23 @@ class StarType(ObjectType):
         self.habitable = f.render('Habitable', True, (0, 255, 0), COLOR_BOX)
         self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right - 10, y=self.parent.rect.y + 50)
 
-    def set_star(self, star_data):
+    def set_star(self, star_data, inactive=False):
         star = Star(star_data)
-        proto = self.parent.proto_stars.current.object_data
-        assert star.cls == proto.cls, "You are not building\nthe star correctly.\n\nCheck it's mass."
+        protos = [s for s in Universe.current_galaxy.current_neighbourhood.proto_stars if s.cls == star.cls]
+        assert len(protos), "You are not building\nthe star correctly.\n\nCheck it's mass."
+        proto = protos.pop()
 
         star.idx = proto.idx
         neighbourhood = Universe.current_galaxy.current_neighbourhood
         neighbourhood.proto_stars.remove(proto)
-        self.parent.button_add.enable()
-        self.current = star
-        self.fill()
-        self.toggle_habitable()
-        self.parent.age_bar.cursor.set_x(star)
+        Systems.add_star(star)
+        if not inactive:
+            self.parent.button_add.enable()
+            self.current = star
+            self.fill()
+            self.toggle_habitable()
+            self.parent.age_bar.cursor.set_x(star)
+        return star
 
     def destroy_button(self):
         Systems.remove_star(self.current)
