@@ -1,5 +1,5 @@
-from .orbit import BinaryStarOrbit, BinaryPlanetOrbit, PlanetOrbit
-from engine.backend.util import roll, generate_id, q
+from .orbit import BinaryPlanetOrbit, PlanetOrbit  # , BinaryStarOrbit
+# from engine.backend.util import roll, generate_id, q
 from engine.backend.util import generate_id, q
 from .orbit import BinaryStarOrbit
 from .general import Flagable
@@ -68,6 +68,7 @@ class BinarySystem(AbstractBinary):
     _orbit_type = BinaryStarOrbit
 
     position = None
+
     def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, unit='au', id=None):
         super().__init__(primary, secondary, avgsep, ep=ep, es=es, unit=unit)
 
@@ -207,7 +208,7 @@ class STypeSystem(BinarySystem):
 
 
 class PlanetaryPTypeSystem(BinarySystem, Planet):
-    celestial_type = 'system'  # not really, but is a system of planets, that ocuppies the orbit of a planet, etc.
+    celestial_type = 'binary planet'
     letter = 'P'
     _orbit_type = BinaryPlanetOrbit
     orbit = None

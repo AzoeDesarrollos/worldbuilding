@@ -199,8 +199,8 @@ class SystemType(BaseWidget):
             self.parent.undo_button.enable()
             self.has_values = True
 
-        if star in Systems.loose_stars:
-            Systems.loose_stars.remove(star)
+        if obj in Systems.loose_stars:
+            Systems.loose_stars.remove(obj)
 
         if self.primary.value != '' and self.secondary.value != '':
             for obj in self.properties.get_widgets_from_layer(2):
@@ -332,8 +332,8 @@ class DissolveButton(TextButton):
 class SystemButton(ColoredBody):
     enabled = True
 
-    def __init__(self, parent, system_data, idx, x, y):
-        system_data.idx = idx
+    def __init__(self, parent, system_data, x, y):
+        # system_data.idx = idx
         super().__init__(parent, system_data, str(system_data), x, y)
 
     def on_mousebuttondown(self, event):

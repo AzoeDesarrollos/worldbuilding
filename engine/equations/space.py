@@ -66,8 +66,8 @@ class Universe:
         group = cls._get_astro_group(astro_obj)
         if astro_obj not in group:
             group.append(astro_obj)
-            if astro_obj.celestial_type != 'system':
-                cls.astro_bodies.append(astro_obj)
+            # if astro_obj.celestial_type != 'system':
+            cls.astro_bodies.append(astro_obj)
         if hasattr(astro_obj, 'clase'):
             astro_obj.idx = len([i for i in group if i.clase == astro_obj.clase]) - 1
         elif hasattr(astro_obj, 'cls'):
@@ -94,12 +94,14 @@ class Universe:
             group = cls.asteroids
         elif astro_obj.celestial_type == 'star':
             group = cls.stars
-        elif astro_obj.celestial_type == 'system':
+        elif astro_obj.celestial_type == 'binary planet':
             group = cls.binary_planets
         elif astro_obj.celestial_type == 'galaxy':
             group = cls.galaxies
         elif astro_obj.celestial_type == 'stellar bubble':
             group = cls.bubbles
+        elif astro_obj.celestial_type == 'system':
+            group = cls.systems
         return group
 
     @classmethod

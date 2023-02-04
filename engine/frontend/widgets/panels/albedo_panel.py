@@ -23,7 +23,7 @@ class AlbedoPanel(BaseWidget):
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
 
-        f1 = self.crear_fuente(16, underline=True)
+        # f1 = self.crear_fuente(16, underline=True)
         f2 = self.crear_fuente(15, underline=True, bold=True)
 
         self.properties = Group()
