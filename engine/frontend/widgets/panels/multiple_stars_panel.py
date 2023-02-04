@@ -3,8 +3,11 @@ from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
 from engine.frontend.widgets.panels.common import ListedBody, ListedArea
 from engine.backend import EventHandler, Systems
 from engine.equations.binary import system_type
+from engine.equations.space import Universe
 from ..basewidget import BaseWidget
+from ..values import ValueText
 from pygame import Surface
+from random import choice
 
 
 class MultipleStarsPanel(BaseWidget):
@@ -14,6 +17,8 @@ class MultipleStarsPanel(BaseWidget):
     curr_x = 0
     curr_y = 440
 
+    show_swap_system_button = False
+
     def __init__(self, parent):
         self.name = 'Multiple Stars'
         super().__init__(parent)
@@ -22,12 +27,10 @@ class MultipleStarsPanel(BaseWidget):
         self.rect = self.image.get_rect()
         self.properties = Group()
 
-        f1 = self.crear_fuente(16, underline=True)
-        self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5, y=0)
         self.stars_area = AvailableSystems(self, ANCHO - 200, 32, 200, 340)
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
-        self.f2 = self.crear_fuente(14, underline=True)
-        self.write('Subsystems', self.f2, COLOR_AREA, x=3, y=420)
+        f = self.crear_fuente(14, underline=True)
+        self.write('Subsystems', f, COLOR_AREA, x=3, y=420)
 
         self.system_buttons = Group()
 
@@ -39,18 +42,48 @@ class MultipleStarsPanel(BaseWidget):
         self.properties.add(self.current, self.stars_area, self.undo_button, self.setup_button, self.dissolve_button)
         EventHandler.register(self.name_current, 'NameObject')
 
+        t = " Systems remaining"
+        self.triple_remaining = ValueText(self, 'Triple Star'+t, 3, self.area_buttons.top - 70, size=14)
+        self.multiple_remaining = ValueText(self, 'Multiple Star'+t, 3, self.area_buttons.top - 50, size=14)
+        self.properties.add(self.triple_remaining, self.multiple_remaining)
+
+    def load_universe_data(self):
+        triple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Triple']
+        multiple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Multiple']
+        self.triple_remaining.value = str(triple_systems)
+        self.multiple_remaining.value = str(multiple_systems)
+
     def name_current(self, event):
         if event.data['object'] in self.systems:
             system = event.data['object']
             system.set_name(event.data['name'])
 
     def create_button(self, system_data):
+        triple_systems = [system for system in Universe.systems if system.composition == 'triple']
+        multiple_systems = [system for system in Universe.systems if system.composition == 'multiple']
+        primary = system_data.primary
+        secondary = system_data.secondary
+        chosen, kind = None, None
+        if primary.celestial_type == 'system' and secondary.celestial_type == 'star':
+            chosen = choice(triple_systems)
+            kind = 'Triple'
+        elif primary.celestial_type == 'system' and secondary.celestial_type == 'system':
+            chosen = choice(multiple_systems)
+            kind = 'Multiple'
+        elif primary.celestial_type == 'star' and secondary.celestial_type == 'system':
+            chosen = choice(triple_systems)
+            kind = 'Triple'
+        assert chosen is not None, "System is nonsensical"
+        Universe.systems.remove(chosen)
+        system_data.position = chosen.location
+        Universe.current_galaxy.current_neighbourhood.quantities[kind] -= 1
+        self.load_universe_data()
         if system_data not in self.systems:
             button = SystemButton(self, system_data, self.curr_x, self.curr_y)
             self.systems.append(system_data)
             self.system_buttons.add(button)
             self.properties.add(button)
-            self.sort_buttons(self.system_buttons)
+            self.sort_buttons(self.system_buttons.widgets())
             Systems.set_system(system_data)
             self.current.enable()
             return button
@@ -79,11 +112,14 @@ class MultipleStarsPanel(BaseWidget):
         super().show()
         for prop in self.properties.widgets():
             prop.show()
+        self.parent.swap_neighbourhood_button.unlock()
+        self.load_universe_data()
 
     def hide(self):
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
+        self.parent.swap_neighbourhood_button.lock()
 
 
 class SystemsType(SystemType):
@@ -143,6 +179,8 @@ class AvailableSystems(ListedArea):
     def show(self):
         self.repopulate()
         super().show()
+        for listed in self.listed_objects.widgets():
+            listed.show()
 
     def repopulate(self):
         population = []
@@ -150,6 +188,12 @@ class AvailableSystems(ListedArea):
             if system_or_star.is_a_system:
                 if system_or_star.star_system.system not in population:
                     population.append(system_or_star.star_system.system)
-                    population.sort(key=lambda s: s.mass, reverse=True)
-                    if len(population):
-                        self.populate(population, layer='two')
+
+        if len(population):
+            population.sort(key=lambda s: s.mass, reverse=True)
+            self.populate(population, layer='two')
+
+    def update(self):
+        # this hook is necessary.
+        # otherwise the content of the panel is deleted.
+        pass

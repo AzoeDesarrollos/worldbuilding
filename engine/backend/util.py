@@ -128,6 +128,59 @@ def eucledian_distance(p1, p2):
     return d
 
 
+def _additive_notation(potencia, factor, roman):
+    quantity = int(potencia / factor)
+    if potencia in (4 * factor, 9 * factor):
+        return _substractive_notation(potencia, roman)
+    elif potencia > 5 * factor:
+        return roman[5 * factor] + roman[1 * factor] * (quantity - 5)
+    elif potencia in roman:
+        return roman[potencia]
+    elif potencia == 0 and factor == 1:
+        return "N"
+    else:
+        return roman[1 * factor] * quantity
+
+
+def _substractive_notation(a_number, roman):
+    if a_number in (4, 40, 400):
+        factor = a_number / 4
+        return roman[1 * factor] + roman[5 * factor]
+    elif a_number in (9, 90, 900):
+        factor = a_number / 9
+        return roman[1 * factor] + roman[10 * factor]
+    else:
+        return roman[a_number]
+
+
+def turn_into_roman(number):
+    if number > 3999 or number < 0:
+        return number
+    roman = {1: "I", 5: "V", 10: "X", 50: "L", 100: "C", 500: "D", 1000: "M"}
+    roman_string = ''
+
+    miles = floor(number / 1000) * 1000
+    number -= miles
+    q_m = int(miles / 1000)
+    roman_string += roman[1000] * q_m
+
+    centenas = floor(number / 100) * 100
+    roman_string += _additive_notation(centenas, 100, roman)
+    number -= centenas
+
+    decenas = floor(number / 10) * 10
+    roman_string += _additive_notation(decenas, 10, roman)
+    number -= decenas
+
+    unidades = number
+    roman_string += _additive_notation(unidades, 1, roman)
+
+    if roman_string.endswith('N') and len(roman_string) >= 2:
+        roman_string = roman_string[:-1]
+
+    return roman_string
+
+
 EventHandler.register(salir_handler, 'salir')
 
 if path.exists(path.join(getcwd(), "lib")):
@@ -158,5 +211,6 @@ __all__ = [
     "recomendation",
     "albedos",
     "q",
-    "eucledian_distance"
+    "eucledian_distance",
+    "turn_into_roman"
 ]

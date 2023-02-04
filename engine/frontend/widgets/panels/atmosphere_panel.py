@@ -21,6 +21,8 @@ class AtmospherePanel(BaseWidget):
 
     last_idx = None
 
+    show_swap_system_button = True
+
     def __init__(self, parent):
         super().__init__(parent)
         self.name = 'Atmosphere'
@@ -30,14 +32,12 @@ class AtmospherePanel(BaseWidget):
         self.elements = Group()
         self.pressure = q(0, 'psi')
 
-        f1 = self.crear_fuente(16, underline=True)
-        self.f2 = self.crear_fuente(12)
-        self.f3 = self.crear_fuente(16)
+        self.f1 = self.crear_fuente(12)
+        self.f2 = self.crear_fuente(16)
         f4 = self.crear_fuente(11)
         self.f5 = self.crear_fuente(11, bold=True)
 
-        self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5, y=0)
-        self.write('Composition', self.f3, centerx=65, y=35)
+        self.write('Composition', self.f2, centerx=65, y=35)
         self.water_state_rect = self.write('State of Water at Surface: ', f4, x=3, y=ALTO - 50)
         self.write_water_state('unknown')
         EventHandler.register(self.clear, 'ClearData')
@@ -61,7 +61,7 @@ class AtmospherePanel(BaseWidget):
             elm = Element(self, i, element, name, weight, min_atm, max_atm, boiling, melting, 3, 21 * i + 60, color=c)
             elm.hide()
             self.elements.add(elm)
-            self.write('%', self.f3, x=elm.percent.rect.right + 3, centery=elm.rect.centery)
+            self.write('%', self.f2, x=elm.percent.rect.right + 3, centery=elm.rect.centery)
 
         self.atmograph = Atmograph(self, 190, 60)
         self.show_pressure = ShownPressure(self, x=self.atmograph.rect.x, centery=self.atmograph.rect.bottom + 10)
@@ -111,7 +111,7 @@ class AtmospherePanel(BaseWidget):
         t = f'{name}\nPressure at sea level: {p_pre} atm\nMinimum pressure: {min_p} atm\nMaximum pressure: {max_p} atm'
 
         self.image.fill(COLOR_BOX, self.area_info)
-        render = render_textrect(t, self.f2, self.area_info.w, COLOR_TEXTO, COLOR_BOX)
+        render = render_textrect(t, self.f1, self.area_info.w, COLOR_TEXTO, COLOR_BOX)
         self.image.blit(render, self.area_info)
         self.show_warning(element)
 
@@ -167,7 +167,7 @@ class AtmospherePanel(BaseWidget):
             idx = Systems.get_current().planets.index(planet)
             text += ' #' + str(idx) + ' (' + planet.clase + ')'
 
-            self.write(text, self.f2, centerx=self.rect.centerx, y=21)
+            self.write(text, self.f1, centerx=self.rect.centerx, y=21)
 
     def hide(self):
         super().hide()
@@ -250,11 +250,11 @@ class AtmospherePanel(BaseWidget):
                 self.total += float(value)
 
         self.image.fill(COLOR_BOX, (0, ALTO - 85, 170, 34))
-        self.write('Total: ' + str(round(self.total, 2)) + '%', self.f3, x=3, y=ALTO - 87)
+        self.write('Total: ' + str(round(self.total, 2)) + '%', self.f2, x=3, y=ALTO - 87)
         a = self.atmograph
         self.image.fill(COLOR_BOX, [a.rect.x, a.rect.bottom, 200, 21])
 
-        self.write('Greenhouse effect: ' + str(self.global_warming()), self.f2, x=3, y=ALTO - 67)
+        self.write('Greenhouse effect: ' + str(self.global_warming()), self.f1, x=3, y=ALTO - 67)
         if self.curr_planet is not None:
             self.set_planet(self.curr_planet)
 

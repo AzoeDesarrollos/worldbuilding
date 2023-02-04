@@ -43,8 +43,8 @@ class StarSystemBody(Flagable):
 
     def set_parent(self, parent):
         self.parent = parent
-        self.age = parent.age.to('years')
-        self.formation = parent.age.to('billion years')
+        # self.age = parent.age.to('years')
+        # self.formation = parent.age.to('billion years')
 
     def is_orbiting_a_star(self):
         if hasattr(self.parent, 'parent'):

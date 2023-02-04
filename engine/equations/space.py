@@ -1,5 +1,6 @@
 from engine.backend import small_angle_aproximation, Systems, q, eucledian_distance
 from math import sqrt
+from itertools import cycle
 
 
 class Universe:
@@ -7,6 +8,9 @@ class Universe:
     satellites = None
     asteroids = None
     stars = None
+    galaxies = None
+    bubbles = None
+    systems = None
 
     aparent_brightness = None
     relative_sizes = None
@@ -16,12 +20,18 @@ class Universe:
 
     binary_planets = None
 
+    galaxy_cycler = None
+    current_galaxy = None
+
     @classmethod
     def init(cls):
         cls.planets = []
         cls.satellites = []
         cls.asteroids = []
         cls.stars = []
+        cls.galaxies = []
+        cls.bubbles = []
+        cls.systems = []
 
         cls.aparent_brightness = {}
         cls.relative_sizes = {}
@@ -30,6 +40,9 @@ class Universe:
         cls.astro_bodies = []
 
         cls.binary_planets = []
+
+        cls.galaxy_cycler = cycle(cls.galaxies)
+        cls.current_galaxy = None
 
     @classmethod
     def get_astrobody_by(cls, tag_identifier, tag_type='name', silenty=False):
@@ -61,6 +74,9 @@ class Universe:
             astro_obj.idx = len([i for i in group if i.cls == astro_obj.cls]) - 1
         elif group == cls.binary_planets:
             astro_obj.idx = len(group) - 1
+        elif astro_obj.celestial_type == 'galaxy' and len(group) == 1:
+            next(cls.galaxy_cycler)
+            cls.current_galaxy = astro_obj
 
     @classmethod
     def remove_astro_obj(cls, astro_obj):
@@ -80,7 +96,10 @@ class Universe:
             group = cls.stars
         elif astro_obj.celestial_type == 'system':
             group = cls.binary_planets
-
+        elif astro_obj.celestial_type == 'galaxy':
+            group = cls.galaxies
+        elif astro_obj.celestial_type == 'stellar bubble':
+            group = cls.bubbles
         return group
 
     @classmethod
@@ -192,6 +211,12 @@ class Universe:
                         elif ab < 1.2e-9:
                             visibility = 'telescope'
                     cls.aparent_brightness[body.id][other.id] = visibility
+
+    @classmethod
+    def cycle_galaxies(cls):
+        galaxy = next(cls.galaxy_cycler)
+        cls.current_galaxy = galaxy
+        return galaxy
 
 
 Universe.init()

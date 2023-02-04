@@ -24,6 +24,8 @@ class PlanetaryOrbitPanel(BaseWidget):
     added = None
     visible_markers = True
 
+    show_swap_system_button = True
+
     def __init__(self, parent):
         super().__init__(parent)
         self.name = 'Planetary Orbit'
@@ -49,7 +51,6 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.show_markers_button.disable()
         self.resonances_button = AddResonanceButton(self, ANCHO - 150, 416)
         self.order_f = self.crear_fuente(14)
-        self.write(self.name + ' Panel', self.crear_fuente(16, underline=True), centerx=(ANCHO // 4) * 1.5)
         self.digit_x = RatioDigit(self, 'x', self.resonances_button.rect.left - 55, self.resonances_button.rect.y)
         self.write(':', self.crear_fuente(16), topleft=[self.digit_x.rect.right + 1, self.resonances_button.rect.y - 1])
         self.digit_y = RatioDigit(self, 'y', self.digit_x.rect.right + 9, self.resonances_button.rect.y)

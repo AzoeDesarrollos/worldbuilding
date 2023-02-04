@@ -14,6 +14,8 @@ class AlbedoPanel(BaseWidget):
     current = None
     locked = False
 
+    show_swap_system_button = True
+
     def __init__(self, parent):
         self.name = 'Albedo'
         super().__init__(parent)
@@ -23,7 +25,6 @@ class AlbedoPanel(BaseWidget):
 
         f1 = self.crear_fuente(16, underline=True)
         f2 = self.crear_fuente(15, underline=True, bold=True)
-        self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5)
 
         self.properties = Group()
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 300)

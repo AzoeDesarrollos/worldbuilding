@@ -199,7 +199,9 @@ class PlanetType(ObjectType):
                 planet_data = event.data['Planets'][id]
                 planet_data['id'] = id
                 system = Systems.get_system_by_id(planet_data['system'])
-                planet_data['parent'] = system
+                if system is not None:
+                    planet_data['parent'] = system
+
                 planet = Planet(planet_data)
                 if planet not in self.parent.planets:
                     btn = self.create_button(planet)

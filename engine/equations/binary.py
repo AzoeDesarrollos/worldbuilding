@@ -1,5 +1,7 @@
 from .orbit import BinaryStarOrbit, BinaryPlanetOrbit, PlanetOrbit
 from engine.backend.util import roll, generate_id, q
+from engine.backend.util import generate_id, q
+from .orbit import BinaryStarOrbit
 from .general import Flagable
 from .space import Universe
 from .planet import Planet
@@ -65,6 +67,7 @@ class BinarySystem(AbstractBinary):
 
     _orbit_type = BinaryStarOrbit
 
+    position = None
     def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, unit='au', id=None):
         super().__init__(primary, secondary, avgsep, ep=ep, es=es, unit=unit)
 
@@ -140,7 +143,7 @@ class PTypeSystem(BinarySystem):
     luminosity = 0
     radius = 0
 
-    def __init__(self, primary, secondary, avgsep, ep=0, es=0, pos=None, id=None, name=None):
+    def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
         super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
         self.primary.orbit = self._orbit_type(self.primary, self.secondary, self.primary_max_sep, self.ecc_p)
         self.secondary.orbit = self._orbit_type(self.secondary, self.primary, self.secondary_max_sep, self.ecc_s)
@@ -168,9 +171,6 @@ class PTypeSystem(BinarySystem):
         age = max([self.primary.age, self.secondary.age])
         self.age = age
         self.evolution_id = self.id
-        self.position = [round(roll(0, 1000)) if pos is None else pos['x'],
-                         round(roll(0, 1000)) if pos is None else pos['y'],
-                         round(roll(0, 1000)) if pos is None else pos['z']]
 
     def set_qs(self):
         self.shared_mass = q(self._mass.m, 'sol_mass')
@@ -196,12 +196,6 @@ class STypeSystem(BinarySystem):
         self.primary.set_parent(self)
         self.secondary.set_parent(self)
         self.shared_mass = primary.mass + secondary.mass
-        self.primary.position[0] = self.primary_distance
-        self.secondary.position[0] = -self.secondary_distance
-        self.position = [0, 0, 0]
-        self.position[0] = round((self.primary_distance.m + self.secondary_distance.m) / 2)
-        self.position[1] = round((self.primary.position[1] + self.secondary.position[1]) / 2)
-        self.position[2] = round((self.primary.position[2] + self.secondary.position[2]) / 2)
 
         self.inner_forbbiden_zone = q(round(self.min_sep.m / 3, 3), 'au')
         self.outer_forbbiden_zone = q(round(self.max_sep.m * 3, 3), 'au')
@@ -252,7 +246,7 @@ def system_type(separation):
     elif (120 <= float(separation) <= 600) or (1200 <= float(separation) <= 60000):
         system = STypeSystem
     else:
-        raise AssertionError('The Average Separation is incompatible with\n'
-                             'S-Type (120 to 600 AU) or\n'
+        raise AssertionError('The Average Separation\nis incompatible with\n'
+                             'S-Type (120 to 600 AU)\nor\n'
                              'P-Type (0.15 to 6 AU) systems')
     return system

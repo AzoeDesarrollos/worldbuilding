@@ -21,12 +21,10 @@ class SatellitePanel(BasePanel):
         super().__init__('Satellite', parent, modes=3)
         self.current = SatelliteType(self)
         f1 = self.crear_fuente(16, underline=True)
-        f2 = self.crear_fuente(13, underline=True)
         r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 132, 178])
         self.area_buttons = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 178))
-        ra = self.write('Satellites', f2, COLOR_AREA, x=self.area_buttons.x + 3, y=self.area_buttons.y)
         self.curr_x = self.area_buttons.x + 3
-        self.curr_y = self.area_buttons.y + ra.h
+        self.curr_y = self.area_buttons.y + 16
 
         self.properties = Group()
         self.mass_number = ShownMass(self)

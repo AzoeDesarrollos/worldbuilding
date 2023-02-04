@@ -3,14 +3,18 @@ from engine.frontend.widgets.basewidget import BaseWidget
 from .common import ListedArea, ColoredBody, TextButton
 from engine.backend import EventHandler, Systems
 from engine.equations.binary import system_type
+from engine.equations.space import Universe
 from ..values import ValueText
 from pygame import Surface
+from random import choice
 
 
 class StarSystemPanel(BaseWidget):
     selected = None
     skip = False
     skippable = True
+
+    show_swap_system_button = False
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -19,11 +23,7 @@ class StarSystemPanel(BaseWidget):
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
-        self.f2 = self.crear_fuente(14, underline=True)
-        self.write('Star Systems', self.f2, COLOR_AREA, x=3, y=420)
         self.properties = Group()
-        self.f1 = self.crear_fuente(16, underline=True)
-        self.write(self.name + ' Panel', self.f1, centerx=(ANCHO // 4) * 1.5, y=0)
         self.stars_area = AvailableStars(self, ANCHO - 200, 32, 200, 340)
 
         self.current = SystemType(self)
@@ -37,6 +37,12 @@ class StarSystemPanel(BaseWidget):
         EventHandler.register(self.save_systems, 'Save')
         EventHandler.register(self.load_systems, 'LoadData')
         EventHandler.register(self.name_current, 'NameObject')
+
+        f = self.crear_fuente(14, underline=True)
+        self.write('Systems', f, COLOR_AREA, x=3, y=420)
+
+        self.remaining = ValueText(self, 'Binary Pairs remaining', 3, self.area_buttons.top - 50, size=14)
+        self.properties.add(self.remaining)
 
     def name_current(self, event):
         if event.data['object'] in self.systems:
@@ -52,6 +58,10 @@ class StarSystemPanel(BaseWidget):
         self.current.reset(star)
 
     def create_button(self, system_data):
+        binary_systems = [system for system in Universe.systems if system.composition == 'binary']
+        chosen = choice(binary_systems)
+        Universe.systems.remove(chosen)
+        system_data.position = chosen.location
         if system_data not in self.systems:
             button = SystemButton(self, system_data, self.curr_x, self.curr_y)
             self.systems.append(system_data)
@@ -60,6 +70,7 @@ class StarSystemPanel(BaseWidget):
             self.sort_buttons(self.system_buttons.widgets())
             Systems.set_system(system_data)
             self.current.enable()
+            self.remaining.value = str(int(self.remaining.value) - 1)
             return button
 
     def save_systems(self, event):
@@ -74,11 +85,14 @@ class StarSystemPanel(BaseWidget):
                     'ecc_p': current.ecc_p.m,
                     "ecc_s": current.ecc_s.m,
                     "name": current.name,
-                    'pos': dict(zip(['x', 'y', 'z'], current.position))
                 }
                 data[current.id] = d
 
         EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': data})
+
+    def load_universe_data(self):
+        binary_systems = Universe.current_galaxy.current_neighbourhood.quantities['Binary']
+        self.remaining.value = str(binary_systems)
 
     def load_systems(self, event):
         for id in event.data['Binary Systems']:
@@ -89,13 +103,10 @@ class StarSystemPanel(BaseWidget):
             prim = Systems.get_star_by_id(system_data['primary'])
             scnd = Systems.get_star_by_id(system_data['secondary'])
             name = system_data['name']
-            pos = system_data['pos']
 
-            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, pos, id=id, name=name)
+            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
             button = self.create_button(system)
             button.hide()
-            # Systems.set_system(system)
-        self.sort_buttons(self.system_buttons.widgets())
 
     def select_one(self, btn):
         for button in self.system_buttons.widgets():
@@ -113,20 +124,31 @@ class StarSystemPanel(BaseWidget):
             Systems.dissolve_system(system)
 
     def show(self):
+        self.parent.swap_neighbourhood_button.unlock()
         for system in Systems.get_systems():
             if system.is_a_system:
                 self.create_button(system.star_system)
         super().show()
         for prop in self.properties.widgets():
             prop.show()
+        self.load_universe_data()
 
     def hide(self):
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
+        lock = False
         for star_widget in self.stars_area.listed_objects.widgets():
             star = star_widget.object_data
+            singles = [system for system in Universe.systems if system.composition == 'single']
+            chosen = choice(singles)
+            Universe.systems.remove(chosen)
+            star.position = chosen.location
             Systems.set_system(star)
+            lock = True
+
+        if lock:
+            self.parent.swap_neighbourhood_button.lock()
 
 
 class SystemType(BaseWidget):
@@ -176,6 +198,9 @@ class SystemType(BaseWidget):
             self.secondary.value = obj
             self.parent.undo_button.enable()
             self.has_values = True
+
+        if star in Systems.loose_stars:
+            Systems.loose_stars.remove(star)
 
         if self.primary.value != '' and self.secondary.value != '':
             for obj in self.properties.get_widgets_from_layer(2):
@@ -265,6 +290,7 @@ class AvailableStars(ListedArea):
     listed_type = ListedStar
 
     def show(self):
+        self.clear()
         self.populate(Systems.loose_stars, layer='one')
         super().show()
 
@@ -306,7 +332,8 @@ class DissolveButton(TextButton):
 class SystemButton(ColoredBody):
     enabled = True
 
-    def __init__(self, parent, system_data, x, y):
+    def __init__(self, parent, system_data, idx, x, y):
+        system_data.idx = idx
         super().__init__(parent, system_data, str(system_data), x, y)
 
     def on_mousebuttondown(self, event):

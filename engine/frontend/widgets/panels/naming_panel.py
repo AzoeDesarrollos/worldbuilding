@@ -15,15 +15,14 @@ class NamingPanel(BaseWidget):
     no_system_error = False
     all_named_error = False
 
+    show_swap_system_button = True
+
     def __init__(self, parent):
         self.name = 'Naming'
         super().__init__(parent)
         self.image = Surface((ANCHO, ALTO - 32))
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
-
-        f1 = self.crear_fuente(16, underline=True)
-        self.write(self.name + ' Panel', f1, centerx=(ANCHO // 4) * 1.5)
 
         self.unnamed = Group()
         self.objects = {}

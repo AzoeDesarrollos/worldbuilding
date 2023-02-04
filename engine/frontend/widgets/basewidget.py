@@ -22,8 +22,6 @@ class BaseWidget(Sprite):
         self.parent = parent
         if self.parent is not None:
             self.layer = self.parent.layer + 1
-        EventHandler.register(self.on_mousebuttondown, 'onMouseButtonDown')
-        EventHandler.register(self.on_mousebuttonup, 'onMouseButtonUp')
 
     @staticmethod
     def crear_fuente(size, underline=False, bold=False):
@@ -65,11 +63,13 @@ class BaseWidget(Sprite):
         pass
 
     def show(self):
+        self.register()
         self.is_visible = True
         Renderer.add_widget(self)
         WidgetHandler.add_widget(self)
 
     def hide(self):
+        self.deregister()
         self.is_visible = False
         Renderer.del_widget(self)
         WidgetHandler.del_widget(self)
@@ -124,3 +124,11 @@ class BaseWidget(Sprite):
         if len(buttons) and not buttons[-1].is_visible and not overriden:
             self.curr_y -= 32
             self.sort_buttons(buttons, y=self.curr_y)
+
+    def register(self):
+        EventHandler.register(self.on_mousebuttondown, 'onMouseButtonDown')
+        EventHandler.register(self.on_mousebuttonup, 'onMouseButtonUp')
+
+    def deregister(self):
+        EventHandler.deregister(self.on_mousebuttondown, 'onMouseButtonDown')
+        EventHandler.deregister(self.on_mousebuttonup, 'onMouseButtonUp')
