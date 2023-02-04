@@ -1,6 +1,8 @@
-﻿from math import pi, acos, sin, cos, floor
-from engine.backend import q, generate_id
+﻿from engine.backend import q, generate_id, turn_into_roman
+from math import pi, acos, sin, cos, floor
+from .galaxy import ProtoStar
 from random import uniform
+from time import sleep
 
 
 class StellarNeighbourhood:
@@ -188,11 +190,14 @@ class DefinedNeighbourhood:
 
     pre_processed_system_positions = None
 
+    proto_stars = None
+
     def __init__(self, data):
         self.id = generate_id()
         self.location = data['location']
         self.radius = data['radius']
         self.density = data['density']
+        self.proto_stars = []
         self.pre_processed_system_positions = {
             "Single": [],
             "Binary": [],
@@ -201,7 +206,7 @@ class DefinedNeighbourhood:
         }
 
     def __repr__(self):
-        return 'Neighbourhood Object'
+        return f'{turn_into_roman(self.idx)}@{str(self.location)}'
 
     def process_data(self, data):
         for system_id in data['Binary Systems']:
@@ -211,6 +216,25 @@ class DefinedNeighbourhood:
                 y = system_data['pos']['y']
                 z = system_data['pos']['z']
                 self.pre_processed_system_positions['Binary'].append((x, y, z))
+
+    def add_proto_star(self, star):
+        if star not in self.proto_stars:
+            self.proto_stars.append(star)
+
+    def add_proto_stars(self, list_of_dicts):
+        for data in list_of_dicts:
+            data.update({'neighbourhood_idx': self.idx - 1})
+            star = ProtoStar(data)
+            self.proto_stars.append(star)
+            # Este sleep es necesario porque de otro modo todas las ProtoStars tienen el mismo ID.
+            sleep(0.001)
+
+    def __eq__(self, other):
+        equal = self.id == other.id
+        equal = equal and self.location == other.location
+        equal = equal and self.radius == other.radius
+        equal = equal and self.density == other.density
+        return equal
 
 
 class ProtoSystem:

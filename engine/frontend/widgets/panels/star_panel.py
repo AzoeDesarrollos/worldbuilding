@@ -16,7 +16,7 @@ class StarPanel(BasePanel):
 
     add_on_exit = False
 
-    show_swawp_system_button = False
+    show_swap_system_button = False
 
     def __init__(self, parent):
         super().__init__('Star', parent)
@@ -93,10 +93,8 @@ class StarPanel(BasePanel):
         self.sort_buttons(self.star_buttons)
         for obj in self.properties.widgets():
             obj.show()
-        if self.current.has_values:
-            self.current.current.sprite.show()
-        else:
-            self.deselect_buttons()
+        self.deselect_buttons()
+        self.parent.swap_neighbourhood_button.unlock()
 
     def hide(self):
         super().hide()
@@ -112,6 +110,7 @@ class StarPanel(BasePanel):
                 Universe.systems.remove(chosen)
                 star.position = chosen.location
                 Systems.set_system(star)
+                self.parent.swap_neighbourhood_button.lock()
         else:
             self.parent.set_skippable('Star System', False)
 
@@ -192,8 +191,8 @@ class StarType(ObjectType):
         assert star.cls == proto.cls, "You are not building\nthe star correctly.\n\nCheck it's mass."
 
         star.idx = proto.idx
-        galaxy = Universe.get_astrobody_by('Galaxy')
-        galaxy.proto_stars.remove(proto)
+        neighbourhood = Universe.current_galaxy.current_neighbourhood
+        neighbourhood.proto_stars.remove(proto)
         self.parent.button_add.enable()
         self.current = star
         self.fill()
@@ -430,13 +429,15 @@ class PotentialStars(ListedArea):
     def show(self):
         super().show()
         self.clear()
-        for galaxy in Universe.galaxies:
-            pop = [star for star in galaxy.proto_stars]
-            self.populate(pop, layer=galaxy.id)
+
+        for neighbourhood in Universe.current_galaxy.stellar_neighbourhoods:
+            pop = [star for star in neighbourhood.proto_stars]
+            self.populate(pop, layer=neighbourhood.id)
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
-        idx = -1 if Universe.current_galaxy is None else Universe.current_galaxy.id
+        neighbourhood = Universe.current_galaxy.current_neighbourhood
+        idx = -1 if neighbourhood is None else neighbourhood.id
         if idx != self.last_idx:
             self.last_idx = idx
         self.show_current(self.last_idx)

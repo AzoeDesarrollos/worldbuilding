@@ -14,7 +14,7 @@ class StarSystemPanel(BaseWidget):
     skip = False
     skippable = True
 
-    show_swawp_system_button = False
+    show_swap_system_button = False
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -24,8 +24,6 @@ class StarSystemPanel(BaseWidget):
         self.rect = self.image.get_rect()
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.properties = Group()
-        self.f1 = self.crear_fuente(16, underline=True)
-        self.write(self.name + ' Panel', self.f1, centerx=(ANCHO // 4) * 1.5, y=0)
         self.stars_area = AvailableStars(self, ANCHO - 200, 32, 200, 340)
 
         self.current = SystemType(self)
@@ -70,7 +68,7 @@ class StarSystemPanel(BaseWidget):
             self.sort_buttons(self.system_buttons.widgets())
             Systems.set_system(system_data)
             self.current.enable()
-            self.remaining.value = str(int(self.remaining.value)-1)
+            self.remaining.value = str(int(self.remaining.value) - 1)
             return button
 
     def save_systems(self, event):
@@ -128,7 +126,7 @@ class StarSystemPanel(BaseWidget):
             Systems.dissolve_system(system)
 
     def show(self):
-        # self.remaining.value = str(len([system for system in Universe.systems if system.composition == 'binary']))
+        self.parent.swap_neighbourhood_button.unlock()
         for system in Systems.get_systems():
             if system.is_a_system:
                 self.create_button(system.star_system)
@@ -140,6 +138,7 @@ class StarSystemPanel(BaseWidget):
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
+        lock = False
         for star_widget in self.stars_area.listed_objects.widgets():
             star = star_widget.object_data
             singles = [system for system in Universe.systems if system.composition == 'single']
@@ -147,6 +146,10 @@ class StarSystemPanel(BaseWidget):
             Universe.systems.remove(chosen)
             star.position = chosen.location
             Systems.set_system(star)
+            lock = True
+
+        if lock:
+            self.parent.swap_neighbourhood_button.lock()
 
 
 class SystemType(BaseWidget):

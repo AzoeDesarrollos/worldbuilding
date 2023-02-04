@@ -40,9 +40,11 @@ class LayoutPanel(BaseWidget):
 
         f = SwapSystem(self, ANCHO - 200, 2, 'System')
         g = SwapGalaxy(self, 0, 2, 'Galaxy')
-        h = SwapNeighbourhood(self, 120, 2, 'Neighbourhood')
+        h = SwapNeighbourhood(self, 150, 2, 'Neighbourhood')
 
         self.load_button = d
+        self.swap_galaxy_button = g
+        self.swap_neighbourhood_button = h
 
         self.properties.add(a, b, c, d, e, f, g, h, layer=1)
 
@@ -192,7 +194,7 @@ class SwapSystem(Meta):
 
     def update(self):
         super().update()
-        if not self.enabled and self.parent.current.show_swawp_system_button is True:
+        if not self.enabled and self.parent.current.show_swap_system_button is True:
             self.enable()
 
     def show(self):
@@ -219,18 +221,43 @@ class SwapGalaxy(SwapSystem):
         self.system_image = GalaxyName(self, left=self.rect.right + 6, y=2)
 
     def update(self):
-        super().update()
+        if all([not self.has_mouseover, not self.selected, self.enabled]):
+            self.image = self.img_uns
+        self.has_mouseover = False
+
+    def enable(self):
+        super().enable()
 
 
 class SwapNeighbourhood(SwapSystem):
+    current = None
+    locked = False
+
     def on_mousebuttondown(self, event):
-        pass
+        if event.data['button'] == 1 and event.origin == self and self.enabled:
+            neighbourhood = Universe.current_galaxy.cycle_neighbourhoods()
+            self.current = neighbourhood
+            EventHandler.trigger('SwitchNeighbourhood', 'SwapNeighbourhoodButton', {'current': neighbourhood})
+
+    def lock(self):
+        self.locked = True
+        self.disable()
+
+    def unlock(self):
+        self.locked = False
+        self.enable()
+
+    def disable(self):
+        super().disable()
+        self.system_image.color = COLOR_DISABLED
 
     def create_img(self):
-        self.system_image = NeighbourhoodName(self, left=self.rect.right + 6, y=12)
+        self.system_image = NeighbourhoodName(self, left=self.rect.right + 6, y=2)
 
     def update(self):
-        super().update()
+        if all([not self.has_mouseover, not self.selected, self.enabled]):
+            self.image = self.img_uns
+        self.has_mouseover = False
 
 
 class SystemName(BaseWidget):
@@ -245,7 +272,7 @@ class SystemName(BaseWidget):
         self.rect = self._rect.copy()
 
     def get_name(self):
-        if self.parent.parent.current.show_swawp_system_button is False:
+        if self.parent.parent.current.show_swap_system_button is False:
             name = None
         else:
             star = Systems.get_current_star()
@@ -270,12 +297,24 @@ class SystemName(BaseWidget):
 
 class GalaxyName(SystemName):
     def get_name(self):
-        if self.parent.current is not None and self.parent.enabled:
+        if self.parent.current is not None:
             name = self.parent.current.id.split('-')[1]
             self.color = COLOR_TEXTO
             return name
+        else:
+            return '-'
 
 
 class NeighbourhoodName(SystemName):
+    named = None
+
     def get_name(self):
-        pass
+        name = str(self.parent.current)
+        self.named = name
+        if self.parent.enabled:
+            self.color = COLOR_TEXTO
+            return name
+        elif self.parent.locked:
+            return self.named
+        else:
+            return '-'

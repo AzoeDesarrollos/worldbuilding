@@ -21,7 +21,7 @@ class AtmospherePanel(BaseWidget):
 
     last_idx = None
 
-    show_swawp_system_button = True
+    show_swap_system_button = True
 
     def __init__(self, parent):
         super().__init__(parent)

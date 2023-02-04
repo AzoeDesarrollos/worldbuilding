@@ -16,7 +16,7 @@ class MultipleStarsPanel(BaseWidget):
     curr_x = 0
     curr_y = 440
 
-    show_swawp_system_button = False
+    show_swap_system_button = False
 
     def __init__(self, parent):
         self.name = 'Multiple Stars'
@@ -96,11 +96,13 @@ class MultipleStarsPanel(BaseWidget):
         super().show()
         for prop in self.properties.widgets():
             prop.show()
+        self.parent.swap_neighbourhood_button.unlock()
 
     def hide(self):
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
+        self.parent.swap_neighbourhood_button.lock()
 
 
 class SystemsType(SystemType):

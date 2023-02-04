@@ -1,6 +1,5 @@
 from engine.backend import q, generate_id, turn_into_roman
-# from .space import Universe
-from time import sleep
+from itertools import cycle
 
 
 class Galaxy:
@@ -13,13 +12,18 @@ class Galaxy:
     name = 'Galaxy'
 
     celestial_type = 'galaxy'
-    proto_stars = None
 
     orbit = None
 
     id = None
 
+    stellar_neighbourhoods = None
+    neighbourhood_cycler = None
+    current_neighbourhood = None
+
     def __init__(self):
+        self.stellar_neighbourhoods = []
+        self.neighbourhood_cycler = cycle(self.stellar_neighbourhoods)
         self.density_at_location = {}  # tho this dict may get very large.
         self.proto_stars = []
 
@@ -33,13 +37,16 @@ class Galaxy:
             self.id = data.id
             self.set_radius(data.radius)
 
-    def add_proto_stars(self, list_of_dicts, neighbourhood_idx):
-        for data in list_of_dicts:
-            data.update({'neighbourhood_idx': neighbourhood_idx})
-            star = ProtoStar(data)
-            self.proto_stars.append(star)
-            # Este sleep es necesario porque de otro modo todas las ProtoStars tienen el mismo ID.
-            sleep(0.001)
+    def add_neighbourhood(self, new):
+        if new not in self.stellar_neighbourhoods:
+            self.stellar_neighbourhoods.append(new)
+            if len(self.stellar_neighbourhoods) == 1:
+                next(self.neighbourhood_cycler)
+
+    def cycle_neighbourhoods(self):
+        new = next(self.neighbourhood_cycler)
+        self.current_neighbourhood = new
+        return new
 
     def set_radius(self, radius):
         self.radius = q(radius, 'ly')
@@ -83,24 +90,24 @@ class ProtoStar:
         mass = 0
         b = self.idx + self.neighbourhood_idx
         if self.cls.startswith('O'):
-            mass += 16.0+b/10
+            mass += 16.0 + b / 10
         elif self.cls.startswith('B'):
-            mass += 2.1+b/10
+            mass += 2.1 + b / 10
         elif self.cls.startswith('A'):
-            mass += 1.4+b/10
+            mass += 1.4 + b / 10
         elif self.cls.startswith('F'):
-            mass += 1.04+b/10
+            mass += 1.04 + b / 10
         elif self.cls.startswith('G'):
-            mass += 0.8+b/10
+            mass += 0.8 + b / 10
         elif self.cls.startswith('K'):
-            mass += 0.45+b/10
+            mass += 0.45 + b / 10
         elif self.cls.startswith('M'):
-            mass += 0.08+b/100
+            mass += 0.08 + b / 100
 
         self.mass = q(mass, 'sol_mass')
 
     def __str__(self):
-        return f'{self.cls}_{turn_into_roman(self.idx+1)}_{turn_into_roman(self.neighbourhood_idx+1)}'
+        return f'{self.cls}{turn_into_roman(self.idx + 1)}'
 
     def __repr__(self):
         return f"ProtoStar {self.cls} #{self.idx}"

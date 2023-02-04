@@ -15,7 +15,7 @@ class NeighbourhoodPanel(BaseWidget):
 
     locked = False
 
-    show_swawp_system_button = False
+    show_swap_system_button = False
 
     current = None
     current_nei = None
@@ -145,7 +145,8 @@ class NeighbourhoodPanel(BaseWidget):
         self.neighbourhood.characteristics.set_radius(radius)
 
         stars = self.neighbourhood.characteristics.individual_stars
-        self.galaxy.current.add_proto_stars(stars, self.current_nei.idx)
+        self.current_nei.add_proto_stars(stars)
+        self.galaxy.current.add_neighbourhood(button.object_data)
         return button
 
     def clear(self, event=None):
@@ -159,11 +160,16 @@ class NeighbourhoodPanel(BaseWidget):
         for prop in self.properties.widgets():
             prop.show()
         self.neighbourhood.populate()
+        if Universe.current_galaxy is not None:
+            self.parent.swap_galaxy_button.enable()
+            self.parent.swap_neighbourhood_button.disable()
 
     def hide(self):
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
+        self.parent.swap_galaxy_button.disable()
+        self.parent.swap_neighbourhood_button.enable()
 
     def switch_current(self, event):
         self.current_galaxy_id = event.data['current'].id
@@ -218,7 +224,7 @@ class GalaxyType(BaseWidget):
                 widget.enable()
             self.has_values = True
 
-            swap_galaxy_button = self.parent.parent.properties.widgets()[6]
+            swap_galaxy_button = self.parent.parent.swap_galaxy_button
             swap_galaxy_button.enable()
             swap_galaxy_button.current = self.current
 
@@ -413,6 +419,9 @@ class NeighbourhoodButton(Meta):
             self.parent.get_values(location, radius)
             self.parent.select_one(self)
             self.parent.button_add.disable()
+            # esto está un poco sucio porque se está está poniendo por afuera.
+            self.parent.parent.swap_neighbourhood_button.current = self.object_data
+            Universe.current_galaxy.current_neighbourhood = self.object_data
 
     def move(self, x, y):
         self.rect.topleft = x, y

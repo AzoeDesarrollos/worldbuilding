@@ -10,7 +10,7 @@ class StartPanel(BaseWidget):
     skippable = True
     skip = True
 
-    show_swawp_system_button = False
+    show_swap_system_button = False
 
     def __init__(self, parent):
         self.name = 'Start'
