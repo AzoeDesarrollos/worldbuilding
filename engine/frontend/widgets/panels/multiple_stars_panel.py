@@ -128,7 +128,8 @@ class MultipleStarsPanel(BaseWidget):
         for prop in self.properties.widgets():
             prop.show()
         self.parent.swap_neighbourhood_button.unlock()
-        self.load_universe_data()
+        if Universe.current_galaxy is not None:
+            self.load_universe_data()
 
     def create_systems(self):
         lock = False
@@ -285,10 +286,10 @@ class AvailableSystems(ListedArea):
 
     def repopulate(self):
         population = []
-
-        for system in Universe.current_galaxy.current_neighbourhood.systems:
-            if system not in population:
-                population.append(system)
+        if Universe.current_galaxy is not None:
+            for system in Universe.current_galaxy.current_neighbourhood.systems:
+                if system not in population:
+                    population.append(system)
         population.extend(Systems.loose_stars)
 
         if len(population):

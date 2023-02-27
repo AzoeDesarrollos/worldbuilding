@@ -1,5 +1,5 @@
 from engine.frontend.widgets.panels.satellite_panel import CopyCompositionButton, RandomCompositionButton
-from engine.frontend.globales import COLOR_AREA, ANCHO, COLOR_TEXTO, COLOR_BOX, Group
+from engine.frontend.globales import COLOR_AREA, ALTO, ANCHO, COLOR_TEXTO, COLOR_BOX, Group
 from engine.backend import EventHandler, Systems, material_densities, q
 from engine.equations.satellite import minor_moon_by_composition
 from engine.frontend.widgets.basewidget import BaseWidget
@@ -23,9 +23,14 @@ class AsteroidPanel(BasePanel):
         r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 132, 178])
         ro = self.write('Composition', f, COLOR_AREA, topleft=(18, 420))
         self.area_buttons = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 178))
-
+        self.write('Asteroids', f, COLOR_AREA, topleft=(self.area_buttons.x+2, self.area_buttons.y))
+        self.area_type = Rect(32, 32, ANCHO, ALTO - (self.area_buttons.h + 200))
+        text = '''
+        Create your asteroids here. \n\n Input first its three axes and then set its composition.
+        '''
+        self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
         self.curr_x = self.area_buttons.x + 3
-        self.curr_y = self.area_buttons.y + 16
+        self.curr_y = self.area_buttons.y + 21
 
         self.button_add = AddAsteroidButton(self, ANCHO - 13, 398)
         self.button_del = DelAsteroidButton(self, ANCHO - 13, 416)
@@ -93,7 +98,8 @@ class AsteroidPanel(BasePanel):
         self.asteroids.add(button, layer=layer_number)
         self.properties.add(button, layer=layer_number)
         if self.is_visible:
-            self.sort_buttons(self.asteroids.get_widgets_from_layer(Systems.get_current().id))
+            asteroids = self.asteroids.get_widgets_from_layer(Systems.get_current().id)
+            self.sort_buttons(asteroids, x=self.curr_x, y=self.curr_y)
         self.current.erase()
         self.button_add.disable()
 
@@ -307,7 +313,7 @@ class AsteroidType(BaseWidget):
                 'Volume': 'Ve'
             }
         }
-
+        self.parent.image.fill(COLOR_BOX, self.parent.area_type)
         elementos = self.properties.get_widgets_from_layer(2)
         for elemento in elementos:
             elemento.enable()

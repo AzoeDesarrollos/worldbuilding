@@ -11,6 +11,7 @@ import os
 
 class InformationPanel(BaseWidget):
     skippable = False
+    skip = False
 
     current = None
 

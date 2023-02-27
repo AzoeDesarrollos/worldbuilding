@@ -7,6 +7,7 @@ from pygame import Surface, Rect
 
 class NamingPanel(BaseWidget):
     skippable = False
+    skip = False
     last_idx = -1
 
     curr_idx = 0

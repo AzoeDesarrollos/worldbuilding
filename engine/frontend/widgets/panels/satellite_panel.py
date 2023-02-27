@@ -1,6 +1,7 @@
-from engine.frontend.globales import COLOR_AREA, ANCHO, COLOR_TEXTO, COLOR_DISABLED, COLOR_SELECTED, Group
+from engine.frontend.globales import COLOR_AREA, COLOR_BOX, COLOR_TEXTO, COLOR_DISABLED, COLOR_SELECTED
 from engine.backend import EventHandler, Systems, material_densities, roll
 from engine.equations.satellite import major_moon_by_composition
+from engine.frontend.globales import ANCHO, ALTO, Group
 from engine.frontend.widgets.values import ValueText
 from engine.frontend.widgets.meta import Meta
 from .common import TextButton, ColoredBody
@@ -24,21 +25,26 @@ class SatellitePanel(BasePanel):
         r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 132, 178])
         self.area_buttons = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 178))
         self.curr_x = self.area_buttons.x + 3
-        self.curr_y = self.area_buttons.y + 16
+        self.curr_y = self.area_buttons.y + 21
 
         self.properties = Group()
         self.mass_number = ShownMass(self)
         self.button_add = AddMoonButton(self, ANCHO - 13, 398)
         self.button_del = DelMoonButton(self, ANCHO - 13, 416)
         self.f3 = self.crear_fuente(11)
+        self.area_type = Rect(32, 32, ANCHO, ALTO - (self.area_buttons.h + 200))
+        text = '''
+        Create your satellites here. \n\n Input first its mass and then select its composition below.
+        '''
+        self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
+        ra = self.write('Composition', f1, COLOR_AREA, topleft=(18, 420))
+        self.write('Satellites', f1, COLOR_AREA, topleft=(self.area_buttons.x+2, self.area_buttons.y))
+        self.copy_button = CopyCompositionButton(self, ra.left, ra.bottom + 6, ra.centerx)
+        self.random_button = RandomCompositionButton(self, ra.right, ra.bottom + 6, ra.centerx)
 
-        r = self.write('Composition', f1, COLOR_AREA, topleft=(18, 420))
-        self.copy_button = CopyCompositionButton(self, r.left, r.bottom + 6, r.centerx)
-        self.random_button = RandomCompositionButton(self, r.right, r.bottom + 6, r.centerx)
-
-        self.name_rect = Rect(0, 0, r.w, self.f3.get_height())
-        self.name_rect.centerx = r.centerx
-        self.name_rect.top = self.copy_button.text_rect.bottom
+        self.planet_name_rect = Rect(0, 0, ra.w, self.f3.get_height())
+        self.planet_name_rect.centerx = ra.centerx
+        self.planet_name_rect.top = self.copy_button.text_rect.bottom
 
         self.properties.add(self.button_add, self.button_del, self.copy_button,
                             self.mass_number, self.random_button, layer=1)
@@ -92,7 +98,8 @@ class SatellitePanel(BasePanel):
         self.satellites.add(button, layer=layer_number)
         self.properties.add(button)
         if self.is_visible:
-            self.sort_buttons(self.satellites.get_widgets_from_layer(Systems.get_current().id))
+            satellites = self.satellites.get_widgets_from_layer(Systems.get_current().id)
+            self.sort_buttons(satellites, x=self.curr_x, y=self.curr_y)
             self.current.erase()
         self.button_add.disable()
 
@@ -149,7 +156,7 @@ class SatellitePanel(BasePanel):
     def write_name(self, planet):
         r = self.image.fill(COLOR_AREA, [0, 498, 130, 14])
         text = f'[{str(planet)}]'
-        self.write(text, self.f3, COLOR_AREA, top=self.name_rect.y, centerx=r.centerx)
+        self.write(text, self.f3, COLOR_AREA, top=self.planet_name_rect.y, centerx=r.centerx)
 
     def clear_name(self):
         self.image.fill(COLOR_AREA, [0, 498, 130, 14])
@@ -317,6 +324,7 @@ class SatelliteType(ObjectType):
         for element in self.properties.get_widgets_from_layer(1)[1:]:
             element.enable()
         super().fill(tos)
+        self.parent.image.fill(COLOR_BOX, self.parent.area_type)
 
         comp = {}
         for elemento in self.properties.get_widgets_from_layer(2):

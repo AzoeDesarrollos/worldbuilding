@@ -164,17 +164,19 @@ class StarSystemPanel(BaseWidget):
 
     def show(self):
         self.parent.swap_neighbourhood_button.unlock()
-        for system in Universe.current_galaxy.current_neighbourhood.systems:
-            self.create_button(system)
+        if Universe.current_galaxy is not None:
+            for system in Universe.current_galaxy.current_neighbourhood.systems:
+                self.create_button(system)
+            self.load_universe_data()
         self.sort_buttons(self.system_buttons.widgets())
         super().show()
         for prop in self.properties.widgets():
             prop.show()
-        self.load_universe_data()
 
     def hide(self):
         super().hide()
-        self.create_systems()
+        if Universe.current_galaxy is not None:
+            self.create_systems()
         for prop in self.properties.widgets():
             prop.hide()
 

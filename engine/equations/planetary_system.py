@@ -243,7 +243,7 @@ class RoguePlanets:
                 cls.astro_bodies.append(astro_obj)
             else:
                 astro_obj.temperature = q(2.7, 'kelvin')
-            Universe.visibility_by_albedo()
+            # Universe.visibility_by_albedo()
             if astro_obj.celestial_type == 'planet' and astro_obj.planet_type == 'rocky':
                 EventHandler.trigger('RockyPlanet', 'RoguePlanets', {'system_id': cls.id,
                                                                      'planet': astro_obj,

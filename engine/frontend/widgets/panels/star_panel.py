@@ -110,6 +110,9 @@ class StarPanel(BasePanel):
 
     def hide(self):
         super().hide()
+        binary_systems = 1
+        if Universe.current_galaxy is not None:
+            binary_systems = Universe.current_galaxy.current_neighbourhood.quantities['Binary']
         for obj in self.properties.widgets():
             obj.hide()
         if self.add_on_exit or not len(self.stars):
@@ -124,6 +127,8 @@ class StarPanel(BasePanel):
                 Systems.set_system(star)
                 Universe.current_galaxy.current_neighbourhood.add_true_system(star)
                 self.parent.swap_neighbourhood_button.lock()
+        elif binary_systems == 0:
+            self.parent.set_skippable('Star System', True)
         else:
             self.parent.set_skippable('Star System', False)
 

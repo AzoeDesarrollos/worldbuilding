@@ -24,6 +24,11 @@ class PlanetPanel(BasePanel):
         self.current = PlanetType(self)
         self.properties = Group()
         self.unit = Unit(self, 0, 416)
+        text = '''
+        Create your planets here. \nClick on any attibute to trigger a graph to select its properties.\n\n
+        You can alternate among the planet types by clicking in the "Type" button below.
+        '''
+        self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
         self.mass_number = ShownMass(self)
         self.button_add = AddPlanetButton(self, ANCHO - 13, 398)
         self.button_del = DelPlanetButton(self, ANCHO - 13, 416)
@@ -324,6 +329,7 @@ class PlanetType(ObjectType):
                 'rotation': 'hours/day'
             }
         }
+        self.parent.image.fill(COLOR_BOX, self.parent.area_type)
         super().fill(tos)
 
         if self.current.sprite is None and self.current.composition is not None:

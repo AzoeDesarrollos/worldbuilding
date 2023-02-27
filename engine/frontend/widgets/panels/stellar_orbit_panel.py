@@ -34,7 +34,7 @@ class OrbitPanel(BaseWidget):
 
     skip = False
 
-    show_swawp_system_button = True
+    show_swap_system_button = True
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -421,6 +421,8 @@ class OrbitPanel(BaseWidget):
     def fill_indexes(self):
         assert len(Systems.get_systems()), "There is no data to load"
         for system in Systems.get_systems():
+            if not system.is_a_system:
+                raise AssertionError("There is no data to load")
             star = system.star_system
             if star.id not in self._markers:
                 self._markers[star.id] = []
@@ -510,15 +512,16 @@ class OrbitPanel(BaseWidget):
         else:
             idx = self.last_idx
 
-        if idx != self.last_idx:
-            self.set_current()
-            self.last_idx = idx
-
         if not self.no_star_error:
             # self.image.fill(COLOR_BOX, self.area_markers)
             self.image.fill(COLOR_AREA, self.area_buttons)
         else:
             self.show_no_system_error()
+
+        if idx != self.last_idx:
+            if self.no_star_error is False:
+                self.set_current()
+            self.last_idx = idx
 
     def __repr__(self):
         return 'Orbit Panel'

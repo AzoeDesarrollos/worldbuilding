@@ -16,6 +16,7 @@ class AtmospherePanel(BaseWidget):
     curr_planet = None
 
     skippable = False
+    skip = False
     written_info = None
     total = 0
 

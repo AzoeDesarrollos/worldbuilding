@@ -6,6 +6,7 @@ from engine.backend import EventHandler, Systems
 from engine.frontend.widgets.meta import Meta
 from engine.equations.space import Universe
 from engine.backend.util import abrir_json
+from engine.backend.config import Config
 from os.path import exists, join
 from os import getcwd
 from . import panels
@@ -58,14 +59,18 @@ class LayoutPanel(BaseWidget):
 
         self.current.hide()
         self.current = self.panels[self.curr_idx]
-        if self.current.skippable is True and self.current.skip is True:
+        ignore_rules = Config.get('ignore skip-rules')
+        start_rule = self.current.name == 'Start'
+        if all([self.current.skippable, self.current.skip, [not ignore_rules or start_rule]]):
             self.cycle(delta)
             return  # si se saltea un panel, no hay que mostrar el panel siguiente 2 veces.
         self.current.show()
 
     def set_skippable(self, name, value):
-        panel = [i for i in self.panels if i.name == name][0]
-        panel.skip = value
+        ignore_rules = Config.get('ignore skip-rules')
+        if ignore_rules is False:
+            panel = [i for i in self.panels if i.name == name][0]
+            panel.skip = value
 
     def __repr__(self):
         return 'Layout Panel'
