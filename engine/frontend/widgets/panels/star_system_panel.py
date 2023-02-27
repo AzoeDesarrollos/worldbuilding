@@ -141,6 +141,7 @@ class StarSystemPanel(BaseWidget):
                         Universe.remove_astro_obj(chosen)
                         star.position = chosen.location
                         Systems.set_system(star)
+                        Universe.current_galaxy.current_neighbourhood.add_true_system(star)
                     except IndexError as error:
                         raise AssertionError(error)
 

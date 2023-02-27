@@ -144,6 +144,7 @@ class MultipleStarsPanel(BaseWidget):
                     Universe.remove_astro_obj(chosen)
                     star.position = chosen.location
                     Systems.set_system(star)
+                    Universe.current_galaxy.current_neighbourhood.add_true_system(star)
                     lock = True
 
                 except IndexError:

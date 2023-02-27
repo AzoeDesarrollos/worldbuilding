@@ -1,8 +1,8 @@
 from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, ANCHO, COLOR_BOX, COLOR_SELECTED, Renderer, Group
-from engine.backend import EventHandler, Systems, roll, generate_id
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.panels.common import TextButton
 from engine.frontend.widgets.object_type import ObjectType
+from engine.backend import EventHandler, Systems, roll
 from engine.frontend.widgets.meta import Meta
 from .common import ColoredBody, ListedArea
 from engine.equations.space import Universe
@@ -54,7 +54,8 @@ class StarPanel(BasePanel):
     @staticmethod
     def save_stars(event):
         data1, data2 = {}, {}
-        for star in [s.star_system for s in Systems.get_systems() if s.is_a_system and s.star_system.letter is None]:
+        stars = Universe.current_galaxy.current_neighbourhood.all_stars()
+        for star in stars:
             star_data = {
                 'name': star.name if star.name is not None else str(star),
                 'mass': star.mass.m,
@@ -65,12 +66,11 @@ class StarPanel(BasePanel):
             data1[star.id] = star_data
 
             if star.position is not None:
-                idx = generate_id()
                 system_data = {
-                    'system_id': star.id,
+                    "neighbourhood_id": Universe.current_galaxy.current_neighbourhood.id,
                     'position': dict(zip(['x', 'y', 'z'], star.position)),
                 }
-                data2[idx] = system_data
+                data2[star.id] = system_data
 
         EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data1})
         EventHandler.trigger(event.tipo + 'Data', 'Star', {"Single Systems": data2})
@@ -122,6 +122,7 @@ class StarPanel(BasePanel):
                 Universe.systems.remove(chosen)
                 star.position = chosen.location
                 Systems.set_system(star)
+                Universe.current_galaxy.current_neighbourhood.add_true_system(star)
                 self.parent.swap_neighbourhood_button.lock()
         else:
             self.parent.set_skippable('Star System', False)

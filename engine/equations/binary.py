@@ -117,7 +117,8 @@ class BinarySystem(AbstractBinary):
             raise StopIteration()
 
     def composition(self):
-        return [self.primary, self.secondary]
+        flat_list = [item for sublist in [self.primary.composition(), self.secondary.composition()] for item in sublist]
+        return flat_list
 
     @property
     def system(self):

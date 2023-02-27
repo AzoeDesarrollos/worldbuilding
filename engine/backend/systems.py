@@ -313,7 +313,10 @@ class Systems:
 
     @classmethod
     def compound_save_data(cls, event):
-        cls.save_data.update(event.data)
+        for key in event.data:
+            if len(event.data[key]):
+                cls.save_data[key].update(event.data[key])
+        # cls.save_data.update(event.data)
         if not EventHandler.is_quequed('SaveDataFile'):
             EventHandler.trigger('SaveDataFile', 'EngineData', cls.save_data)
 

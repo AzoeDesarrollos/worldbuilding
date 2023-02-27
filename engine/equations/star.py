@@ -270,6 +270,9 @@ class Star(BodyInHydrostaticEquilibrium):
         else:
             return self
 
+    def composition(self):
+        return self
+
     @property
     def shared_mass(self):
         return self._shared_mass
@@ -337,9 +340,9 @@ class Star(BodyInHydrostaticEquilibrium):
     def __str__(self):
         if self.has_name:
             return self.name
-        elif self.prefix != '':
-            sub = self.sub_classification
-            return f"{self.prefix}{turn_into_roman(self.sub_pos)}{self.cls}{sub}{turn_into_roman(self.idx + 1)}"
+        # elif self.prefix != '':
+        #     sub = self.sub_classification
+        #     return f"{self.prefix}{turn_into_roman(self.sub_pos)}{self.cls}{sub}{turn_into_roman(self.idx + 1)}"
         else:
             return f"{self.cls}{self.sub_classification}{turn_into_roman(self.idx + 1)}"
 
