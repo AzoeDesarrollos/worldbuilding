@@ -127,10 +127,9 @@ class Major(Satellite, BodyInHydrostaticEquilibrium):
 
         self.system_id = data.get('system', None)
 
-    # noinspection PyUnusedLocal
     @staticmethod
     def set_density(composition):
-        return NotImplemented
+        raise NotImplementedError
 
 
 class Minor(Satellite, StarSystemBody):
@@ -178,10 +177,9 @@ class Minor(Satellite, StarSystemBody):
         self.satellites = [] if 'satellites' not in data else [i for i in data['satellites']]
         self.orbit = None if 'orbit' not in data else data['orbit']
 
-    # noinspection PyUnusedLocal
     @staticmethod
     def set_density(composition):
-        return NotImplemented
+        raise NotImplementedError
 
     def get_radius(self):
         # chapuza

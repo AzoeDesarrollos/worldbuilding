@@ -14,6 +14,7 @@ class Systems:
         'Planets': {},
         'Satellites': {},
         'Stars': {},
+        'Single Systems': {},
         'Binary Systems': {},
         'Planetary Orbits': {},
         'Stellar Orbits': {}
@@ -65,33 +66,33 @@ class Systems:
     def set_system(cls, star):
         if star in cls.loose_stars:
             cls.loose_stars.remove(star)
-        elif star.celestial_type != 'system':
-            return
+        # elif star.celestial_type != 'system':
+        #     return
         if star.letter == 'S':
             for sub in star:
                 for system in cls._systems:
                     if system.star_system == sub:
                         system.update()
-
+                cls.set_system(sub)
         else:
             system = cls.planetary(star)
-            cls.populate(star.id)
             if system not in cls._systems:
+                cls.populate(star.id)
                 cls._systems.append(system)
-                if len(cls._systems):
+                if len(cls._systems) == 1:
                     cls._current = next(cls._system_cycler)
-            # if star.letter is not None:
-            #     for s in star:
-            #         if s in cls.loose_stars:
-            #             cls.loose_stars.remove(s)
-            #         else:
-            #             system = cls.get_system_by_star(s)
-            #             if system is not None:
-            #                 cls._systems.remove(system)
-            #                 cls.unpopulate(system.id)
-            #                 s.flag()
-            #                 for astro in system.astro_bodies:
-            #                     astro.flag()
+        # if star.letter is not None:
+        #     for s in star:
+        #         if s in cls.loose_stars:
+        #             cls.loose_stars.remove(s)
+        #         else:
+        #             system = cls.get_system_by_star(s)
+        #             if system is not None:
+        #                 cls._systems.remove(system)
+        #                 cls.unpopulate(system.id)
+        #                 s.flag()
+        #                 for astro in system.astro_bodies:
+        #                     astro.flag()
 
     @classmethod
     def populate(cls, star_id):
@@ -248,8 +249,9 @@ class Systems:
 
     @classmethod
     def remove_star(cls, star):
-        cls.universe.remove_astro_obj(star)
-        star.flag()
+        if cls.universe.contains(star):
+            cls.universe.remove_astro_obj(star)
+
         if star in cls.loose_stars:
             cls.loose_stars.remove(star)
         else:
@@ -268,7 +270,7 @@ class Systems:
         ruta = join(getcwd(), 'data', 'savedata.json')
         data = abrir_json(ruta)
         read_data = abrir_json(ruta)
-        keys = 'Galaxies,Neighbourhoods,Stars,Binary Systems,Stellar Orbits,'
+        keys = 'Galaxies,Neighbourhoods,Stars,Single Systems,Binary Systems,Stellar Orbits,'
         keys += 'Planetary Orbits,Asteroids,Planets,Satellites'
         for key in keys.split(','):
             new_data = event.data.get(key, [])
@@ -280,6 +282,7 @@ class Systems:
                     data[key][item_id] = item_data
 
         copy_data = data.copy()
+        delete = {}
         for key in keys.split(','):
             if key not in ('Galaxies', 'Neighbourhoods'):
                 for idx in copy_data[key]:
@@ -296,9 +299,16 @@ class Systems:
                     if system is not None:
                         body = system.get_astrobody_by(idx, tag_type='id')
                         if body is not False and body.flagged:
-                            del data[key][idx]
+                            if key not in delete:
+                                delete[key] = [data[key][idx]]
+                            else:
+                                delete[key].append(data[key][idx])
 
         else:
+            for key in delete:
+                for idx in delete[key]:
+                    del data[key][idx]
+
             guardar_json(ruta, data)
 
     @classmethod

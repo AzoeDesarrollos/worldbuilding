@@ -38,6 +38,9 @@ class Group:
             del self._d[layer]
 
     def clear(self):
+        layers = [layer for layer in self.layers]
+        for layer in layers:
+            self.clear_layer(layer)
         self._d.clear()
         self._list.clear()
         self._leght = 0

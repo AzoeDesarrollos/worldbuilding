@@ -79,6 +79,11 @@ class Universe:
             cls.current_galaxy = astro_obj
 
     @classmethod
+    def contains(cls, astro_obj):
+        group = cls._get_astro_group(astro_obj)
+        return astro_obj in group
+
+    @classmethod
     def remove_astro_obj(cls, astro_obj):
         group = cls._get_astro_group(astro_obj)
         group.remove(astro_obj)

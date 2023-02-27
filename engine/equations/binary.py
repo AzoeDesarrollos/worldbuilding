@@ -1,6 +1,5 @@
 from .orbit import BinaryPlanetOrbit, PlanetOrbit  # , BinaryStarOrbit
-# from engine.backend.util import roll, generate_id, q
-from engine.backend.util import generate_id, q
+from engine.backend.util import generate_id, q, turn_into_roman
 from .orbit import BinaryStarOrbit
 from .general import Flagable
 from .space import Universe
@@ -69,6 +68,13 @@ class BinarySystem(AbstractBinary):
 
     position = None
 
+    prefix = ''
+    sub_pos = -1
+    _system = None
+    _shared_mass = -1
+    _inner_forbidden = None
+    _outer_forbidden = None
+
     def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, unit='au', id=None):
         super().__init__(primary, secondary, avgsep, ep=ep, es=es, unit=unit)
 
@@ -84,7 +90,10 @@ class BinarySystem(AbstractBinary):
         self.id = id if id is not None else generate_id()
 
     def __str__(self):
-        return self.letter + '-Type #{}'.format(self.idx)
+        if self.parent is None:
+            return self.letter + '-Type #{}'.format(self.idx)
+        else:
+            return f'{self.parent.letter}{turn_into_roman(self.sub_pos)}{self.letter}{turn_into_roman(self.idx)}'
 
     def __repr__(self):
         return self.letter + '-Type Binary System'
@@ -130,6 +139,11 @@ class BinarySystem(AbstractBinary):
     def set_name(self, name):
         self.name = name
         self.has_name = True
+
+    def inherit(self, system, idx):
+        self.prefix = system.letter
+        self.sub_pos = idx
+        self._system = system
 
 
 class PTypeSystem(BinarySystem):
@@ -200,11 +214,13 @@ class STypeSystem(BinarySystem):
 
         self.inner_forbbiden_zone = q(round(self.min_sep.m / 3, 3), 'au')
         self.outer_forbbiden_zone = q(round(self.max_sep.m * 3, 3), 'au')
-        for star in self.composition():
+        for idx, star in enumerate(self.composition(), start=1):
             if star.letter is None:
                 inner = self.inner_forbbiden_zone
                 outer = self.outer_forbbiden_zone
-                star.inherit(self, inner, outer, self.shared_mass)
+                star.inherit(self, inner, outer, self.shared_mass, idx)
+            else:
+                star.inherit(self, idx)
 
 
 class PlanetaryPTypeSystem(BinarySystem, Planet):

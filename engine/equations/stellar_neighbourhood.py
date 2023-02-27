@@ -1,4 +1,4 @@
-﻿from engine.backend import q, generate_id, turn_into_roman
+﻿from engine.backend import q, generate_id, turn_into_roman, roll
 from math import pi, acos, sin, cos, floor
 from .galaxy import ProtoStar
 from random import uniform
@@ -81,12 +81,19 @@ class StellarNeighbourhood:
         self.main_sequence_stars = sum([self._o_stars, self._b_stars, self._a_stars, self._f_stars, self._g_stars,
                                         self._k_stars, self._m_stars])
 
-        self._binary = int(round(((self._total_stars / 1.58) * 0.33), 0))
-        self._triple = int(round(((self._total_stars / 1.58) * 0.08), 0))
-        self._multiple = int(round(((self._total_stars / 1.58) * 0.03), 0))
-        self._single = int(self._total_stars - ((self._binary * 2) + (self._triple * 3) + (self._multiple * 4)))
+        # The distribution of individual stars into systems only takes into account main sequence stars because
+        # the program doesn't allow for neither the creation of brown or white dwarves or black holes yet.
+        # this might change in future revisions.
+        self._binary = int(round(((self.main_sequence_stars / 1.58) * 0.33), 0))
+        self._triple = int(round(((self.main_sequence_stars / 1.58) * 0.08), 0))
+        self._multiple = int(round(((self.main_sequence_stars / 1.58) * 0.03), 0))
+        self._single = int(self.main_sequence_stars - ((self._binary * 2) + (self._triple * 3) + (self._multiple * 4)))
 
         self._total_systems = int(sum([self._single, self._binary, self._triple, self._multiple]))
+
+        # this is because some of the binary pairs are part
+        self._binary += self._triple + (self._multiple * 2)
+        # of triple and cuadruple systems.
 
         self.individual_stars = [{'class': 'O', 'idx': i} for i in range(int(self._o_stars))]
         self.individual_stars += [{'class': 'B', 'idx': i} for i in range(int(self._b_stars))]
@@ -146,8 +153,12 @@ class StellarNeighbourhood:
         else:
             raise ValueError(f'Kind "{kind}" is unrecognizable.')
 
-    def system_positions(self, current_neighbourhood, seed=1):
-        assert seed > 0, 'the seed must be greater than 0'
+    def system_positions(self, current_neighbourhood):
+        if current_neighbourhood.nei_seed is None:
+            seed = 1
+        else:
+            seed = current_neighbourhood.nei_seed
+
         systems = ['Single'] * (self.systems('single')) + ['Binary'] * self.systems('binary')
         systems += ['Triple'] * self.systems('triple') + ['Multiple'] * self.systems('multiple')
 
@@ -158,8 +169,8 @@ class StellarNeighbourhood:
         r_raw = initial_value
         distances = []
         for i, system in enumerate(systems):
-            if len(current_neighbourhood[system]):
-                x, y, z = current_neighbourhood[system].pop()
+            if len(current_neighbourhood.pre_processed_system_positions[system]):
+                x, y, z = current_neighbourhood.pre_processed_system_positions[system].pop()
             else:
                 p_raw = constant * r_raw % divisor
                 w_raw = constant * p_raw % divisor
@@ -194,8 +205,14 @@ class DefinedNeighbourhood:
 
     quantities = None
 
-    def __init__(self, data):
-        self.id = generate_id()
+    systems = []
+
+    nei_seed = None
+
+    def __init__(self, idx, data):
+        self.idx = idx
+        self.id = data['id'] if 'id' in data else generate_id()
+        self.nei_seed = data['seed'] if 'seed' in data else self._roll_seed()
         self.location = data['location']
         self.radius = data['radius']
         self.density = data['density']
@@ -216,17 +233,23 @@ class DefinedNeighbourhood:
     def set_quantity(self, key, quantity):
         self.quantities[key] = quantity
 
+    def add_true_system(self, system):
+        if system not in self.systems:
+            self.systems.append(system)
+
     def __repr__(self):
         return f'{turn_into_roman(self.idx)}@{str(self.location)}'
 
     def process_data(self, data):
-        for system_id in data['Binary Systems']:
-            if data['neighbourhood_id'] == self.id:
-                system_data = data['Binary Systems'][system_id]
-                x = system_data['pos']['x']
-                y = system_data['pos']['y']
-                z = system_data['pos']['z']
-                self.pre_processed_system_positions['Binary'].append((x, y, z))
+        for tag in 'Single Systems', 'Binary Systems':
+            tag_name = tag.split()[0]
+            for system_id in data[tag]:
+                if data[tag][system_id]['neighbourhood_id'] == self.id:
+                    system_data = data[tag][system_id]
+                    x = system_data['position']['x']
+                    y = system_data['position']['y']
+                    z = system_data['position']['z']
+                    self.pre_processed_system_positions[tag_name].append((x, y, z))
 
     def add_proto_stars(self, list_of_dicts):
         for data in list_of_dicts:
@@ -242,6 +265,11 @@ class DefinedNeighbourhood:
         equal = equal and self.radius == other.radius
         equal = equal and self.density == other.density
         return equal
+
+    @staticmethod
+    def _roll_seed():
+        rolled = roll(1.0, 2*10**8)
+        return int(rolled)
 
 
 class ProtoSystem:

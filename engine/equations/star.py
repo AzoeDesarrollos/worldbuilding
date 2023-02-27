@@ -22,7 +22,6 @@ class Star(BodyInHydrostaticEquilibrium):
     outer_boundry = 0
     frost_line = 0
 
-    sprite = None
     letter = None
     idx = None
 
@@ -51,6 +50,9 @@ class Star(BodyInHydrostaticEquilibrium):
     neighbourhood_idx = None
 
     position = None
+
+    prefix = ''
+    sub_pos = 0
 
     def __init__(self, data):
         mass = data.get('mass', False)
@@ -237,15 +239,25 @@ class Star(BodyInHydrostaticEquilibrium):
             else:
                 return number
 
-        r = cap(decimal_round(ar * x + br))
-        g = cap(decimal_round(ag * x + bg))
-        b = cap(decimal_round(ab * x + bb))
+        r, g, b = 0, 0, 0
+        try:
+            r = cap(decimal_round(ar * x + br))
+            g = cap(decimal_round(ag * x + bg))
+            b = cap(decimal_round(ab * x + bb))
+        except RecursionError:
+            # No sé porqué, pero a veces pasa esto.
+            print(r, g, b)
+            r = 1
+            g = 1
+            b = 1
 
         color = Color(r, g, b)
         return color
 
     # These 4 methods correspond to a star that is part of a binary system.
-    def inherit(self, system, inner, outer, mass):
+    def inherit(self, system, inner, outer, mass, idx):
+        self.prefix = system.letter
+        self.sub_pos = idx
         self._system = system
         self._shared_mass = mass
         self._inner_forbidden = inner
@@ -325,8 +337,11 @@ class Star(BodyInHydrostaticEquilibrium):
     def __str__(self):
         if self.has_name:
             return self.name
+        elif self.prefix != '':
+            sub = self.sub_classification
+            return f"{self.prefix}{turn_into_roman(self.sub_pos)}{self.cls}{sub}{turn_into_roman(self.idx + 1)}"
         else:
-            return f"{self.cls}{self.sub_classification}{turn_into_roman(self.idx+1)}"
+            return f"{self.cls}{self.sub_classification}{turn_into_roman(self.idx + 1)}"
 
     def __repr__(self):
         if self.has_name is False:

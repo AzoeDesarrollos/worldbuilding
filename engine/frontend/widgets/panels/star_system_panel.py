@@ -44,6 +44,8 @@ class StarSystemPanel(BaseWidget):
         self.remaining = ValueText(self, 'Binary Pairs remaining', 3, self.area_buttons.top - 50, size=14)
         self.properties.add(self.remaining)
 
+        self.discarded_protos = []
+
     def name_current(self, event):
         if event.data['object'] in self.systems:
             system = event.data['object']
@@ -59,34 +61,42 @@ class StarSystemPanel(BaseWidget):
 
     def create_button(self, system_data):
         binary_systems = [system for system in Universe.systems if system.composition == 'binary']
-        chosen = choice(binary_systems)
-        Universe.systems.remove(chosen)
-        system_data.position = chosen.location
+        if len(binary_systems):
+            chosen = choice(binary_systems)
+            Universe.systems.remove(chosen)
+            self.discarded_protos.append(chosen)
+            system_data.position = chosen.location
+            Universe.current_galaxy.current_neighbourhood.quantities['Binary'] -= 1
+
         if system_data not in self.systems:
-            button = SystemButton(self, system_data, self.curr_x, self.curr_y)
+            idx = len([s for s in self.systems if system_data.compare(s) is True])
+            button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
             self.systems.append(system_data)
             self.system_buttons.add(button)
             self.properties.add(button)
-            self.sort_buttons(self.system_buttons.widgets())
             Systems.set_system(system_data)
+            Universe.current_galaxy.current_neighbourhood.add_true_system(system_data)
             self.current.enable()
-            self.remaining.value = str(int(self.remaining.value) - 1)
+            self.load_universe_data()
             return button
 
-    def save_systems(self, event):
+    @staticmethod
+    def save_systems(event):
         data = {}
-        for button in self.system_buttons.widgets():
-            current = button.object_data
-            if current.celestial_type == 'system':
+        systems = Systems.get_systems()
+        for system in [s.star_system for s in systems if s.is_a_system and s.star_system.letter is not None]:
+            if system.celestial_type == 'system':
                 d = {
-                    'primary': current.primary.id,
-                    'secondary': current.secondary.id,
-                    'avg_s': current.average_separation.m,
-                    'ecc_p': current.ecc_p.m,
-                    "ecc_s": current.ecc_s.m,
-                    "name": current.name,
+                    'primary': system.primary.id,
+                    'secondary': system.secondary.id,
+                    'avg_s': system.average_separation.m,
+                    'ecc_p': system.ecc_p.m,
+                    "ecc_s": system.ecc_s.m,
+                    "name": system.name,
+                    "position": dict(zip(['x', 'y', 'z'], system.position)),
+                    "neighbourhood_id": Universe.current_galaxy.current_neighbourhood.id
                 }
-                data[current.id] = d
+                data[system.id] = d
 
         EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': data})
 
@@ -102,11 +112,39 @@ class StarSystemPanel(BaseWidget):
             ecc_s = system_data['ecc_s']
             prim = Systems.get_star_by_id(system_data['primary'])
             scnd = Systems.get_star_by_id(system_data['secondary'])
+            Systems.remove_star(prim)
+            Systems.remove_star(scnd)
             name = system_data['name']
+            x = system_data['position']['x']
+            y = system_data['position']['y']
+            z = system_data['position']['z']
 
             system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
+            system.position = x, y, z
+            Universe.add_astro_obj(system)
+
             button = self.create_button(system)
             button.hide()
+
+    def create_systems(self):
+        triple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Triple']
+        multiple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Multiple']
+        if triple_systems == 0 and multiple_systems == 0:
+            widgets = self.stars_area.listed_objects.widgets()
+            singles = [system for system in Universe.systems if system.composition == 'single']
+            stars = [s.object_data for s in widgets if s.object_data.celestial_type == 'star']
+            if len(singles):
+                for star in stars:
+                    try:
+                        chosen = choice(singles)
+                        singles.remove(chosen)
+                        Universe.remove_astro_obj(chosen)
+                        star.position = chosen.location
+                        Systems.set_system(star)
+                    except IndexError as error:
+                        raise AssertionError(error)
+
+            self.parent.set_skippable('Multiple Stars', True)
 
     def select_one(self, btn):
         for button in self.system_buttons.widgets():
@@ -125,9 +163,9 @@ class StarSystemPanel(BaseWidget):
 
     def show(self):
         self.parent.swap_neighbourhood_button.unlock()
-        for system in Systems.get_systems():
-            if system.is_a_system:
-                self.create_button(system.star_system)
+        for system in Universe.current_galaxy.current_neighbourhood.systems:
+            self.create_button(system)
+        self.sort_buttons(self.system_buttons.widgets())
         super().show()
         for prop in self.properties.widgets():
             prop.show()
@@ -135,20 +173,19 @@ class StarSystemPanel(BaseWidget):
 
     def hide(self):
         super().hide()
+        self.create_systems()
         for prop in self.properties.widgets():
             prop.hide()
-        lock = False
-        for star_widget in self.stars_area.listed_objects.widgets():
-            star = star_widget.object_data
-            singles = [system for system in Universe.systems if system.composition == 'single']
-            chosen = choice(singles)
-            Universe.systems.remove(chosen)
-            star.position = chosen.location
-            Systems.set_system(star)
-            lock = True
 
-        if lock:
-            self.parent.swap_neighbourhood_button.lock()
+    def transfer_proto_system(self, discarded):
+        proto = [sys for sys in self.discarded_protos if sys.location == discarded.position]
+        if len(proto):
+            proto = proto.pop()
+        else:
+            raise ValueError(f'{discarded} has an invalid location.')
+        Universe.systems.append(proto)
+        self.discarded_protos.remove(proto)
+        self.load_universe_data()
 
 
 class SystemType(BaseWidget):
@@ -196,8 +233,9 @@ class SystemType(BaseWidget):
             self.has_values = True
         else:
             self.secondary.value = obj
-            self.parent.undo_button.enable()
             self.has_values = True
+
+        self.parent.undo_button.enable()
 
         if obj in Systems.loose_stars:
             Systems.loose_stars.remove(obj)
@@ -207,7 +245,7 @@ class SystemType(BaseWidget):
                 obj.enable()
 
     def unset_stars(self):
-        self.parent.stars_area.populate(Systems.loose_stars)
+        self.parent.stars_area.populate(Systems.loose_stars, layer='one')
         self.erase()
 
     def get_determinants(self):
@@ -246,6 +284,7 @@ class SystemType(BaseWidget):
         self.current = None
 
     def destroy(self):
+        self.parent.transfer_proto_system(self.current)
         self.parent.del_button(self.current)
         self.erase()
 
@@ -273,7 +312,7 @@ class ListedStar(ColoredBody):
 
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and event.origin == self:
-            self.parent.parent.current.set_star(self.object_data)
+            self.parent.parent.current.set_bodies(self.object_data)
             self.parent.remove_listed(self)
             self.kill()
             self.parent.sort()
@@ -311,6 +350,7 @@ class SetupButton(TextButton):
             sistema = self.parent.current.current
             self.parent.create_button(sistema)
             self.parent.current.erase()
+            self.parent.sort_buttons(self.parent.system_buttons.widgets())
             self.disable()
 
 
@@ -332,8 +372,8 @@ class DissolveButton(TextButton):
 class SystemButton(ColoredBody):
     enabled = True
 
-    def __init__(self, parent, system_data, x, y):
-        # system_data.idx = idx
+    def __init__(self, parent, system_data, idx, x, y):
+        system_data.idx = idx
         super().__init__(parent, system_data, str(system_data), x, y)
 
     def on_mousebuttondown(self, event):
@@ -347,9 +387,6 @@ class SystemButton(ColoredBody):
             if hasattr(self.parent, 'dissolve_button'):
                 self.parent.dissolve_button.enable()
 
-    def move(self, x, y):
-        self.rect.topleft = x, y
-
 
 class UndoButton(TextButton):
     enabled = False
@@ -359,6 +396,6 @@ class UndoButton(TextButton):
         super().__init__(parent, name, x, y)
 
     def on_mousebuttondown(self, event):
-        if event.origin == self:
+        if self.enabled and event.data['button'] == 1 and event.origin == self:
             self.parent.current.unset_stars()
             self.disable()

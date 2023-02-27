@@ -19,6 +19,9 @@ class MultipleStarsPanel(BaseWidget):
 
     show_swap_system_button = False
 
+    _triple = 0
+    _multiple = 0
+
     def __init__(self, parent):
         self.name = 'Multiple Stars'
         super().__init__(parent)
@@ -43,15 +46,23 @@ class MultipleStarsPanel(BaseWidget):
         EventHandler.register(self.name_current, 'NameObject')
 
         t = " Systems remaining"
-        self.triple_remaining = ValueText(self, 'Triple Star'+t, 3, self.area_buttons.top - 70, size=14)
-        self.multiple_remaining = ValueText(self, 'Multiple Star'+t, 3, self.area_buttons.top - 50, size=14)
+        self.triple_remaining = ValueText(self, 'Triple Star' + t, 3, self.area_buttons.top - 70, size=14)
+        self.multiple_remaining = ValueText(self, 'Multiple Star' + t, 3, self.area_buttons.top - 50, size=14)
         self.properties.add(self.triple_remaining, self.multiple_remaining)
+
+        self.discarded_protos = []
+
+        EventHandler.register(self.save_systems, 'Save')
+        EventHandler.register(self.load_systems, 'LoadData')
+        EventHandler.register(self.name_current, 'NameObject')
 
     def load_universe_data(self):
         triple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Triple']
         multiple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Multiple']
         self.triple_remaining.value = str(triple_systems)
         self.multiple_remaining.value = str(multiple_systems)
+        self._triple = triple_systems
+        self._multiple = multiple_systems
 
     def name_current(self, event):
         if event.data['object'] in self.systems:
@@ -59,6 +70,7 @@ class MultipleStarsPanel(BaseWidget):
             system.set_name(event.data['name'])
 
     def create_button(self, system_data):
+        self.parent.properties.widgets()[1].enable()
         triple_systems = [system for system in Universe.systems if system.composition == 'triple']
         multiple_systems = [system for system in Universe.systems if system.composition == 'multiple']
         primary = system_data.primary
@@ -77,15 +89,18 @@ class MultipleStarsPanel(BaseWidget):
         Universe.systems.remove(chosen)
         system_data.position = chosen.location
         Universe.current_galaxy.current_neighbourhood.quantities[kind] -= 1
-        self.load_universe_data()
+        self.discarded_protos.append(chosen)
         if system_data not in self.systems:
-            button = SystemButton(self, system_data, self.curr_x, self.curr_y)
+            idx = len([s for s in self.systems if system_data.compare(s) is True])
+            button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
             self.systems.append(system_data)
             self.system_buttons.add(button)
             self.properties.add(button)
             self.sort_buttons(self.system_buttons.widgets())
             Systems.set_system(system_data)
+            Universe.current_galaxy.current_neighbourhood.add_true_system(system_data)
             self.current.enable()
+            self.load_universe_data()
             return button
 
     def show_current(self, star):
@@ -102,7 +117,7 @@ class MultipleStarsPanel(BaseWidget):
         button = [i for i in self.system_buttons.widgets() if i.object_data == system][0]
         self.systems.remove(system)
         self.system_buttons.remove(button)
-        self.sort_buttons(self.system_buttons)
+        self.sort_buttons(self.system_buttons.widgets())
         self.properties.remove(button)
         self.dissolve_button.disable()
         if system in self.systems:
@@ -115,11 +130,96 @@ class MultipleStarsPanel(BaseWidget):
         self.parent.swap_neighbourhood_button.unlock()
         self.load_universe_data()
 
+    def create_systems(self):
+        lock = False
+        widgets = self.stars_area.listed_objects.widgets()
+        singles = [system for system in Universe.systems if system.composition == 'single']
+        stars = [s.object_data for s in widgets if s.object_data.celestial_type == 'star']
+        binaries = [s.object_data for s in widgets if s.object_data.celestial_type != 'star']
+        if len(singles):
+            for star in stars:
+                try:
+                    chosen = choice(singles)
+                    singles.remove(chosen)
+                    Universe.remove_astro_obj(chosen)
+                    star.position = chosen.location
+                    Systems.set_system(star)
+                    lock = True
+
+                except IndexError:
+                    self.parent.properties.widgets()[1].disable()
+                    self.parent.curr_idx -= 1
+                    total = self._triple + self._multiple
+                    verb = "s" if total == 1 else 're'
+                    pl = '' if total == 1 else 's'
+                    warning = f"Complete the systems before continuing.\n\nThere'{verb} {total} system{pl} left."
+                    raise AssertionError(warning)
+
+        for other in binaries:
+            Systems.set_system(other)
+
+        if lock:
+            self.parent.swap_neighbourhood_button.lock()
+
     def hide(self):
+        self.create_systems()
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
-        self.parent.swap_neighbourhood_button.lock()
+
+    def transfer_proto_system(self, discarded):
+        proto = [sys for sys in self.discarded_protos if sys.location == discarded.position]
+        if len(proto):
+            proto = proto.pop()
+        else:
+            raise ValueError(f'{discarded} has an invalid location.')
+        Universe.systems.append(proto)
+        self.discarded_protos.remove(proto)
+        self.load_universe_data()
+
+    def save_systems(self, event):
+        data = {}
+        for system in self.systems:
+            d = {
+                'primary': system.primary.id,
+                'secondary': system.secondary.id,
+                'avg_s': system.average_separation.m,
+                'ecc_p': system.ecc_p.m,
+                "ecc_s": system.ecc_s.m,
+                "name": system.name,
+                "position": dict(zip(['x', 'y', 'z'], system.position)),
+                "neighbourhood_id": Universe.current_galaxy.current_neighbourhood.id
+            }
+            data[system.id] = d
+
+        if len(data):
+            # so it doesn't save an empty dictionary.
+            EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': data})
+
+    def load_systems(self, event):
+        for id in event.data['Binary Systems']:
+            system_data = event.data['Binary Systems'][id]
+
+            prim = Universe.get_astrobody_by(system_data['primary'], 'id')
+            scnd = Universe.get_astrobody_by(system_data['secondary'], 'id')
+            go_on = prim.celestial_type == 'star' and scnd.celestial_type == 'system'
+            go_on = go_on or prim.celestial_type == 'system' and scnd.celestial_type == 'system'
+            go_on = go_on or prim.celestial_type == 'system' and scnd.celestial_type == 'star'
+
+            if go_on:
+                avg_s = system_data['avg_s']
+                ecc_p = system_data['ecc_p']
+                ecc_s = system_data['ecc_s']
+                name = system_data['name']
+                x = system_data['position']['x']
+                y = system_data['position']['y']
+                z = system_data['position']['z']
+
+                system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
+                system.position = x, y, z
+
+                button = self.create_button(system)
+                button.hide()
 
 
 class SystemsType(SystemType):
@@ -184,10 +284,11 @@ class AvailableSystems(ListedArea):
 
     def repopulate(self):
         population = []
-        for system_or_star in Systems.get_systems():
-            if system_or_star.is_a_system:
-                if system_or_star.star_system.system not in population:
-                    population.append(system_or_star.star_system.system)
+
+        for system in Universe.current_galaxy.current_neighbourhood.systems:
+            if system not in population:
+                population.append(system)
+        population.extend(Systems.loose_stars)
 
         if len(population):
             population.sort(key=lambda s: s.mass, reverse=True)

@@ -16,14 +16,14 @@ class DoublePlanetsPanel(BaseWidget):
     curr_s_x = None
     curr_s_y = None
 
+    show_swap_system_button = True
+
     def __init__(self, parent):
         super().__init__(parent)
         self.name = 'Double Planets'
         self.image = Surface((ANCHO, ALTO - 32))
         self.image.fill(COLOR_BOX)
         self.rect = self.image.get_rect()
-        self.f1 = self.crear_fuente(16, underline=True)
-        self.write(self.name + ' Panel', self.f1, centerx=(ANCHO // 4) * 1.5, y=0)
         self.current = DoublesType(self)
         self.planets_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
@@ -38,9 +38,9 @@ class DoublePlanetsPanel(BaseWidget):
         self.setup_button = SetupButton(self, 484, 416)
         self.undo_button = UndoButton(self, self.setup_button.rect.left - 50, 416)
         self.dissolve_button = DissolveSystemsButton(self, self.undo_button.rect.x, self.planets_area.rect.bottom + 21)
-        self.f2 = self.crear_fuente(14, underline=True)
-        self.write('Potential Planets', self.f2, COLOR_AREA, x=self.area_buttons.x + 3, y=self.area_buttons.y)
-        self.write('Double Planets', self.f2, COLOR_AREA, x=self.systems_area.x + 3, y=self.systems_area.y + 2)
+        f = self.crear_fuente(14, underline=True)
+        self.write('Potential Planets', f, COLOR_AREA, x=self.area_buttons.x + 3, y=self.area_buttons.y)
+        self.write('Double Planets', f, COLOR_AREA, x=self.systems_area.x + 3, y=self.systems_area.y + 2)
 
         self.properties.add(self.planets_area, self.undo_button, self.setup_button, self.dissolve_button, layer=1)
 
@@ -107,7 +107,8 @@ class DoublePlanetsPanel(BaseWidget):
     def create_system_button(self, system_data):
         if system_data not in self.systems:
             Systems.get_current().add_astro_obj(system_data)
-            button = SystemButton(self, system_data, self.curr_s_x, self.curr_s_y)
+            idx = len([s for s in self.systems if system_data.compare(s) is True])
+            button = SystemButton(self, system_data, idx, self.curr_s_x, self.curr_s_y)
             self.systems.append(system_data)
             self.system_buttons.add(button)
             self.properties.add(button)

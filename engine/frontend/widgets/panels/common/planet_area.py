@@ -94,6 +94,7 @@ class ListedArea(BaseWidget):
 
     def deselect_all(self):
         self.image.fill(COLOR_AREA, [0, 21, self.rect.w, self.rect.h])
+        self.current = None
         for listed in self.listed_objects.widgets():
             listed.deselect()
 

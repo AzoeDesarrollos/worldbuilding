@@ -123,6 +123,11 @@ class PlanetPanel(BasePanel):
             self.current.fill()
 
     def hide(self):
+        if len(self.planets) <= 1:
+            self.parent.set_skippable('Double Planets', True)
+        else:
+            self.parent.set_skippable('Double Planets', False)
+
         super().hide()
         for item in self.properties.widgets():
             item.hide()

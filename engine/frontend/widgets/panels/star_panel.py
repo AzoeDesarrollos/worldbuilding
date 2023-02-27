@@ -1,8 +1,8 @@
 from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, ANCHO, COLOR_BOX, COLOR_SELECTED, Renderer, Group
+from engine.backend import EventHandler, Systems, roll, generate_id
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.panels.common import TextButton
 from engine.frontend.widgets.object_type import ObjectType
-from engine.backend import EventHandler, Systems
 from engine.frontend.widgets.meta import Meta
 from .common import ColoredBody, ListedArea
 from engine.equations.space import Universe
@@ -28,7 +28,8 @@ class StarPanel(BasePanel):
         self.image.blit(render, self.area_buttons.topleft)
         self.button_add = AddStarButton(self, ANCHO - 13, 398)
         self.button_del = DelStarButton(self, ANCHO - 13, 416)
-        self.properties.add(self.button_add, self.button_del, layer=1)
+        self.button_auto = AutomaticButton(self, 4, 50)
+        self.properties.add(self.button_add, self.button_del, self.button_auto, layer=1)
         self.stars = []
         EventHandler.register(self.save_stars, 'Save')
         EventHandler.register(self.load_stars, 'LoadData')
@@ -41,26 +42,38 @@ class StarPanel(BasePanel):
         self.write('present', f2, centerx=234, top=self.age_bar.rect.bottom + 1)
         self.write('future', f2, centerx=self.age_bar.rect.right, top=self.age_bar.rect.bottom + 1)
 
-        self.proto_stars = PotentialStars(self, ANCHO - 150, 32, 150, 340)
-        self.properties.add(self.proto_stars, layer=1)
+        self.potential_stars = PotentialStars(self, ANCHO - 150, 32, 150, 340)
+        self.properties.add(self.potential_stars, layer=1)
+        self.selected_proto = None
 
     @property
     def star_buttons(self):
         # adds readability
         return self.properties.get_widgets_from_layer(2)
 
-    def save_stars(self, event):
-        data = {}
-        for star_button in self.star_buttons:
-            star = star_button.object_data
+    @staticmethod
+    def save_stars(event):
+        data1, data2 = {}, {}
+        for star in [s.star_system for s in Systems.get_systems() if s.is_a_system and s.star_system.letter is None]:
             star_data = {
-                'name': star.name,
+                'name': star.name if star.name is not None else str(star),
                 'mass': star.mass.m,
                 'spin': star.spin,
-                'age': star.age.m
+                'age': star.age.m,
+                "neighbourhood_id": Universe.current_galaxy.current_neighbourhood.id
             }
-            data[star.id] = star_data
-        EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data})
+            data1[star.id] = star_data
+
+            if star.position is not None:
+                idx = generate_id()
+                system_data = {
+                    'system_id': star.id,
+                    'position': dict(zip(['x', 'y', 'z'], star.position)),
+                }
+                data2[idx] = system_data
+
+        EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data1})
+        EventHandler.trigger(event.tipo + 'Data', 'Star', {"Single Systems": data2})
 
     def load_stars(self, event):
         systems = []
@@ -68,6 +81,7 @@ class StarPanel(BasePanel):
             star_data = event.data['Stars'][id]
             star_data.update({'id': id})
             star = self.current.set_star(star_data, inactive=True)
+            Universe.add_astro_obj(star)
             if star not in self.stars:
                 self.stars.append(star)
                 self.add_button(star)
@@ -116,6 +130,7 @@ class StarPanel(BasePanel):
         button = StarButton(self.current, star, str(star), self.curr_x, self.curr_y)
         self.properties.add(button, layer=2)
         Systems.add_star(star)
+        self.selected_proto = None
         if star not in self.stars:
             self.stars.append(star)
         if self.is_visible:
@@ -127,11 +142,24 @@ class StarPanel(BasePanel):
     def del_button(self, star):
         button = [i for i in self.star_buttons if i.object_data == star][0]
         self.properties.remove(button)
+        button.kill()
         if self.is_visible:
             self.sort_buttons(self.star_buttons)
         self.button_del.disable()
         self.stars.remove(button.object_data)
+        neighbourhood = Universe.current_galaxy.current_neighbourhood
+        list_of_dicts = [{'class': star.cls, 'idx': star.idx}]
+        neighbourhood.add_proto_stars(list_of_dicts)
+        self.potential_stars.show()
         Systems.remove_star(star)
+
+    def clear(self):
+        self.deselect_buttons()
+        self.button_del.disable()
+        self.button_add.disable()
+        if self.selected_proto is not None:
+            self.current.unset_star(self.selected_proto)
+        self.potential_stars.deselect_all()
 
     def select_one(self, btn):
         for button in self.star_buttons:
@@ -166,6 +194,9 @@ class StarPanel(BasePanel):
             star = event.data['object']
             star.set_name(event.data['name'])
 
+    def hold_proto(self, proto):
+        self.selected_proto = proto
+
 
 class StarType(ObjectType):
     def __init__(self, parent):
@@ -191,7 +222,10 @@ class StarType(ObjectType):
         neighbourhood = Universe.current_galaxy.current_neighbourhood
         neighbourhood.proto_stars.remove(proto)
         Systems.add_star(star)
+
+        self.parent.hold_proto(proto)
         if not inactive:
+            self.parent.button_add.set_link(proto)
             self.parent.button_add.enable()
             self.current = star
             self.fill()
@@ -199,8 +233,13 @@ class StarType(ObjectType):
             self.parent.age_bar.cursor.set_x(star)
         return star
 
+    def unset_star(self, proto):
+        neighbourhood = Universe.current_galaxy.current_neighbourhood
+        neighbourhood.proto_stars.append(proto)
+        Systems.remove_star(self.current)
+        self.current = None
+
     def destroy_button(self):
-        # Systems.remove_star(self.current)
         self.parent.del_button(self.current)
         self.erase()
 
@@ -212,10 +251,8 @@ class StarType(ObjectType):
 
     def clear(self, event):
         if event.data['panel'] is self.parent:
+            self.parent.clear()
             self.erase()
-            self.parent.deselect_buttons()
-            self.parent.button_del.disable()
-            self.parent.button_add.disable()
 
     def enable(self):
         super().enable()
@@ -273,15 +310,27 @@ class StarType(ObjectType):
 
 
 class AddStarButton(TextButton):
+    linked_astro = None
+
     def __init__(self, parent, x, y):
         super().__init__(parent, 'Add Star', x, y)
         self.rect.right = x
 
+    def set_link(self, astro=None):
+        """Without arguments, unlinks completely.
+        With an argument, it links that argument instead."""
+        self.linked_astro = astro
+
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and self.parent.current.has_values and event.origin == self:
-            star = self.parent.current.current
-            self.parent.add_button(star)
-            self.disable()
+            self.trigger()
+
+    def trigger(self):
+        star = self.parent.current.current
+        if self.linked_astro is not None:
+            self.parent.potential_stars.delete_objects(self.linked_astro)
+        self.parent.add_button(star)
+        self.disable()
 
 
 class DelStarButton(TextButton):
@@ -429,15 +478,34 @@ class PotentialStars(ListedArea):
     def show(self):
         super().show()
         self.clear()
-
-        for neighbourhood in Universe.current_galaxy.stellar_neighbourhoods:
-            pop = [star for star in neighbourhood.proto_stars]
-            self.populate(pop, layer=neighbourhood.id)
+        if Universe.current_galaxy is not None:
+            for neighbourhood in Universe.current_galaxy.stellar_neighbourhoods:
+                pop = [star for star in neighbourhood.proto_stars]
+                self.populate(pop, layer=neighbourhood.id)
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
-        neighbourhood = Universe.current_galaxy.current_neighbourhood
+        neighbourhood = None
+        if Universe.current_galaxy is not None:
+            neighbourhood = Universe.current_galaxy.current_neighbourhood
         idx = -1 if neighbourhood is None else neighbourhood.id
         if idx != self.last_idx:
             self.last_idx = idx
         self.show_current(self.last_idx)
+
+
+class AutomaticButton(TextButton):
+    enabled = True
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent, '[Auto]', x, y, font_size=10)
+        self.rect.centery = y
+
+    def on_mousebuttondown(self, event):
+        if event.data['button'] == 1 and event.origin == self:
+            proto_stars = Universe.current_galaxy.current_neighbourhood.proto_stars.copy()
+            for proto in proto_stars:
+                mass = round(roll(proto.min_mass, proto.max_mass), 3)
+                self.parent.current.set_star({'mass': mass})
+                self.parent.button_add.trigger()
+                Renderer.update()

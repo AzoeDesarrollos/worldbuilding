@@ -87,23 +87,32 @@ class ProtoStar:
         self.idx = data['idx']
         self.neighbourhood_idx = data['neighbourhood_idx']
 
-        mass = 0
+        m_min, m_max, mass = 0, 0, 0
         b = self.idx + self.neighbourhood_idx
         if self.cls.startswith('O'):
             mass += 16.0 + b / 10
+            m_min, m_max = 16, None
         elif self.cls.startswith('B'):
             mass += 2.1 + b / 10
+            m_min, m_max = 2.1, 16
         elif self.cls.startswith('A'):
             mass += 1.4 + b / 10
+            m_min, m_max = 1.4, 2.1
         elif self.cls.startswith('F'):
             mass += 1.04 + b / 10
+            m_min, m_max = 1.04, 1.4
         elif self.cls.startswith('G'):
             mass += 0.8 + b / 10
+            m_min, m_max = 0.8, 1.04
         elif self.cls.startswith('K'):
             mass += 0.45 + b / 10
+            m_min, m_max = 0.45, 0.8
         elif self.cls.startswith('M'):
             mass += 0.08 + b / 100
+            m_min, m_max = 0.08, 0.45
 
+        self.min_mass = m_min
+        self.max_mass = m_max
         self.mass = q(mass, 'sol_mass')
 
     def __str__(self):

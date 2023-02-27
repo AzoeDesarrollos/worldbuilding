@@ -101,8 +101,7 @@ class NeighbourhoodPanel(BaseWidget):
         if data is None:
             data = {'location': location, 'radius': radius, 'density': density}
 
-        object_data = DefinedNeighbourhood(data)
-        object_data.idx = len(self.neighbourhoods) + 1
+        object_data = DefinedNeighbourhood(len(self.neighbourhoods) + 1, data)
         self.neighbourhoods.append(object_data)
         self.current_nei = object_data
         button = NeighbourhoodButton(self, object_data)
@@ -117,7 +116,7 @@ class NeighbourhoodPanel(BaseWidget):
         self.current_nei.add_proto_stars(stars)
 
         comps = ['single', 'binary', 'triple', 'multiple']
-        positions = self.neighbourhood.characteristics.system_positions(object_data.pre_processed_system_positions)
+        positions = self.neighbourhood.characteristics.system_positions(object_data)
         singles = [x['pos'] for x in positions if x['configuration'] == 'Single']
         binaries = [x['pos'] for x in positions if x['configuration'] == 'Binary']
         triples = [x['pos'] for x in positions if x['configuration'] == 'Triple']
@@ -302,7 +301,8 @@ class NeighbourhoodType(BaseWidget):
                 'location': neighbourhood.location,
                 'radius': neighbourhood.radius,
                 'density': neighbourhood.density,
-                'galaxy_id': self.parent.galaxy.current.id
+                'galaxy_id': self.parent.galaxy.current.id,
+                'seed': neighbourhood.nei_seed
             }
             macro_data[neighbourhood.id] = data
 
@@ -315,6 +315,7 @@ class NeighbourhoodType(BaseWidget):
                 neighbourhood_data = event.data['Neighbourhoods'][key]
                 location = neighbourhood_data['location']
                 density = neighbourhood_data['density']
+                neighbourhood_data['id'] = key
                 self.parent.galaxy.current.record_density_at_location(location, density)
                 nei = self.parent.create_neighbourhood(neighbourhood_data)
                 nei.object_data.process_data(event.data)
