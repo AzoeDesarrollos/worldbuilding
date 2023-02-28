@@ -107,7 +107,8 @@ class NeighbourhoodPanel(BaseWidget):
         button = NeighbourhoodButton(self, object_data)
         self.neighbourhood_buttons.add(button, layer=self.current_galaxy_id)
         self.properties.add(button, layer=5)
-        self.sort_buttons(self.properties.get_widgets_from_layer(5))
+        if self.is_visible:
+            self.sort_buttons(self.properties.get_widgets_from_layer(5))
 
         self.neighbourhood.characteristics.set_location(data['location'], known_density=data['density'])
         self.neighbourhood.characteristics.set_radius(data['radius'])
@@ -157,6 +158,7 @@ class NeighbourhoodPanel(BaseWidget):
         for prop in self.properties.widgets():
             prop.show()
         self.neighbourhood.populate()
+        self.sort_buttons(self.properties.get_widgets_from_layer(5))
         if Universe.current_galaxy is not None:
             self.parent.swap_galaxy_button.enable()
             self.parent.swap_neighbourhood_button.disable()

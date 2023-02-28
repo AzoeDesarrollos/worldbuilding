@@ -579,7 +579,7 @@ class Atmograph(BaseWidget):
         self.parent.show_pressure.update_text(pressure)
 
     def on_mousebuttondown(self, event):
-        if event.origin == self:
+        if event.origin == self and self.enabled:
             delta_y = 0
             n2 = self.parent.elements.widgets()[9]
             n2_value = n2.percent.get_value()

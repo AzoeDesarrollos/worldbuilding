@@ -244,9 +244,10 @@ class SwapNeighbourhood(SwapSystem):
 
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and event.origin == self and self.enabled:
-            neighbourhood = Universe.current_galaxy.cycle_neighbourhoods()
-            self.current = neighbourhood
-            EventHandler.trigger('SwitchNeighbourhood', 'SwapNeighbourhoodButton', {'current': neighbourhood})
+            if Universe.current_galaxy is not None:
+                neighbourhood = Universe.current_galaxy.cycle_neighbourhoods()
+                self.current = neighbourhood
+                EventHandler.trigger('SwitchNeighbourhood', 'SwapNeighbourhoodButton', {'current': neighbourhood})
 
     def set_current(self):
         if Universe.current_galaxy is not None:
