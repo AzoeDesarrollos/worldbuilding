@@ -8,6 +8,8 @@ class EventHandler:
     _oyentes = {}  # {evento1:[funciones],evento2:[funciones]}
     _cola = deque()
 
+    allowed = True
+
     @classmethod
     def register(cls, listener, *events):
         """
@@ -66,7 +68,10 @@ class EventHandler:
             evento = _cola.popleft()
             if evento.tipo in cls._oyentes:
                 for listener in cls._oyentes[evento.tipo]:
-                    listener(evento)
+                    if cls.allowed:
+                        listener(evento)
+
+        cls.allowed = True
 
     @classmethod
     def get_queqed(cls):

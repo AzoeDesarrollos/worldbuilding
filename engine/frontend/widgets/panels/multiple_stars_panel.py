@@ -22,6 +22,9 @@ class MultipleStarsPanel(BaseWidget):
     _triple = 0
     _multiple = 0
 
+    _t_quantity = None
+    _m_quantity = None
+
     def __init__(self, parent):
         self.name = 'Multiple Stars'
         super().__init__(parent)
@@ -59,10 +62,14 @@ class MultipleStarsPanel(BaseWidget):
     def load_universe_data(self):
         triple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Triple']
         multiple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Multiple']
-        self.triple_remaining.value = str(triple_systems)
-        self.multiple_remaining.value = str(multiple_systems)
-        self._triple = triple_systems
-        self._multiple = multiple_systems
+        if self._t_quantity is None:
+            self._t_quantity = triple_systems
+            self._triple = triple_systems
+        if self._m_quantity is None:
+            self._m_quantity = multiple_systems
+            self._multiple = multiple_systems
+        self.triple_remaining.value = f'{self._triple}/{self._t_quantity}'
+        self.multiple_remaining.value = f'{self._multiple}/{self._m_quantity}'
 
     def name_current(self, event):
         if event.data['object'] in self.systems:
@@ -75,20 +82,20 @@ class MultipleStarsPanel(BaseWidget):
         multiple_systems = [system for system in Universe.systems if system.composition == 'multiple']
         primary = system_data.primary
         secondary = system_data.secondary
-        chosen, kind = None, None
+        chosen, count = None, None
         if primary.celestial_type == 'system' and secondary.celestial_type == 'star':
             chosen = choice(triple_systems)
-            kind = 'Triple'
+            count = self._triple
         elif primary.celestial_type == 'system' and secondary.celestial_type == 'system':
             chosen = choice(multiple_systems)
-            kind = 'Multiple'
+            count = self._multiple
         elif primary.celestial_type == 'star' and secondary.celestial_type == 'system':
             chosen = choice(triple_systems)
-            kind = 'Triple'
+            count = self._triple
         assert chosen is not None, "System is nonsensical"
         Universe.systems.remove(chosen)
         system_data.position = chosen.location
-        Universe.current_galaxy.current_neighbourhood.quantities[kind] -= 1
+        count -= 1
         self.discarded_protos.append(chosen)
         if system_data not in self.systems:
             idx = len([s for s in self.systems if system_data.compare(s) is True])
@@ -119,6 +126,19 @@ class MultipleStarsPanel(BaseWidget):
         self.system_buttons.remove(button)
         self.sort_buttons(self.system_buttons.widgets())
         self.properties.remove(button)
+        button.kill()
+
+        prim = system.primary
+        scnd = system.secondary
+        go_on_1 = prim.celestial_type == 'star' and scnd.celestial_type == 'system'
+        go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type == 'star'
+        go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'
+
+        if go_on_1 or go_on_2:
+            self._triple += 1
+        if go_on_3:
+            self._multiple += 1
+
         self.dissolve_button.disable()
         if system in self.systems:
             Systems.dissolve_system(system)
@@ -177,7 +197,6 @@ class MultipleStarsPanel(BaseWidget):
             raise ValueError(f'{discarded} has an invalid location.')
         Universe.systems.append(proto)
         self.discarded_protos.remove(proto)
-        self.load_universe_data()
 
     def save_systems(self, event):
         data = {}
@@ -199,16 +218,21 @@ class MultipleStarsPanel(BaseWidget):
             EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': data})
 
     def load_systems(self, event):
+        self.load_universe_data()
         for id in event.data['Binary Systems']:
             system_data = event.data['Binary Systems'][id]
 
             prim = Universe.get_astrobody_by(system_data['primary'], 'id')
             scnd = Universe.get_astrobody_by(system_data['secondary'], 'id')
-            go_on = prim.celestial_type == 'star' and scnd.celestial_type == 'system'
-            go_on = go_on or prim.celestial_type == 'system' and scnd.celestial_type == 'system'
-            go_on = go_on or prim.celestial_type == 'system' and scnd.celestial_type == 'star'
+            go_on_1 = prim.celestial_type == 'star' and scnd.celestial_type == 'system'
+            go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type == 'star'
+            go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'
 
-            if go_on:
+            if any([go_on_1, go_on_2, go_on_3]):
+                if go_on_1 or go_on_2:
+                    self._triple -= 1
+                if go_on_3:
+                    self._multiple -= 1
                 avg_s = system_data['avg_s']
                 ecc_p = system_data['ecc_p']
                 ecc_s = system_data['ecc_s']
@@ -222,6 +246,9 @@ class MultipleStarsPanel(BaseWidget):
 
                 button = self.create_button(system)
                 button.hide()
+
+    def update(self):
+        self.load_universe_data()
 
 
 class SystemsType(SystemType):
@@ -286,6 +313,7 @@ class AvailableSystems(ListedArea):
 
     def repopulate(self):
         population = []
+        self.clear()
         if Universe.current_galaxy is not None:
             for system in Universe.current_galaxy.current_neighbourhood.systems:
                 if system not in population:

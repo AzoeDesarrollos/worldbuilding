@@ -166,6 +166,7 @@ class LoadButton(BaseButton):
         if event.origin == self and self.enabled:
             data = self.check_data()
             EventHandler.trigger('LoadData', 'LoadButton', data)
+            self.disable()
 
 
 class NewButton(BaseButton):

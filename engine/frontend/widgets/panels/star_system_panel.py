@@ -16,6 +16,9 @@ class StarSystemPanel(BaseWidget):
 
     show_swap_system_button = False
 
+    quantity = None
+    count = 0
+
     def __init__(self, parent):
         super().__init__(parent)
         self.name = 'Star System'
@@ -66,7 +69,7 @@ class StarSystemPanel(BaseWidget):
             Universe.systems.remove(chosen)
             self.discarded_protos.append(chosen)
             system_data.position = chosen.location
-            Universe.current_galaxy.current_neighbourhood.quantities['Binary'] -= 1
+            self.count -= 1
 
         if system_data not in self.systems:
             idx = len([s for s in self.systems if system_data.compare(s) is True])
@@ -77,7 +80,6 @@ class StarSystemPanel(BaseWidget):
             Systems.set_system(system_data)
             Universe.current_galaxy.current_neighbourhood.add_true_system(system_data)
             self.current.enable()
-            self.load_universe_data()
             return button
 
     @staticmethod
@@ -102,9 +104,13 @@ class StarSystemPanel(BaseWidget):
 
     def load_universe_data(self):
         binary_systems = Universe.current_galaxy.current_neighbourhood.quantities['Binary']
-        self.remaining.value = str(binary_systems)
+        if self.quantity is None:
+            self.quantity = binary_systems
+            self.count = binary_systems
+        self.remaining.value = f'{self.count}/{self.quantity}'
 
     def load_systems(self, event):
+        self.load_universe_data()
         for id in event.data['Binary Systems']:
             system_data = event.data['Binary Systems'][id]
             avg_s = system_data['avg_s']
@@ -159,6 +165,9 @@ class StarSystemPanel(BaseWidget):
         self.sort_buttons(self.system_buttons.widgets())
         self.properties.remove(button)
         self.dissolve_button.disable()
+        self.count += 1
+
+        button.kill()
         if system in self.systems:
             Systems.dissolve_system(system)
 
@@ -188,6 +197,8 @@ class StarSystemPanel(BaseWidget):
             raise ValueError(f'{discarded} has an invalid location.')
         Universe.systems.append(proto)
         self.discarded_protos.remove(proto)
+
+    def update(self):
         self.load_universe_data()
 
 
@@ -248,7 +259,13 @@ class SystemType(BaseWidget):
                 obj.enable()
 
     def unset_stars(self):
-        self.parent.stars_area.populate(Systems.loose_stars, layer='one')
+        stars = Systems.loose_stars.copy()
+        self.parent.stars_area.clear()
+        if self.primary.value is not None:
+            stars.append(self.primary.value)
+        if self.secondary.value is not None:
+            stars.append(self.secondary.value)
+        self.parent.stars_area.populate(stars, layer='one')
         self.erase()
 
     def get_determinants(self):
@@ -352,6 +369,7 @@ class SetupButton(TextButton):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
             sistema = self.parent.current.current
             self.parent.create_button(sistema)
+            self.parent.undo_button.disable()
             self.parent.current.erase()
             self.parent.sort_buttons(self.parent.system_buttons.widgets())
             self.disable()

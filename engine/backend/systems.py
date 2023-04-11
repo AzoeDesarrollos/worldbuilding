@@ -322,4 +322,13 @@ class Systems:
 
     @classmethod
     def load_data(cls, event):
-        cls.save_data.update(event.data)
+        empty = []
+        for key in cls.save_data:
+            if cls.save_data[key] == {}:
+                empty.append(True)
+            else:
+                empty.append(False)
+        if all(empty):
+            cls.save_data.update(event.data)
+        else:
+            EventHandler.allowed = False
