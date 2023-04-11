@@ -128,15 +128,11 @@ class Arc(BaseWidget):
                 if self.using_handlers:
                     self.adjust(self.handle_a)
                     self.adjust(self.handle_b)
+            else:
+                self.hide_and_merge()
 
         except ValueError:
-            if self.arc_lenght < 1:
-                self.hide()
-            if self.using_handlers:
-                if self.handle_a.pressed:
-                    self.handle_a.merge()
-                elif self.handle_b.pressed:
-                    self.handle_b.merge()
+            self.hide_and_merge()
 
         if rotation:
             image = transform.rotate(image, rotation)
@@ -144,6 +140,15 @@ class Arc(BaseWidget):
         if not self._set:
             self.post_value()
         return image
+
+    def hide_and_merge(self):
+        if self.arc_lenght < 1:
+            self.hide()
+        if self.using_handlers:
+            if self.handle_a.pressed:
+                self.handle_a.merge()
+            elif self.handle_b.pressed:
+                self.handle_b.merge()
 
     def displace(self, cx, cy):
         """Ajusta la posición del arco según el centro dado"""
