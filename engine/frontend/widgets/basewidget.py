@@ -79,11 +79,13 @@ class BaseWidget(Sprite):
         super().kill()
 
     def write(self, text, fuente, bg=COLOR_BOX, **kwargs):
+        """Escribe a self.image con COLOR TEXTO"""
         render = fuente.render(text, True, COLOR_TEXTO, bg)
         render_rect = render.get_rect(**kwargs)
         return self.image.blit(render, render_rect)
 
     def write2(self, text, fuente, width, fg=COLOR_TEXTO, bg=COLOR_BOX, **kwargs):
+        """Escribe a self.image con render_textrect"""
         j = kwargs.pop('j') if 'j' in kwargs else 0
         render = render_textrect(text, fuente, width, fg, bg, justification=j)
         render_rect = render.get_rect(**kwargs)
@@ -91,6 +93,7 @@ class BaseWidget(Sprite):
 
     @staticmethod
     def write3(text, fuente, width, bg=COLOR_BOX, j=0):
+        """Devuelve la imagen creada por render_textrect"""
         render = render_textrect(text, fuente, width, COLOR_TEXTO, bg, justification=j)
         return render
 

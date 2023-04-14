@@ -54,6 +54,8 @@ class Star(BodyInHydrostaticEquilibrium):
     prefix = ''
     sub_pos = 0
 
+    light_color = None
+
     def __init__(self, data):
         mass = data.get('mass', False)
         luminosity = data.get('luminosity', False)
@@ -91,7 +93,7 @@ class Star(BodyInHydrostaticEquilibrium):
 
         self.classification = self.stellar_classification(mass)
         self.cls = self.classification
-        self.star_color = self.true_color(self.temperature)
+        self.light_color = self.true_color(self.temperature)
         self.peak_light = LightWave(self.peak_lightwave_frequency(self.temperature))
 
         # ID values make each star unique, even if they have the same mass and name.
@@ -329,7 +331,7 @@ class Star(BodyInHydrostaticEquilibrium):
 
         self.classification = self.stellar_classification(self._mass)
         self.cls = self.classification
-        self.star_color = self.true_color(self.temperature)
+        self.light_color = self.true_color(self.temperature)
 
     def compare(self, other):
         if hasattr(other, 'cls'):
@@ -466,3 +468,4 @@ class LightWave:
     @property
     def color(self):
         return self._color
+

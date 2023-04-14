@@ -2,11 +2,11 @@ from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, ANCHO, COLOR_BOX, 
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.panels.common import TextButton
 from engine.frontend.widgets.object_type import ObjectType
+from pygame import Surface, mouse, draw, SRCALPHA, Color
 from engine.backend import EventHandler, Systems, roll
 from engine.frontend.widgets.meta import Meta
 from .common import ColoredBody, ListedArea
 from engine.equations.space import Universe
-from pygame import Surface, mouse, draw
 from engine.equations.star import Star
 from random import choice
 
@@ -45,6 +45,11 @@ class StarPanel(BasePanel):
         self.potential_stars = PotentialStars(self, ANCHO - 150, 32, 150, 340)
         self.properties.add(self.potential_stars, layer=1)
         self.selected_proto = None
+
+        _right = self.potential_stars.rect.left - 50
+        self.true_color_block = ColorBlock(self, 'True Color', right=_right, y=40)
+        self.peak_light_block = ColorBlock(self, 'Peak Light', right=_right, y=self.true_color_block.rect.bottom + 18)
+        self.properties.add(self.true_color_block, self.peak_light_block, layer=1)
 
     @property
     def star_buttons(self):
@@ -164,6 +169,8 @@ class StarPanel(BasePanel):
         self.deselect_buttons()
         self.button_del.disable()
         self.button_add.disable()
+        self.true_color_block.erase()
+        self.peak_light_block.erase()
         if self.selected_proto is not None:
             self.current.unset_star(self.selected_proto)
         self.potential_stars.deselect_all()
@@ -254,6 +261,8 @@ class StarType(ObjectType):
         self.erase()
         self.current = star
         self.parent.age_bar.cursor.set_x(star)
+        self.parent.true_color_block.create(star, 'true')
+        self.parent.peak_light_block.create(star, 'peak')
         self.fill()
 
     def clear(self, event):
@@ -516,3 +525,50 @@ class AutomaticButton(TextButton):
                 self.parent.current.set_star({'mass': mass})
                 self.parent.button_add.trigger()
                 Renderer.update()
+
+
+class ColorBlock(Meta):
+    def __init__(self, parent, text, **kwargs):
+        super().__init__(parent)
+        render = self.write3(text, self.crear_fuente(10), 65, j=1)
+        image = Surface((32, 16))
+        canvas = Surface((80, image.get_height() + render.get_height() + 15), SRCALPHA)
+        canvas_rect = canvas.get_rect()
+
+        self.sp_f = self.crear_fuente(10)
+        ultraviolet = self.write3('ULTRA-VIOLET', self.sp_f, 80, j=1)
+
+        self.image_rect = image.get_rect(centerx=canvas_rect.centerx, y=0)
+        self.render_rect = render.get_rect(centerx=canvas_rect.centerx, top=image.get_height() + 1)
+        self.no_color_rect = ultraviolet.get_rect(centerx=canvas_rect.centerx, top=self.render_rect.bottom + 1)
+
+        self.color_image = image
+        self.text_rect = render
+        self.image = canvas
+        self.rect = image.get_rect(**kwargs)
+
+    def create(self, star, light='true'):
+        color = None
+        if light == 'true':
+            color = star.light_color
+        elif light == 'peak':
+            spectrum = star.peak_light.spectrum
+            if spectrum == 'VISIBLE':
+                color = star.peak_light.color
+                self.image.fill(COLOR_BOX, self.no_color_rect)
+            else:
+                color = Color('black' if spectrum == 'INFRARED' else 'white')
+                spectrum_render = self.write3(spectrum, self.sp_f, self.rect.w + 50, j=1)
+                spectrum_rect = spectrum_render.get_rect(x=self.no_color_rect.x, y=self.no_color_rect.y)
+                self.image.blit(spectrum_render, spectrum_rect)
+
+        self.color_image.fill((color.r, color.g, color.b))
+        self.image.blit(self.color_image, self.image_rect)
+        self.image.blit(self.text_rect, self.render_rect)
+
+    def clear(self, event):
+        if event.data['panel'] is self.parent:
+            self.erase()
+
+    def erase(self):
+        self.image.fill(COLOR_BOX)
