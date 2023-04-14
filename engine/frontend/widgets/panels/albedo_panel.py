@@ -208,7 +208,7 @@ class AlbedoPanel(BaseWidget):
 class UnbondedBody(ColoredBody):
     # because their "bond" albedo hasn't been set yet.
     def on_mousebuttondown(self, event):
-        if event.origin == self:
+        if event.data['button'] == 1 and event.origin == self and self.enabled:
             self.parent.select_one(self)
             self.parent.parent.set_planet(self.object_data)
 
@@ -217,7 +217,7 @@ class AvailablePlanets(ListedArea):
     listed_type = UnbondedBody
 
     def show(self):
-        for system in Systems.get_systems():
+        for system in Systems.get_planetary_systems():
             idx = system.id
             bodies = [body for body in system.planets]
             self.populate(bodies, layer=idx)

@@ -216,7 +216,7 @@ class AvailablePlanets(ListedArea):
     listed_type = PotentialPlanet
 
     def show(self):
-        for system in Systems.get_systems():
+        for system in Systems.get_planetary_systems():
             idx = system.id
             self.populate(system.planets, layer=idx)
             self.parent.populate(*system.planets, layer=idx)

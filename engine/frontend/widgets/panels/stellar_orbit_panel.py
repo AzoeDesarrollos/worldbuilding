@@ -352,7 +352,7 @@ class OrbitPanel(BaseWidget):
             self.clear_ratios()
 
     def save_orbits(self, event):
-        for system in Systems.get_systems():
+        for system in Systems.get_planetary_systems():
             if system.star_system.letter == 'S':
                 for star in system:
                     for marker in self._orbits.get(star.id, []):
@@ -419,8 +419,8 @@ class OrbitPanel(BaseWidget):
             self.sort_markers()
 
     def fill_indexes(self):
-        assert len(Systems.get_systems()), "There is no data to load"
-        for system in Systems.get_systems():
+        assert len(Systems.get_planetary_systems()), "There is no data to load"
+        for system in Systems.get_planetary_systems():
             if not system.is_a_system:
                 raise AssertionError("There is no data to load")
             star = system.star_system
@@ -915,7 +915,7 @@ class AvailablePlanets(ListedArea):
     name = 'Planets'
 
     def show(self):
-        for system in Systems.get_systems():
+        for system in Systems.get_planetary_systems():
             idx = system.id
             population = [i for i in system.planets + system.asteroids + system.binary_planets if i.orbit is None]
             self.populate(population, layer=idx)

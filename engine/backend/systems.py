@@ -30,6 +30,11 @@ class Systems:
     planetary = None
     universe = None
 
+    just_stars = None
+    # the difference between just_stars and loose_stars is that loose_stars changes when the stars from a system,
+    # whereas just_stars is just the stars (duh), regardless if they are part of a system or not, and thus is more
+    # static.
+
     @classmethod
     def import_clases(cls, rogues=None, planetary=None, universe=None):
         # this method exists to avert a circular import.
@@ -44,6 +49,7 @@ class Systems:
     def init(cls):
         cls._systems = [cls.rogue]
         cls.loose_stars = []
+        cls.just_stars = []
         cls._system_cycler = cycle(cls._systems)
         cls._current = next(cls._system_cycler)
 
@@ -63,7 +69,7 @@ class Systems:
             cls.restricted_mode = False
 
     @classmethod
-    def set_system(cls, star):
+    def set_planetary_system(cls, star):
         if star in cls.loose_stars:
             cls.loose_stars.remove(star)
         # elif star.celestial_type != 'system':
@@ -73,7 +79,7 @@ class Systems:
                 for system in cls._systems:
                     if system.star_system == sub:
                         system.update()
-                cls.set_system(sub)
+                cls.set_planetary_system(sub)
         else:
             system = cls.planetary(star)
             if system not in cls._systems:
@@ -217,7 +223,7 @@ class Systems:
         return idx
 
     @classmethod
-    def get_systems(cls):
+    def get_planetary_systems(cls):
         if len(cls._systems):
             return cls._systems
         else:
@@ -243,6 +249,8 @@ class Systems:
     def add_star(cls, star):
         if star not in cls.loose_stars:
             cls.loose_stars.append(star)
+        if star not in cls.just_stars:
+            cls.just_stars.append(star)
         astro_bodies = [i for i in cls.universe.astro_bodies if i.celestial_type != 'star']
         for body in astro_bodies:
             cls.universe.visibility_of_stars(body)
@@ -328,7 +336,7 @@ class Systems:
                 empty.append(True)
             else:
                 empty.append(False)
-        if all(empty):
+        if any(empty):
             cls.save_data.update(event.data)
         else:
             EventHandler.allowed = False

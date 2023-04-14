@@ -271,7 +271,7 @@ class Star(BodyInHydrostaticEquilibrium):
             return self
 
     def composition(self):
-        return self
+        return [self]
 
     @property
     def shared_mass(self):

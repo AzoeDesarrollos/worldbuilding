@@ -43,7 +43,7 @@ class MultipleStarsPanel(BaseWidget):
         self.systems = []
         self.current = SystemsType(self)
         self.undo_button = UndoButton(self, 234, 416)
-        self.setup_button = SetupButton(self, 484, 416)
+        self.setup_button = CreateSystemButton(self, 484, 416)
         self.dissolve_button = DissolveButton(self, 334, 416)
         self.properties.add(self.current, self.stars_area, self.undo_button, self.setup_button, self.dissolve_button)
         EventHandler.register(self.name_current, 'NameObject')
@@ -58,6 +58,14 @@ class MultipleStarsPanel(BaseWidget):
         EventHandler.register(self.save_systems, 'Save')
         EventHandler.register(self.load_systems, 'LoadData')
         EventHandler.register(self.name_current, 'NameObject')
+
+    @property
+    def triple(self):
+        return self._triple
+
+    @property
+    def multiple(self):
+        return self._multiple
 
     def load_universe_data(self):
         triple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Triple']
@@ -80,34 +88,36 @@ class MultipleStarsPanel(BaseWidget):
         self.parent.properties.widgets()[1].enable()
         triple_systems = [system for system in Universe.systems if system.composition == 'triple']
         multiple_systems = [system for system in Universe.systems if system.composition == 'multiple']
-        primary = system_data.primary
-        secondary = system_data.secondary
-        chosen, count = None, None
-        if primary.celestial_type == 'system' and secondary.celestial_type == 'star':
+        prim = system_data.primary
+        scnd = system_data.secondary
+        go_on_1 = prim.celestial_type == 'star' and scnd.celestial_type == 'system'
+        go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type == 'star'
+        go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'
+        chosen = None
+        if go_on_1 or go_on_2:
             chosen = choice(triple_systems)
-            count = self._triple
-        elif primary.celestial_type == 'system' and secondary.celestial_type == 'system':
+            self._triple -= 1
+        elif go_on_3:
             chosen = choice(multiple_systems)
-            count = self._multiple
-        elif primary.celestial_type == 'star' and secondary.celestial_type == 'system':
-            chosen = choice(triple_systems)
-            count = self._triple
+            self._multiple -= 1
+
         assert chosen is not None, "System is nonsensical"
         Universe.systems.remove(chosen)
         system_data.position = chosen.location
-        count -= 1
         self.discarded_protos.append(chosen)
         if system_data not in self.systems:
-            idx = len([s for s in self.systems if system_data.compare(s) is True])
+            all_systems = set(Universe.current_galaxy.current_neighbourhood.systems+self.systems)
+            idx = len([s for s in all_systems if system_data.compare(s) is True])
             button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
             self.systems.append(system_data)
             self.system_buttons.add(button)
             self.properties.add(button)
             self.sort_buttons(self.system_buttons.widgets())
-            Systems.set_system(system_data)
+            Systems.set_planetary_system(system_data)
             Universe.current_galaxy.current_neighbourhood.add_true_system(system_data)
             self.current.enable()
             self.load_universe_data()
+            self.stars_area.enable_all()
             return button
 
     def show_current(self, star):
@@ -164,7 +174,7 @@ class MultipleStarsPanel(BaseWidget):
                     singles.remove(chosen)
                     Universe.remove_astro_obj(chosen)
                     star.position = chosen.location
-                    Systems.set_system(star)
+                    Systems.set_planetary_system(star)
                     Universe.current_galaxy.current_neighbourhood.add_true_system(star)
                     lock = True
 
@@ -178,7 +188,7 @@ class MultipleStarsPanel(BaseWidget):
                     raise AssertionError(warning)
 
         for other in binaries:
-            Systems.set_system(other)
+            Systems.set_planetary_system(other)
 
         if lock:
             self.parent.swap_neighbourhood_button.lock()
@@ -229,10 +239,6 @@ class MultipleStarsPanel(BaseWidget):
             go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'
 
             if any([go_on_1, go_on_2, go_on_3]):
-                if go_on_1 or go_on_2:
-                    self._triple -= 1
-                if go_on_3:
-                    self._multiple -= 1
                 avg_s = system_data['avg_s']
                 ecc_p = system_data['ecc_p']
                 ecc_s = system_data['ecc_s']
@@ -266,14 +272,39 @@ class SystemsType(SystemType):
         if str(self.primary.value) == '':
             self.primary.value = star
             self.has_values = True
-        else:
+            for listed in self.parent.stars_area.listed_objects.widgets():
+                if listed.object_data is not star:
+                    self.check_contruction(listed.object_data)
+        elif str(self.secondary.value) == '':
             self.secondary.value = star
             self.parent.undo_button.enable()
             self.has_values = True
+        else:
+            return False
 
         if self.primary.value != '' and self.secondary.value != '':
             for obj in self.properties.get_widgets_from_layer(2):
                 obj.enable()
+        return True
+
+    def check_contruction(self, system_2):
+        # you may be buiding a multiple system.
+        # Are there slots for it?
+        # if not, disable all other systems.
+        # you can only add a star as a secondary system
+        # to form a triple system.
+        # again, if there are slots for it.
+        if self.primary.value != '':
+            system_1 = self.primary.value
+            if system_1.celestial_type == 'system':
+                triple = self.parent.triple
+                multiple = self.parent.multiple
+                if system_2.celestial_type == 'system':
+                    if multiple >= 1:
+                        self.parent.stars_area.disable_by_type('star')
+                elif system_2.celestial_type == 'star':
+                    if triple >= 1:
+                        self.parent.stars_area.disable_by_type('system')
 
     def unset_stars(self):
         self.parent.stars_area.repopulate()
@@ -288,17 +319,18 @@ class SystemsType(SystemType):
                 value = getattr(self.current, attr)
                 pr = self.properties.get_widget(i)
                 pr.value = value
-            self.parent.setup_button.enable()
+            if self.parent.triple > 0 or self.parent.multiple > 0:
+                self.parent.setup_button.enable()
 
 
 class ListedSystem(ListedBody):
 
     def on_mousebuttondown(self, event):
-        if event.data['button'] == 1 and event.origin == self:
-            self.parent.parent.current.set_star(self.object_data)
-            self.parent.remove_listed(self)
-            self.kill()
-            self.parent.sort()
+        if event.data['button'] == 1 and event.origin == self and self.enabled:
+            if self.parent.parent.current.set_star(self.object_data):
+                self.parent.remove_listed(self)
+                self.kill()
+                self.parent.sort()
 
 
 class AvailableSystems(ListedArea):
@@ -311,12 +343,21 @@ class AvailableSystems(ListedArea):
         for listed in self.listed_objects.widgets():
             listed.show()
 
+    def disable_by_type(self, selected_type):
+        for listed in self.listed_objects.widgets():
+            if listed.object_data.celestial_type == selected_type:
+                listed.disable()
+
+    def enable_all(self):
+        for listed in self.listed_objects.widgets():
+            listed.enable()
+
     def repopulate(self):
         population = []
         self.clear()
         if Universe.current_galaxy is not None:
             for system in Universe.current_galaxy.current_neighbourhood.systems:
-                if system not in population:
+                if len(system.composition()) == 2 and system not in population:
                     population.append(system)
         population.extend(Systems.loose_stars)
 
@@ -328,3 +369,12 @@ class AvailableSystems(ListedArea):
         # this hook is necessary.
         # otherwise the content of the panel is deleted.
         pass
+
+
+class CreateSystemButton(SetupButton):
+
+    def on_mousebuttondown(self, event):
+        if event.origin == self:
+            clause = self.parent.triple > 0 or self.parent.multiple > 0
+            assert clause, "There are no more binary systems available to create."
+            super().on_mousebuttondown(event)

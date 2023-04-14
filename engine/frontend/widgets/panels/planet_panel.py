@@ -40,7 +40,7 @@ class PlanetPanel(BasePanel):
 
     def save_planets(self, event):
         data = {}
-        for system in Systems.get_systems():
+        for system in Systems.get_planetary_systems():
             for planet in self.planets:
                 if planet in system.planets:
                     planet_data = {

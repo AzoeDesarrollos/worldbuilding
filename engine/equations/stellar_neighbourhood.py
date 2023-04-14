@@ -237,16 +237,6 @@ class DefinedNeighbourhood:
         if system not in self.systems:
             self.systems.append(system)
 
-    def all_stars(self):
-        stars = []
-        for system in self.systems:
-            if system.letter is None:  # a single star
-                stars.append(system)
-            else:
-                for sub in system.composition():
-                    stars.append(sub)
-        return stars
-
     def __repr__(self):
         return f'{turn_into_roman(self.idx)}@{str(self.location)}'
 

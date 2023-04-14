@@ -1,4 +1,4 @@
-from engine.frontend.globales import COLOR_TEXTO, COLOR_AREA
+from engine.frontend.globales import COLOR_TEXTO, COLOR_AREA, COLOR_DISABLED
 from engine.frontend.widgets.meta import Meta
 
 
@@ -25,6 +25,7 @@ class ListedBody(Meta):
     def crear(self, name):
         self.img_uns = self.f1.render(name, True, self._color, COLOR_AREA)
         self.img_sel = self.f2.render(name, True, self._color, COLOR_AREA)
+        self.img_dis = self.f1.render(name, True, COLOR_DISABLED, COLOR_AREA)
 
     def on_mousebuttondown(self, event):
         raise NotImplementedError()

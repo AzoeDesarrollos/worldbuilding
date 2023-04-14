@@ -433,7 +433,7 @@ class PlanetaryOrbitPanel(BaseWidget):
 
 class OrbitableObject(ColoredBody):
     def on_mousebuttondown(self, event):
-        if event.origin == self:
+        if event.data['button'] == 1 and event.origin == self and self.enabled:
             self.parent.parent.hide_orbit_types()
             self.parent.select_one(self)
             self.parent.parent.select_planet(self.object_data)
@@ -443,7 +443,7 @@ class AvailablePlanets(ListedArea):
     listed_type = OrbitableObject
 
     def show(self):
-        for system in Systems.get_systems():
+        for system in Systems.get_planetary_systems():
             idx = system.id
             bodies = [body for body in system.astro_bodies if body.hill_sphere is not None]
             self.populate(bodies, layer=idx)

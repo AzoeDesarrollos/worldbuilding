@@ -90,7 +90,7 @@ class BinarySystem(AbstractBinary):
         self.id = id if id is not None else generate_id()
 
     def __str__(self):
-        if self.parent is None:
+        if self.parent is None or self.sub_pos == -1:
             return self.letter + '-Type #{}'.format(self.idx)
         else:
             return f'{self.parent.letter}{turn_into_roman(self.sub_pos)}{self.letter}{turn_into_roman(self.idx)}'

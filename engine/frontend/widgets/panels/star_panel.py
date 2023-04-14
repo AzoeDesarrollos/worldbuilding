@@ -54,8 +54,7 @@ class StarPanel(BasePanel):
     @staticmethod
     def save_stars(event):
         data1, data2 = {}, {}
-        stars = Universe.current_galaxy.current_neighbourhood.all_stars()
-        for star in stars:
+        for star in Systems.just_stars:
             star_data = {
                 'name': star.name if star.name is not None else str(star),
                 'mass': star.mass.m,
@@ -72,8 +71,10 @@ class StarPanel(BasePanel):
                 }
                 data2[star.id] = system_data
 
-        EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data1})
-        EventHandler.trigger(event.tipo + 'Data', 'Star', {"Single Systems": data2})
+        if len(data1):
+            EventHandler.trigger(event.tipo + 'Data', 'Star', {"Stars": data1})
+        if len(data2):
+            EventHandler.trigger(event.tipo + 'Data', 'Star', {"Single Systems": data2})
 
     def load_stars(self, event):
         systems = []
@@ -90,7 +91,7 @@ class StarPanel(BasePanel):
                 for id_p in event.data[keyword]:
                     data = event.data[keyword][id_p]
                     if data['system'] == id and star.id not in systems:
-                        Systems.set_system(star)
+                        Systems.set_planetary_system(star)
                         systems.append(star.id)
 
         if len(self.star_buttons):
@@ -124,7 +125,7 @@ class StarPanel(BasePanel):
                 chosen = choice(singles)
                 Universe.systems.remove(chosen)
                 star.position = chosen.location
-                Systems.set_system(star)
+                Systems.set_planetary_system(star)
                 Universe.current_galaxy.current_neighbourhood.add_true_system(star)
                 self.parent.swap_neighbourhood_button.lock()
         elif binary_systems == 0:
@@ -457,7 +458,7 @@ class AgeCursor(Meta):
 
 class ListedStar(ColoredBody):
     def on_mousebuttondown(self, event):
-        if event.data['button'] == 1 and event.origin == self:
+        if event.data['button'] == 1 and event.origin == self and self.enabled:
             text = 'To create this star, input a mass '
             if self.object_data.cls.startswith('O'):
                 text += 'of 16 solar masses or more.'

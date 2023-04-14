@@ -677,7 +677,7 @@ class AvailablePlanets(ListedArea):
     listed_type = ListedPlanet
 
     def show(self):
-        for system in Systems.get_systems():
+        for system in Systems.get_planetary_systems():
             idx = system.id
             pop = [planet for planet in system.planets if planet.orbit is not None or planet.rogue is True]
             self.populate(pop, layer=idx)

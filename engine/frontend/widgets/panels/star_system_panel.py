@@ -64,20 +64,19 @@ class StarSystemPanel(BaseWidget):
 
     def create_button(self, system_data):
         binary_systems = [system for system in Universe.systems if system.composition == 'binary']
-        if len(binary_systems):
+        if len(binary_systems) and system_data not in self.systems:
             chosen = choice(binary_systems)
             Universe.systems.remove(chosen)
             self.discarded_protos.append(chosen)
             system_data.position = chosen.location
             self.count -= 1
 
-        if system_data not in self.systems:
             idx = len([s for s in self.systems if system_data.compare(s) is True])
             button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
             self.systems.append(system_data)
             self.system_buttons.add(button)
             self.properties.add(button)
-            Systems.set_system(system_data)
+            Systems.set_planetary_system(system_data)
             Universe.current_galaxy.current_neighbourhood.add_true_system(system_data)
             self.current.enable()
             return button
@@ -85,20 +84,18 @@ class StarSystemPanel(BaseWidget):
     @staticmethod
     def save_systems(event):
         data = {}
-        systems = Systems.get_systems()
-        for system in [s.star_system for s in systems if s.is_a_system and s.star_system.letter is not None]:
-            if system.celestial_type == 'system':
-                d = {
-                    'primary': system.primary.id,
-                    'secondary': system.secondary.id,
-                    'avg_s': system.average_separation.m,
-                    'ecc_p': system.ecc_p.m,
-                    "ecc_s": system.ecc_s.m,
-                    "name": system.name,
-                    "position": dict(zip(['x', 'y', 'z'], system.position)),
-                    "neighbourhood_id": Universe.current_galaxy.current_neighbourhood.id
-                }
-                data[system.id] = d
+        systems = Universe.current_galaxy.current_neighbourhood.systems
+        for system in systems:
+            data[system.id] = {
+                'primary': system.primary.id,
+                'secondary': system.secondary.id,
+                'avg_s': system.average_separation.m,
+                'ecc_p': system.ecc_p.m,
+                "ecc_s": system.ecc_s.m,
+                "name": system.name,
+                "position": dict(zip(['x', 'y', 'z'], system.position)),
+                "neighbourhood_id": Universe.current_galaxy.current_neighbourhood.id
+            }
 
         EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': data})
 
@@ -113,24 +110,26 @@ class StarSystemPanel(BaseWidget):
         self.load_universe_data()
         for id in event.data['Binary Systems']:
             system_data = event.data['Binary Systems'][id]
-            avg_s = system_data['avg_s']
-            ecc_p = system_data['ecc_p']
-            ecc_s = system_data['ecc_s']
             prim = Systems.get_star_by_id(system_data['primary'])
             scnd = Systems.get_star_by_id(system_data['secondary'])
-            Systems.remove_star(prim)
-            Systems.remove_star(scnd)
-            name = system_data['name']
-            x = system_data['position']['x']
-            y = system_data['position']['y']
-            z = system_data['position']['z']
+            if self.check_system(prim_scnd=[prim, scnd]):
+                Systems.remove_star(prim)
+                Systems.remove_star(scnd)
+                avg_s = system_data['avg_s']
+                ecc_p = system_data['ecc_p']
+                ecc_s = system_data['ecc_s']
 
-            system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
-            system.position = x, y, z
-            Universe.add_astro_obj(system)
+                name = system_data['name']
+                x = system_data['position']['x']
+                y = system_data['position']['y']
+                z = system_data['position']['z']
 
-            button = self.create_button(system)
-            button.hide()
+                system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
+                system.position = x, y, z
+                Universe.add_astro_obj(system)
+
+                button = self.create_button(system)
+                button.hide()
 
     def create_systems(self):
         triple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Triple']
@@ -146,7 +145,7 @@ class StarSystemPanel(BaseWidget):
                         singles.remove(chosen)
                         Universe.remove_astro_obj(chosen)
                         star.position = chosen.location
-                        Systems.set_system(star)
+                        Systems.set_planetary_system(star)
                         Universe.current_galaxy.current_neighbourhood.add_true_system(star)
                     except IndexError as error:
                         raise AssertionError(error)
@@ -171,12 +170,36 @@ class StarSystemPanel(BaseWidget):
         if system in self.systems:
             Systems.dissolve_system(system)
 
+    @staticmethod
+    def check_system(sstm=None, prim_scnd=None):
+        """Se asegura de que los componentes del sistema
+        sean dos estrellas individuales.
+
+        Puede chequear un sistema ya creado o dos componentes estelares
+        aternativamente"""
+        if sstm is not None:
+            if sstm.letter is not None:
+                prim = sstm.primary
+                scnd = sstm.secondary
+            else:
+                return False
+        elif prim_scnd is not None:
+            prim, scnd = prim_scnd
+        else:
+            return False
+        if prim is not None and scnd is not None:
+            return prim.celestial_type == 'star' and scnd.celestial_type == 'star'
+        else:
+            return False
+
     def show(self):
         self.parent.swap_neighbourhood_button.unlock()
         if Universe.current_galaxy is not None:
             for system in Universe.current_galaxy.current_neighbourhood.systems:
-                self.create_button(system)
+                if self.check_system(sstm=system):
+                    self.create_button(system)
             self.load_universe_data()
+            self.stars_area.show()
         self.sort_buttons(self.system_buttons.widgets())
         super().show()
         for prop in self.properties.widgets():
@@ -261,9 +284,9 @@ class SystemType(BaseWidget):
     def unset_stars(self):
         stars = Systems.loose_stars.copy()
         self.parent.stars_area.clear()
-        if self.primary.value is not None:
+        if self.primary.value != '':
             stars.append(self.primary.value)
-        if self.secondary.value is not None:
+        if self.secondary.value != '':
             stars.append(self.secondary.value)
         self.parent.stars_area.populate(stars, layer='one')
         self.erase()
@@ -331,7 +354,7 @@ class ListedStar(ColoredBody):
     enabled = True
 
     def on_mousebuttondown(self, event):
-        if event.data['button'] == 1 and event.origin == self:
+        if event.data['button'] == 1 and event.origin == self and self.enabled:
             self.parent.parent.current.set_bodies(self.object_data)
             self.parent.remove_listed(self)
             self.kill()

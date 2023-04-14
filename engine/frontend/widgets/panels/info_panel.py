@@ -185,7 +185,7 @@ class InformationPanel(BaseWidget):
             body_visibility = visibility[body_id]
             body = Universe.get_astrobody_by(body_id, tag_type='id', silenty=True)
             if body is False:
-                for sys in Systems.get_systems():
+                for sys in Systems.get_planetary_systems():
                     if sys != system and body_id not in analyzed:
                         body = sys.get_astrobody_by(body_id, tag_type='id', silenty=True)
                         if body is not False:
@@ -264,7 +264,7 @@ class AvailablePlanets(ListedArea):
     listed_type = Astrobody
 
     def show(self):
-        systems = Systems.get_systems()
+        systems = Systems.get_planetary_systems()
         if len(systems):
             for system in systems:
                 idx = system.id
