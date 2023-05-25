@@ -24,10 +24,10 @@ class PlanetPanel(BasePanel):
         self.current = PlanetType(self)
         self.properties = Group()
         self.unit = Unit(self, 0, 416)
-        text = '''
-        Create your planets here. \nClick on any attibute to trigger a graph to select its properties.\n\n
-        You can alternate among the planet types by clicking in the "Type" button below.
-        '''
+        text = 'Create your planets here.\n\n'
+        text += 'You can alternate among the planet types by clicking in the "Type" button below.\n\n'
+        text += 'Then click any of its parameters to lauch a graph for its creation.\n\n'
+        text += "Don't forget to set its axial tilt before leaving."
         self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
         self.mass_number = ShownMass(self)
         self.button_add = AddPlanetButton(self, ANCHO - 13, 398)

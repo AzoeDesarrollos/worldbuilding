@@ -25,9 +25,10 @@ class AsteroidPanel(BasePanel):
         self.area_buttons = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 178))
         self.write('Asteroids', f, COLOR_AREA, topleft=(self.area_buttons.x+2, self.area_buttons.y))
         self.area_type = Rect(32, 32, ANCHO, ALTO - (self.area_buttons.h + 200))
-        text = '''
-        Create your asteroids here. \n\n Input first its three axes and then set its composition.
-        '''
+        text = 'Create your asteroids here.\n\n'
+        text += 'Input its three axes first, and then select its composition below.\n\n'
+        text += 'You can copy its compostition from a given planet or set it randomly.\n\n'
+        text += 'You can also set the percentages manually.'
         self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
         self.curr_x = self.area_buttons.x + 3
         self.curr_y = self.area_buttons.y + 21

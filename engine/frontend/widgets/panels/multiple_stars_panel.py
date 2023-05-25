@@ -343,14 +343,15 @@ class AvailableSystems(ListedArea):
         for listed in self.listed_objects.widgets():
             listed.show()
 
-    def disable_by_type(self, selected_type):
-        for listed in self.listed_objects.widgets():
-            if listed.object_data.celestial_type == selected_type:
-                listed.disable()
-
     def enable_all(self):
         for listed in self.listed_objects.widgets():
             listed.enable()
+
+    def disable_all(self):
+        enabled_objects = [i for i in self.listed_objects.widgets() if i.enabled]
+        if len(enabled_objects):
+            for listed in self.listed_objects.widgets():
+                listed.disable()
 
     def repopulate(self):
         population = []
@@ -366,9 +367,8 @@ class AvailableSystems(ListedArea):
             self.populate(population, layer='two')
 
     def update(self):
-        # this hook is necessary.
-        # otherwise the content of the panel is deleted.
-        pass
+        if self.parent.triple < 1 and self.parent.multiple < 1:
+            self.disable_all()
 
 
 class CreateSystemButton(SetupButton):

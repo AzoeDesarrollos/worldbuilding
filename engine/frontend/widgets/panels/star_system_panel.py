@@ -377,6 +377,8 @@ class AvailableStars(ListedArea):
         super().show()
 
     def update(self):
+        if self.parent.count < 1:
+            self.disable_by_type('star')
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
         self.show_current('one')
 

@@ -393,11 +393,6 @@ class AgeBar(Meta):
         if self.cursor is not None and event.origin == self:
             self.cursor.pressed = False
 
-    def on_mousemotion(self, rel):
-        x = mouse.get_pos()[0]
-        if self.cursor is not None and abs(x - self.cursor.rect.centerx) <= 3:
-            mouse.set_pos(*self.cursor.rect.center)
-
     def enable(self):
         self.cursor.show()
 
@@ -459,7 +454,6 @@ class AgeCursor(Meta):
         super().update()
         x = mouse.get_pos()[0]
         if self.pressed:
-            mouse.set_pos(x, self.rect.centery)
             self.has_mouseover = True
             self.rect.x = x if 50 <= x <= 450 else self.rect.x
             self.on_movement(self.rect.x)

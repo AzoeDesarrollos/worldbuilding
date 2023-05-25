@@ -33,9 +33,10 @@ class SatellitePanel(BasePanel):
         self.button_del = DelMoonButton(self, ANCHO - 13, 416)
         self.f3 = self.crear_fuente(11)
         self.area_type = Rect(32, 32, ANCHO, ALTO - (self.area_buttons.h + 200))
-        text = '''
-        Create your satellites here. \n\n Input first its mass and then select its composition below.
-        '''
+        text = 'Create your major satellites here.\n\n'
+        text += 'Input its mass first, and then select its composition below.\n\n'
+        text += 'You can copy its compostition from a given planet or set it randomly.\n\n'
+        text += 'You can also set the percentages manually.'
         self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
         ra = self.write('Composition', f1, COLOR_AREA, topleft=(18, 420))
         self.write('Satellites', f1, COLOR_AREA, topleft=(self.area_buttons.x+2, self.area_buttons.y))

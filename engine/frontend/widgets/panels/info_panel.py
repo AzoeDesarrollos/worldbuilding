@@ -1,5 +1,5 @@
 from engine.equations.tides import major_tides, minor_tides, is_tidally_locked
-from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, Group
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
 from engine.equations.planetary_system import RoguePlanets
 from .common import ListedArea, ColoredBody, TextButton
 from engine.backend import generate_id, Systems, q
@@ -32,8 +32,11 @@ class InformationPanel(BaseWidget):
 
         self.f1 = self.crear_fuente(14)
         self.f2 = self.crear_fuente(16)
-
+        text = 'Click on any Astronmical Object to get information about its tide interaction and distances to other'
+        text += ' celestial bodies.'
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
+        offset = Rect(0, 0, self.rect.w - self.planet_area.rect.w, self.rect.h)
+        self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, centerx=offset.centerx, y=100, j=1)
         self.print_button = PrintButton(self, *self.planet_area.rect.midbottom)
         self.properties.add(self.planet_area, self.print_button, layer=2)
         self.perceptions_rect = Rect(3, 250, 380, ALTO)
@@ -158,7 +161,7 @@ class InformationPanel(BaseWidget):
 
         if primary == 'rogue':
             text = f'{str(self.current)} is a rogue planet.'
-        elif is_tidally_locked(lunar_tides+planet_tides, system.age.m / 10 ** 9, mass):
+        elif is_tidally_locked(lunar_tides + planet_tides, system.age.m / 10 ** 9, mass):
             text = f'{str(self.current)} is tidally locked to {primary}.'
             self.current.rotation = 'Tidally locked'
             self.current.spin = 'Locked'
