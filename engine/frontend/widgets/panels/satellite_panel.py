@@ -108,6 +108,7 @@ class SatellitePanel(BasePanel):
         button = [i for i in self.satellites.widgets() if i.object_data == satellite][0]
         self.moons.remove(satellite)
         self.satellites.remove(button)
+        button.hide()
         self.sort_buttons(self.satellites.get_widgets_from_layer(Systems.get_current().id))
         self.properties.remove(button)
         self.button_del.disable()
@@ -325,7 +326,7 @@ class SatelliteType(ObjectType):
         for element in self.properties.get_widgets_from_layer(1)[1:]:
             element.enable()
         super().fill(tos)
-        self.parent.image.fill(COLOR_BOX, self.parent.area_type)
+        self.parent.image.fill(COLOR_BOX, self.parent.erase_text_area)
 
         comp = {}
         for elemento in self.properties.get_widgets_from_layer(2):

@@ -108,6 +108,7 @@ class AsteroidPanel(BasePanel):
         button = [i for i in self.asteroids.widgets() if i.object_data == satellite][0]
         self.moons.remove(satellite)
         self.asteroids.remove(button)
+        button.hide()
         self.sort_buttons(self.asteroids.get_widgets_from_layer(Systems.get_current().id))
         self.properties.remove(button)
         self.button_del.disable()
@@ -314,7 +315,7 @@ class AsteroidType(BaseWidget):
                 'Volume': 'Ve'
             }
         }
-        self.parent.image.fill(COLOR_BOX, self.parent.area_type)
+        self.parent.image.fill(COLOR_BOX, self.parent.erase_text_area)
         elementos = self.properties.get_widgets_from_layer(2)
         for elemento in elementos:
             elemento.enable()

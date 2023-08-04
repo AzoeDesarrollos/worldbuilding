@@ -1,4 +1,4 @@
-from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, ANCHO, ALTO, Group, NUEVA_LINEA
+from engine.frontend.globales import COLOR_BOX, COLOR_TEXTO, COLOR_AREA, ANCHO, Group, NUEVA_LINEA
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.sprite_star import PlanetSprite
 from engine.equations.planetary_system import RoguePlanets
@@ -20,7 +20,6 @@ class PlanetPanel(BasePanel):
     def __init__(self, parent):
         super().__init__('Planet', parent)
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
-        self.area_type = Rect(32, 32, ANCHO, ALTO - (self.area_buttons.h + 200))
         self.current = PlanetType(self)
         self.properties = Group()
         self.unit = Unit(self, 0, 416)
@@ -28,7 +27,7 @@ class PlanetPanel(BasePanel):
         text += 'You can alternate among the planet types by clicking in the "Type" button below.\n\n'
         text += 'Then click any of its parameters to lauch a graph for its creation.\n\n'
         text += "Don't forget to set its axial tilt before leaving."
-        self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
+        self.erase_text_area = self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
         self.mass_number = ShownMass(self)
         self.button_add = AddPlanetButton(self, ANCHO - 13, 398)
         self.button_del = DelPlanetButton(self, ANCHO - 13, 416)
@@ -72,7 +71,7 @@ class PlanetPanel(BasePanel):
             planets = self.planet_buttons.get_widgets_from_layer(Systems.get_current().id)
             self.sort_buttons(planets)
         self.properties.add(button, layer=3)
-        self.image.fill(COLOR_BOX, self.area_type)
+        self.image.fill(COLOR_BOX, self.erase_text_area)
         return button
 
     def del_button(self, planet):
@@ -235,7 +234,7 @@ class PlanetType(ObjectType):
         self.parent.select_one()
         self.parent.button_del.disable()
         self.has_values = False
-        self.parent.image.fill(COLOR_BOX, self.parent.area_type)
+        self.parent.image.fill(COLOR_BOX, self.parent.erase_text_area)
         if self.current is not None and self.current.sprite is not None:
             self.current.sprite.kill()
 
@@ -329,7 +328,7 @@ class PlanetType(ObjectType):
                 'rotation': 'hours/day'
             }
         }
-        self.parent.image.fill(COLOR_BOX, self.parent.area_type)
+        self.parent.image.fill(COLOR_BOX, self.parent.erase_text_area)
         super().fill(tos)
 
         if self.current.sprite is None and self.current.composition is not None:
