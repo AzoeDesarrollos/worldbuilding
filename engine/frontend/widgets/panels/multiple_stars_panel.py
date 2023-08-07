@@ -1,8 +1,10 @@
 from .star_system_panel import SystemType, UndoButton, SetupButton, SystemButton, DissolveButton
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
+from engine.equations.system_single import SingleSystem, load_single_systems
 from engine.frontend.widgets.panels.common import ListedBody, ListedArea
+from engine.equations.orbit import NeighbourhoodSystemOrbit
+from engine.equations.system_binary import system_type
 from engine.backend import EventHandler, Systems
-from engine.equations.binary import system_type
 from engine.equations.space import Universe
 from ..basewidget import BaseWidget
 from ..values import ValueText
@@ -58,6 +60,7 @@ class MultipleStarsPanel(BaseWidget):
         EventHandler.register(self.save_systems, 'Save')
         EventHandler.register(self.load_systems, 'LoadData')
         EventHandler.register(self.name_current, 'NameObject')
+        EventHandler.register(load_single_systems, 'LoadData')
 
     @property
     def triple(self):
@@ -103,7 +106,9 @@ class MultipleStarsPanel(BaseWidget):
 
         assert chosen is not None, "System is nonsensical"
         Universe.systems.remove(chosen)
-        system_data.position = chosen.location
+        system_data.cartesian = chosen.location
+        offset = Universe.current_galaxy.current_neighbourhood.location
+        system_data.orbit = NeighbourhoodSystemOrbit(*system_data.cartesian, offset)
         self.discarded_protos.append(chosen)
         if system_data not in self.systems:
             all_systems = set(Universe.current_galaxy.current_neighbourhood.systems+self.systems)
@@ -173,9 +178,13 @@ class MultipleStarsPanel(BaseWidget):
                     chosen = choice(singles)
                     singles.remove(chosen)
                     Universe.remove_astro_obj(chosen)
-                    star.position = chosen.location
+                    neighbourhood = Universe.current_galaxy.current_neighbourhood
+                    system = SingleSystem(star, neighbourhood.id)
+                    system.cartesian = chosen.location
+                    offset = neighbourhood.location
+                    system.set_orbit(offset)
                     Systems.set_planetary_system(star)
-                    Universe.current_galaxy.current_neighbourhood.add_true_system(star)
+                    Universe.current_galaxy.current_neighbourhood.add_true_system(system)
                     lock = True
 
                 except IndexError:
@@ -218,7 +227,7 @@ class MultipleStarsPanel(BaseWidget):
                 'ecc_p': system.ecc_p.m,
                 "ecc_s": system.ecc_s.m,
                 "name": system.name,
-                "position": dict(zip(['x', 'y', 'z'], system.position)),
+                "position": dict(zip(['x', 'y', 'z'], system.cartesian)),
                 "neighbourhood_id": Universe.current_galaxy.current_neighbourhood.id
             }
             data[system.id] = d
@@ -246,9 +255,11 @@ class MultipleStarsPanel(BaseWidget):
                 x = system_data['position']['x']
                 y = system_data['position']['y']
                 z = system_data['position']['z']
+                offset = Universe.current_galaxy.current_neighbourhood.location
 
                 system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
-                system.position = x, y, z
+                system.orbit = NeighbourhoodSystemOrbit(x, y, z, offset)
+                system.cartesian = x, y, z
 
                 button = self.create_button(system)
                 button.hide()

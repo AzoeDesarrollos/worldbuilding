@@ -43,6 +43,17 @@ class Galaxy:
             if len(self.stellar_neighbourhoods) == 1:
                 self.cycle_neighbourhoods()
 
+    def get_neighbourhood(self, id):
+        for neighbourhood in self.stellar_neighbourhoods:
+            if neighbourhood.id == id:
+                return neighbourhood
+
+    def exists(self, neighbourhood_id):
+        for neighbourhood in self.stellar_neighbourhoods:
+            if neighbourhood.id == neighbourhood_id:
+                return True
+        return False
+
     def cycle_neighbourhoods(self):
         new = next(self.neighbourhood_cycler)
         self.current_neighbourhood = new

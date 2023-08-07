@@ -1,6 +1,7 @@
 from . import EventHandler, guardar_json, abrir_json
 from os.path import join, exists
 from itertools import cycle
+from .config import Config
 from os import getcwd
 
 
@@ -34,6 +35,8 @@ class Systems:
     # the difference between just_stars and loose_stars is that loose_stars changes when the stars from a system,
     # whereas just_stars is just the stars (duh), regardless if they are part of a system or not, and thus is more
     # static.
+
+    _rogue_planets_warning_issued = False
 
     @classmethod
     def import_clases(cls, rogues=None, planetary=None, universe=None):
@@ -72,8 +75,6 @@ class Systems:
     def set_planetary_system(cls, star):
         if star in cls.loose_stars:
             cls.loose_stars.remove(star)
-        # elif star.celestial_type != 'system':
-        #     return
         if star.letter == 'S':
             for sub in star:
                 for system in cls._systems:
@@ -87,18 +88,6 @@ class Systems:
                 cls._systems.append(system)
                 if len(cls._systems) == 1:
                     cls._current = next(cls._system_cycler)
-        # if star.letter is not None:
-        #     for s in star:
-        #         if s in cls.loose_stars:
-        #             cls.loose_stars.remove(s)
-        #         else:
-        #             system = cls.get_system_by_star(s)
-        #             if system is not None:
-        #                 cls._systems.remove(system)
-        #                 cls.unpopulate(system.id)
-        #                 s.flag()
-        #                 for astro in system.astro_bodies:
-        #                     astro.flag()
 
     @classmethod
     def populate(cls, star_id):
@@ -192,12 +181,14 @@ class Systems:
 
     @classmethod
     def cycle_systems(cls, panel_name=None):
+        warning = 'Rogue Planets, by definition, do not have orbits, so they are unable to exist in this panel.'
         if len(cls._systems):
             system = next(cls._system_cycler)
             if panel_name == 'Orbit' and not system.is_a_system:
-                cls.cycle_systems(panel_name)
-                warning = 'Rogue Planets, by definition, do not have orbits so they are unable to exist in this panel.'
-                raise AssertionError(warning)
+                if Config.get('repeat warnings') is True or not cls._rogue_planets_warning_issued:
+                    cls._rogue_planets_warning_issued = True
+                    raise AssertionError(warning)
+                system = next(cls._system_cycler)
             cls._current = system
 
     @classmethod
@@ -253,7 +244,8 @@ class Systems:
             cls.just_stars.append(star)
         astro_bodies = [i for i in cls.universe.astro_bodies if i.celestial_type != 'star']
         for body in astro_bodies:
-            cls.universe.visibility_of_stars(body)
+            if body.orbit is not None:
+                cls.universe.visibility_of_stars(body)
 
     @classmethod
     def remove_star(cls, star):
@@ -323,8 +315,14 @@ class Systems:
     def compound_save_data(cls, event):
         for key in event.data:
             if len(event.data[key]):
+                if key == 'Single Systems':
+                    if len(cls.save_data[key]) == 0:
+                        cls.save_data[key]= {}
+                    for key_id in event.data[key]:
+                        cls.save_data[key][key_id] = event.data[key][key_id]
                 cls.save_data[key].update(event.data[key])
-        # cls.save_data.update(event.data)
+
+
         if not EventHandler.is_quequed('SaveDataFile'):
             EventHandler.trigger('SaveDataFile', 'EngineData', cls.save_data)
 

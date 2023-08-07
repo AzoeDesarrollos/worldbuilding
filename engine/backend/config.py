@@ -5,7 +5,8 @@ from os import path, getcwd
 class Config:
     _default = {
         'mode': 0,
-        'ignore skip-rules': False
+        'ignore skip-rules': False,
+        'repeat warnings': False
     }
     _data = None
     _ruta = path.join(getcwd(), 'data', 'config.json')

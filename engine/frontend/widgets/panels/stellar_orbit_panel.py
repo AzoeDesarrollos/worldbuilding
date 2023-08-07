@@ -47,10 +47,6 @@ class OrbitPanel(BaseWidget):
         self.area_markers = Rect(3, 32, 380, 20 * 10)
         self.area_modify = ModifyArea(self, ANCHO - 201, 374)
 
-        # self.f = self.crear_fuente(16, underline=True)
-        # self.f2 = self.crear_fuente(12)
-        # self.order_f = self.crear_fuente(14)
-        # self.write(self.name + ' Panel', self.f, centerx=(ANCHO // 4) * 1.5, y=0)
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
 
         self.area_recomendation = Rect(3, 0, 380, 185)
@@ -86,17 +82,22 @@ class OrbitPanel(BaseWidget):
 
     def set_current(self):
         star = Systems.get_current_star()
-        self.current = star
-        self.last_idx = self.current.id
-        self.orbits: list = self._orbits[star.id]
-        self.markers = self._markers[star.id]
-        self.buttons = self._buttons[star.id]
-        if self.is_visible:
-            if star.evolution_id != star.id:
-                self.depopulate()
-            if not len(self.markers) or not self.markers[0].locked:
-                self.populate()
-            self.prepare_and_sort()
+        if star.id != 'rogues':
+            self.current = star
+            self.last_idx = self.current.id
+            self.orbits: list = self._orbits[star.id]
+            self.markers = self._markers[star.id]
+            self.buttons = self._buttons[star.id]
+            if self.is_visible:
+                if star.evolution_id != star.id:
+                    self.depopulate()
+                if not len(self.markers) or not self.markers[0].locked:
+                    self.populate()
+                self.prepare_and_sort()
+        else:
+            Systems.cycle_systems()
+            self.set_current()
+
 
     def populate(self):
         star = self.current
@@ -419,16 +420,16 @@ class OrbitPanel(BaseWidget):
             self.sort_markers()
 
     def fill_indexes(self):
-        assert len(Systems.get_planetary_systems()), "There is no data to load"
-        for system in Systems.get_planetary_systems():
-            if not system.is_a_system:
-                raise AssertionError("There is no data to load")
-            star = system.star_system
-            if star.id not in self._markers:
-                self._markers[star.id] = []
-                self._orbits[star.id] = []
-                self._buttons[star.id] = []
-                self.indexes.append(star)
+        systems = Systems.get_planetary_systems()
+        assert len(systems), "There is no data to load"
+        for system in systems:
+            if system.is_a_system:
+                star = system.star_system
+                if star.id not in self._markers:
+                    self._markers[star.id] = []
+                    self._orbits[star.id] = []
+                    self._buttons[star.id] = []
+                    self.indexes.append(star)
 
     def show(self):
         super().show()
@@ -513,7 +514,6 @@ class OrbitPanel(BaseWidget):
             idx = self.last_idx
 
         if not self.no_star_error:
-            # self.image.fill(COLOR_BOX, self.area_markers)
             self.image.fill(COLOR_AREA, self.area_buttons)
         else:
             self.show_no_system_error()
@@ -563,7 +563,6 @@ class OrbitPanel(BaseWidget):
 
     def reset_offset(self):
         self.offset = 0
-        # self.sort_markers()
 
 
 class Intertwined:

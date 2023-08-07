@@ -49,27 +49,31 @@ class AsteroidPanel(BasePanel):
                             self.random_button, self.button_del, self.copy_button, layer=1)
         self.asteroids = Group()
         self.moons = []
-        EventHandler.register(self.load_satellites, 'LoadData')
         EventHandler.register(self.save_satellites, 'Save')
         EventHandler.register(self.name_current, 'NameObject')
+        EventHandler.register(self.hold_loaded_bodies, 'LoadData')
+        self.holded_data = {}
+
+    def hold_loaded_bodies(self, event):
+        if 'Asteroids' in event.data and len(event.data['Asteroids']):
+            self.holded_data.update(event.data['Asteroids'])
 
     def name_current(self, event):
         if event.data['object'] in self.moons:
             moon = event.data['object']
             moon.set_name(event.data['name'])
 
-    def load_satellites(self, event):
-        if 'Asteroids' in event.data and len(event.data['Asteroids']):
-            self.enable()
-            for id in event.data['Asteroids']:
-                satellite_data = event.data['Asteroids'][id]
-                satellite_data['id'] = id
-                moon = minor_moon_by_composition(satellite_data)
-                moon.idx = len([i for i in Systems.get_current().planets if i.clase == moon.clase])
-                system = Systems.get_system_by_id(satellite_data['system'])
-                if system is not None and system.add_astro_obj(moon):
-                    self.current.current = moon
-                    self.add_button()
+    def load_satellites(self):
+        self.enable()
+        for id in self.holded_data:
+            satellite_data = self.holded_data[id]
+            satellite_data['id'] = id
+            moon = minor_moon_by_composition(satellite_data)
+            moon.idx = len([i for i in Systems.get_current().planets if i.clase == moon.clase])
+            system = Systems.get_system_by_id(satellite_data['system'])
+            if system is not None and system.add_astro_obj(moon):
+                self.current.current = moon
+                self.add_button()
 
     def save_satellites(self, event):
         data = {}
@@ -131,6 +135,7 @@ class AsteroidPanel(BasePanel):
 
     def show(self):
         super().show()
+        self.load_satellites()
         for pr in self.properties.get_widgets_from_layer(1):
             pr.show()
         for pr in self.properties.get_widgets_from_layer(Systems.get_current_id(self)):

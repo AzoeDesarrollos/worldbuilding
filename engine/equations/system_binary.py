@@ -1,6 +1,5 @@
-from .orbit import BinaryPlanetOrbit, PlanetOrbit  # , BinaryStarOrbit
+from .orbit import NeighbourhoodSystemOrbit, BinaryPlanetOrbit, PlanetOrbit, BinaryStarOrbit
 from engine.backend.util import generate_id, q, turn_into_roman
-from .orbit import BinaryStarOrbit
 from .general import Flagable
 from .space import Universe
 from .planet import Planet
@@ -66,7 +65,7 @@ class BinarySystem(AbstractBinary):
 
     _orbit_type = BinaryStarOrbit
 
-    position = None
+    _cartesian = None
 
     prefix = ''
     sub_pos = -1
@@ -146,6 +145,16 @@ class BinarySystem(AbstractBinary):
         self.sub_pos = idx
         self._system = system
 
+    @property
+    def cartesian(self):
+        return self._cartesian
+
+    @cartesian.setter
+    def cartesian(self, values):
+        self._cartesian = values
+
+    def set_orbit(self, offset):
+        self.orbit = NeighbourhoodSystemOrbit(*self._cartesian,offset)
 
 class PTypeSystem(BinarySystem):
     letter = 'P'

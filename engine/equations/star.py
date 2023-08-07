@@ -287,10 +287,6 @@ class Star(BodyInHydrostaticEquilibrium):
     def outer_forbbiden_zone(self):
         return self._outer_forbidden
 
-    @property
-    def star_system(self):
-        return self
-
     @staticmethod
     def peak_lightwave_frequency(temperature):
         return 0.0028977729 / (temperature * 5778) * 1000000000

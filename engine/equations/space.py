@@ -66,8 +66,8 @@ class Universe:
         group = cls._get_astro_group(astro_obj)
         if astro_obj not in group:
             group.append(astro_obj)
-            # if astro_obj.celestial_type != 'system':
-            cls.astro_bodies.append(astro_obj)
+            if astro_obj.celestial_type != 'galaxy':
+                cls.astro_bodies.append(astro_obj)
         if hasattr(astro_obj, 'clase'):
             astro_obj.idx = len([i for i in group if i.clase == astro_obj.clase]) - 1
         elif hasattr(astro_obj, 'cls'):
@@ -115,12 +115,20 @@ class Universe:
             cls.aparent_brightness[body.id] = {}
         if body.id not in cls.distances:
             cls.distances[body.id] = {}
-
-        for system in Systems.get_stars_and_systems():
-            if system.star_system.letter == 'P':
-                stars = [system.star_system]
-            else:
-                stars = [s for s in system.star_system]
+        stars = []
+        for galaxy in cls.galaxies:
+            for stellar_neibouhood in galaxy.stellar_neighbourhoods:
+                for system in stellar_neibouhood.systems:
+                    if system.letter == 'P' or system.letter is None:
+                        stars.append(system)
+                    else:
+                        for star in system:
+                            stars.append(star)
+        # for system in Systems.get_stars_and_systems():
+        #     if system.star_system.letter == 'P':
+        #         stars = [system.star_system]
+        #     else:
+        #         stars = [s for s in system.star_system]
 
             for star in stars:
                 if body.orbit is not None and star.id not in cls.aparent_brightness[body.id]:
@@ -132,15 +140,15 @@ class Universe:
                         else:
                             cls.distances[body.id][star.id] = body.parent.orbit.a
                     elif star in body.orbit.star:  # primary star's companion (in case of an S-Type System)
-                        x1, y1, z1 = body.find_topmost_parent(body).position
+                        x1, y1, z1 = body.find_topmost_parent(body).cartesian
                         x1 = body.orbit.a.m  # chapuza
-                        x2, y2, z2 = star.position
+                        x2, y2, z2 = star.cartesian
                         d = q(sqrt(pow(abs(x2 - x1), 2) + pow(abs(y2 - y1), 2) + pow(abs(z2 - z1), 2)), 'au')
                         cls.distances[body.id][star.id] = round(d)
                         ab = q(star.luminosity.m / pow(d.to('au').m, 2), 'Vs')
                     else:  # Other stars in the universe
-                        x1, y1, z1 = body.find_topmost_parent(body).position
-                        x2, y2, z2 = star.position
+                        x1, y1, z1 = body.find_topmost_parent(body).cartesian
+                        x2, y2, z2 = star.cartesian
                         d = q(sqrt(pow(abs(x2 - x1), 2) + pow(abs(y2 - y1), 2) + pow(abs(z2 - z1), 2)), 'lightyears')
                         cls.distances[body.id][star.id] = round(d)
                         ab = q(star.luminosity.m / pow(d.to('au').m, 2), 'Vs')

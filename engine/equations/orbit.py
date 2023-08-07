@@ -1,6 +1,6 @@
 from engine.frontend.graphs.orbital_properties import rotation_loop
 from engine.frontend.globales import Renderer
-from math import sqrt, pow, cos, sin, pi
+from math import sqrt, pow, cos, sin, acos
 from .general import Ellipse, Flagable
 from engine.backend import q
 from decimal import Decimal
@@ -86,7 +86,7 @@ class PseudoOrbit:
         self.semi_major_axis = orbit.semi_major_axis
         self.temperature = orbit.temperature
         self._star = orbit.star
-        if self._star.letter is None:
+        if not hasattr(self._star, 'letter') or self._star.letter is None:
             self._period = q(sqrt(pow(self.semi_major_axis.m, 3) / self._star.mass.m), 'year')
         elif self._star.letter == 'P':
             self._period = q(sqrt(pow(self.semi_major_axis.m, 3) / self._star.shared_mass.m), 'year')
@@ -343,18 +343,28 @@ class BinaryPlanetOrbit(Orbit):
         self.velocity = q(sqrt(main_body_mass / self._a), 'earth_orbital_velocity').to('kilometer per second')
 
 
-class GalacticStellarOrbit(Orbit):
+class GalacticNeighbourhoodOrbit(Orbit):
     subtype = 'Galatic'
 
-    def __init__(self, a, e):
-        super().__init__(a, e, q(0, 'degrees'), unit='kpc')
-        age = self.star.age.m
-        self.star.z = q(49 * cos((2 * pi / 72) * age), 'kpc')
-        # z difined as the star's shift ("bobbing") with respect to the galactic plane
-        # also, this fuction is completely made up, as the actual formula dependes on observational data.
+    def __init__(self, a):
+        super().__init__(q(a, 'light_years'), q(0), q(0, 'degrees'), unit='light_years')
+        # age = self.star.age.m
+        # self.star.z = q(49 * cos((2 * pi / 72) * age), 'kpc')
+        # # z difined as the star's shift ("bobbing") with respect to the galactic plane
+        # # also, this fuction is completely made up, as the actual formula dependes on observational data.
 
     def reset_period_and_speed(self, main):
         raise NotImplementedError
+
+
+class NeighbourhoodSystemOrbit(Orbit):
+    subtype = 'Neighbourhood'
+
+    def __init__(self, x, y, z, offset):
+        # spherical coordinates
+        rho = sqrt(x ** 2 + y ** 2 + z ** 2)
+        phi = acos(z / rho)
+        super().__init__(q(rho+offset, 'light_years'), q(0), q(phi, 'degrees'), unit='light_years')
 
 
 def from_stellar_resonance(star, planet, resonance: str):

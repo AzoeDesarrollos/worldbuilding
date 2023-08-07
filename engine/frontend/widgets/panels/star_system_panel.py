@@ -1,8 +1,9 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_TEXTO, Group
 from engine.frontend.widgets.basewidget import BaseWidget
 from .common import ListedArea, ColoredBody, TextButton
+from engine.equations.system_single import SingleSystem
+from engine.equations.system_binary import system_type
 from engine.backend import EventHandler, Systems
-from engine.equations.binary import system_type
 from engine.equations.space import Universe
 from ..values import ValueText
 from pygame import Surface
@@ -68,7 +69,9 @@ class StarSystemPanel(BaseWidget):
             chosen = choice(binary_systems)
             Universe.systems.remove(chosen)
             self.discarded_protos.append(chosen)
-            system_data.position = chosen.location
+            system_data.cartesian = chosen.location
+            offset = Universe.current_galaxy.current_neighbourhood.location
+            system_data.set_orbit(offset)
             self.count -= 1
 
             idx = len([s for s in self.systems if system_data.compare(s) is True])
@@ -86,16 +89,17 @@ class StarSystemPanel(BaseWidget):
         data = {}
         systems = Universe.current_galaxy.current_neighbourhood.systems
         for system in systems:
-            data[system.id] = {
-                'primary': system.primary.id,
-                'secondary': system.secondary.id,
-                'avg_s': system.average_separation.m,
-                'ecc_p': system.ecc_p.m,
-                "ecc_s": system.ecc_s.m,
-                "name": system.name,
-                "position": dict(zip(['x', 'y', 'z'], system.position)),
-                "neighbourhood_id": Universe.current_galaxy.current_neighbourhood.id
-            }
+            if system.celestial_type == 'system':
+                data[system.id] = {
+                    'primary': system.primary.id,
+                    'secondary': system.secondary.id,
+                    'avg_s': system.average_separation.m,
+                    'ecc_p': system.ecc_p.m,
+                    "ecc_s": system.ecc_s.m,
+                    "name": system.name,
+                    "position": dict(zip(['x', 'y', 'z'], system.cartesian)),
+                    "neighbourhood_id": Universe.current_galaxy.current_neighbourhood.id
+                }
 
         EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': data})
 
@@ -123,9 +127,11 @@ class StarSystemPanel(BaseWidget):
                 x = system_data['position']['x']
                 y = system_data['position']['y']
                 z = system_data['position']['z']
+                offset = Universe.current_galaxy.current_neighbourhood.location
 
                 system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
-                system.position = x, y, z
+                system.cartesian = x, y, z
+                system.set_orbit(offset)
                 Universe.add_astro_obj(system)
 
                 button = self.create_button(system)
@@ -144,9 +150,12 @@ class StarSystemPanel(BaseWidget):
                         chosen = choice(singles)
                         singles.remove(chosen)
                         Universe.remove_astro_obj(chosen)
-                        star.position = chosen.location
+                        system = SingleSystem(star)
+                        system.cartesian = chosen.location
+                        offset = Universe.current_galaxy.current_neighbourhood.location
+                        system.set_orbit(offset)
                         Systems.set_planetary_system(star)
-                        Universe.current_galaxy.current_neighbourhood.add_true_system(star)
+                        Universe.current_galaxy.current_neighbourhood.add_true_system(system)
                     except IndexError as error:
                         raise AssertionError(error)
 
@@ -172,11 +181,8 @@ class StarSystemPanel(BaseWidget):
 
     @staticmethod
     def check_system(sstm=None, prim_scnd=None):
-        """Se asegura de que los componentes del sistema
-        sean dos estrellas individuales.
-
-        Puede chequear un sistema ya creado o dos componentes estelares
-        aternativamente"""
+        """Se asegura de que los componentes del sistema sean dos estrellas individuales.
+        Puede chequear un sistema ya creado o dos componentes estelares aternativamente."""
         if sstm is not None:
             if sstm.letter is not None:
                 prim = sstm.primary
@@ -268,7 +274,12 @@ class SystemType(BaseWidget):
         if str(self.primary.value) == '':
             self.primary.value = obj
             self.has_values = True
+        elif str(self.secondary.value) == '':
+            self.secondary.value = obj
+            self.has_values = True
         else:
+            old_value = self.secondary.value
+            self.replace_secondary(old_value, obj)
             self.secondary.value = obj
             self.has_values = True
 
@@ -290,6 +301,14 @@ class SystemType(BaseWidget):
             stars.append(self.secondary.value)
         self.parent.stars_area.populate(stars, layer='one')
         self.erase()
+
+    def replace_secondary(self, replaced_star, replacement):
+        stars = Systems.loose_stars.copy()
+        stars.remove(replacement)
+        self.parent.stars_area.clear()
+        stars.append(replaced_star)
+        Systems.loose_stars.append(replaced_star)
+        self.parent.stars_area.populate(stars, layer='one')
 
     def get_determinants(self):
         names = ['primary', 'secondary', 'separation', 'ecc_p', 'ecc_s']
@@ -355,8 +374,8 @@ class ListedStar(ColoredBody):
 
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and event.origin == self and self.enabled:
-            self.parent.parent.current.set_bodies(self.object_data)
             self.parent.remove_listed(self)
+            self.parent.parent.current.set_bodies(self.object_data)
             self.kill()
             self.parent.sort()
 

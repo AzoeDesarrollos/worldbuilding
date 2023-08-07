@@ -2,7 +2,7 @@ from engine.frontend.widgets.panels.common import ListedBody, ListedArea, Colore
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
 from .star_system_panel import SystemType, SystemButton, DissolveButton
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.equations.binary import PlanetaryPTypeSystem
+from engine.equations.system_binary import PlanetaryPTypeSystem
 from engine.backend import Systems, q
 from pygame import Surface
 

@@ -3,6 +3,7 @@ from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.panels.common import TextButton
 from engine.frontend.widgets.object_type import ObjectType
 from pygame import Surface, mouse, draw, SRCALPHA, Color
+from engine.equations.system_single import SingleSystem
 from engine.backend import EventHandler, Systems, roll
 from engine.frontend.widgets.meta import Meta
 from .common import ColoredBody, ListedArea
@@ -82,22 +83,24 @@ class StarPanel(BasePanel):
             EventHandler.trigger(event.tipo + 'Data', 'Star', {"Single Systems": data2})
 
     def load_stars(self, event):
-        systems = []
+        # systems = []
         for id in event.data['Stars']:
             star_data = event.data['Stars'][id]
             star_data.update({'id': id})
-            star = self.current.set_star(star_data, inactive=True)
-            Universe.add_astro_obj(star)
+            star = Universe.get_astrobody_by(id, 'id', silenty=True)
+            if not star:
+                star = self.current.set_star(star_data, inactive=True)
+                Universe.add_astro_obj(star)
             if star not in self.stars:
                 self.stars.append(star)
                 self.add_button(star)
                 Renderer.update()
-            for keyword in ['Planets', 'Satellites', 'Asteroids']:
-                for id_p in event.data[keyword]:
-                    data = event.data[keyword][id_p]
-                    if data['system'] == id and star.id not in systems:
-                        Systems.set_planetary_system(star)
-                        systems.append(star.id)
+            # for keyword in ['Planets', 'Satellites', 'Asteroids']:
+            #     for id_p in event.data[keyword]:
+            #         data = event.data[keyword][id_p]
+            #         if data['system'] == id and star.id not in systems:
+            #             Systems.set_planetary_system(star)
+            #             systems.append(star.id)
 
         if len(self.star_buttons):
             self.current.enable()
@@ -128,10 +131,13 @@ class StarPanel(BasePanel):
                 star = self.stars[0]
                 singles = [system for system in Universe.systems if system.composition == 'single']
                 chosen = choice(singles)
-                Universe.systems.remove(chosen)
-                star.position = chosen.location
+                Universe.remove_astro_obj(chosen)
+                system = SingleSystem(star)
+                system.cartesian = chosen.location
+                offset = Universe.current_galaxy.current_neighbourhood.location
+                system.set_orbit(offset)
                 Systems.set_planetary_system(star)
-                Universe.current_galaxy.current_neighbourhood.add_true_system(star)
+                Universe.current_galaxy.current_neighbourhood.add_true_system(system)
                 self.parent.swap_neighbourhood_button.lock()
         elif binary_systems == 0:
             self.parent.set_skippable('Star System', True)
@@ -228,24 +234,24 @@ class StarType(ObjectType):
 
     def set_star(self, star_data, inactive=False):
         star = Star(star_data)
-        protos = [s for s in Universe.current_galaxy.current_neighbourhood.proto_stars if s.cls == star.cls]
-        assert len(protos), "You are not building\nthe star correctly.\n\nCheck it's mass."
-        proto = protos.pop()
-
-        star.idx = proto.idx
         neighbourhood = Universe.current_galaxy.current_neighbourhood
-        neighbourhood.proto_stars.remove(proto)
-        Systems.add_star(star)
+        if neighbourhood is not None:
+            protos = [s for s in Universe.current_galaxy.current_neighbourhood.proto_stars if s.cls == star.cls]
+            assert len(protos), "You are not building\nthe star correctly.\n\nCheck it's mass."
+            proto = protos.pop()
+            star.idx = proto.idx
+            neighbourhood.proto_stars.remove(proto)
+            Systems.add_star(star)
 
-        self.parent.hold_proto(proto)
-        if not inactive:
-            self.parent.button_add.set_link(proto)
-            self.parent.button_add.enable()
-            self.current = star
-            self.fill()
-            self.toggle_habitable()
-            self.parent.age_bar.cursor.set_x(star)
-        return star
+            self.parent.hold_proto(proto)
+            if not inactive:
+                self.parent.button_add.set_link(proto)
+                self.parent.button_add.enable()
+                self.current = star
+                self.fill()
+                self.toggle_habitable()
+                self.parent.age_bar.cursor.set_x(star)
+            return star
 
     def unset_star(self, proto):
         neighbourhood = Universe.current_galaxy.current_neighbourhood

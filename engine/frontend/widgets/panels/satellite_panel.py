@@ -37,7 +37,7 @@ class SatellitePanel(BasePanel):
         text += 'Input its mass first, and then select its composition below.\n\n'
         text += 'You can copy its compostition from a given planet or set it randomly.\n\n'
         text += 'You can also set the percentages manually.'
-        self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
+        self.erase_text_area = self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
         ra = self.write('Composition', f1, COLOR_AREA, topleft=(18, 420))
         self.write('Satellites', f1, COLOR_AREA, topleft=(self.area_buttons.x+2, self.area_buttons.y))
         self.copy_button = CopyCompositionButton(self, ra.left, ra.bottom + 6, ra.centerx)
@@ -51,21 +51,25 @@ class SatellitePanel(BasePanel):
                             self.mass_number, self.random_button, layer=1)
         self.satellites = Group()
         self.moons = []
-        EventHandler.register(self.load_satellites, 'LoadData')
         EventHandler.register(self.save_satellites, 'Save')
         EventHandler.register(self.name_current, 'NameObject')
+        EventHandler.register(self.hold_loaded_bodies, 'LoadData')
+        self.holded_data = {}
 
-    def load_satellites(self, event):
+    def hold_loaded_bodies(self, event):
         if 'Satellites' in event.data and len(event.data['Satellites']):
-            self.enable()
-            for idx, id in enumerate(event.data['Satellites']):
-                satellite_data = event.data['Satellites'][id]
-                satellite_data['id'] = id
-                moon = major_moon_by_composition(satellite_data)
-                moon.idx = len([i for i in Systems.get_current().satellites if i.cls == moon.cls])
-                system = Systems.get_system_by_id(satellite_data['system'])
-                if system is not None and system.add_astro_obj(moon):
-                    self.add_button(moon)
+            self.holded_data.update(event.data['Satellites'])
+
+    def load_satellites(self):
+        self.enable()
+        for idx, id in enumerate(self.holded_data):
+            satellite_data = self.holded_data[id]
+            satellite_data['id'] = id
+            moon = major_moon_by_composition(satellite_data)
+            moon.idx = len([i for i in Systems.get_current().satellites if i.cls == moon.cls])
+            system = Systems.get_system_by_id(satellite_data['system'])
+            if system is not None and system.add_astro_obj(moon):
+                self.add_button(moon)
 
     def save_satellites(self, event):
         data = {}
@@ -85,7 +89,7 @@ class SatellitePanel(BasePanel):
             button.hide()
         for button in self.satellites.get_widgets_from_layer(idx):
             button.show()
-        self.sort_buttons(self.satellites.get_widgets_from_layer(Systems.get_current().id))
+        self.sort_buttons(self.satellites.get_widgets_from_layer(Systems.get_current().id),x=self.curr_x)
 
     def add_button(self, moon):
         button = SatelliteButton(self.current, moon, str(moon), self.curr_x, self.curr_y)
@@ -125,6 +129,7 @@ class SatellitePanel(BasePanel):
 
     def show(self):
         super().show()
+        self.load_satellites()
         if self.mass_number is None:
             self.properties.add()
         for pr in self.properties.widgets():

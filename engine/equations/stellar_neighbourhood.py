@@ -1,4 +1,5 @@
 ﻿from engine.backend import q, generate_id, turn_into_roman, roll
+from .orbit import GalacticNeighbourhoodOrbit
 from math import pi, acos, sin, cos, floor
 from .galaxy import ProtoStar
 from random import uniform
@@ -209,6 +210,8 @@ class DefinedNeighbourhood:
 
     nei_seed = None
 
+    orbit = None
+
     def __init__(self, idx, data):
         self.idx = idx
         self.id = data['id'] if 'id' in data else generate_id()
@@ -229,6 +232,7 @@ class DefinedNeighbourhood:
             "Triple": 0,
             "Multiple": 0
         }
+        self.orbit = GalacticNeighbourhoodOrbit(self.location)
 
     def set_quantity(self, key, quantity):
         self.quantities[key] = quantity

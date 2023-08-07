@@ -7,6 +7,7 @@ from engine.frontend.widgets.basewidget import BaseWidget
 from engine.backend import EventHandler, Systems
 from engine.frontend.widgets.meta import Meta
 from .common import ColoredBody, TextButton
+from engine.equations.space import Universe
 from engine.equations.planet import Planet
 from pygame import Rect
 
@@ -84,6 +85,7 @@ class PlanetPanel(BasePanel):
         self.button_del.disable()
 
     def show_current(self, idx):
+        self.current.load_data()
         for button in self.planet_buttons.widgets():
             button.hide()
         for button in self.planet_buttons.get_widgets_from_layer(idx):
@@ -190,7 +192,8 @@ class PlanetType(ObjectType):
         self.hab_rect = self.habitable.get_rect(centerx=460, y=self.parent.rect.y + 250)
         self.uhb_rect = self.uninhabitable.get_rect(centerx=460, y=self.parent.rect.y + 250)
 
-        EventHandler.register(self.load_planet, 'LoadData')
+        EventHandler.register(self.hold_loaded_bodies, 'LoadData')
+        self.holded_data = {}
 
     def enable(self):
         for arg in self.properties.widgets():
@@ -202,22 +205,25 @@ class PlanetType(ObjectType):
             arg.disable()
         super().disable()
 
-    def load_planet(self, event):
+    def hold_loaded_bodies(self, event):
         if 'Planets' in event.data and len(event.data['Planets']):
-            for id in event.data['Planets']:
-                planet_data = event.data['Planets'][id]
-                planet_data['id'] = id
-                system = Systems.get_system_by_id(planet_data['system'])
-                if system is not None:
-                    planet_data['parent'] = system
+            self.holded_data.update(event.data['Planets'])
 
-                planet = Planet(planet_data)
-                if planet not in self.parent.planets:
-                    btn = self.create_button(planet)
-                    if planet.composition is not None:
-                        planet.sprite = PlanetSprite(self, planet, 460, 100)
-                        self.properties.add(planet.sprite, layer=3)
-                    btn.hide()
+    def load_data(self):
+        for id in self.holded_data:
+            planet_data = self.holded_data[id]
+            planet_data['id'] = id
+            system = Universe.get_astrobody_by(planet_data['system'],'id')
+            if system is not None:
+                planet_data['parent'] = system
+
+            planet = Planet(planet_data)
+            if planet not in self.parent.planets:
+                btn = self.create_button(planet)
+                if planet.composition is not None:
+                    planet.sprite = PlanetSprite(self, planet, 460, 100)
+                    self.properties.add(planet.sprite, layer=3)
+                btn.hide()
 
     def set_planet(self, planet):
         if self.current is not None and self.current.sprite is not None:
