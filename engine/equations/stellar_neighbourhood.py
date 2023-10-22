@@ -241,6 +241,11 @@ class DefinedNeighbourhood:
         if system not in self.systems:
             self.systems.append(system)
 
+    def get_system(self, id):
+        for system in self.systems:
+            if system.id == id:
+                return system
+
     def __repr__(self):
         return f'{turn_into_roman(self.idx)}@{str(self.location)}'
 
@@ -272,7 +277,7 @@ class DefinedNeighbourhood:
 
     @staticmethod
     def _roll_seed():
-        rolled = roll(1.0, 2*10**8)
+        rolled = roll(1.0, 2 * 10 ** 8)
         return int(rolled)
 
 

@@ -317,11 +317,10 @@ class Systems:
             if len(event.data[key]):
                 if key == 'Single Systems':
                     if len(cls.save_data[key]) == 0:
-                        cls.save_data[key]= {}
+                        cls.save_data[key] = {}
                     for key_id in event.data[key]:
                         cls.save_data[key][key_id] = event.data[key][key_id]
                 cls.save_data[key].update(event.data[key])
-
 
         if not EventHandler.is_quequed('SaveDataFile'):
             EventHandler.trigger('SaveDataFile', 'EngineData', cls.save_data)

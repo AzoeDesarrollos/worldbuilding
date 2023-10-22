@@ -1,4 +1,4 @@
-from .star_system_panel import SystemType, UndoButton, SetupButton, SystemButton, DissolveButton
+from .star_system_panel import SystemType, UndoButton, SetupButton, SystemButton, DissolveButton, AutoButton
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
 from engine.equations.system_single import SingleSystem, load_single_systems
 from engine.frontend.widgets.panels.common import ListedBody, ListedArea
@@ -7,8 +7,8 @@ from engine.equations.system_binary import system_type
 from engine.backend import EventHandler, Systems
 from engine.equations.space import Universe
 from ..basewidget import BaseWidget
+from pygame import Surface, mouse
 from ..values import ValueText
-from pygame import Surface
 from random import choice
 
 
@@ -47,7 +47,9 @@ class MultipleStarsPanel(BaseWidget):
         self.undo_button = UndoButton(self, 234, 416)
         self.setup_button = CreateSystemButton(self, 484, 416)
         self.dissolve_button = DissolveButton(self, 334, 416)
-        self.properties.add(self.current, self.stars_area, self.undo_button, self.setup_button, self.dissolve_button)
+        self.auto_button = AutoButton(self, ANCHO - 260, 133, set_choice='S')
+        self.properties.add(self.current, self.stars_area, self.undo_button,
+                            self.setup_button, self.dissolve_button, self.auto_button)
         EventHandler.register(self.name_current, 'NameObject')
 
         t = " Systems remaining"
@@ -107,11 +109,12 @@ class MultipleStarsPanel(BaseWidget):
         assert chosen is not None, "System is nonsensical"
         Universe.systems.remove(chosen)
         system_data.cartesian = chosen.location
-        offset = Universe.current_galaxy.current_neighbourhood.location
+        neighbourhood = Universe.current_galaxy.current_neighbourhood
+        offset = neighbourhood.location
         system_data.orbit = NeighbourhoodSystemOrbit(*system_data.cartesian, offset)
         self.discarded_protos.append(chosen)
         if system_data not in self.systems:
-            all_systems = set(Universe.current_galaxy.current_neighbourhood.systems+self.systems)
+            all_systems = set(neighbourhood.systems+self.systems)
             idx = len([s for s in all_systems if system_data.compare(s) is True])
             button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
             self.systems.append(system_data)
@@ -296,6 +299,10 @@ class SystemsType(SystemType):
         if self.primary.value != '' and self.secondary.value != '':
             for obj in self.properties.get_widgets_from_layer(2):
                 obj.enable()
+            if not self.has_values:
+                x, y = self.parent.auto_button.rect.center
+                mouse.set_pos(x, y)
+                self.parent.auto_button.enable()
         return True
 
     def check_contruction(self, system_2):

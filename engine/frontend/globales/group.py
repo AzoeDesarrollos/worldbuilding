@@ -70,9 +70,10 @@ class Group:
         return self._list
 
     def get_widget(self, id):
-        for item in self._list:
-            if hasattr(item, 'id') and item.id == id:
-                return item
+        if type(id) is str:
+            for item in self._list:
+                if hasattr(item, 'id') and item.id == id:
+                    return item
 
         if type(id) is int and 0 <= id <= len(self._list):
             return self._list[id]

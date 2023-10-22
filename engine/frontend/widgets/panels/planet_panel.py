@@ -193,7 +193,7 @@ class PlanetType(ObjectType):
         self.uhb_rect = self.uninhabitable.get_rect(centerx=460, y=self.parent.rect.y + 250)
 
         EventHandler.register(self.hold_loaded_bodies, 'LoadData')
-        self.holded_data = {}
+        self.held_data = {}
 
     def enable(self):
         for arg in self.properties.widgets():
@@ -207,13 +207,14 @@ class PlanetType(ObjectType):
 
     def hold_loaded_bodies(self, event):
         if 'Planets' in event.data and len(event.data['Planets']):
-            self.holded_data.update(event.data['Planets'])
+            self.held_data.update(event.data['Planets'])
 
     def load_data(self):
-        for id in self.holded_data:
-            planet_data = self.holded_data[id]
+        for id in self.held_data:
+            planet_data = self.held_data[id]
             planet_data['id'] = id
-            system = Universe.get_astrobody_by(planet_data['system'],'id')
+            star = Universe.current_galaxy.current_neighbourhood.get_system(planet_data['system']).star
+            system = Systems.get_system_by_star(star)
             if system is not None:
                 planet_data['parent'] = system
 
@@ -224,6 +225,7 @@ class PlanetType(ObjectType):
                     planet.sprite = PlanetSprite(self, planet, 460, 100)
                     self.properties.add(planet.sprite, layer=3)
                 btn.hide()
+        self.held_data.clear()
 
     def set_planet(self, planet):
         if self.current is not None and self.current.sprite is not None:
@@ -351,6 +353,7 @@ class Unit(Meta):
     enabled = True
     mass_number = None
     curr_idx = 0
+    image = None
 
     def __init__(self, parent, x, y):
         super().__init__(parent)

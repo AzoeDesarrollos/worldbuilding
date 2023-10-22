@@ -1,6 +1,6 @@
 from math import pi, sqrt, asin, sin, cos
 from engine.backend.util import roll, q
-from .day_lenght import aprox_day_leght
+from .day_lenght import aprox_daylenght
 from pygame import Rect
 
 
@@ -32,7 +32,7 @@ class StarSystemBody(Flagable):
     _age = -1
     _rotation = -1
 
-    formation = 0
+    formation: q = None
     reference_rotation = None
     unit = ''
 
@@ -43,8 +43,8 @@ class StarSystemBody(Flagable):
 
     def set_parent(self, parent):
         self.parent = parent
-        # self.age = parent.age.to('years')
-        # self.formation = parent.age.to('billion years')
+        self.age = parent.age.to('years')
+        self.formation = parent.age.to('billion years')
 
     def is_orbiting_a_star(self):
         if hasattr(self.parent, 'parent'):
@@ -79,10 +79,7 @@ class StarSystemBody(Flagable):
         if type(new) is q:
             if type(self._rotation) in (int, q):
                 self._rotation = new.to(self.unit + '_rotation')
-                if self.reference_rotation is None:
-                    self.reference_rotation = round(new.to('hours/day').m, 3)
-            else:
-                self.reset_rotation()
+                self.reference_rotation = round(new.to('hours/day').m, 3)
         else:
             self._rotation = new
 
@@ -103,7 +100,7 @@ class StarSystemBody(Flagable):
         else:
             'age equals formation, so it is the present'
             now = 0
-        self._rotation = q(aprox_day_leght(self, now), self.unit + '_rotation')
+        self._rotation = q(aprox_daylenght(self, now), self.unit + '_rotation')
 
     def update_everything(self, age=None):
         if age is not None:

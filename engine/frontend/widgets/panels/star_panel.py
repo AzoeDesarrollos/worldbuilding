@@ -328,7 +328,7 @@ class StarType(ObjectType):
         system = Systems.get_system_by_star(self.current)
         if system is not None:
             for astrobody in system.astro_bodies:
-                astrobody.update_everything()
+                astrobody.update_everything(system.age)
 
 
 class AddStarButton(TextButton):

@@ -464,4 +464,3 @@ class LightWave:
     @property
     def color(self):
         return self._color
-

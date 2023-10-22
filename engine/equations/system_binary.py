@@ -74,6 +74,8 @@ class BinarySystem(AbstractBinary):
     _inner_forbidden = None
     _outer_forbidden = None
 
+    orbit = None
+
     def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, unit='au', id=None):
         super().__init__(primary, secondary, avgsep, ep=ep, es=es, unit=unit)
 
@@ -154,7 +156,8 @@ class BinarySystem(AbstractBinary):
         self._cartesian = values
 
     def set_orbit(self, offset):
-        self.orbit = NeighbourhoodSystemOrbit(*self._cartesian,offset)
+        self.orbit = NeighbourhoodSystemOrbit(*self._cartesian, offset)
+
 
 class PTypeSystem(BinarySystem):
     letter = 'P'
@@ -174,6 +177,7 @@ class PTypeSystem(BinarySystem):
         self.secondary.orbit = self._orbit_type(self.secondary, self.primary, self.secondary_max_sep, self.ecc_s)
 
         assert self.min_sep.m > 0.1, "Stars will merge at {:~} minimum distance".format(self.min_sep)
+        self.age = max([self.primary.age, self.secondary.age])
         self.primary.set_parent(self)
         self.secondary.set_parent(self)
         self._mass = primary.mass + secondary.mass
@@ -193,8 +197,6 @@ class PTypeSystem(BinarySystem):
         self.outer_forbbiden_zone = q(round(self.max_sep.m * 3, 3), 'au')
 
         self.habitable_orbit = round(self.max_sep * 4, 3)
-        age = max([self.primary.age, self.secondary.age])
-        self.age = age
         self.evolution_id = self.id
 
     def set_qs(self):
@@ -218,6 +220,7 @@ class STypeSystem(BinarySystem):
         super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
         self.primary.orbit = self._orbit_type(self.primary, self.secondary, self.primary_max_sep, self.ecc_p)
         self.secondary.orbit = self._orbit_type(self.secondary, self.primary, self.secondary_max_sep, self.ecc_s)
+        self.age = max([self.primary.age, self.secondary.age])
         self.primary.set_parent(self)
         self.secondary.set_parent(self)
         self.shared_mass = primary.mass + secondary.mass

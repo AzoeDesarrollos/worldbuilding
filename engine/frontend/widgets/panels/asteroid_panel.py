@@ -27,9 +27,12 @@ class AsteroidPanel(BasePanel):
         self.area_type = Rect(32, 32, ANCHO, ALTO - (self.area_buttons.h + 200))
         text = 'Create your asteroids here.\n\n'
         text += 'Input its three axes first, and then select its composition below.\n\n'
+        text += ('For a Tri-Axial Ellipsoid: A > B > C\n\n'
+                 'For a Obleate Spheroid: A = B > C\n\n'
+                 'For a Prolate Spheroid: A = B < C\n\n')
         text += 'You can copy its compostition from a given planet or set it randomly.\n\n'
         text += 'You can also set the percentages manually.'
-        self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
+        self.erase_text_area = self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=50, j=1)
         self.curr_x = self.area_buttons.x + 3
         self.curr_y = self.area_buttons.y + 21
 

@@ -1,12 +1,12 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_TEXTO, Group
 from engine.frontend.widgets.basewidget import BaseWidget
+from engine.backend import EventHandler, Systems, roll, q
 from .common import ListedArea, ColoredBody, TextButton
 from engine.equations.system_single import SingleSystem
 from engine.equations.system_binary import system_type
-from engine.backend import EventHandler, Systems
 from engine.equations.space import Universe
+from pygame import Surface, mouse
 from ..values import ValueText
-from pygame import Surface
 from random import choice
 
 
@@ -36,7 +36,9 @@ class StarSystemPanel(BaseWidget):
         self.setup_button = SetupButton(self, 484, 416)
         self.dissolve_button = DissolveButton(self, 334, 416)
         self.undo_button = UndoButton(self, 234, 416)
-        self.properties.add(self.setup_button, self.dissolve_button, self.undo_button, self.stars_area, self.current)
+        self.auto_button = AutomaticSystemDataButton(self, ANCHO - 260, 133)
+        self.properties.add(self.setup_button, self.dissolve_button, self.undo_button,
+                            self.stars_area, self.current, self.auto_button)
         self.system_buttons = Group()
         EventHandler.register(self.save_systems, 'Save')
         EventHandler.register(self.load_systems, 'LoadData')
@@ -291,6 +293,10 @@ class SystemType(BaseWidget):
         if self.primary.value != '' and self.secondary.value != '':
             for obj in self.properties.get_widgets_from_layer(2):
                 obj.enable()
+            if not self.has_values:
+                x, y = self.parent.auto_button.rect.center
+                mouse.set_pos(x, y)
+            self.parent.auto_button.enable()
 
     def unset_stars(self):
         stars = Systems.loose_stars.copy()
@@ -464,3 +470,42 @@ class UndoButton(TextButton):
         if self.enabled and event.data['button'] == 1 and event.origin == self:
             self.parent.current.unset_stars()
             self.disable()
+
+
+class AutomaticSystemDataButton(TextButton):
+
+    def __init__(self, parent, x, y, set_choice=None):
+        super().__init__(parent, '[Auto]', x, y)
+        self.chosen = set_choice
+
+    def on_mousebuttondown(self, event):
+        if self.enabled and event.data['button'] == 1 and event.origin == self:
+            choices = ['S', 'P']
+            if self.chosen is None:
+                letter = choice(choices)
+            else:
+                letter = self.chosen
+            if letter == 'P':
+                min_a = 0.15
+                max_a = 6
+            else:
+                min_a = 120
+                max_a = 600
+            a = round(roll(min_a, max_a), 3)
+            e_1 = roll(0.4, 0.7)
+            e_2 = roll(0.4, 0.7)
+
+            a_widget = self.parent.current.properties.get_widget(2)
+            e1__widget = self.parent.current.properties.get_widget(3)
+            e2_widget = self.parent.current.properties.get_widget(4)
+
+            a_widget.value = q(a, "EU")
+            e1__widget.value = q(e_1)
+            e2_widget.value = q(e_2)
+            self.parent.current.fill()
+            self.disable()
+            x, y = self.parent.setup_button.rect.center
+            mouse.set_pos(x, y)
+
+
+AutoButton = AutomaticSystemDataButton
