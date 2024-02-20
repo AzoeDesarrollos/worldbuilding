@@ -1,7 +1,7 @@
 from engine.frontend.graphs.orbital_properties import rotation_loop
 from engine.frontend.globales import Renderer
+from .general import Ellipse, Flagable, Point
 from math import sqrt, pow, cos, sin, acos
-from .general import Ellipse, Flagable
 from engine.backend import q
 from decimal import Decimal
 from .space import Universe
@@ -146,6 +146,7 @@ class Orbit(Flagable, Ellipse):
         self._i = float(i.m)
         self._Q = abs(self._a * (1 + self._e))
         self._q = abs(self._a * (1 - self._e))
+        self.set_focus(self._q)
 
         if self._i in (0, 180):
             self.motion = 'equatorial'
@@ -185,6 +186,12 @@ class Orbit(Flagable, Ellipse):
 
     def set_true_anomaly(self, value: float):
         self.true_anomaly = q(round(value, 3), 'degree')
+
+    def set_focus(self, periapsis):
+        peri_point = Point(periapsis, name='Periapsis')
+        foci = [self.f1, self.f2]
+        closeness = [focus.how_close(peri_point) for focus in foci]
+        self.focus = foci[closeness.index(min(closeness))]
 
     @property
     def a(self):

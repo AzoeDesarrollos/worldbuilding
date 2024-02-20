@@ -58,6 +58,9 @@ class BasePanel(BaseWidget):
     def hide(self):
         super().hide()
         self.current.hide()
+        if hasattr(self, 'properties'):
+            for widget in self.properties.widgets():
+                widget.deregister()
 
     def __repr__(self):
         return self.name + ' Panel'

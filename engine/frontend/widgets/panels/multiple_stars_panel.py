@@ -114,7 +114,7 @@ class MultipleStarsPanel(BaseWidget):
         system_data.orbit = NeighbourhoodSystemOrbit(*system_data.cartesian, offset)
         self.discarded_protos.append(chosen)
         if system_data not in self.systems:
-            all_systems = set(neighbourhood.systems+self.systems)
+            all_systems = set(neighbourhood.systems + self.systems)
             idx = len([s for s in all_systems if system_data.compare(s) is True])
             button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
             self.systems.append(system_data)
@@ -198,6 +198,22 @@ class MultipleStarsPanel(BaseWidget):
                     pl = '' if total == 1 else 's'
                     warning = f"Complete the systems before continuing.\n\nThere'{verb} {total} system{pl} left."
                     raise AssertionError(warning)
+
+        if len(singles):  # WIP
+            neighbourhood = Universe.current_galaxy.current_neighbourhood
+            brown = [choice(['Y', 'W', 'L']) for _ in range(neighbourhood.other['brown'])]
+            white = ['D' for _ in range(neighbourhood.other['white'])]
+            black = ['Black hole' for _ in range(neighbourhood.other['black'])]
+            stellar_mass_objects = brown + white + black
+            for it in stellar_mass_objects:
+                chosen = choice(singles)
+                singles.remove(chosen)
+                Universe.remove_astro_obj(chosen)
+                system = SingleSystem(it, neighbourhood.id)
+                system.cartesian = chosen.location
+                offset = neighbourhood.location
+                system.set_orbit(offset)
+                Universe.current_galaxy.current_neighbourhood.add_true_system(system)
 
         for other in binaries:
             Systems.set_planetary_system(other)

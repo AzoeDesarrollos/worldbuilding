@@ -100,6 +100,16 @@ class NeighbourhoodPanel(BaseWidget):
         density = widgets[2].value
         if data is None:
             data = {'location': location, 'radius': radius, 'density': density}
+        else:
+            density = data['density']
+            radius = data['radius']
+
+        self.neighbourhood.characteristics.recalculate(density, radius)
+        brown = self.neighbourhood.characteristics.stars('bd')
+        white = self.neighbourhood.characteristics.stars('wd')
+        black = self.neighbourhood.characteristics.stars('black hole')
+        other = {'brown': brown, 'white': white, 'black': black}
+        data.update({'other': other})
 
         object_data = DefinedNeighbourhood(len(self.neighbourhoods) + 1, data)
         self.neighbourhoods.append(object_data)

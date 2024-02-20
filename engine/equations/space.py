@@ -12,6 +12,12 @@ class Universe:
     bubbles = None
     systems = None
 
+    black_holes = None
+    neutron_stars = None
+    brown_dwarfs = None
+    white_dwarfs = None
+    compact_objects = None
+
     aparent_brightness = None
     relative_sizes = None
     distances = None
@@ -32,6 +38,12 @@ class Universe:
         cls.galaxies = []
         cls.bubbles = []
         cls.systems = []
+
+        cls.black_holes = []
+        cls.neutron_stars = []
+        cls.brown_dwarfs = []
+        cls.white_dwarfs = []
+        cls.compact_objects = []
 
         cls.aparent_brightness = {}
         cls.relative_sizes = {}
@@ -68,11 +80,13 @@ class Universe:
             group.append(astro_obj)
             if astro_obj.celestial_type != 'galaxy':
                 cls.astro_bodies.append(astro_obj)
+            if astro_obj.celestial_type == 'compact':
+                cls.compact_objects.append(astro_obj)
         if hasattr(astro_obj, 'clase'):
             astro_obj.idx = len([i for i in group if i.clase == astro_obj.clase]) - 1
         elif hasattr(astro_obj, 'cls'):
             astro_obj.idx = len([i for i in group if i.cls == astro_obj.cls]) - 1
-        elif group == cls.binary_planets:
+        elif group in [cls.binary_planets, cls.brown_dwarfs, cls.white_dwarfs, cls.neutron_stars, cls.black_holes]:
             astro_obj.idx = len(group) - 1
         elif astro_obj.celestial_type == 'galaxy' and len(group) == 1:
             next(cls.galaxy_cycler)
@@ -107,6 +121,16 @@ class Universe:
             group = cls.bubbles
         elif astro_obj.celestial_type == 'system':
             group = cls.systems
+        elif astro_obj.celestial_type == 'compact':
+            if astro_obj.compact_subtype == 'black':
+                group = cls.black_holes
+            elif astro_obj.compact_subtype == 'white':
+                group = cls.white_dwarfs
+            elif astro_obj.compact_subtype == 'neutron':
+                group = cls.neutron_stars
+            else:
+                group = cls.brown_dwarfs
+
         return group
 
     @classmethod
@@ -124,11 +148,11 @@ class Universe:
                     else:
                         for star in system:
                             stars.append(star)
-        # for system in Systems.get_stars_and_systems():
-        #     if system.star_system.letter == 'P':
-        #         stars = [system.star_system]
-        #     else:
-        #         stars = [s for s in system.star_system]
+            # for system in Systems.get_stars_and_systems():
+            #     if system.star_system.letter == 'P':
+            #         stars = [system.star_system]
+            #     else:
+            #         stars = [s for s in system.star_system]
 
             for star in stars:
                 if body.orbit is not None and star.id not in cls.aparent_brightness[body.id]:

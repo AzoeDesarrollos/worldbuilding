@@ -6,6 +6,7 @@ class Meta(BaseWidget):
     img_uns = None
     img_dis = None
     selected = False
+    image = None
 
     has_mouseover = False
 

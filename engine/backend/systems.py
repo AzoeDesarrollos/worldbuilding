@@ -32,7 +32,7 @@ class Systems:
     universe = None
 
     just_stars = None
-    # the difference between just_stars and loose_stars is that loose_stars changes when the stars from a system,
+    # the difference between just_stars and loose_stars is that loose_stars changes when the stars form a system,
     # whereas just_stars is just the stars (duh), regardless if they are part of a system or not, and thus is more
     # static.
 

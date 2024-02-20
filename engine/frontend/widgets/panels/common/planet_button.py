@@ -13,7 +13,7 @@ class ColoredBody(ListedBody):
 
     def set_color(self, astro):
         color = COLOR_TEXTO
-        if astro.celestial_type not in ('star', 'system'):
+        if astro.celestial_type not in ('star', 'system', 'compact'):
             if astro.clase == 'Terrestial Planet':
                 if astro.habitable:
                     color = COLOR_HABITABLE

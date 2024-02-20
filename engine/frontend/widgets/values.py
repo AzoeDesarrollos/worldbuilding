@@ -78,6 +78,7 @@ class ValueText(Meta):
 
     def disable(self):
         super().disable()
+        self.image = self.img_dis
         self.text_area.disable()
 
     def show(self):
@@ -285,7 +286,7 @@ class NumberArea(BaseArea, IncrementalValue):
                     self.grandparent.set_star({self.parent.text.lower(): float(self.value)})
 
                 elif self.great_grandparent.name in ['Star System', 'Orbit', 'Multiple Stars',
-                                                     'Double Planets', 'Neighbourhood']:
+                                                     'Double Planets', 'Neighbourhood', 'Compact Objects']:
                     self.grandparent.fill()
 
                 elif self.great_grandparent.name in ['Satellite', 'Asteroid']:

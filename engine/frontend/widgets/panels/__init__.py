@@ -13,11 +13,13 @@ from .albedo_panel import AlbedoPanel
 from .start_panel import StartPanel
 from .double_planets_panel import DoublePlanetsPanel
 from .neighbourhood_panel import NeighbourhoodPanel
+from .compact_objects_panel import CompactObjectsPanel
 
 panels = [
     StartPanel,
     NeighbourhoodPanel,
     StarPanel,
+    CompactObjectsPanel,
     StarSystemPanel,
     MultipleStarsPanel,
     PlanetPanel,

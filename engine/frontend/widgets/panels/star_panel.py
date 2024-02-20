@@ -1,10 +1,10 @@
-from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, ANCHO, COLOR_BOX, COLOR_SELECTED, Renderer, Group
+from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, ANCHO, COLOR_BOX, Renderer, Group
+from engine.frontend.widgets.panels.common import TextButton, BaseSlider, BaseCursor
 from engine.frontend.widgets.panels.base_panel import BasePanel
-from engine.frontend.widgets.panels.common import TextButton
 from engine.frontend.widgets.object_type import ObjectType
-from pygame import Surface, mouse, draw, SRCALPHA, Color
 from engine.equations.system_single import SingleSystem
 from engine.backend import EventHandler, Systems, roll
+from pygame import Surface, SRCALPHA, Color, draw
 from engine.frontend.widgets.meta import Meta
 from .common import ColoredBody, ListedArea
 from engine.equations.space import Universe
@@ -381,72 +381,23 @@ class StarButton(ColoredBody):
                 self.parent.parent.on_mousebuttondown(event)
 
 
-class AgeBar(Meta):
-    cursor = None
-
+class AgeBar(BaseSlider):
     def __init__(self, parent, x, y):
-        super().__init__(parent)
-
-        self.image = Surface((401, 7))
-        self.rect = self.image.get_rect(topleft=[x, y])
-        self.image.fill(COLOR_BOX, [0, 0, 400, 7])
-        draw.aaline(self.image, COLOR_TEXTO, [0, 3], [self.rect.w, 3])
-        draw.aaline(self.image, COLOR_TEXTO, [0, 0], [0, 7])
-        draw.aaline(self.image, COLOR_TEXTO, [184, 0], [184, 7])
+        super().__init__(parent, x, y, 401)
         self.cursor = AgeCursor(self, self.rect.centery)
-
-    def on_mousebuttonup(self, event):
-        if self.cursor is not None and event.origin == self:
-            self.cursor.pressed = False
-
-    def enable(self):
-        self.cursor.show()
+        draw.aaline(self.image, COLOR_TEXTO, [184, 0], [184, 7])
 
     def show(self):
         super().show()
         if self.parent.current.has_values:
             self.cursor.show()
 
-    def hide(self):
-        super().hide()
-        self.cursor.hide()
 
-
-class AgeCursor(Meta):
-    pressed = False
-    enabled = True
-
-    def __init__(self, parent, y):
-        super().__init__(parent)
-        self.img_uns = self.crear(1, COLOR_TEXTO)
-        self.img_sel = self.crear(3, COLOR_SELECTED)
-        self.img_dis = self.crear(5, COLOR_TEXTO)
-        self.image = self.img_uns
-        self.rect = self.image.get_rect(centery=y)
-        self.centerx = self.rect.centerx
-
-    @staticmethod
-    def crear(w, color):
-        image = Surface((w, 13))
-        image.fill(color)
-        return image
-
-    def select(self):
-        super().select()
-        self.rect = self.image.get_rect(centerx=self.centerx)
-
-    def deselect(self):
-        super().deselect()
-        self.rect = self.image.get_rect(centerx=self.centerx)
-
-    def on_mousebuttondown(self, event):
-        if event.data['button'] == 1 and event.origin == self:
-            EventHandler.trigger('DeselectOthers', self, {})
-            self.pressed = True
+class AgeCursor(BaseCursor):
 
     def on_mousebuttonup(self, event):
+        super().on_mousebuttonup(event)
         if event.data['button'] == 1 and event.origin == self:
-            self.pressed = False
             self.parent.parent.current.propagate_age_changes()
 
     def on_movement(self, x: int):
@@ -458,10 +409,7 @@ class AgeCursor(Meta):
 
     def update(self):
         super().update()
-        x = mouse.get_pos()[0]
         if self.pressed:
-            self.has_mouseover = True
-            self.rect.x = x if 50 <= x <= 450 else self.rect.x
             self.on_movement(self.rect.x)
 
 

@@ -5,6 +5,7 @@ from datetime import datetime
 from pint import UnitRegistry
 from os import getcwd, path
 from pygame import quit
+from time import sleep
 from sys import exit
 import json
 
@@ -88,10 +89,12 @@ def salir_handler(event):
     data = event.data.get('mensaje', '')
     print('Saliendo...\nStatus: ' + data)
     quit()
+    # noinspection PyUnreachableCode
     exit()
 
 
 def generate_id():
+    sleep(0.002)
     now = ''.join([char for char in str(datetime.now()) if char not in [' ', '.', ':', '-']])
     now = now[0:-5] + '-' + now[-5:]
     return now

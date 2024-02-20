@@ -106,7 +106,7 @@ class WidgetHandler:
             elif e.type == MOUSEBUTTONUP:
                 widgets = [i for i in cls.contents.sprites() if i.rect.collidepoint(e.pos)]
                 widgets.sort(key=lambda o: o.layer, reverse=True)
-                if cls.active is None:
+                if cls.active is None and len(widgets):
                     EventHandler.trigger('onMouseButtonUp', widgets[0], {'button': e.button, 'pos': e.pos})
                 else:
                     EventHandler.trigger('onMouseButtonUp', cls.active, {'button': e.button, 'pos': e.pos})

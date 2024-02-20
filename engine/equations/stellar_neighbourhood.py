@@ -3,7 +3,6 @@ from .orbit import GalacticNeighbourhoodOrbit
 from math import pi, acos, sin, cos, floor
 from .galaxy import ProtoStar
 from random import uniform
-from time import sleep
 
 
 class StellarNeighbourhood:
@@ -62,6 +61,9 @@ class StellarNeighbourhood:
         self.radius = q(radius, 'ly')
         self._calculate(self.density, self.radius.m)
 
+    def recalculate(self, density, radius):
+        self._calculate(float(density), float(radius))
+
     def _calculate(self, density, radius):
         stellar_factor = density * ((4 / 3) * pi * radius ** 3)
 
@@ -89,6 +91,8 @@ class StellarNeighbourhood:
         self._triple = int(round(((self.main_sequence_stars / 1.58) * 0.08), 0))
         self._multiple = int(round(((self.main_sequence_stars / 1.58) * 0.03), 0))
         self._single = int(self.main_sequence_stars - ((self._binary * 2) + (self._triple * 3) + (self._multiple * 4)))
+        # se agregan los cuerpos compatos porque por definicón son sistemas simples.
+        self._single += int(self._w_dwarfs + self._b_dwarfs + self._other)
 
         self._total_systems = int(sum([self._single, self._binary, self._triple, self._multiple]))
 
@@ -106,7 +110,7 @@ class StellarNeighbourhood:
 
     def stars(self, spectral_type: str = 'g') -> int:
 
-        types = 'o,b,a,f,g,k,m,wd,white,brown,bd,black hole'.split(',')
+        types = 'o,b,a,f,g,k,m,wd,white,brown,bd,black,black hole'.split(',')
         assert spectral_type in types, f'spectral_type "{spectral_type}" is unrecognizable.'
 
         if spectral_type == 'o':
@@ -219,6 +223,7 @@ class DefinedNeighbourhood:
         self.location = data['location']
         self.radius = data['radius']
         self.density = data['density']
+        self.other = data['other']
         self.proto_stars = []
         self.pre_processed_system_positions = {
             "Single": [],
@@ -265,8 +270,6 @@ class DefinedNeighbourhood:
             data.update({'neighbourhood_idx': self.idx - 1})
             star = ProtoStar(data)
             self.proto_stars.append(star)
-            # Este sleep es necesario porque de otro modo todas las ProtoStars tienen el mismo ID.
-            sleep(0.001)
 
     def __eq__(self, other):
         equal = self.id == other.id

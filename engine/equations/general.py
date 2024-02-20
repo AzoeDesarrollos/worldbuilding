@@ -1,5 +1,5 @@
+from engine.backend.util import roll, q, eucledian_distance
 from math import pi, sqrt, asin, sin, cos
-from engine.backend.util import roll, q
 from .day_lenght import aprox_daylenght
 from pygame import Rect
 
@@ -181,9 +181,8 @@ class Ellipse:
         self._e = float(e.m)
         self._b = self._a * sqrt(1 - (self._e ** 2))
         self._c = sqrt(self._a ** 2 - self._b ** 2)
-        self.f1 = Point(self._c, 0)
-        self.f2 = Point(-self._c, 0)
-        self.focus = self.f1
+        self.f1 = Point(self._c, 0, 'right')
+        self.f2 = Point(-self._c, 0, 'left')
 
     def get_rect(self, x, y):
         """returns the rect of the ellipse for the use of pygame.draw.ellipse().
@@ -209,9 +208,19 @@ class OblateSpheroid(Ellipse, BodyInHydrostaticEquilibrium):
 
 
 class Point:
-    def __init__(self, x, y):
+    def __init__(self, x, y=0, name=None):
         self.x = x
         self.y = y
+        self.name = name
+
+    def how_close(self, other):
+        return eucledian_distance([self.x, self.y], [other.x, other.y])
+
+    def __repr__(self):
+        if self.name is not None:
+            return self.name
+        else:
+            return str(self)
 
 
 class AxialTilt:
