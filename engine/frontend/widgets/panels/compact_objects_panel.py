@@ -9,7 +9,7 @@ from pygame import Surface, Rect
 
 
 class CompactObjectsPanel(BaseWidget):
-    skippable = False
+    skippable = True
     skip = False
 
     show_swap_system_button = False
@@ -29,23 +29,24 @@ class CompactObjectsPanel(BaseWidget):
         self.brown = BrownDwarfType(self)
         self.current = self.white
 
-        exp_font = self.crear_fuente(14)
+        font = self.crear_fuente(14)
         exp_white = 'White Dwarfs have masses between 0.17 and 1.4 solar masses.'
         exp_brown = 'Brown Dwarfs have masses between 13 and 80 Jupiter masses.'
         exp_black = 'Stellar Mass Black Holes have masses of 5 Solar masses or more.'
         exp_neutron = 'Neutron Stars have masses between 1.4 and 3 solar masses, and radii between 10 and 13 km.'
 
-        rect = self.write2(exp_white, exp_font, 300, fg=COLOR_AREA, top=50, right=self.rect.right)
-        rect = self.write2(exp_brown, exp_font, 300, fg=COLOR_AREA, top=rect.bottom + 20, right=self.rect.right)
-        rect = self.write2(exp_black, exp_font, 300, fg=COLOR_AREA, top=rect.bottom + 50, right=self.rect.right)
-        self.write2(exp_neutron, exp_font, 300, fg=COLOR_AREA, top=rect.bottom + 50, right=self.rect.right)
+        r, c = self.rect.right, COLOR_AREA
+        self.white_rect = self.write2(exp_white, font, 300, fg=c, top=50, right=self.rect.right)
+        self.brown_rect = self.write2(exp_brown, font, 300, fg=c, top=self.white_rect.bottom + 20, right=r)
+        self.black_rect = self.write2(exp_black, font, 300, fg=c, top=self.brown_rect.bottom + 50, right=r)
+        self.neutron_rect = self.write2(exp_neutron, font, 300, fg=c, top=self.black_rect.bottom + 50, right=r)
 
         area_font = self.crear_fuente(14, underline=True)
         self.area_buttons = Rect(0, 420, self.rect.w, 200)
         self.image.fill(COLOR_AREA, self.area_buttons)
         self.write('Compact Objects', area_font, COLOR_AREA, x=3, top=self.area_buttons.top)
 
-        self.write('Remaining', exp_font, left=320, bottom=self.area_buttons.top - 20)
+        self.write('Remaining', font, left=320, bottom=self.area_buttons.top - 20)
         self.remanent = ValueText(self, 'mass', 320, self.area_buttons.top - 20, size=14)
         self.remanent.enable()
         self.remanent.editable = False
@@ -63,7 +64,12 @@ class CompactObjectsPanel(BaseWidget):
         EventHandler.register(self.clear, 'ClearData')
 
     def load_universe_data(self):
-        value_brown = Universe.current_galaxy.current_neighbourhood.other['brown']
+        no_black_holes = "This stellar neighbourhood does not have any black holes."
+        no_neutron_stars = "This stellar neighbourhood does not have any neutron stars."
+        no_brown_dwarfs = "This stellar neighbourhood does not have any brown dwarfs."
+        no_white_dwarfs = "This stellar neighbourhood does not have any white dwarfs."
+
+        value_brown = Universe.nei().other['brown']
         value_white = Universe.current_galaxy.current_neighbourhood.other['white']
         value_black_or_neutron = Universe.current_galaxy.current_neighbourhood.other['black']
 
@@ -74,13 +80,24 @@ class CompactObjectsPanel(BaseWidget):
         white_value = int(value_white)
         other_value = int(value_black_or_neutron)
 
+        exp_font = self.crear_fuente(14)
         if brown_value > 0:
             self.brown.enable()
+        else:
+            self.write2(no_brown_dwarfs, exp_font, 300, fg=COLOR_AREA, topleft=self.brown_rect.topleft)
+
         if white_value > 0:
             self.white.enable()
+        else:
+            self.write2(no_white_dwarfs, exp_font, 300, fg=COLOR_AREA, topleft=self.white_rect.topleft)
+
         if other_value > 0:
             self.neutron.enable()
             self.black.enable()
+        else:
+            self.image.fill(COLOR_BOX, self.black_rect.union(self.neutron_rect))  # Eraser
+            self.write2(no_black_holes, exp_font, 300, fg=COLOR_AREA, topleft=self.black_rect.topleft)
+            self.write2(no_neutron_stars, exp_font, 300, fg=COLOR_AREA, topleft=self.neutron_rect.topleft)
 
         text_brown.value = q(brown_value)
         text_white.value = q(white_value)

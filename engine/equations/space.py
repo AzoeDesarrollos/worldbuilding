@@ -252,6 +252,12 @@ class Universe:
                     cls.aparent_brightness[body.id][other.id] = visibility
 
     @classmethod
+    def nei(cls):
+        if cls.current_galaxy is not None:
+            if cls.current_galaxy.current_neighbourhood is not None:
+                return cls.current_galaxy.current_neighbourhood
+
+    @classmethod
     def cycle_galaxies(cls):
         galaxy = next(cls.galaxy_cycler)
         cls.current_galaxy = galaxy

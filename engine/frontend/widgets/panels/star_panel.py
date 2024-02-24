@@ -66,13 +66,13 @@ class StarPanel(BasePanel):
                 'mass': star.mass.m,
                 'spin': star.spin,
                 'age': star.age.m,
-                "neighbourhood_id": Universe.current_galaxy.current_neighbourhood.id
+                "neighbourhood_id": Universe.nei().id
             }
             data1[star.id] = star_data
 
             if star.position is not None:
                 system_data = {
-                    "neighbourhood_id": Universe.current_galaxy.current_neighbourhood.id,
+                    "neighbourhood_id": Universe.nei().id,
                     'position': dict(zip(['x', 'y', 'z'], star.position)),
                 }
                 data2[star.id] = system_data
@@ -121,28 +121,38 @@ class StarPanel(BasePanel):
         super().hide()
         binary_systems = 1
         if Universe.current_galaxy is not None:
-            binary_systems = Universe.current_galaxy.current_neighbourhood.quantities['Binary']
+            binary_systems = Universe.nei().quantities['Binary']
+            value_brown = Universe.nei().other['brown']
+            value_white = Universe.nei().other['white']
+            value_black_or_neutron = Universe.nei().other['black']
+            if not any([value_brown, value_white, value_black_or_neutron]):
+                self.parent.set_skippable('Compact Objects', True)
+
         for obj in self.properties.widgets():
             obj.hide()
+
         if self.add_on_exit or not len(self.stars):
             self.parent.set_skippable('Star System', True)
             self.parent.set_skippable('Multiple Stars', True)
             if len(self.stars) == 1:
-                star = self.stars[0]
-                singles = [system for system in Universe.systems if system.composition == 'single']
-                chosen = choice(singles)
-                Universe.remove_astro_obj(chosen)
-                system = SingleSystem(star)
-                system.cartesian = chosen.location
-                offset = Universe.current_galaxy.current_neighbourhood.location
-                system.set_orbit(offset)
-                Systems.set_planetary_system(star)
-                Universe.current_galaxy.current_neighbourhood.add_true_system(system)
+                self.add_stars(self.stars[0])
                 self.parent.swap_neighbourhood_button.lock()
         elif binary_systems == 0:
             self.parent.set_skippable('Star System', True)
         else:
             self.parent.set_skippable('Star System', False)
+
+    @staticmethod
+    def add_stars(star):
+        singles = [system for system in Universe.systems if system.composition == 'single']
+        chosen = choice(singles)
+        Universe.remove_astro_obj(chosen)
+        system = SingleSystem(star)
+        system.cartesian = chosen.location
+        offset = Universe.nei().location
+        system.set_orbit(offset)
+        Systems.set_planetary_system(star)
+        Universe.nei().add_true_system(system)
 
     def add_button(self, star):
         button = StarButton(self.current, star, str(star), self.curr_x, self.curr_y)
@@ -165,9 +175,8 @@ class StarPanel(BasePanel):
             self.sort_buttons(self.star_buttons)
         self.button_del.disable()
         self.stars.remove(button.object_data)
-        neighbourhood = Universe.current_galaxy.current_neighbourhood
         list_of_dicts = [{'class': star.cls, 'idx': star.idx}]
-        neighbourhood.add_proto_stars(list_of_dicts)
+        Universe.nei().add_proto_stars(list_of_dicts)
         self.potential_stars.show()
         Systems.remove_star(star)
 
@@ -234,9 +243,9 @@ class StarType(ObjectType):
 
     def set_star(self, star_data, inactive=False):
         star = Star(star_data)
-        neighbourhood = Universe.current_galaxy.current_neighbourhood
+        neighbourhood = Universe.nei()
         if neighbourhood is not None:
-            protos = [s for s in Universe.current_galaxy.current_neighbourhood.proto_stars if s.cls == star.cls]
+            protos = [s for s in Universe.nei().proto_stars if s.cls == star.cls]
             assert len(protos), "You are not building\nthe star correctly.\n\nCheck it's mass."
             proto = protos.pop()
             star.idx = proto.idx
@@ -254,8 +263,7 @@ class StarType(ObjectType):
             return star
 
     def unset_star(self, proto):
-        neighbourhood = Universe.current_galaxy.current_neighbourhood
-        neighbourhood.proto_stars.append(proto)
+        Universe.nei().proto_stars.append(proto)
         Systems.remove_star(self.current)
         self.current = None
 
@@ -451,7 +459,7 @@ class PotentialStars(ListedArea):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
         neighbourhood = None
         if Universe.current_galaxy is not None:
-            neighbourhood = Universe.current_galaxy.current_neighbourhood
+            neighbourhood = Universe.nei()
         idx = -1 if neighbourhood is None else neighbourhood.id
         if idx != self.last_idx:
             self.last_idx = idx
@@ -467,7 +475,7 @@ class AutomaticButton(TextButton):
 
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and event.origin == self:
-            proto_stars = Universe.current_galaxy.current_neighbourhood.proto_stars.copy()
+            proto_stars = Universe.nei().proto_stars.copy()
             for proto in proto_stars:
                 mass = round(roll(proto.min_mass, proto.max_mass), 3)
                 self.parent.current.set_star({'mass': mass})

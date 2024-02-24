@@ -72,7 +72,7 @@ class StarSystemPanel(BaseWidget):
             Universe.systems.remove(chosen)
             self.discarded_protos.append(chosen)
             system_data.cartesian = chosen.location
-            offset = Universe.current_galaxy.current_neighbourhood.location
+            offset = Universe.nei().location
             system_data.set_orbit(offset)
             self.count -= 1
 
@@ -82,15 +82,14 @@ class StarSystemPanel(BaseWidget):
             self.system_buttons.add(button)
             self.properties.add(button)
             Systems.set_planetary_system(system_data)
-            Universe.current_galaxy.current_neighbourhood.add_true_system(system_data)
+            Universe.nei().add_true_system(system_data)
             self.current.enable()
             return button
 
     @staticmethod
     def save_systems(event):
         data = {}
-        systems = Universe.current_galaxy.current_neighbourhood.systems
-        for system in systems:
+        for system in Universe.nei().systems:
             if system.celestial_type == 'system':
                 data[system.id] = {
                     'primary': system.primary.id,
@@ -100,13 +99,13 @@ class StarSystemPanel(BaseWidget):
                     "ecc_s": system.ecc_s.m,
                     "name": system.name,
                     "position": dict(zip(['x', 'y', 'z'], system.cartesian)),
-                    "neighbourhood_id": Universe.current_galaxy.current_neighbourhood.id
+                    "neighbourhood_id": Universe.nei().id
                 }
 
         EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': data})
 
     def load_universe_data(self):
-        binary_systems = Universe.current_galaxy.current_neighbourhood.quantities['Binary']
+        binary_systems = Universe.nei().quantities['Binary']
         if self.quantity is None:
             self.quantity = binary_systems
             self.count = binary_systems
@@ -129,7 +128,7 @@ class StarSystemPanel(BaseWidget):
                 x = system_data['position']['x']
                 y = system_data['position']['y']
                 z = system_data['position']['z']
-                offset = Universe.current_galaxy.current_neighbourhood.location
+                offset = Universe.nei().location
 
                 system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
                 system.cartesian = x, y, z
@@ -140,8 +139,8 @@ class StarSystemPanel(BaseWidget):
                 button.hide()
 
     def create_systems(self):
-        triple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Triple']
-        multiple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Multiple']
+        triple_systems = Universe.nei().quantities['Triple']
+        multiple_systems = Universe.nei().quantities['Multiple']
         if triple_systems == 0 and multiple_systems == 0:
             widgets = self.stars_area.listed_objects.widgets()
             singles = [system for system in Universe.systems if system.composition == 'single']
@@ -154,7 +153,7 @@ class StarSystemPanel(BaseWidget):
                         Universe.remove_astro_obj(chosen)
                         system = SingleSystem(star)
                         system.cartesian = chosen.location
-                        offset = Universe.current_galaxy.current_neighbourhood.location
+                        offset = Universe.nei().location
                         system.set_orbit(offset)
                         Systems.set_planetary_system(star)
                         Universe.current_galaxy.current_neighbourhood.add_true_system(system)
@@ -203,7 +202,7 @@ class StarSystemPanel(BaseWidget):
     def show(self):
         self.parent.swap_neighbourhood_button.unlock()
         if Universe.current_galaxy is not None:
-            for system in Universe.current_galaxy.current_neighbourhood.systems:
+            for system in Universe.nei().systems:
                 if self.check_system(sstm=system):
                     self.create_button(system)
             self.load_universe_data()
