@@ -18,7 +18,8 @@ class Systems:
         'Single Systems': {},
         'Binary Systems': {},
         'Planetary Orbits': {},
-        'Stellar Orbits': {}
+        'Stellar Orbits': {},
+        'Compact Objects': {},
     }
     _current = None
     _system_cycler = None
@@ -271,7 +272,7 @@ class Systems:
         data = abrir_json(ruta)
         read_data = abrir_json(ruta)
         keys = 'Galaxies,Neighbourhoods,Stars,Single Systems,Binary Systems,Stellar Orbits,'
-        keys += 'Planetary Orbits,Asteroids,Planets,Satellites'
+        keys += 'Planetary Orbits,Asteroids,Planets,Satellites,Compact Objects'
         for key in keys.split(','):
             new_data = event.data.get(key, [])
             for item_id in new_data:

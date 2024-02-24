@@ -29,6 +29,8 @@ class CompactObjectsPanel(BaseWidget):
         self.brown = BrownDwarfType(self)
         self.current = self.white
 
+        self.compact_objects = Group()
+
         font = self.crear_fuente(14)
         exp_white = 'White Dwarfs have masses between 0.17 and 1.4 solar masses.'
         exp_brown = 'Brown Dwarfs have masses between 13 and 80 Jupiter masses.'
@@ -62,51 +64,65 @@ class CompactObjectsPanel(BaseWidget):
             self.properties.add(vt, layer=7)
 
         EventHandler.register(self.clear, 'ClearData')
+        EventHandler.register(self.save_objects, 'Save')
+        EventHandler.register(self.load_objects, 'LoadData')
 
     def load_universe_data(self):
-        no_black_holes = "This stellar neighbourhood does not have any black holes."
-        no_neutron_stars = "This stellar neighbourhood does not have any neutron stars."
-        no_brown_dwarfs = "This stellar neighbourhood does not have any brown dwarfs."
-        no_white_dwarfs = "This stellar neighbourhood does not have any white dwarfs."
+        no_black_holes = "This stellar neighbourhood does not have room for more black holes."
+        no_neutron_stars = "This stellar neighbourhood does not have room for more neutron stars."
+        no_brown_dwarfs = "This stellar neighbourhood does not have room for more brown dwarfs."
+        no_white_dwarfs = "This stellar neighbourhood does not have room for more white dwarfs."
 
-        value_brown = Universe.nei().other['brown']
-        value_white = Universe.current_galaxy.current_neighbourhood.other['white']
-        value_black_or_neutron = Universe.current_galaxy.current_neighbourhood.other['black']
+        count_brown = sum([1 for w in self.compact_objects.widgets() if w.compact_subtype is None])
+        count_white = sum([1 for w in self.compact_objects.widgets() if w.compact_subtype == 'white'])
+        count_other = sum([1 for w in self.compact_objects.widgets() if w.compact_subtype == 'neutron'])
+        count_other += sum([1 for w in self.compact_objects.widgets() if w.compact_subtype == 'black'])
+
+        value_brown = int(Universe.nei().other['brown'] - count_brown)
+        value_white = int(Universe.nei().other['white'] - count_white)
+        value_black_or_neutron = int(Universe.nei().other['black'] - count_other)
 
         widgets = self.properties.get_widgets_from_layer(7)
         text_brown, text_white, text_black = widgets
 
-        brown_value = int(value_brown)
-        white_value = int(value_white)
-        other_value = int(value_black_or_neutron)
-
         exp_font = self.crear_fuente(14)
-        if brown_value > 0:
+        if value_brown > 0:
             self.brown.enable()
         else:
+            self.brown.disable()
             self.write2(no_brown_dwarfs, exp_font, 300, fg=COLOR_AREA, topleft=self.brown_rect.topleft)
 
-        if white_value > 0:
+        if value_white > 0:
             self.white.enable()
         else:
+            self.white.disable()
             self.write2(no_white_dwarfs, exp_font, 300, fg=COLOR_AREA, topleft=self.white_rect.topleft)
 
-        if other_value > 0:
+        if value_black_or_neutron > 0:
             self.neutron.enable()
             self.black.enable()
         else:
+            self.neutron.disable()
+            self.black.disable()
             self.image.fill(COLOR_BOX, self.black_rect.union(self.neutron_rect))  # Eraser
             self.write2(no_black_holes, exp_font, 300, fg=COLOR_AREA, topleft=self.black_rect.topleft)
             self.write2(no_neutron_stars, exp_font, 300, fg=COLOR_AREA, topleft=self.neutron_rect.topleft)
 
-        text_brown.value = q(brown_value)
-        text_white.value = q(white_value)
-        text_black.value = q(other_value)
+        text_brown.value = q(value_brown)
+        text_white.value = q(value_white)
+        text_black.value = q(value_black_or_neutron)
 
     def show(self):
         if Universe.current_galaxy is not None:
             self.load_universe_data()
             self.remanent.value = self.calculate_mass()
+            self.sort_buttons(self.properties.get_widgets_from_layer(6))
+
+        elif Systems.restricted_mode is False:
+            self.brown.enable()
+            self.white.enable()
+            self.neutron.enable()
+            self.black.enable()
 
         super().show()
         for prop in self.properties.widgets():
@@ -118,13 +134,12 @@ class CompactObjectsPanel(BaseWidget):
             prop.hide()
 
     def review(self, object_data):
-        if object_data.celestial_type == 'compact':
-            if object_data.compact_subtype == 'black':
-                text = self.black
-            elif object_data.compact_subtype == 'neutron':
-                text = self.neutron
-            else:
-                text = self.white
+        if object_data.compact_subtype == 'black':
+            text = self.black
+        elif object_data.compact_subtype == 'neutron':
+            text = self.neutron
+        elif object_data.compact_subtype == 'white':
+            text = self.white
         else:
             text = self.brown
 
@@ -136,10 +151,9 @@ class CompactObjectsPanel(BaseWidget):
 
     @staticmethod
     def calculate_mass():
-        current = Universe.current_galaxy.current_neighbourhood
         total_mass = sum([star.mass.to('sol_mass') for star in Systems.just_stars])
         main_sequence = len(Systems.just_stars)
-        other = sum([*current.other.values()])
+        other = sum([*Universe.nei().other.values()])
 
         total = main_sequence + other
         main_percentage = q(main_sequence / total, '%')
@@ -147,10 +161,12 @@ class CompactObjectsPanel(BaseWidget):
         available_mass = total_mass / main_percentage
         return other_percentage * available_mass
 
-    def create_button(self):
-        object_data = self.current.current
+    def create_button(self, object_data=None):
+        if object_data is None:
+            object_data = self.current.current
         Universe.add_astro_obj(object_data)
         Systems.add_star(object_data)
+        self.compact_objects.add(object_data)
 
         widgets = self.properties.get_widgets_from_layer(7)
         text_brown, text_white, text_black = widgets
@@ -161,16 +177,54 @@ class CompactObjectsPanel(BaseWidget):
         else:
             text = text_brown
 
-        text.value = q(int(text.value) - 1)
-        if text.value == 0:
-            self.current.disable()
+        if text.value != '':
+            text.value = q(int(text.value) - 1)
+            if text.value == 0:
+                self.current.disable()
 
         mass = object_data.mass.to('sol_mass').m
-        self.remanent.value = q(float(self.remanent.value) - mass, 'sol_mass')
-        button = CompactObjectButton(self, object_data)
+        if self.remanent.value != '':
+            self.remanent.value = q(float(self.remanent.value) - mass, 'sol_mass')
+        button = CompactObjectButton(self, object_data, size=13)
         self.properties.add(button, layer=6)
-        self.sort_buttons(self.properties.get_widgets_from_layer(6))
-        self.current.clear()
+        if self.is_visible:
+            self.sort_buttons(self.properties.get_widgets_from_layer(6))
+            self.current.clear()
+
+    def save_objects(self, event):
+        macro_data = {}
+        for compact in self.compact_objects.widgets():
+            if compact.compact_subtype == 'neutron':
+                data = {
+                    'mass': compact.mass.m,
+                    'radius': compact.radius.m
+                }
+            else:
+                data = {
+                    'mass': compact.mass.m
+                }
+
+            data["neighbourhood_id"] = Universe.nei().id
+            data['subtype'] = compact.compact_subtype
+            macro_data[compact.id] = data
+
+        EventHandler.trigger(event.tipo + 'Data', 'Compact', {"Compact Objects": macro_data})
+
+    def load_objects(self, event):
+        self.load_universe_data()
+        for key in event.data['Compact Objects']:
+            data = event.data['Compact Objects'][key]
+            subtype = data['subtype']
+            if subtype == 'black':
+                compact = BlackHole(data['mass'])
+            elif subtype == 'neutron':
+                compact = NeutronStar(data['mass'], data['radius'])
+            elif subtype == 'white':
+                compact = WhiteDwarf(data['mass'])
+            else:
+                compact = BrownDwarf(data['mass'])
+
+            self.create_button(compact)
 
 
 class NeutronStarType(BaseWidget):
@@ -390,12 +444,12 @@ class CompactObjectButton(Meta):
         self.f1 = self.crear_fuente(size)
         self.f2 = self.crear_fuente(size, bold=True)
         self.object_data = compact
-        self.img_uns = self.f1.render(str(compact) + ' #' + str(compact.idx), True, COLOR_TEXTO)
-        self.img_sel = self.f2.render(str(compact) + ' #' + str(compact.idx), True, COLOR_TEXTO)
+        self.img_uns = self.f1.render(str(compact), True, COLOR_TEXTO)
+        self.img_sel = self.f2.render(str(compact), True, COLOR_TEXTO)
 
         self.image = self.img_uns
         self.rect = self.image.get_rect()
-        self.max_w = self.img_sel.get_width()
+        self.max_w = self.img_sel.get_width() + 3
 
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
