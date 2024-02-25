@@ -28,8 +28,8 @@ class AbstractBinary(Flagable):
         self.ecc_s = q(es)
         self.average_separation = q(avgsep, unit)
         self.barycenter = q(avgsep * (self.secondary.mass.m / (self.primary.mass.m + self.secondary.mass.m)), unit)
-        self.primary_distance = round(self.barycenter, 2)
-        self.secondary_distance = round(self.average_separation - self.primary_distance, 2)
+        self.primary_distance = self.barycenter
+        self.secondary_distance = self.average_separation - self.primary_distance
 
         assert 0.4 <= ep <= 0.7, 'Primary eccentricity must be between 0.4 and 0.7'
         max_sep_p, min_sep_p = self.calculate_distances(ep, self.primary_distance.m, unit)
@@ -45,8 +45,8 @@ class AbstractBinary(Flagable):
 
     @staticmethod
     def calculate_distances(e, ref, unit):
-        max_sep = q((1 + e) * round(ref, 2), unit)
-        min_sep = q((1 - e) * round(ref, 2), unit)
+        max_sep = q((1 + e) * ref, unit)
+        min_sep = q((1 - e) * ref, unit)
         return max_sep, min_sep
 
 

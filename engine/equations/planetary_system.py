@@ -194,7 +194,7 @@ class PlanetarySystem(Flagable):
         return 'System of ' + str(self.star_system)
 
     def __getitem__(self, item):
-        if self.star_system.celestial_type == 'star':  # single-star system
+        if self.star_system.celestial_type != 'system':  # single-star system
             if item == 0:
                 return self.star_system
             raise StopIteration()

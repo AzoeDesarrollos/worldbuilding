@@ -147,7 +147,11 @@ class CompactObjectsPanel(BaseWidget):
 
     def clear(self, event=None):
         if event is None or event.data['panel'] is self:
-            self.current.clear()
+            self.brown.clear()
+            self.black.clear()
+            self.white.clear()
+            self.neutron.clear()
+            self.load_universe_data()
 
     @staticmethod
     def calculate_mass():
@@ -194,18 +198,21 @@ class CompactObjectsPanel(BaseWidget):
     def save_objects(self, event):
         macro_data = {}
         for compact in self.compact_objects.widgets():
+            data = {
+                'mass': compact.mass.m,
+                "neighbourhood_id": Universe.nei().id,
+                'subtype': compact.compact_subtype,
+                'age': compact.age.m
+            }
             if compact.compact_subtype == 'neutron':
-                data = {
-                    'mass': compact.mass.m,
-                    'radius': compact.radius.m
-                }
-            else:
-                data = {
-                    'mass': compact.mass.m
-                }
+                data.update({'radius': compact.radius.m})
 
-            data["neighbourhood_id"] = Universe.nei().id
-            data['subtype'] = compact.compact_subtype
+            if hasattr(compact, 'sub_cls'):  # neutron stars and white dwarfs otherwise assing random numbers.
+                data.update({'sub': compact.sub_cls})
+
+            if compact.has_name:
+                data.update({'name': compact.name})
+
             macro_data[compact.id] = data
 
         EventHandler.trigger(event.tipo + 'Data', 'Compact', {"Compact Objects": macro_data})
@@ -214,15 +221,16 @@ class CompactObjectsPanel(BaseWidget):
         self.load_universe_data()
         for key in event.data['Compact Objects']:
             data = event.data['Compact Objects'][key]
+            data['id'] = key
             subtype = data['subtype']
             if subtype == 'black':
-                compact = BlackHole(data['mass'])
+                compact = BlackHole(data)
             elif subtype == 'neutron':
-                compact = NeutronStar(data['mass'], data['radius'])
+                compact = NeutronStar(data)
             elif subtype == 'white':
-                compact = WhiteDwarf(data['mass'])
+                compact = WhiteDwarf(data)
             else:
-                compact = BrownDwarf(data['mass'])
+                compact = BrownDwarf(data)
 
             self.create_button(compact)
 
@@ -253,7 +261,8 @@ class NeutronStarType(BaseWidget):
                 NeutronStar.validate(float(mass.value), 'mass')
             else:
                 NeutronStar.validate(float(radius.value), 'radius')
-                self.current = NeutronStar(float(mass.value), float(radius.value))
+                data = {'mass': float(mass.value), 'radius': float(radius.value)}
+                self.current = NeutronStar(data)
                 valid = True
         else:
             valid = True
@@ -303,7 +312,7 @@ class BlackHoleType(BaseWidget):
         widgets = self.parent.properties.get_widgets_from_layer(3)
         mass, radius, photon = widgets
         if object_data is None:
-            self.current = BlackHole(float(mass.value))
+            self.current = BlackHole({'mass': float(mass.value)})
         else:
             self.current = object_data
 
@@ -351,7 +360,7 @@ class WhiteDwarfType(BaseWidget):
         widgets = self.parent.properties.get_widgets_from_layer(4)
         mass, radius = widgets
         if object_data is None:
-            self.current = WhiteDwarf(float(mass.value))
+            self.current = WhiteDwarf({'mass': float(mass.value)})
         else:
             self.current = object_data
 
@@ -396,7 +405,7 @@ class BrownDwarfType(BaseWidget):
         widgets = self.parent.properties.get_widgets_from_layer(5)
         mass, radius = widgets
         if object_data is None:
-            self.current = BrownDwarf(float(mass.value))
+            self.current = BrownDwarf({'mass': float(mass.value)})
         else:
             self.current = object_data
 

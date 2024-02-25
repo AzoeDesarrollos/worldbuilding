@@ -95,9 +95,9 @@ class MultipleStarsPanel(BaseWidget):
         multiple_systems = [system for system in Universe.systems if system.composition == 'multiple']
         prim = system_data.primary
         scnd = system_data.secondary
-        go_on_1 = prim.celestial_type == 'star' and scnd.celestial_type == 'system'
-        go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type == 'star'
-        go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'
+        go_on_1 = prim.celestial_type != 'system' and scnd.celestial_type == 'system'  # triple
+        go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type != 'system'  # triple
+        go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'  # multiple
         chosen = None
         if go_on_1 or go_on_2:
             chosen = choice(triple_systems)
@@ -122,7 +122,7 @@ class MultipleStarsPanel(BaseWidget):
             self.properties.add(button)
             self.sort_buttons(self.system_buttons.widgets())
             Systems.set_planetary_system(system_data)
-            Universe.current_galaxy.current_neighbourhood.add_true_system(system_data)
+            Universe.nei().add_true_system(system_data)
             self.current.enable()
             self.load_universe_data()
             self.stars_area.enable_all()
@@ -199,21 +199,22 @@ class MultipleStarsPanel(BaseWidget):
                     warning = f"Complete the systems before continuing.\n\nThere'{verb} {total} system{pl} left."
                     raise AssertionError(warning)
 
-        if len(singles):  # WIP
-            neighbourhood = Universe.current_galaxy.current_neighbourhood
-            brown = [choice(['Y', 'W', 'L']) for _ in range(neighbourhood.other['brown'])]
-            white = ['D' for _ in range(neighbourhood.other['white'])]
-            black = ['Black hole' for _ in range(neighbourhood.other['black'])]
-            stellar_mass_objects = brown + white + black
+        if len(singles):
+            brown = [i for i in Universe.brown_dwarfs if i.parent is None]
+            white = [i for i in Universe.white_dwarfs if i.parent is None]
+            black = [i for i in Universe.black_holes if i.parent is None]
+            neutron = [i for i in Universe.neutron_stars if i.parent is None]
+
+            stellar_mass_objects = brown + white + black + neutron
             for it in stellar_mass_objects:
                 chosen = choice(singles)
                 singles.remove(chosen)
                 Universe.remove_astro_obj(chosen)
-                system = SingleSystem(it, neighbourhood.id)
+                system = SingleSystem(it, Universe.nei().id)
                 system.cartesian = chosen.location
-                offset = neighbourhood.location
+                offset = Universe.nei().location
                 system.set_orbit(offset)
-                Universe.current_galaxy.current_neighbourhood.add_true_system(system)
+                Universe.nei().add_true_system(system)
 
         for other in binaries:
             Systems.set_planetary_system(other)
@@ -262,9 +263,9 @@ class MultipleStarsPanel(BaseWidget):
 
             prim = Universe.get_astrobody_by(system_data['primary'], 'id')
             scnd = Universe.get_astrobody_by(system_data['secondary'], 'id')
-            go_on_1 = prim.celestial_type == 'star' and scnd.celestial_type == 'system'
-            go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type == 'star'
-            go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'
+            go_on_1 = prim.celestial_type != 'system' and scnd.celestial_type == 'system'  # triple
+            go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type != 'system'  # triple
+            go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'  # multiple
 
             if any([go_on_1, go_on_2, go_on_3]):
                 avg_s = system_data['avg_s']
@@ -274,7 +275,7 @@ class MultipleStarsPanel(BaseWidget):
                 x = system_data['position']['x']
                 y = system_data['position']['y']
                 z = system_data['position']['z']
-                offset = Universe.current_galaxy.current_neighbourhood.location
+                offset = Universe.nei().location
 
                 system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
                 system.orbit = NeighbourhoodSystemOrbit(x, y, z, offset)

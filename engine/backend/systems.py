@@ -285,7 +285,7 @@ class Systems:
         copy_data = data.copy()
         delete = {}
         for key in keys.split(','):
-            if key not in ('Galaxies', 'Neighbourhoods'):
+            if key not in ('Galaxies', 'Neighbourhoods', 'Compact Objects'):
                 for idx in copy_data[key]:
                     datos = copy_data[key][idx]
                     if 'system' in datos:

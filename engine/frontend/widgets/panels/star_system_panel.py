@@ -195,7 +195,7 @@ class StarSystemPanel(BaseWidget):
         else:
             return False
         if prim is not None and scnd is not None:
-            return prim.celestial_type == 'star' and scnd.celestial_type == 'star'
+            return prim.celestial_type != 'system' and scnd.celestial_type != 'system'
         else:
             return False
 
@@ -495,11 +495,11 @@ class AutomaticSystemDataButton(TextButton):
             e_2 = roll(0.4, 0.7)
 
             a_widget = self.parent.current.properties.get_widget(2)
-            e1__widget = self.parent.current.properties.get_widget(3)
+            e1_widget = self.parent.current.properties.get_widget(3)
             e2_widget = self.parent.current.properties.get_widget(4)
 
             a_widget.value = q(a, "EU")
-            e1__widget.value = q(e_1)
+            e1_widget.value = q(e_1)
             e2_widget.value = q(e_2)
             self.parent.current.fill()
             self.disable()

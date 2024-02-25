@@ -1,6 +1,7 @@
 from engine.backend.util import q, generate_id
 from .general import BodyInHydrostaticEquilibrium
 from random import randint, choice
+from math import sqrt, pi
 
 
 class CompactObject(BodyInHydrostaticEquilibrium):
@@ -8,64 +9,34 @@ class CompactObject(BodyInHydrostaticEquilibrium):
     celestial_type = 'compact'
 
 
-class BlackHole(CompactObject):
-    _mass = None
-    _event = None
-    _photon = None
-
-    compact_subtype = 'black'
-
-    def __init__(self, mass):
-        assert mass >= 5, "A stellar mass black hole must have 5 solar masses or more."
-        self._mass = mass
-        self._event = 2.95 * mass
-        self._photon = 1.5 * self._event
-        self.id = generate_id()
-
-    @property
-    def mass(self):
-        return q(self._mass, 'sol_mass')
-
-    @property
-    def event_horizon(self):
-        return q(self._event, 'km')
-
-    @property
-    def photon_sphere(self):
-        return q(self._photon, 'km')
-
-    def __repr__(self):
-        return 'Black Hole'
-
-
-class NeutronStar(CompactObject):
-    compact_subtype = 'neutron'
-
+class BinaryPartner:
     prefix = None
-    sub_pos = 0
+    sub_pos = None
     _system = None
-    _shared_mass = 0
+    _shared_mass = None
     _inner_forbidden = None
     _outer_forbidden = None
 
-    def __init__(self, mass, radius):
-        self._mass = mass
-        self._radius = radius
+    _lifetime = None
+    _age = None
 
-        self.mass = q(mass, 'sol_mass')
-        self.radius = q(radius, 'km')
+    letter = None
 
-        self.id = generate_id()
-        self.sub_cls = choice(['RPP', 'RRAT', 'SGR', 'AXP'])
+    def __init__(self, data):
+        # Star's lifetime; compact objects may have their own way of calculating lifetime. Required for age.
+        if hasattr(self, 'luminosity'):
+            self._lifetime = data['mass'] / float(self.luminosity.m)
+        else:
+            self._lifetime = data['mass'] / pow(data['mass'], 3.5)
 
-    @staticmethod
-    def validate(value, name):
-        if name == 'mass':
-            assert 1.4 <= value <= 3.0, 'Neutron Stars have masses between 1.4 and 3 solar masses.'
-            return True
-        elif name == 'radius':
-            assert 10 <= value <= 13, 'Neutron Stars have radii between 10 and 13 kilometers.'
-            return True
+    def set_age(self, x=0):
+        # copied from Star.set_age(). Might be wrong for black holes.
+        if self._age == -1:
+            self._age = (self._lifetime * 0.46) * 10 ** 10
+        else:
+            age = (self._lifetime * x) * 10 ** 10
+            if age != self._age:
+                self._age = age
 
     def inherit(self, system, inner, outer, mass, idx):
         self.prefix = system.letter
@@ -97,6 +68,83 @@ class NeutronStar(CompactObject):
     def outer_forbbiden_zone(self):
         return self._outer_forbidden
 
+    def __getitem__(self, item):
+        if type(item) is int:
+            if item == 0:
+                return self
+            raise StopIteration()
+
+
+class BlackHole(CompactObject, BinaryPartner):
+    compact_subtype = 'black'
+
+    age = 0
+    mass = None
+    event_horizon = None
+    photon_sphere = None
+    lifetime = None
+    temperature = None
+
+    def __init__(self, data):
+        mass = data['mass']
+        assert mass >= 5, "A stellar mass black hole must have 5 solar masses or more."
+        self._mass = mass
+        self._event = 2.95 * mass
+        self._photon = 1.5 * self._event
+
+        self.id = data['id'] if 'id' in data else generate_id()
+
+        super().__init__(data)
+        # https://en.wikipedia.org/wiki/Hawking_radiation
+        self._lifetime = 2.140e67 * mass ** 3
+        self._temperature = 1 / (4 * pi * sqrt(2 * mass * self._event * (1 - (2 * mass / self._event))))
+        if 'age' in data:
+            self._age = data['age']
+        else:
+            self.set_age()
+        self.set_qs()
+
+    def set_qs(self):
+        self.mass = q(self._mass, 'sol_mass')
+        self.event_horizon = q(self._event, 'km')
+        self.photon_sphere = q(self._photon, 'km')
+        self.lifetime = q(self._lifetime, 'years')
+        self.temperature = q(self._temperature, 'kelvin')
+        self.age = q(self._age, 'years')
+
+    def __repr__(self):
+        return 'Black Hole'
+
+
+class NeutronStar(CompactObject, BinaryPartner):
+    compact_subtype = 'neutron'
+
+    def __init__(self, data):
+        super().__init__(data)
+        self._mass = data['mass']
+        self._radius = data['radius']
+
+        self.mass = q(self._mass, 'sol_mass')
+        self.radius = q(self._radius, 'km')
+
+        self.id = data['id'] if 'id' in data else generate_id()
+        self.sub_cls = data['sub'] if 'sub' in data else choice(['RPP', 'RRAT', 'SGR', 'AXP'])
+        if 'age' in data:
+            self._age = data['age']
+        else:
+            self.set_age()
+
+        self.age = q(self._age, 'years')
+
+    @staticmethod
+    def validate(value, name):
+        if name == 'mass':
+            assert 1.4 <= value <= 3.0, 'Neutron Stars have masses between 1.4 and 3 solar masses.'
+            return True
+        elif name == 'radius':
+            assert 10 <= value <= 13, 'Neutron Stars have radii between 10 and 13 kilometers.'
+            return True
+
     def __repr__(self):
         return 'Neutron Star'
 
@@ -109,38 +157,47 @@ class NeutronStar(CompactObject):
         return f'{base}-{self.sub_cls}'
 
 
-class WhiteDwarf(CompactObject):
+class WhiteDwarf(CompactObject, BinaryPartner):
     compact_subtype = 'white'
 
-    def __init__(self, mass):
+    def __init__(self, data):
+        mass = data['mass']
         assert 0.17 <= mass <= 1.4, 'White Dwarfs have masses between 0.17 and 1.4 solar masses'
         self._mass = mass
         self._radius = pow(mass, -1 / 3)
         self.mass = q(self._mass, 'sol_mass')
         self.radius = q(self._radius, 'earth_radius')
 
-        self.id = generate_id()
+        self.id = data['id'] if 'id' in data else generate_id()
+        self.sub_cls = data['sub'] if 'sub' in data else ''.join([str(randint(0, 9)) for _ in range(3)])
 
         luminosity = pow(mass, 3.5)
         temperature = pow((luminosity / pow(self._radius, 2)), (1 / 4))
         self.luminosity = q(luminosity, 'sol_luminosity')
         self.temperature = q(temperature, 'kelvin')
+        super().__init__(data)
+
+        if 'age' in data:
+            self._age = data['age']
+        else:
+            self.set_age()
+        self.age = q(self._age, 'years')
 
     def __repr__(self):
         return 'White Dwarf'
 
     def __str__(self):
-        # the numbers are completely made up.
-        ns = ''.join([str(randint(1, 9)) for _ in range(4)])
-        us = ''.join([str(randint(0, 9)) for _ in range(3)])
-        return f'WD{ns}+{us}'
+        # "ns" is now the first four numbers of the last portion of the ID.
+        ns = self.id.split('-')[1][0:4]
+        return f'WD{ns}+{self.sub_cls}'
 
 
-class BrownDwarf(CompactObject):
+class BrownDwarf(CompactObject, BinaryPartner):
     compact_subtype = None  # this is intentional, because it is not compact.
     idx = 0
 
-    def __init__(self, mass):
+    def __init__(self, data):
+        mass = data['mass']
         assert 13 <= mass <= 80, 'Brown Dwarfs have masses between 13 and 80 Jupiter masses'
         self._mass = mass
         self._radius = 0.089552239 * mass - 0.164179104  # this is made up (proportional)
@@ -148,7 +205,7 @@ class BrownDwarf(CompactObject):
         self.mass = q(self._mass, 'jupiter_mass')
         self.radius = q(self._radius, 'jupiter_radius')
 
-        self.id = generate_id()
+        self.id = data['id'] if 'id' in data else generate_id()
 
         luminosity = pow(mass, 3.5)
         temperature = pow((luminosity / pow(self._radius, 2)), (1 / 4))
@@ -163,6 +220,12 @@ class BrownDwarf(CompactObject):
         self.cls = self.classification
         self.luminosity = q(luminosity, 'sol_luminosity')
         self.temperature = q(temperature, 'kelvin')
+        super().__init__(data)
+        if 'age' in data:
+            self._age = data['age']
+        else:
+            self.set_age()
+        self.age = q(self._age, 'years')
 
     def __repr__(self):
         return f"{self.cls}{self.idx + 1}"

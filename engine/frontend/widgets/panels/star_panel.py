@@ -57,10 +57,9 @@ class StarPanel(BasePanel):
         # adds readability
         return self.properties.get_widgets_from_layer(2)
 
-    @staticmethod
-    def save_stars(event):
+    def save_stars(self, event):
         data1, data2 = {}, {}
-        for star in Systems.just_stars:
+        for star in self.stars:
             star_data = {
                 'name': star.name if star.name is not None else str(star),
                 'mass': star.mass.m,
