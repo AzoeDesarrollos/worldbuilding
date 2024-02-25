@@ -47,7 +47,7 @@ class MultipleStarsPanel(BaseWidget):
         self.undo_button = UndoButton(self, 234, 416)
         self.setup_button = CreateSystemButton(self, 484, 416)
         self.dissolve_button = DissolveButton(self, 334, 416)
-        self.auto_button = AutoButton(self, ANCHO - 260, 133, set_choice='S')
+        self.auto_button = AutoButton(self, ANCHO - 260, 133, set_choice='S',factor=10)
         self.properties.add(self.current, self.stars_area, self.undo_button,
                             self.setup_button, self.dissolve_button, self.auto_button)
         EventHandler.register(self.name_current, 'NameObject')
@@ -302,14 +302,14 @@ class SystemsType(SystemType):
     def set_star(self, star):
         if str(self.primary.value) == '':
             self.primary.value = star
-            self.has_values = True
+
             for listed in self.parent.stars_area.listed_objects.widgets():
                 if listed.object_data is not star:
                     self.check_contruction(listed.object_data)
         elif str(self.secondary.value) == '':
             self.secondary.value = star
             self.parent.undo_button.enable()
-            self.has_values = True
+
         else:
             return False
 

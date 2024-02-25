@@ -473,9 +473,10 @@ class UndoButton(TextButton):
 
 class AutomaticSystemDataButton(TextButton):
 
-    def __init__(self, parent, x, y, set_choice=None):
+    def __init__(self, parent, x, y, set_choice=None, factor=1):
         super().__init__(parent, '[Auto]', x, y)
         self.chosen = set_choice
+        self.factor = factor
 
     def on_mousebuttondown(self, event):
         if self.enabled and event.data['button'] == 1 and event.origin == self:
@@ -485,11 +486,11 @@ class AutomaticSystemDataButton(TextButton):
             else:
                 letter = self.chosen
             if letter == 'P':
-                min_a = 0.15
-                max_a = 6
+                min_a = 0.15*self.factor
+                max_a = 6*self.factor
             else:
-                min_a = 120
-                max_a = 600
+                min_a = 120*self.factor
+                max_a = 600*self.factor
             a = round(roll(min_a, max_a), 3)
             e_1 = roll(0.4, 0.7)
             e_2 = roll(0.4, 0.7)
