@@ -16,6 +16,8 @@ class AbstractBinary(Flagable):
     outer_forbbiden_zone = 0
     ecc_p, ecc_s = 0, 0
 
+    system_number = 'binary'
+
     def __init__(self, primary, secondary, avgsep, ep=0, es=0, unit='au'):
         if secondary.mass <= primary.mass:
             self.primary = primary
@@ -76,6 +78,8 @@ class BinarySystem(AbstractBinary):
 
     orbit = None
 
+    sub_cls = ''
+
     def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, unit='au', id=None):
         super().__init__(primary, secondary, avgsep, ep=ep, es=es, unit=unit)
 
@@ -92,7 +96,7 @@ class BinarySystem(AbstractBinary):
 
     def __str__(self):
         if self.parent is None or self.sub_pos == -1:
-            return self.letter + '-Type #{}'.format(self.idx)
+            return f'{self.sub_cls} {self.letter}-Type #{self.idx}'
         else:
             return f'{self.parent.letter}{turn_into_roman(self.sub_pos)}{self.letter}{turn_into_roman(self.idx)}'
 
@@ -243,8 +247,11 @@ class PlanetaryPTypeSystem(BinarySystem, Planet):
     orbit = None
     relative_size = ''
 
-    def __init__(self, star, primary, secondary, avg, ep=0, es=0):
-        super().__init__('Not Set', primary, secondary, avg, ep, es, unit='earth_radius')
+    sub_cls = 'Planetary'
+    clase = 'binary system'
+
+    def __init__(self, star, primary, secondary, avg, ep=0, es=0, idx=0):
+        super().__init__('Not Set', primary, secondary, avg, ep, es, id=idx, unit='earth_radius')
 
         # this is Planet.set_orbit(), not PlanetaryPTypeSystem.set_orbit()
         self.primary.set_orbit(star, [secondary, self.primary_max_sep, self.ecc_p], abnormal=True)

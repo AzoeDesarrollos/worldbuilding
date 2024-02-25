@@ -84,13 +84,15 @@ class StarSystemPanel(BaseWidget):
             Systems.set_planetary_system(system_data)
             Universe.nei().add_true_system(system_data)
             self.current.enable()
+            if self.is_visible:
+                self.sort_buttons(self.system_buttons.widgets())
             return button
 
     @staticmethod
     def save_systems(event):
         data = {}
         for system in Universe.nei().systems:
-            if system.celestial_type == 'system':
+            if system.celestial_type == 'system' and system.system_number not in ('single', None):
                 data[system.id] = {
                     'primary': system.primary.id,
                     'secondary': system.secondary.id,
@@ -295,7 +297,9 @@ class SystemType(BaseWidget):
             if not self.has_values:
                 x, y = self.parent.auto_button.rect.center
                 mouse.set_pos(x, y)
-            self.parent.auto_button.enable()
+
+            if hasattr(self.parent, 'auto_button'):
+                self.parent.auto_button.enable()
 
     def unset_stars(self):
         stars = Systems.loose_stars.copy()

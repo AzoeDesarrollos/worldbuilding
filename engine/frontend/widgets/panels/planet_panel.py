@@ -59,7 +59,7 @@ class PlanetPanel(BasePanel):
         EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": data})
         self.current.loaded_data = None
 
-    def add_button(self, planet):
+    def add_button(self, planet, erase=True):
         button = CreatedPlanet(self.current, planet, str(planet), self.curr_x, self.curr_y)
         if planet.system_id is not None:
             layer_number = planet.system_id
@@ -72,7 +72,8 @@ class PlanetPanel(BasePanel):
             planets = self.planet_buttons.get_widgets_from_layer(Systems.get_current().id)
             self.sort_buttons(planets)
         self.properties.add(button, layer=3)
-        self.image.fill(COLOR_BOX, self.erase_text_area)
+        if erase:
+            self.image.fill(COLOR_BOX, self.erase_text_area)
         return button
 
     def del_button(self, planet):
@@ -192,8 +193,7 @@ class PlanetType(ObjectType):
         self.hab_rect = self.habitable.get_rect(centerx=460, y=self.parent.rect.y + 250)
         self.uhb_rect = self.uninhabitable.get_rect(centerx=460, y=self.parent.rect.y + 250)
 
-        EventHandler.register(self.hold_loaded_bodies, 'LoadData')
-        self.held_data = {}
+        EventHandler.register(self.load_planets, 'LoadData')
 
     def enable(self):
         for arg in self.properties.widgets():
@@ -205,27 +205,25 @@ class PlanetType(ObjectType):
             arg.disable()
         super().disable()
 
-    def hold_loaded_bodies(self, event):
+    def load_planets(self, event):
         if 'Planets' in event.data and len(event.data['Planets']):
-            self.held_data.update(event.data['Planets'])
+            for id in event.data['Planets']:
+                planet_data = event.data['Planets'][id]
+                star = Universe.get_astrobody_by(planet_data['system'], 'id')
+                planet_data.update({
+                    'parent':  Systems.get_system_by_star(star),
+                    'id': id
+                })
+                planet = Planet(planet_data)
+                self.parent.planets.append(planet)
+                Universe.add_astro_obj(planet)
 
     def load_data(self):
-        for id in self.held_data:
-            planet_data = self.held_data[id]
-            planet_data['id'] = id
-            star = Universe.current_galaxy.current_neighbourhood.get_system(planet_data['system']).star
-            system = Systems.get_system_by_star(star)
-            if system is not None:
-                planet_data['parent'] = system
-
-            planet = Planet(planet_data)
-            if planet not in self.parent.planets:
-                btn = self.create_button(planet)
-                if planet.composition is not None:
-                    planet.sprite = PlanetSprite(self, planet, 460, 100)
-                    self.properties.add(planet.sprite, layer=3)
-                btn.hide()
-        self.held_data.clear()
+        for planet in self.parent.planets:
+            self.create_button(planet, erase=False)
+            if planet.composition is not None:
+                planet.sprite = PlanetSprite(self, planet, 460, 100)
+                self.properties.add(planet.sprite, layer=3)
 
     def set_planet(self, planet):
         if self.current is not None and self.current.sprite is not None:
@@ -246,7 +244,7 @@ class PlanetType(ObjectType):
         if self.current is not None and self.current.sprite is not None:
             self.current.sprite.kill()
 
-    def create_button(self, planet=None):
+    def create_button(self, planet=None, erase=True):
         if planet is None:
             planet = self.current
             system = Systems.get_current()
@@ -260,9 +258,10 @@ class PlanetType(ObjectType):
             for button in self.properties.get_widgets_from_layer(1):
                 button.clear()
             self.parent.button_add.disable()
-            btn = self.parent.add_button(planet)
+            btn = self.parent.add_button(planet, erase)
             self.has_values = False
-            self.parent.image.fill(COLOR_BOX, self.hab_rect)
+            if erase:
+                self.parent.image.fill(COLOR_BOX, self.hab_rect)
             if self.current is not None and self.current.sprite is not None:
                 self.current.sprite.hide()
             return btn

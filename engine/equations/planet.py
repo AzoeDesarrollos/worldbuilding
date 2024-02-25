@@ -3,7 +3,6 @@ from engine.backend.util import generate_id, molecular_weight, q, albedos
 from .general import BodyInHydrostaticEquilibrium
 from .lagrange import get_lagrange_points
 from math import sqrt, pi, pow
-from .space import Universe
 from pygame import Color
 
 
@@ -185,7 +184,7 @@ class Planet(BodyInHydrostaticEquilibrium):
 
         self.temperature = self.set_temperature(temp, self.orbit.semi_minor_axis.m)
         self.orbit.set_astrobody(star, self)
-        Universe.visibility_by_albedo()
+
         if hasattr(star, 'letter') and star.letter == 'P':
             self.lagrange_points = get_lagrange_points(self.orbit.a.m, star.shared_mass.m, self.mass.m)
         else:

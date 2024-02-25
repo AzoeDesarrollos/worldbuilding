@@ -1,16 +1,17 @@
 from engine.backend import EventHandler, Systems
 from .orbit import NeighbourhoodSystemOrbit
 from engine.equations.space import Universe
+from engine.equations.general import Flagable
 
 
-class SingleSystem:
+class SingleSystem(Flagable):
     star = None
     _orbit = None
     _cartesian = None
     letter = None
-    celestial_type = None
+    celestial_type = 'system'
+    system_number = 'single'
 
-    parent = None
     shared_mass = None
     age = None
 

@@ -1,9 +1,10 @@
 from engine.frontend.widgets.panels.common import ListedBody, ListedArea, ColoredBody, TextButton
+from .star_system_panel import SystemType, SystemButton, DissolveButton, AutoButton
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
-from .star_system_panel import SystemType, SystemButton, DissolveButton
-from engine.frontend.widgets.basewidget import BaseWidget
 from engine.equations.system_binary import PlanetaryPTypeSystem
-from engine.backend import Systems, q
+from engine.frontend.widgets.basewidget import BaseWidget
+from engine.backend import Systems, q, EventHandler
+from engine.equations import Universe
 from pygame import Surface
 
 
@@ -27,9 +28,8 @@ class DoublePlanetsPanel(BaseWidget):
         self.current = DoublesType(self)
         self.planets_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
-        self.systems_area = self.image.fill(COLOR_AREA, [0, 280, 380, 130])
-        self.curr_s_x = self.systems_area.x
-        self.curr_s_y = self.systems_area.y + 21
+        self.auto_button = AutoButton(self, ANCHO - 260, 133)
+
         self.system_buttons = Group()
         self.systems = []
         self.planet_buttons = Group()
@@ -39,10 +39,13 @@ class DoublePlanetsPanel(BaseWidget):
         self.undo_button = UndoButton(self, self.setup_button.rect.left - 50, 416)
         self.dissolve_button = DissolveSystemsButton(self, self.undo_button.rect.x, self.planets_area.rect.bottom + 21)
         f = self.crear_fuente(14, underline=True)
-        self.write('Potential Planets', f, COLOR_AREA, x=self.area_buttons.x + 3, y=self.area_buttons.y)
-        self.write('Double Planets', f, COLOR_AREA, x=self.systems_area.x + 3, y=self.systems_area.y + 2)
+        self.write('Double Planets', f, COLOR_AREA, x=self.area_buttons.x + 3, y=self.area_buttons.y)
 
-        self.properties.add(self.planets_area, self.undo_button, self.setup_button, self.dissolve_button, layer=1)
+        self.properties.add(self.planets_area, self.undo_button, self.auto_button,
+                            self.setup_button, self.dissolve_button, layer=1)
+
+        EventHandler.register(self.save_systems, 'Save')
+        EventHandler.register(self.load_systems, 'LoadData')
 
     def populate(self, *planets, layer: str):
         if layer not in self.primary_planets:
@@ -70,19 +73,13 @@ class DoublePlanetsPanel(BaseWidget):
         widgets = self.primary_planets[layer]
         by_mass = sorted(widgets, key=lambda b: abs(pm / b.mass.to('earth_mass').m))
         by_mass.pop(by_mass.index(planet))
-        selected = []
         for i, p in enumerate(by_mass):
             mass_of_p = p.mass.to('earth_mass').m
             ratio = min([pm, mass_of_p]) / max([pm, mass_of_p])
-            if 0.8 <= ratio <= 1.1:
-                if planet.id not in self.planet_buttons.layers:
-                    self.add_button(p, planet.id)
-                    selected.append(p)
+            if not (0.8 <= ratio <= 1.1):
+                self.planets_area.disable_object(p)
 
-        for button in self.planet_buttons.get_widgets_from_layers(planet.id):
-            button.hide()
         self.sort_buttons(self.planet_buttons.get_widgets_from_layer(planet.id))
-        return selected
 
     def add_button(self, planet, layer):
         button = CreatedPlanet(self, planet, str(planet), self.curr_x, self.curr_y)
@@ -96,7 +93,7 @@ class DoublePlanetsPanel(BaseWidget):
         self.systems.remove(system)
         self.system_buttons.remove(button)
         button.kill()
-        self.sort_buttons(self.system_buttons.widgets(), y=self.systems_area.y + 21, area=self.systems_area)
+        self.sort_buttons(self.system_buttons.widgets())
         self.properties.remove(button)
         self.dissolve_button.disable()
 
@@ -108,18 +105,75 @@ class DoublePlanetsPanel(BaseWidget):
         if system_data not in self.systems:
             Systems.get_current().add_astro_obj(system_data)
             idx = len([s for s in self.systems if system_data.compare(s) is True])
-            button = SystemButton(self, system_data, idx, self.curr_s_x, self.curr_s_y)
+            button = SystemButton(self, system_data, idx, 0, 0)
             self.systems.append(system_data)
             self.system_buttons.add(button)
             self.properties.add(button)
-            self.sort_buttons(self.system_buttons.widgets(), y=self.systems_area.y + 21, area=self.systems_area)
+            if self.is_visible:
+                self.sort_buttons(self.system_buttons.widgets())
             self.current.enable()
-            # return button
 
     def show_current(self, system):
         self.current.erase()
         self.current.current = system
         self.current.reset(system)
+
+    def save_systems(self, event):
+        macro_data = {}
+        for system in self.systems:
+            data = {
+                'primary': system.primary.id,
+                'secondary': system.secondary.id,
+                'avg_s': system.average_separation.m,
+                'ecc_p': system.ecc_p.m,
+                "ecc_s": system.ecc_s.m,
+                "name": system.name,
+                "neighbourhood_id": Universe.nei().id
+            }
+            if system.cartesian is not None:
+                data.update({"position": dict(zip(['x', 'y', 'z'], system.cartesian))})
+            macro_data[system.id] = data
+
+        EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': macro_data})
+
+    def load_systems(self, event):
+        for id in event.data['Binary Systems']:
+            system_data = event.data['Binary Systems'][id]
+            prim = Universe.get_astrobody_by(system_data['primary'], 'id', silenty=True)
+            scnd = Universe.get_astrobody_by(system_data['secondary'], 'id', silenty=True)
+            if 'system_id' in system_data:
+                sstm = Systems.get_star_by_id(system_data['system_id'])
+            else:
+                continue
+            if prim.celestial_type == 'planet' and scnd.celestial_type == 'planet':
+                avg_s = system_data['avg_s']
+                ecc_p = system_data['ecc_p']
+                ecc_s = system_data['ecc_s']
+
+                # name = system_data['name']
+                if 'position' in system_data:
+                    x = system_data['position']['x']
+                    y = system_data['position']['y']
+                    z = system_data['position']['z']
+                # offset = Universe.nei().location
+
+                system = PlanetaryPTypeSystem(sstm, prim, scnd, avg_s, ecc_p, ecc_s, idx=id)
+                # system.cartesian = x, y, z
+                self.systems.append(system)
+
+                Universe.add_astro_obj(system)
+
+                self.create_system_button(system)
+
+        if len(self.systems):
+            for id in event.data['Stellar Orbits']:
+                orbit_data = event.data['Stellar Orbits'][id]
+                a = orbit_data['a']
+                e = orbit_data['e']
+                i = orbit_data['i']
+                system = [s for s in self.systems if s.id == orbit_data['astrobody']][0]
+                sstm = Systems.get_star_by_id(orbit_data['star_id'])
+                system.set_orbit(sstm, (a, e, i))
 
     def select_one(self, btn):
         for button in self.system_buttons.widgets():
@@ -189,26 +243,14 @@ class DoublesType(SystemType):
 
 class PotentialPlanet(ListedBody):
     # Because it has the "potential" to form a double planet system.
-    enabled = True
 
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.parent.current.set_bodies(self.object_data)
-            created = self.parent.parent.create_buttons(self.object_data)
+            self.parent.parent.create_buttons(self.object_data)
             self.parent.remove_listed(self)
-            for pln in created:
-                self.parent.delete_objects(pln)
             self.kill()
             self.parent.sort()
-            self.parent.lock()
-
-    def disable(self):
-        """Se dispara en parent.lock()"""
-        self.enabled = False
-
-    def enable(self):
-        """Se dispara en parent.unlock()"""
-        self.enabled = True
 
 
 class AvailablePlanets(ListedArea):

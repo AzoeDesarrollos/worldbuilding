@@ -47,7 +47,7 @@ class MultipleStarsPanel(BaseWidget):
         self.undo_button = UndoButton(self, 234, 416)
         self.setup_button = CreateSystemButton(self, 484, 416)
         self.dissolve_button = DissolveButton(self, 334, 416)
-        self.auto_button = AutoButton(self, ANCHO - 260, 133, set_choice='S',factor=10)
+        self.auto_button = AutoButton(self, ANCHO - 260, 133, set_choice='S', factor=10)
         self.properties.add(self.current, self.stars_area, self.undo_button,
                             self.setup_button, self.dissolve_button, self.auto_button)
         EventHandler.register(self.name_current, 'NameObject')
@@ -261,28 +261,29 @@ class MultipleStarsPanel(BaseWidget):
         for id in event.data['Binary Systems']:
             system_data = event.data['Binary Systems'][id]
 
-            prim = Universe.get_astrobody_by(system_data['primary'], 'id')
-            scnd = Universe.get_astrobody_by(system_data['secondary'], 'id')
-            go_on_1 = prim.celestial_type != 'system' and scnd.celestial_type == 'system'  # triple
-            go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type != 'system'  # triple
-            go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'  # multiple
+            prim = Universe.get_astrobody_by(system_data['primary'], 'id', silenty=True)
+            scnd = Universe.get_astrobody_by(system_data['secondary'], 'id', silenty=True)
+            if prim is not False and scnd is not False:
+                go_on_1 = prim.celestial_type != 'system' and scnd.celestial_type == 'system'  # triple
+                go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type != 'system'  # triple
+                go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'  # multiple
 
-            if any([go_on_1, go_on_2, go_on_3]):
-                avg_s = system_data['avg_s']
-                ecc_p = system_data['ecc_p']
-                ecc_s = system_data['ecc_s']
-                name = system_data['name']
-                x = system_data['position']['x']
-                y = system_data['position']['y']
-                z = system_data['position']['z']
-                offset = Universe.nei().location
+                if any([go_on_1, go_on_2, go_on_3]):
+                    avg_s = system_data['avg_s']
+                    ecc_p = system_data['ecc_p']
+                    ecc_s = system_data['ecc_s']
+                    name = system_data['name']
+                    x = system_data['position']['x']
+                    y = system_data['position']['y']
+                    z = system_data['position']['z']
+                    offset = Universe.nei().location
 
-                system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
-                system.orbit = NeighbourhoodSystemOrbit(x, y, z, offset)
-                system.cartesian = x, y, z
+                    system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
+                    system.orbit = NeighbourhoodSystemOrbit(x, y, z, offset)
+                    system.cartesian = x, y, z
 
-                button = self.create_button(system)
-                button.hide()
+                    button = self.create_button(system)
+                    button.hide()
 
     def update(self):
         self.load_universe_data()

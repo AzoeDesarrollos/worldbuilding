@@ -5,6 +5,7 @@ from engine.frontend.globales import ANCHO, ALTO, Group
 from engine.frontend.widgets.values import ValueText
 from engine.frontend.widgets.meta import Meta
 from .common import TextButton, ColoredBody
+from engine.equations import Universe
 from ..object_type import ObjectType
 from .planet_panel import ShownMass
 from .base_panel import BasePanel
@@ -39,7 +40,7 @@ class SatellitePanel(BasePanel):
         text += 'You can also set the percentages manually.'
         self.erase_text_area = self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
         ra = self.write('Composition', f1, COLOR_AREA, topleft=(18, 420))
-        self.write('Satellites', f1, COLOR_AREA, topleft=(self.area_buttons.x+2, self.area_buttons.y))
+        self.write('Satellites', f1, COLOR_AREA, topleft=(self.area_buttons.x + 2, self.area_buttons.y))
         self.copy_button = CopyCompositionButton(self, ra.left, ra.bottom + 6, ra.centerx)
         self.random_button = RandomCompositionButton(self, ra.right, ra.bottom + 6, ra.centerx)
 
@@ -53,21 +54,20 @@ class SatellitePanel(BasePanel):
         self.moons = []
         EventHandler.register(self.save_satellites, 'Save')
         EventHandler.register(self.name_current, 'NameObject')
-        EventHandler.register(self.hold_loaded_bodies, 'LoadData')
-        self.holded_data = {}
+        EventHandler.register(self.load_satellites, 'LoadData')
 
-    def hold_loaded_bodies(self, event):
-        if 'Satellites' in event.data and len(event.data['Satellites']):
-            self.holded_data.update(event.data['Satellites'])
-
-    def load_satellites(self):
-        self.enable()
-        for idx, id in enumerate(self.holded_data):
-            satellite_data = self.holded_data[id]
-            satellite_data['id'] = id
+    def load_satellites(self, event):
+        for idx, id in enumerate(event.data['Satellites']):
+            satellite_data = event.data['Satellites'][id]
             moon = major_moon_by_composition(satellite_data)
             moon.idx = len([i for i in Systems.get_current().satellites if i.cls == moon.cls])
-            system = Systems.get_system_by_id(satellite_data['system'])
+            self.satellites.add(moon)
+            Universe.add_astro_obj(moon)
+
+    def load_data(self):
+        self.enable()
+        for moon in self.satellites.widgets():
+            system = Systems.get_system_by_id(moon.system_id)
             if system is not None and system.add_astro_obj(moon):
                 self.add_button(moon)
 
@@ -89,7 +89,7 @@ class SatellitePanel(BasePanel):
             button.hide()
         for button in self.satellites.get_widgets_from_layer(idx):
             button.show()
-        self.sort_buttons(self.satellites.get_widgets_from_layer(Systems.get_current().id),x=self.curr_x)
+        self.sort_buttons(self.satellites.get_widgets_from_layer(Systems.get_current().id), x=self.curr_x)
 
     def add_button(self, moon):
         button = SatelliteButton(self.current, moon, str(moon), self.curr_x, self.curr_y)
@@ -129,7 +129,7 @@ class SatellitePanel(BasePanel):
 
     def show(self):
         super().show()
-        self.load_satellites()
+        self.load_data()
         if self.mass_number is None:
             self.properties.add()
         for pr in self.properties.widgets():
@@ -185,8 +185,8 @@ class SatelliteType(ObjectType):
         self.show_layers.append(3)
 
         for i, item in enumerate(self.relatives.widgets() + self.absolutes.widgets()):
-            item.rect.y += i*4
-            item.text_area.rect.y += i*4
+            item.rect.y += i * 4
+            item.text_area.rect.y += i * 4
 
         names = sorted(material_densities.keys())
         d = {names[0]: 33, names[1]: 33, names[2]: 34}
@@ -526,7 +526,7 @@ class RandomCompositionButton(Meta):
                 new_max = value
                 d[primary] = value
 
-                delta = 100-value
+                delta = 100 - value
                 secondary = choice(materials)
                 materials.remove(secondary)
                 value = round(roll(0.0, delta), 2)
@@ -534,5 +534,5 @@ class RandomCompositionButton(Meta):
                 d[secondary] = value
 
                 tertiary = materials[0]
-                d[tertiary] = 100-new_max
+                d[tertiary] = 100 - new_max
                 self.parent.current.paste_composition(d)

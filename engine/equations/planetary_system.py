@@ -69,7 +69,6 @@ class PlanetarySystem(Flagable):
         return self._get_astro_group(astro_obj)
 
     def add_astro_obj(self, astro_obj):
-        Universe.add_astro_obj(astro_obj)
         group = self._get_astro_group(astro_obj)
 
         if astro_obj not in group:
@@ -113,7 +112,7 @@ class PlanetarySystem(Flagable):
             group = self.satellites
         elif astro_obj.celestial_type == 'asteroid':
             group = self.asteroids
-        elif astro_obj.celestial_type == 'system':
+        elif astro_obj.celestial_type == 'binary planet':
             group = self.binary_planets
 
         return group

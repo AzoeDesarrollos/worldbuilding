@@ -103,6 +103,11 @@ class ListedArea(BaseWidget):
             if listed.object_data.celestial_type == selected_type:
                 listed.disable()
 
+    def disable_object(self, selected_object):
+        for listed in self.listed_objects.widgets():
+            if listed.object_data == selected_object:
+                listed.disable()
+
     def objects(self):
         return [o.object_data for o in self.listed_objects.widgets()]
 

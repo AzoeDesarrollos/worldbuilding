@@ -260,10 +260,11 @@ class DefinedNeighbourhood:
             for system_id in data[tag]:
                 if data[tag][system_id]['neighbourhood_id'] == self.id:
                     system_data = data[tag][system_id]
-                    x = system_data['position']['x']
-                    y = system_data['position']['y']
-                    z = system_data['position']['z']
-                    self.pre_processed_system_positions[tag_name].append((x, y, z))
+                    if 'position' in system_data:
+                        x = system_data['position']['x']
+                        y = system_data['position']['y']
+                        z = system_data['position']['z']
+                        self.pre_processed_system_positions[tag_name].append((x, y, z))
 
     def add_proto_stars(self, list_of_dicts):
         for data in list_of_dicts:

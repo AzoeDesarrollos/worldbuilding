@@ -65,7 +65,7 @@ class Universe:
             astrobody = [body for body in cls.astro_bodies if body.id == tag_identifier]
 
         if not silenty:
-            assert len(astrobody), 'the ID "{}" is invalid'.format(tag_identifier)
+            assert len(astrobody), f'the ID "{tag_identifier}" is invalid'
             return astrobody[0]
         else:
             if not len(astrobody):
@@ -140,13 +140,14 @@ class Universe:
         if body.id not in cls.distances:
             cls.distances[body.id] = {}
         stars = []
+        parent = body.find_topmost_parent()
         for galaxy in cls.galaxies:
             for stellar_neibouhood in galaxy.stellar_neighbourhoods:
                 for system in stellar_neibouhood.systems:
                     if system.letter == 'P' or system.letter is None:
                         stars.append(system)
                     else:
-                        for star in system:
+                        for star in system.composition():
                             stars.append(star)
             # for system in Systems.get_stars_and_systems():
             #     if system.star_system.letter == 'P':
@@ -157,24 +158,37 @@ class Universe:
             for star in stars:
                 if body.orbit is not None and star.id not in cls.aparent_brightness[body.id]:
                     # this chunk is for binary pairs or single stars
-                    if star == body.find_topmost_parent(body):  # primary star
-                        ab = round(q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs'), 3)
+                    if star == parent:  # primary star
+                        star = parent
                         if body.orbit.subtype != 'PlanetaryBinary':
                             cls.distances[body.id][star.id] = body.orbit.a
+                            ab = q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs')
                         else:
-                            cls.distances[body.id][star.id] = body.parent.orbit.a
+                            _body = body.orbit.astrobody.parent
+                            cls.distances[body.id][star.id] = _body.orbit.a.to('au')
+                            ab = q(star.luminosity.m / pow(_body.orbit.a.m, 2), 'Vs')
                     elif star in body.orbit.star:  # primary star's companion (in case of an S-Type System)
-                        x1, y1, z1 = body.find_topmost_parent(body).cartesian
-                        x1 = body.orbit.a.m  # chapuza
+                        x1, y1, z1 = body.find_topmost_parent().cartesian
+                        if body.orbit.subtype != 'PlanetaryBinary':
+                            x1 = body.orbit.a.m  # chapuza
+                        else:
+                            _body = body.orbit.astrobody.parent
+                            x1 = _body.orbit.a.m
                         x2, y2, z2 = star.cartesian
                         d = q(sqrt(pow(abs(x2 - x1), 2) + pow(abs(y2 - y1), 2) + pow(abs(z2 - z1), 2)), 'au')
                         cls.distances[body.id][star.id] = round(d)
                         ab = q(star.luminosity.m / pow(d.to('au').m, 2), 'Vs')
                     else:  # Other stars in the universe
-                        x1, y1, z1 = body.find_topmost_parent(body).cartesian
-                        x2, y2, z2 = star.cartesian
+                        if body.orbit.subtype != 'PlanetaryBinary':
+                            x1, y1, z1 = body.find_topmost_parent().cartesian
+                        else:
+                            _body = body.orbit.astrobody.parent
+                            x1, y1, z1 = _body.find_topmost_parent().cartesian
+                        x2, y2, z2 = star.find_topmost_parent().cartesian
                         d = q(sqrt(pow(abs(x2 - x1), 2) + pow(abs(y2 - y1), 2) + pow(abs(z2 - z1), 2)), 'lightyears')
                         cls.distances[body.id][star.id] = round(d)
+                        if star.system_number == 'single':
+                            star = star.star
                         ab = q(star.luminosity.m / pow(d.to('au').m, 2), 'Vs')
 
                     if star not in cls.relative_sizes[body.id]:
@@ -189,7 +203,7 @@ class Universe:
         to_see = [i for i in to_see if i.orbit is not None or i.rogue is True]
         for i, body in enumerate(to_see):
             if body.orbit is not None:
-                star = body.find_topmost_parent(body)
+                star = body.find_topmost_parent()
                 luminosity = star.luminosity.to('watt').m
             else:
                 luminosity = 0

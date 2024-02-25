@@ -22,6 +22,8 @@ class BinaryPartner:
 
     letter = None
 
+    evolution_id = None
+
     def __init__(self, data):
         # Star's lifetime; compact objects may have their own way of calculating lifetime. Required for age.
         if hasattr(self, 'luminosity'):
@@ -37,6 +39,7 @@ class BinaryPartner:
             age = (self._lifetime * x) * 10 ** 10
             if age != self._age:
                 self._age = age
+                self.evolution_id = generate_id()
 
     def inherit(self, system, inner, outer, mass, idx):
         self.prefix = system.letter
@@ -93,6 +96,7 @@ class BlackHole(CompactObject, BinaryPartner):
         self._photon = 1.5 * self._event
 
         self.id = data['id'] if 'id' in data else generate_id()
+        self.evolution_id = self.id
 
         super().__init__(data)
         # https://en.wikipedia.org/wiki/Hawking_radiation
@@ -128,6 +132,7 @@ class NeutronStar(CompactObject, BinaryPartner):
         self.radius = q(self._radius, 'km')
 
         self.id = data['id'] if 'id' in data else generate_id()
+        self.evolution_id = self.id
         self.sub_cls = data['sub'] if 'sub' in data else choice(['RPP', 'RRAT', 'SGR', 'AXP'])
         if 'age' in data:
             self._age = data['age']
@@ -169,6 +174,7 @@ class WhiteDwarf(CompactObject, BinaryPartner):
         self.radius = q(self._radius, 'earth_radius')
 
         self.id = data['id'] if 'id' in data else generate_id()
+        self.evolution_id = self.id
         self.sub_cls = data['sub'] if 'sub' in data else ''.join([str(randint(0, 9)) for _ in range(3)])
 
         luminosity = pow(mass, 3.5)
@@ -206,6 +212,7 @@ class BrownDwarf(CompactObject, BinaryPartner):
         self.radius = q(self._radius, 'jupiter_radius')
 
         self.id = data['id'] if 'id' in data else generate_id()
+        self.evolution_id = self.id
 
         luminosity = pow(mass, 3.5)
         temperature = pow((luminosity / pow(self._radius, 2)), (1 / 4))

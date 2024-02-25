@@ -98,7 +98,6 @@ class OrbitPanel(BaseWidget):
             Systems.cycle_systems()
             self.set_current()
 
-
     def populate(self):
         star = self.current
         markers = {'Inner Boundary': star.inner_boundry,
@@ -851,6 +850,7 @@ class OrbitButton(Meta, Intertwined):
         self.f1 = self.crear_fuente(14)
         self.f2 = self.crear_fuente(14, bold=True)
         self._rect = Rect(3, 442, 0, 21)
+        self.rect = self._rect
         self.color = color
 
     def link_marker(self, marker):
@@ -1307,7 +1307,7 @@ class Recomendation(BaseWidget):
 
     def create_suggestion(self, planet, temperature):
         if not type(self.format) is str:
-            if planet.celestial_type != 'system':
+            if planet.celestial_type != 'binary planet':
                 base_text = self.recomendation['texts']['text']
                 if planet.habitable is True and temperature == 'habitable':
                     p = 'Habitable Planet'

@@ -80,7 +80,7 @@ class Star(BodyInHydrostaticEquilibrium):
         self.temperature_mass = self._mass
 
         self.habitable = 0.5 <= self._mass <= 1.4
-        self._spin = choice(['clockwise', 'counter-clockwise']) if 'spin' not in data else data['spin']
+        self._spin = data['spin'] if 'spin'in data else choice(['clockwise', 'counter-clockwise'])
         self._radius = self.set_radius()
         self._lifetime = self._mass / self._luminosity
         if 'age' in data:
@@ -355,6 +355,8 @@ class Star(BodyInHydrostaticEquilibrium):
             return False
         elif self.celestial_type == other.celestial_type:
             return all([self.mass.m == other.mass.m, self.name == other.name, self.id == other.id])
+        elif hasattr(other, 'star') and other.star == self:
+            return True
         else:
             return False
 

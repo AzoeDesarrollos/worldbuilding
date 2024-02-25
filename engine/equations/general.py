@@ -8,6 +8,9 @@ class Flagable:
     flagged = False
     _position = None
 
+    parent = None
+    system_number = None
+
     def flag(self):
         self.flagged = True
 
@@ -22,9 +25,20 @@ class Flagable:
     def random_position(self):
         self.position = roll(-100, 100), roll(-100, 100), roll(-100, 100)
 
+    def is_orbiting_a_star(self):
+        if self.parent is not None:
+            return self.parent
+        else:
+            return False
+
+    def find_topmost_parent(self):
+        if self.parent is not None:
+            return self.parent.find_topmost_parent()
+        else:
+            return self
+
 
 class StarSystemBody(Flagable):
-    parent = None
     celestial_type = ''
     name = None
     has_name = False
@@ -46,21 +60,9 @@ class StarSystemBody(Flagable):
         self.age = parent.age.to('years')
         self.formation = parent.age.to('billion years')
 
-    def is_orbiting_a_star(self):
-        if hasattr(self.parent, 'parent'):
-            return self.parent.parent is None
-        return False
-
     def set_name(self, name):
         self.name = name
         self.has_name = True
-
-    @staticmethod
-    def find_topmost_parent(this):
-        if this.is_orbiting_a_star():
-            return this.parent
-        else:
-            return this.find_topmost_parent(this.parent)
 
     @property
     def age(self):

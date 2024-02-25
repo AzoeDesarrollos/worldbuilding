@@ -54,29 +54,22 @@ class AsteroidPanel(BasePanel):
         self.moons = []
         EventHandler.register(self.save_satellites, 'Save')
         EventHandler.register(self.name_current, 'NameObject')
-        EventHandler.register(self.hold_loaded_bodies, 'LoadData')
-        self.holded_data = {}
+        EventHandler.register(self.load_satellites, 'LoadData')
 
-    def hold_loaded_bodies(self, event):
-        if 'Asteroids' in event.data and len(event.data['Asteroids']):
-            self.holded_data.update(event.data['Asteroids'])
-
-    def name_current(self, event):
-        if event.data['object'] in self.moons:
-            moon = event.data['object']
-            moon.set_name(event.data['name'])
-
-    def load_satellites(self):
-        self.enable()
-        for id in self.holded_data:
-            satellite_data = self.holded_data[id]
-            satellite_data['id'] = id
-            moon = minor_moon_by_composition(satellite_data)
+    def load_satellites(self, event):
+        for id in event.data['Asteroids']:
+            asteorid_data = event.data['Asteroids'][id]
+            moon = minor_moon_by_composition(asteorid_data)
             moon.idx = len([i for i in Systems.get_current().planets if i.clase == moon.clase])
-            system = Systems.get_system_by_id(satellite_data['system'])
+            self.asteroids.add(moon)
+            Universe.add_astro_obj(moon)
+
+    def load_data(self):
+        self.enable()
+        for moon in self.asteroids.widgets():
+            system = Systems.get_system_by_id(moon.system_id)
             if system is not None and system.add_astro_obj(moon):
-                self.current.current = moon
-                self.add_button()
+                self.add_button(moon)
 
     def save_satellites(self, event):
         data = {}
@@ -94,8 +87,14 @@ class AsteroidPanel(BasePanel):
             data[moon.id] = moon_data
             EventHandler.trigger(event.tipo + 'Data', 'Asteroid', {"Asteroids": data})
 
-    def add_button(self):
-        asteroid = self.current.current
+    def name_current(self, event):
+        if event.data['object'] in self.moons:
+            moon = event.data['object']
+            moon.set_name(event.data['name'])
+
+    def add_button(self, asteroid=None):
+        if asteroid is None:
+            asteroid = self.current.current
         button = AsteroidButton(self.current, asteroid, str(asteroid), self.curr_x, self.curr_y)
         if self.current.current.system_id is not None:
             layer_number = self.current.current.system_id
@@ -138,7 +137,7 @@ class AsteroidPanel(BasePanel):
 
     def show(self):
         super().show()
-        self.load_satellites()
+        self.load_data()
         for pr in self.properties.get_widgets_from_layer(1):
             pr.show()
         for pr in self.properties.get_widgets_from_layer(Systems.get_current_id(self)):
