@@ -2,7 +2,7 @@ from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_S
 from .common import ColoredBody, ListedArea, ModifyArea, TextButton, ToggleableButton
 from engine.equations.orbit import PseudoOrbit, RawOrbit, from_planetary_resonance
 from engine.frontend.widgets.incremental_value import IncrementalValue
-from engine.backend import EventHandler, Systems,  q, roll
+from engine.backend import EventHandler, Systems, q, roll
 from engine.frontend.widgets.basewidget import BaseWidget
 from .stellar_orbit_panel import OrbitType, RatioDigit
 from engine.frontend.globales import WidgetHandler
@@ -64,6 +64,7 @@ class PlanetaryOrbitPanel(BaseWidget):
 
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
+        EventHandler.register(self.export_data, 'ExportData')
 
     def load_orbits(self, event):
         bodies = []
@@ -378,7 +379,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         return obj in self.added
 
     def get_raw_orbit_markers(self):
-        raws = [m for m in self.markers if ((not m.locked) and (type(m.orbit) == RawOrbit))]
+        raws = [m for m in self.markers if ((not m.locked) and (type(m.orbit) is RawOrbit))]
         return raws
 
     def link_satellite_to_planet(self, marker):
@@ -429,6 +430,10 @@ class PlanetaryOrbitPanel(BaseWidget):
     def clear_ratios(self):
         self.digit_x.clear()
         self.digit_y.clear()
+
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
 
 
 class OrbitableObject(ColoredBody):

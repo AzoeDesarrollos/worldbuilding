@@ -79,6 +79,7 @@ class OrbitPanel(BaseWidget):
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
         EventHandler.register(self.load_orbits, 'LoadData')
+        EventHandler.register(self.export_data, 'ExportData')
 
     def set_current(self):
         star = Systems.get_current_star()
@@ -562,6 +563,10 @@ class OrbitPanel(BaseWidget):
 
     def reset_offset(self):
         self.offset = 0
+
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
 
 
 class Intertwined:

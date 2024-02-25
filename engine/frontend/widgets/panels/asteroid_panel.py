@@ -23,7 +23,7 @@ class AsteroidPanel(BasePanel):
         r = self.image.fill(COLOR_AREA, [0, 420, (self.rect.w // 4) + 132, 178])
         ro = self.write('Composition', f, COLOR_AREA, topleft=(18, 420))
         self.area_buttons = self.image.fill(COLOR_AREA, (r.right + 10, r.y, 300, 178))
-        self.write('Asteroids', f, COLOR_AREA, topleft=(self.area_buttons.x+2, self.area_buttons.y))
+        self.write('Asteroids', f, COLOR_AREA, topleft=(self.area_buttons.x + 2, self.area_buttons.y))
         self.area_type = Rect(32, 32, ANCHO, ALTO - (self.area_buttons.h + 200))
         text = 'Create your asteroids here.\n\n'
         text += 'Input its three axes first, and then select its composition below.\n\n'
@@ -55,6 +55,7 @@ class AsteroidPanel(BasePanel):
         EventHandler.register(self.save_satellites, 'Save')
         EventHandler.register(self.name_current, 'NameObject')
         EventHandler.register(self.load_satellites, 'LoadData')
+        EventHandler.register(self.export_data, 'ExportData')
 
     def load_satellites(self, event):
         for id in event.data['Asteroids']:
@@ -179,6 +180,10 @@ class AsteroidPanel(BasePanel):
     def write_button_desc(self, button):
         self.image.blit(button.text_render, button.text_rect)
 
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
+
 
 class AsteroidType(BaseWidget):
     current = None
@@ -198,7 +203,7 @@ class AsteroidType(BaseWidget):
         for obj in self.pie.chart.widgets():
             self.properties.add(obj, layer=5)
 
-        names = ["Mass", "Density",  "Volume", 'Axial tilt', 'Spin',
+        names = ["Mass", "Density", "Volume", 'Axial tilt', 'Spin',
                  'Rotation Rate', "A Axis", "B Axis", "C Axis", "Shape"]
         for i, prop in enumerate(names, start=0):
             vt = ValueText(self, prop, 50, 40 + i * 36, COLOR_TEXTO, COLOR_BOX)

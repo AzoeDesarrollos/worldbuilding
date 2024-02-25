@@ -28,6 +28,7 @@ class NamingPanel(BaseWidget):
         self.unnamed = Group()
         self.objects = {}
         self.dummy = DummyType(self)
+        EventHandler.register(self.export_data, 'ExportData')
 
     def hide(self):
         super().hide()
@@ -144,6 +145,10 @@ class NamingPanel(BaseWidget):
 
         if obj is not None and text is not None:
             EventHandler.trigger('NameObject', self, {'object': obj, 'name': text})
+
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
 
 
 class DummyType(BaseWidget):

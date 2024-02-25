@@ -63,6 +63,7 @@ class MultipleStarsPanel(BaseWidget):
         EventHandler.register(self.load_systems, 'LoadData')
         EventHandler.register(self.name_current, 'NameObject')
         EventHandler.register(load_single_systems, 'LoadData')
+        EventHandler.register(self.export_data, 'ExportData')
 
     @property
     def triple(self):
@@ -287,6 +288,10 @@ class MultipleStarsPanel(BaseWidget):
 
     def update(self):
         self.load_universe_data()
+
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
 
 
 class SystemsType(SystemType):

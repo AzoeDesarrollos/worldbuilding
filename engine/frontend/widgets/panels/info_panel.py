@@ -2,6 +2,7 @@ from engine.equations.tides import major_tides, minor_tides, is_tidally_locked
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
 from engine.equations.planetary_system import RoguePlanets
 from .common import ListedArea, ColoredBody, TextButton
+from engine.backend.eventhandler import EventHandler
 from engine.backend import generate_id, Systems, q
 from engine.equations.space import Universe
 from ..basewidget import BaseWidget
@@ -41,6 +42,7 @@ class InformationPanel(BaseWidget):
         self.properties.add(self.planet_area, self.print_button, layer=2)
         self.perceptions_rect = Rect(3, 250, 380, ALTO)
         self.info_rect = Rect(3, self.perceptions_rect.bottom, 380, ALTO - (self.perceptions_rect.h + 380 + 21))
+        EventHandler.register(self.export_data, 'ExportData')
 
     def on_mousebuttondown(self, event):
         if event.origin == self:
@@ -253,6 +255,10 @@ class InformationPanel(BaseWidget):
         inner = astrobody.orbit.periapsis.to('au') >= star_system.habitable_inner.to('au')
         outer = astrobody.orbit.apoapsis.to('au') <= star_system.habitable_outer.to('au')
         return inner, outer
+
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
 
 
 class Astrobody(ColoredBody):

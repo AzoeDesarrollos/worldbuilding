@@ -46,6 +46,7 @@ class DoublePlanetsPanel(BaseWidget):
 
         EventHandler.register(self.save_systems, 'Save')
         EventHandler.register(self.load_systems, 'LoadData')
+        EventHandler.register(self.export_data, 'ExportData')
 
     def populate(self, *planets, layer: str):
         if layer not in self.primary_planets:
@@ -208,6 +209,10 @@ class DoublePlanetsPanel(BaseWidget):
             self.last_idx = idx
             if self.last_idx not in self.primary_planets:
                 self.primary_planets[self.last_idx] = []
+
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
 
 
 class DoublesType(SystemType):

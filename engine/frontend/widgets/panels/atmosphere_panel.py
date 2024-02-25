@@ -42,6 +42,7 @@ class AtmospherePanel(BaseWidget):
         self.water_state_rect = self.write('State of Water at Surface: ', f4, x=3, y=ALTO - 50)
         self.write_water_state('unknown')
         EventHandler.register(self.clear, 'ClearData')
+        EventHandler.register(self.export_data, 'ExportData')
         self.area_info = Rect(190, 460, 195, 132 - 41)
         self.warning_rect = Rect(self.area_info.x, self.area_info.bottom, self.area_info.w, 21)
 
@@ -266,6 +267,10 @@ class AtmospherePanel(BaseWidget):
             self.erase()
             self.show_current()
             self.last_idx = idx
+
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
 
 
 class Element(BaseWidget):

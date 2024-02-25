@@ -43,6 +43,7 @@ class StarSystemPanel(BaseWidget):
         EventHandler.register(self.save_systems, 'Save')
         EventHandler.register(self.load_systems, 'LoadData')
         EventHandler.register(self.name_current, 'NameObject')
+        EventHandler.register(self.export_data, 'ExportData')
 
         f = self.crear_fuente(14, underline=True)
         self.write('Systems', f, COLOR_AREA, x=3, y=420)
@@ -232,6 +233,10 @@ class StarSystemPanel(BaseWidget):
 
     def update(self):
         self.load_universe_data()
+
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
 
 
 class SystemType(BaseWidget):

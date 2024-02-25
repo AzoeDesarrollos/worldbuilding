@@ -71,6 +71,7 @@ class NeighbourhoodPanel(BaseWidget):
 
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.switch_current, 'SwitchGalaxy')
+        EventHandler.register(self.export_data, 'ExportData')
         self.neighbourhoods = []
 
     def on_mousebuttondown(self, event):
@@ -198,6 +199,10 @@ class NeighbourhoodPanel(BaseWidget):
     def update(self):
         if self.current_galaxy_id != self.last_id:
             self.last_id = self.current_galaxy_id
+
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
 
 
 class GalaxyType(BaseWidget):

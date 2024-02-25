@@ -35,6 +35,7 @@ class StarPanel(BasePanel):
         EventHandler.register(self.save_stars, 'Save')
         EventHandler.register(self.load_stars, 'LoadData')
         EventHandler.register(self.name_current, 'NameObject')
+        EventHandler.register(self.export_data, 'ExportData')
 
         self.age_bar = AgeBar(self, 50, 420 - 32)
         self.properties.add(self.age_bar, layer=1)
@@ -224,6 +225,10 @@ class StarPanel(BasePanel):
 
     def hold_proto(self, proto):
         self.selected_proto = proto
+
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
 
 
 class StarType(ObjectType):

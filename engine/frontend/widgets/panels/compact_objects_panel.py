@@ -66,6 +66,7 @@ class CompactObjectsPanel(BaseWidget):
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_objects, 'Save')
         EventHandler.register(self.load_objects, 'LoadData')
+        EventHandler.register(self.export_data, 'ExportData')
 
     def load_universe_data(self):
         no_black_holes = "This stellar neighbourhood does not have room for more black holes."
@@ -233,6 +234,10 @@ class CompactObjectsPanel(BaseWidget):
                 compact = BrownDwarf(data)
 
             self.create_button(compact)
+
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
 
 
 class NeutronStarType(BaseWidget):

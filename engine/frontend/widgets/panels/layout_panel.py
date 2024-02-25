@@ -35,9 +35,10 @@ class LayoutPanel(BaseWidget):
         a = Arrow(self, 'backward', 180, self.rect.left + 16, self.rect.bottom)
         b = Arrow(self, 'forward', 0, self.rect.right - 16, self.rect.bottom)
 
-        e = NewButton(self, (self.rect.w // 6) * 1 + 32, self.rect.bottom - 26)
-        d = LoadButton(self, (self.rect.w // 6) * 3, self.rect.bottom - 26)
-        c = SaveButton(self, (self.rect.w // 6) * 5 - 32, self.rect.bottom - 26)
+        e = NewButton(self, 100, ALTO-28)
+        d = LoadButton(self, 210, ALTO-27)
+        c = SaveButton(self, 340, ALTO-27)
+        j = ExportButton(self, 470, ALTO+-28)
 
         f = SwapSystem(self, ANCHO - 200, 2, 'System')
         g = SwapGalaxy(self, 0, 2, 'Galaxy')
@@ -47,7 +48,7 @@ class LayoutPanel(BaseWidget):
         self.swap_galaxy_button = g
         self.swap_neighbourhood_button = h
 
-        self.properties.add(a, b, c, d, e, f, g, h, layer=1)
+        self.properties.add(a, b, c, d, e, f, g, h, j, layer=1)
 
     def cycle(self, delta):
         if self.curr_idx + delta < 0:
@@ -333,3 +334,14 @@ class NeighbourhoodName(SystemName):
             return self.named
         else:
             return '-'
+
+
+class ExportButton(BaseButton):
+    def __init__(self, parent, x, y):
+        super().__init__(parent, x, y, 'Export')
+
+    def on_mousebuttondown(self, event):
+        if event.data['button'] == 1 and event.origin == self:
+            if event.data['button'] == 1 and self.enabled and event.origin == self:
+                EventHandler.trigger('ExportData', 'ExportButton', {'panel': self.parent.current})
+

@@ -37,6 +37,7 @@ class PlanetPanel(BasePanel):
         self.planets = []
         EventHandler.register(self.save_planets, 'Save')
         EventHandler.register(self.name_current, 'NameObject')
+        EventHandler.register(self.export_data, 'ExportData')
 
     def save_planets(self, event):
         data = {}
@@ -167,6 +168,10 @@ class PlanetPanel(BasePanel):
             planet = event.data['object']
             planet.set_name(event.data['name'])
 
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
+
 
 class PlanetType(ObjectType):
 
@@ -211,7 +216,7 @@ class PlanetType(ObjectType):
                 planet_data = event.data['Planets'][id]
                 star = Universe.get_astrobody_by(planet_data['system'], 'id')
                 planet_data.update({
-                    'parent':  Systems.get_system_by_star(star),
+                    'parent': Systems.get_system_by_star(star),
                     'id': id
                 })
                 planet = Planet(planet_data)

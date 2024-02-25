@@ -55,6 +55,7 @@ class SatellitePanel(BasePanel):
         EventHandler.register(self.save_satellites, 'Save')
         EventHandler.register(self.name_current, 'NameObject')
         EventHandler.register(self.load_satellites, 'LoadData')
+        EventHandler.register(self.export_data, 'ExportData')
 
     def load_satellites(self, event):
         for idx, id in enumerate(event.data['Satellites']):
@@ -170,6 +171,10 @@ class SatellitePanel(BasePanel):
 
     def write_button_desc(self, button):
         self.image.blit(button.text_render, button.text_rect)
+
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
 
 
 class SatelliteType(ObjectType):

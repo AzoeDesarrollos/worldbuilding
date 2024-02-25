@@ -117,6 +117,7 @@ class AlbedoPanel(BaseWidget):
         self.properties.add(self.albedo_vt, layer=2)
 
         EventHandler.register(self.conclude, 'Fin')
+        EventHandler.register(self.export_data, 'ExportData')
 
         for chart in self.charts.widgets():
             chart.hide()
@@ -203,6 +204,10 @@ class AlbedoPanel(BaseWidget):
             if event.origin.parent.parent is self:
                 if self.current is not None:
                     self.total_albedo()
+
+    def export_data(self, event):
+        if event.data['panel'] is self:
+            pass
 
 
 class UnbondedBody(ColoredBody):
