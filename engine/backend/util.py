@@ -10,6 +10,46 @@ from sys import exit
 import json
 
 
+def save(event):
+    ruta = path.join(getcwd(), 'data', 'savedata.json')
+    data = abrir_json(ruta)
+    read_data = data.copy()
+    keys = 'Galaxies,Neighbourhoods,Stars,Single Systems,Binary Systems,Stellar Orbits,'
+    keys += 'Planetary Orbits,Asteroids,Planets,Satellites,Compact Objects'
+    for key in keys.split(','):
+        new_data = event.data.get(key, [])
+        for item_id in new_data:
+            item_data = new_data[item_id]
+            if item_id in read_data[key] and type(data[key][item_id]) is dict:
+                data[key][item_id].update(item_data)
+            else:
+                data[key][item_id] = item_data
+
+    copy_data = data.copy()
+    delete = {}
+    for key in keys.split(','):
+        for idx in copy_data[key]:
+            datos = copy_data[key][idx]
+            if datos.get('flagged', False):
+                if key not in delete:
+                    delete[key] = [data[key][idx]]
+                else:
+                    delete[key].append(data[key][idx])
+
+    else:
+        for key in delete:
+            for idx in delete[key]:
+                del data[key][idx]
+
+        for key in keys.split(','):
+            for idx in copy_data[key]:
+                datos = data[key][idx]
+                if 'flagged' in datos:
+                    del datos['flagged']
+
+        guardar_json(ruta, data)
+
+
 def roll(a: float = 0.0, b: float = 0.0):
     """Base function to generate random float values"""
     if a != 0.0 or b != 0.0:
@@ -108,7 +148,10 @@ def interpolate(x, x1, x2, y1, y2):
 
 def small_angle_aproximation(body, distance):
     d = body.radius.to('km').m * 2
-    sma = q(d / distance, 'radian').to('degree')
+    if distance != 0:
+        sma = q(d / distance, 'radian').to('degree')
+    else:
+        sma = d
     decimals = 1
     while round(sma, decimals) == 0:
         decimals += 1
@@ -201,6 +244,9 @@ material_densities = abrir_json(path.join(filepath, 'material_densities.json'))
 molecular_weight = abrir_json(path.join(filepath, 'molecular_weight.json'))
 recomendation = abrir_json(path.join(filepath, 'recomendation.json'))
 albedos = abrir_json(path.join(filepath, 'albedo_values.json'))
+
+
+EventHandler.register(save, "SaveDataFile")
 
 __all__ = [
     'generate_id',

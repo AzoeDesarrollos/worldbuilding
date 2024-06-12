@@ -14,6 +14,7 @@ from .start_panel import StartPanel
 from .double_planets_panel import DoublePlanetsPanel
 from .neighbourhood_panel import NeighbourhoodPanel
 from .compact_objects_panel import CompactObjectsPanel
+from .calendar_panel import CalendarPanel
 
 panels = [
     StartPanel,
@@ -29,6 +30,7 @@ panels = [
     AlbedoPanel,
     OrbitPanel,
     PlanetaryOrbitPanel,
+    CalendarPanel,
     InformationPanel,
     AtmospherePanel,
     NamingPanel

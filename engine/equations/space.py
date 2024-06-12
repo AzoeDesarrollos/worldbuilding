@@ -1,6 +1,7 @@
-from engine.backend import small_angle_aproximation, Systems, q, eucledian_distance
-from math import sqrt
+from engine.backend import small_angle_aproximation, q, eucledian_distance
+from engine.backend.eventhandler import EventHandler
 from itertools import cycle
+from math import sqrt
 
 
 class Universe:
@@ -29,6 +30,8 @@ class Universe:
     galaxy_cycler = None
     current_galaxy = None
 
+    _loose_stars = None
+
     @classmethod
     def init(cls):
         cls.planets = []
@@ -53,8 +56,12 @@ class Universe:
 
         cls.binary_planets = []
 
+        cls._loose_stars = {}
+
         cls.galaxy_cycler = cycle(cls.galaxies)
         cls.current_galaxy = None
+
+        EventHandler.register(cls.dissolve_system, 'DissolveSystem')
 
     @classmethod
     def get_astrobody_by(cls, tag_identifier, tag_type='name', silenty=False):
@@ -82,6 +89,8 @@ class Universe:
                 cls.astro_bodies.append(astro_obj)
             if astro_obj.celestial_type == 'compact':
                 cls.compact_objects.append(astro_obj)
+            else:
+                cls.astro_bodies.append(astro_obj)
         if hasattr(astro_obj, 'clase'):
             astro_obj.idx = len([i for i in group if i.clase == astro_obj.clase]) - 1
         elif hasattr(astro_obj, 'cls'):
@@ -100,7 +109,8 @@ class Universe:
     @classmethod
     def remove_astro_obj(cls, astro_obj):
         group = cls._get_astro_group(astro_obj)
-        group.remove(astro_obj)
+        if astro_obj in group:
+            group.remove(astro_obj)
 
     @classmethod
     def _get_astro_group(cls, astro_obj):
@@ -143,9 +153,11 @@ class Universe:
         parent = body.find_topmost_parent()
         for galaxy in cls.galaxies:
             for stellar_neibouhood in galaxy.stellar_neighbourhoods:
-                for system in stellar_neibouhood.systems:
-                    if system.letter == 'P' or system.letter is None:
+                for system in stellar_neibouhood.true_systems:
+                    if system.letter == 'P':
                         stars.append(system)
+                    elif system.letter is None:
+                        stars.append(system.star)
                     else:
                         for star in system.composition():
                             stars.append(star)
@@ -158,8 +170,7 @@ class Universe:
             for star in stars:
                 if body.orbit is not None and star.id not in cls.aparent_brightness[body.id]:
                     # this chunk is for binary pairs or single stars
-                    if star == parent:  # primary star
-                        star = parent
+                    if star == parent.star:  # primary star
                         if body.orbit.subtype != 'PlanetaryBinary':
                             cls.distances[body.id][star.id] = body.orbit.a
                             ab = q(star.luminosity.m / pow(body.orbit.a.m, 2), 'Vs')
@@ -187,9 +198,14 @@ class Universe:
                         x2, y2, z2 = star.find_topmost_parent().cartesian
                         d = q(sqrt(pow(abs(x2 - x1), 2) + pow(abs(y2 - y1), 2) + pow(abs(z2 - z1), 2)), 'lightyears')
                         cls.distances[body.id][star.id] = round(d)
-                        if star.system_number == 'single':
-                            star = star.star
-                        ab = q(star.luminosity.m / pow(d.to('au').m, 2), 'Vs')
+
+                        ab = 0
+                        if hasattr(star.parent, 'system_number') and star.parent.system_number == 'single':
+                            ab = q(star.luminosity.m / pow(d.to('au').m, 2), 'Vs')
+                        elif hasattr(star, 'system_number') and star.system_number == 'single':
+                            ab = q(star.star.luminosity.m / pow(d.to('au').m, 2), 'Vs')
+                        elif star.system_number != 'single':
+                            ab = q(star.star_system.luminosity.m / pow(d.to('au').m, 2), 'Vs')
 
                     if star not in cls.relative_sizes[body.id]:
                         d = cls.distances[body.id][star.id]
@@ -203,7 +219,8 @@ class Universe:
         to_see = [i for i in to_see if i.orbit is not None or i.rogue is True]
         for i, body in enumerate(to_see):
             if body.orbit is not None:
-                star = body.find_topmost_parent()
+                system = body.find_topmost_parent()
+                star = system.star
                 luminosity = star.luminosity.to('watt').m
             else:
                 luminosity = 0
@@ -224,7 +241,7 @@ class Universe:
                 else:
                     x = body.parent.orbit.a.to('m').m
             else:
-                stars = Systems.get_only_stars()
+                stars = cls.stars
                 x = body.position[0]
             for star in stars:
                 if star.id not in cls.distances[body.id]:
@@ -272,6 +289,38 @@ class Universe:
                 return cls.current_galaxy.current_neighbourhood
 
     @classmethod
+    def current_planetary(cls):
+        return cls.current_galaxy.current_neighbourhood.current_planetary
+
+    @classmethod
+    def add_loose_star(cls, star, neighbourhood_id):
+        if neighbourhood_id not in cls._loose_stars:
+            cls._loose_stars[neighbourhood_id] = [star]
+        elif star not in cls._loose_stars[neighbourhood_id]:
+            cls._loose_stars[neighbourhood_id].append(star)
+
+    @classmethod
+    def remove_loose_star(cls, star, neighbourhood_id):
+        if neighbourhood_id in cls._loose_stars:
+            if star in cls._loose_stars[neighbourhood_id]:
+                cls._loose_stars[neighbourhood_id].remove(star)
+
+    @classmethod
+    def get_loose_stars(cls, neighbourhood_id):
+        if neighbourhood_id in cls._loose_stars:
+            return cls._loose_stars[neighbourhood_id]
+
+    @classmethod
+    def dissolve_system(cls, event):
+        system = event.data['system']
+        nei_id = event.data['nei']
+        if system.letter is not None:
+            for star in system.composition():
+                cls.add_loose_star(star, nei_id)
+        else:
+            cls.add_loose_star(system.star, nei_id)
+
+    @classmethod
     def cycle_galaxies(cls):
         galaxy = next(cls.galaxy_cycler)
         cls.current_galaxy = galaxy
@@ -279,7 +328,6 @@ class Universe:
 
 
 Universe.init()
-Systems.import_clases(universe=Universe)
 # the orbital velocity of a planet in orbit is equal to sqrt(M/a) where M is the mass of the star and a is the sma.
 # a planet ejected from its system retains its orbital velocity (I guess) but now traces a linear path, away from
 # the system. In 3D space, is often said that a body is moving "towards a system", so

@@ -1,9 +1,9 @@
 from engine.backend import decimal_round, generate_id, q, turn_into_roman
 from .general import BodyInHydrostaticEquilibrium
 from bisect import bisect_right
-from math import sqrt, pow
 from random import choice
 from pygame import Color
+from math import pow
 
 
 class Star(BodyInHydrostaticEquilibrium):
@@ -16,22 +16,11 @@ class Star(BodyInHydrostaticEquilibrium):
     temperature = 1
     classification = 'G'
 
-    habitable_inner = 0
-    habitable_outer = 0
-    inner_boundry = 0
-    outer_boundry = 0
-    frost_line = 0
-
     letter = None
     idx = None
 
     _lifetime = 0
     _temperature = 0
-    _habitable_inner = 0
-    _habitable_outer = 0
-    _inner_boundry = 0
-    _outer_boundry = 0
-    _frost_line = 0
 
     _system = None
     _inner_forbidden = None
@@ -47,7 +36,7 @@ class Star(BodyInHydrostaticEquilibrium):
 
     sub_classification = 0
 
-    neighbourhood_idx = None
+    neighbourhood_id = None
 
     position = None
 
@@ -80,14 +69,14 @@ class Star(BodyInHydrostaticEquilibrium):
         self.temperature_mass = self._mass
 
         self.habitable = 0.5 <= self._mass <= 1.4
-        self._spin = data['spin'] if 'spin'in data else choice(['clockwise', 'counter-clockwise'])
+        self._spin = data['spin'] if 'spin' in data else choice(['clockwise', 'counter-clockwise'])
         self._radius = self.set_radius()
         self._lifetime = self._mass / self._luminosity
         if 'age' in data:
             self._age = data['age']
         else:
             self.set_age()
-        self.set_derivated_characteristics()
+        self._temperature = pow((self._luminosity / pow(self._radius, 2)), (1 / 4))
         self.set_qs()
         assert 0.08 <= self.mass.m < 120, 'Invalid Mass: Stellar mass must be between 0.08 and 120 solar masses.'
 
@@ -99,6 +88,7 @@ class Star(BodyInHydrostaticEquilibrium):
         # ID values make each star unique, even if they have the same mass and name.
         self.id = data['id'] if 'id' in data else generate_id()
         self.evolution_id = self.id
+        self.neighbourhood_id = data['neighbourhood_id'] if 'neighbourhood_id' in data else None
 
     @property
     def spin(self):
@@ -130,15 +120,6 @@ class Star(BodyInHydrostaticEquilibrium):
                 self.evolution_id = generate_id()
             return q(age, 'years')
 
-    def set_derivated_characteristics(self):
-        mass = pow(self._luminosity, (1 / 3.5))
-        self._temperature = pow((self._luminosity / pow(self._radius, 2)), (1 / 4))
-        self._habitable_inner = round(sqrt(self._luminosity / 1.1), 3)
-        self._habitable_outer = round(sqrt(self._luminosity / 0.53), 3)
-        self._inner_boundry = round(mass * 0.01, 3)
-        self._outer_boundry = round(mass * 40, 3)
-        self._frost_line = round(4.85 * sqrt(self._luminosity), 3)
-
     def set_qs(self):
         self.mass = q(self._mass, 'sol_mass')
         self.luminosity = q(self._luminosity, 'sol_luminosity')
@@ -149,11 +130,6 @@ class Star(BodyInHydrostaticEquilibrium):
         self.density = q(self.calculate_density(self.mass.to('g').m, self.radius.to('cm').m), 'g/cm^3')
         self.circumference = q(self.calculate_circumference(self.radius.to('km').m), 'km')
         self.surface = q(self.calculate_surface_area(self.radius.to('km').m), 'km^2')
-        self.habitable_inner = q(self._habitable_inner, 'au')
-        self.habitable_outer = q(self._habitable_outer, 'au')
-        self.inner_boundry = q(self._inner_boundry, 'au')
-        self.outer_boundry = q(self._outer_boundry, 'au')
-        self.frost_line = q(self._frost_line, 'au')
         self.age = q(self._age, 'years')
         self.extend_classification()
 
@@ -179,7 +155,7 @@ class Star(BodyInHydrostaticEquilibrium):
         mass = pow(self._luminosity, (1 / 3.5))
         self.temperature_mass = mass
         self._radius = self.set_radius(mass)
-        self.set_derivated_characteristics()
+        self._temperature = pow((self._luminosity / pow(self._radius, 2)), (1 / 4))
         self.set_qs()
 
     @classmethod
@@ -291,9 +267,6 @@ class Star(BodyInHydrostaticEquilibrium):
     def peak_lightwave_frequency(temperature):
         return 0.0028977729 / (temperature * 5778) * 1000000000
 
-    def validate_orbit(self, orbit):
-        return self._inner_boundry < orbit < self._outer_boundry
-
     def extend_classification(self):
         t = decimal_round(self.temperature.to('kelvin').m)
         temps = {"M": [2000, 1700],
@@ -319,7 +292,7 @@ class Star(BodyInHydrostaticEquilibrium):
         self.temperature_mass = self._mass
         self.habitable = 0.5 <= self._mass <= 1.4
         self._radius = self.set_radius()
-        self.set_derivated_characteristics()
+        self._temperature = pow((self._luminosity / pow(self._radius, 2)), (1 / 4))
         self._lifetime = self._mass / self._luminosity
         # self.set_age()  # not sure, 'cause tweeking the mass means the same star is being remodeled. See line 119.
         self.set_qs()
@@ -342,7 +315,9 @@ class Star(BodyInHydrostaticEquilibrium):
         #     sub = self.sub_classification
         #     return f"{self.prefix}{turn_into_roman(self.sub_pos)}{self.cls}{sub}{turn_into_roman(self.idx + 1)}"
         else:
-            return f"{self.cls}{self.sub_classification}{turn_into_roman(self.idx + 1)}"
+            s = '-' if self.prefix else ''
+            n = str(self.parent.idx) if hasattr(self.parent, 'idx') else ''
+            return f"{self.prefix+n}{s}{self.cls}{self.sub_classification}{turn_into_roman(self.idx + 1)}"
 
     def __repr__(self):
         if self.has_name is False:

@@ -2,11 +2,12 @@ from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_S
 from .common import ColoredBody, ListedArea, ModifyArea, TextButton, ToggleableButton
 from engine.equations.orbit import PseudoOrbit, RawOrbit, from_planetary_resonance
 from engine.frontend.widgets.incremental_value import IncrementalValue
-from engine.backend import EventHandler, Systems, q, roll
 from engine.frontend.widgets.basewidget import BaseWidget
 from .stellar_orbit_panel import OrbitType, RatioDigit
 from engine.frontend.globales import WidgetHandler
+from engine.backend import EventHandler, q, roll
 from engine.frontend.widgets.meta import Meta
+from engine.equations.space import Universe
 from pygame import Surface, Rect
 from itertools import cycle
 
@@ -40,6 +41,11 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.added = []
         self.objects = []
         self.satellites = {}
+        text = "Here you can link your natural satellites to your planets."
+        text += "\n Click first on the parent body on the right and then,"
+        text += "\n click on the satellite you with to link at the bottom."
+        text += "\n A random orbit will apear for it. Click on the orbit to start modifiying it."
+        self.erase_text_area = self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.area_markers = Rect(3, 58, 380, 20 * 16)
         self.curr_x = self.area_buttons.x + 3
@@ -63,23 +69,27 @@ class PlanetaryOrbitPanel(BaseWidget):
                             layer=2)
 
         EventHandler.register(self.save_orbits, 'Save')
-        EventHandler.register(self.load_orbits, 'LoadData')
+        EventHandler.register(self.hold_loaded_bodies, 'LoadPlanetary Orbits')
         EventHandler.register(self.export_data, 'ExportData')
+        self.held_data = {}
 
-    def load_orbits(self, event):
+    def hold_loaded_bodies(self, event):
+        if 'Planetary Orbits' in event.data and len(event.data['Planetary Orbits']):
+            self.held_data.update(event.data['Planetary Orbits'])
+
+    def load_orbits(self):
         bodies = []
-        for idx in event.data['Planetary Orbits']:
-            system_id = event.data['Planetary Orbits'][idx]['star_id']
-            system = Systems.get_system_by_id(system_id)
+        for idx in self.held_data:
+            system_id = self.held_data[idx]['star_id']
+            system = Universe.get_astrobody_by(system_id, tag_type='id')
             bodies.append(system.get_astrobody_by(idx, tag_type='id'))
 
         bodies.sort(key=lambda b: b.mass, reverse=True)
         # sorting by mass may not be the best way to sort, but it is unlikely that a body orbits another body if the
         # parent body is less massive than the child one.
         for body in bodies:
-            if body.id in event.data['Planetary Orbits']:
-                id = body.id
-                orbit_data = event.data['Planetary Orbits'][id]
+            if body.id in self.held_data:
+                orbit_data = self.held_data[body.id]
                 a = q(orbit_data['a'], 'earth_radius')
                 e = q(orbit_data['e'])
                 i = q(orbit_data['i'], 'degree')
@@ -87,9 +97,10 @@ class PlanetaryOrbitPanel(BaseWidget):
                 aop = orbit_data['AoP']
                 if aop != 'undefined':
                     aop = q(aop, 'degree')
-                system = Systems.get_system_by_id(orbit_data['star_id'])
+
+                system = Universe.get_astrobody_by(orbit_data['star_id'], tag_type='id')
                 if system is not None:
-                    planet = system.get_astrobody_by(id, tag_type='id')
+                    planet = system.get_astrobody_by(body.id, tag_type='id')
                     if planet.id not in self.satellites:
                         self.satellites[planet.id] = []
 
@@ -122,12 +133,13 @@ class PlanetaryOrbitPanel(BaseWidget):
             d['e'] = orb.eccentricity.m
         if hasattr(orb, 'astrobody'):
             d['astrobody'] = orb.astrobody.id
-            d['star_id'] = Systems.find_parent(orb.astrobody).id
+            d['star_id'] = orb.astrobody.parent.id
         if hasattr(orb, 'longitude_of_the_ascending_node'):
             d['LoAN'] = orb.longitude_of_the_ascending_node.m
         if hasattr(orb, 'argument_of_periapsis'):
             aop = orb.argument_of_periapsis
             d['AoP'] = aop.m if hasattr(aop, 'm') else aop
+        d['flagged'] = orb.flagged
         return d
 
     def hide_orbit_types(self):
@@ -149,7 +161,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.create_hill_marker(planet)
 
     def add_objects(self):
-        system = Systems.get_current()
+        system = Universe.current_planetary()
         if system is not None:
             self.image.fill(COLOR_BOX, [0, 32, self.rect.w, 380])
             planets = [p for p in system.planets if p.relative_size != 'Giant']
@@ -301,7 +313,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         else:
             cls = obj.clase
         obj_name = '{} #{}'.format(cls, obj.idx)
-        pln_habitable = Systems.get_current().is_habitable(self.current)
+        pln_habitable = Universe.current_planetary().is_habitable(self.current)
         pln_hill = self.current.hill_sphere.m
         obj_type = obj.celestial_type
 
@@ -313,7 +325,7 @@ class PlanetaryOrbitPanel(BaseWidget):
 
         roches = self.create_roches_marker(obj)
         pos = q(round(roll(self.current.roches_limit.m, self.current.hill_sphere.m / 2), 3), 'earth_radius')
-        orbit = RawOrbit(Systems.get_current_star(), pos)
+        orbit = RawOrbit(Universe.current_planetary().parent.star, pos)
         obj_marker = Marker(self, obj_name, pos, color=COLOR_SELECTED, lock=False)
 
         max_value = pln_hill
@@ -448,7 +460,7 @@ class AvailablePlanets(ListedArea):
     listed_type = OrbitableObject
 
     def show(self):
-        for system in Systems.get_planetary_systems():
+        for system in Universe.nei().systems():
             idx = system.id
             bodies = [body for body in system.astro_bodies if body.hill_sphere is not None]
             self.populate(bodies, layer=idx)
@@ -623,7 +635,7 @@ class Marker(Meta, IncrementalValue):
                 else:
                     name = str(self.obj)
                     ring = self.parent.current.set_ring(self.obj)
-                    Systems.get_current().remove_astro_obj(self.obj)
+                    Universe.current_planetary().remove_astro_obj(self.obj)
                     self.parent.create_ring_markers(ring)
                     self.parent.remove_marker(self)
                     self.parent.sort_markers()
@@ -636,7 +648,7 @@ class Marker(Meta, IncrementalValue):
 
     def it_may_be_a_ring(self, obj):
         it_may = obj.celestial_type == 'asteroid'
-        if self.parent.current.orbit.a.m < Systems.get_current().star.frost_line.m:
+        if self.parent.current.orbit.a.m < Universe.current_planetary().parent.frost_line.m:
             it_may = it_may and obj.comp != 'Icy'
         else:
             it_may = it_may and obj.comp == 'Icy'

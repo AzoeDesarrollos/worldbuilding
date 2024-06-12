@@ -1,4 +1,4 @@
-from math import sqrt, sin, cos, pi
+from math import sqrt, sin, cos, tau, pi
 # adapted from https://www.desmos.com/calculator/znsuonopre
 sun_mass = 1
 
@@ -36,7 +36,7 @@ L = 44  # We will be looking at the height of the tides at point "L" on Moon A. 
 # Select  the value of "L".
 
 
-x = 0
+x = 0  # The x-axis represents time in Earth days # min value = start of moon orbit, max value end of moon orbit
 
 
 def y_abdistance(moon_x, moon_y, xt):
@@ -44,22 +44,20 @@ def y_abdistance(moon_x, moon_y, xt):
     a_b = moon_x.orbit.a
     p_a = moon_y.orbit.period
     p_b = moon_y.orbit.period
-    return sqrt((a_a ** 2 + a_b) - 2 * a_a * a_b * cos(((2 * pi * xt) / p_b) - ((2 * pi * xt) / p_a)))
+    return sqrt((a_a ** 2 + a_b) - 2 * a_a * a_b * cos(((tau * xt) / p_b) - ((tau * xt) / p_a)))
 
 
 Wa = moon_a.r ** 3 * moon_a.d
 Wb = moon_b.r ** 3 * moon_b.d
-pixt2 = 2 * pi * x
+tau_x = tau * x
 
 Tba = (2230000 * moon_a.r * moon_a.d) / y_abdistance(moon_a, moon_b, x) ** 3
-Ca = moon_a.orbit.a * (Wa / (planet.m + Wa))
-Cb = moon_b.orbit.b * (Wb / (planet.m + Wb))
 
-y_xa = moon_a.orbit.a * cos(pixt2 / moon_a.orbit.period) + Ca
-y_ya = moon_b.orbit.a * sin(pixt2 / moon_a.orbit.period)
+y_xa = moon_a.orbit.a * cos(tau_x / moon_a.orbit.period) + (moon_a.orbit.a * (Wa / (planet.m + Wa)))
+y_ya = moon_b.orbit.a * sin(tau_x / moon_a.orbit.period)
 
-y_xb = moon_a.orbit.b * cos(pixt2 / moon_b.orbit.period) + Cb
-y_yb = moon_a.orbit.a * sin(pixt2 / moon_b.orbit.period)
+y_xb = moon_a.orbit.b * cos(tau_x / moon_b.orbit.period) + (moon_b.orbit.b * (Wb / (planet.m + Wb)))
+y_yb = moon_a.orbit.a * sin(tau_x / moon_b.orbit.period)
 La = sqrt(y_xa ** 2 + y_ya ** 2)
 Lb = sqrt(y_xb ** 2 + y_yb ** 2)
 
@@ -71,7 +69,7 @@ La_y_ab_d = La * y_ab_d
 
 # This purple graph is the effect of Moon B on the tides of Moon A (note this is not in metres)
 T_moon_b = Tba * ((2 * (y_abd_2_La_Lb / 2 * La_y_ab_d) ** 2 - 1) * cos(pi_L_90) - 2 * (Lb / y_ab_d) *
-                  sin((pixt2 / moon_b.orbit.period) - (pixt2 / moon_a.orbit.period)) *
+                  sin((tau_x / moon_b.orbit.period) - (tau_x / moon_a.orbit.period)) *
                   (y_abd_2_La_Lb / 2 * La_y_ab_d) * sin(pi_L_90))
 
 T_sun = ((0.46 * sun_mass * moon_a.d) / moon_a.orbit.a ** 3) * cos(pi_L_90)

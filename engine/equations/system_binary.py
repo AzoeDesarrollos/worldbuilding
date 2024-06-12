@@ -1,5 +1,5 @@
 from .orbit import NeighbourhoodSystemOrbit, BinaryPlanetOrbit, PlanetOrbit, BinaryStarOrbit
-from engine.backend.util import generate_id, q, turn_into_roman
+from engine.backend.util import generate_id, q
 from .general import Flagable
 from .space import Universe
 from .planet import Planet
@@ -80,7 +80,9 @@ class BinarySystem(AbstractBinary):
 
     sub_cls = ''
 
-    def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, unit='au', id=None):
+    neighbourhood_id = None
+
+    def __init__(self, name, primary, secondary, avgsep, ep=0, es=0, unit='au', id=None, nei_id=None):
         super().__init__(primary, secondary, avgsep, ep=ep, es=es, unit=unit)
 
         if name is None:
@@ -93,12 +95,13 @@ class BinarySystem(AbstractBinary):
 
         # ID values make each system unique, even if they have the same stars and separation.
         self.id = id if id is not None else generate_id()
+        self.neighbourhood_id = nei_id if nei_id is not None else None
 
     def __str__(self):
-        if self.parent is None or self.sub_pos == -1:
-            return f'{self.sub_cls} {self.letter}-Type #{self.idx}'
-        else:
-            return f'{self.parent.letter}{turn_into_roman(self.sub_pos)}{self.letter}{turn_into_roman(self.idx)}'
+        s = '-' if self.prefix else ''
+        return f'{self.prefix}{s}{self.letter}{self.sub_cls}-Type #{self.idx}'
+        # else:
+        #     return f'{self.parent.letter}{turn_into_roman(self.sub_pos)}{self.letter}{turn_into_roman(self.idx)}'
 
     def __repr__(self):
         return self.letter + '-Type Binary System'
@@ -175,8 +178,8 @@ class PTypeSystem(BinarySystem):
     luminosity = 0
     radius = 0
 
-    def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
-        super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
+    def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None, nei_id=None):
+        super().__init__(name, primary, secondary, avgsep, ep, es, id=id, nei_id=nei_id)
         self.primary.orbit = self._orbit_type(self.primary, self.secondary, self.primary_max_sep, self.ecc_p)
         self.secondary.orbit = self._orbit_type(self.secondary, self.primary, self.secondary_max_sep, self.ecc_s)
 
@@ -216,12 +219,16 @@ class PTypeSystem(BinarySystem):
     def validate_orbit(self, orbit):
         return self._inner_boundry < orbit < self._outer_boundry
 
+    @property
+    def star(self):
+        return self
+
 
 class STypeSystem(BinarySystem):
     letter = 'S'
 
-    def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None):
-        super().__init__(name, primary, secondary, avgsep, ep, es, id=id)
+    def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None, nei_id=None):
+        super().__init__(name, primary, secondary, avgsep, ep, es, id=id, nei_id=nei_id)
         self.primary.orbit = self._orbit_type(self.primary, self.secondary, self.primary_max_sep, self.ecc_p)
         self.secondary.orbit = self._orbit_type(self.secondary, self.primary, self.secondary_max_sep, self.ecc_s)
         self.age = max([self.primary.age, self.secondary.age])
@@ -287,3 +294,53 @@ def system_type(separation):
                              'S-Type (120 to 600 AU)\nor\n'
                              'P-Type (0.15 to 6 AU) systems')
     return system
+
+
+def analyze_binaries(savedata):
+    """Analiza los datos y determina si los sistemas binarios son en realidad sistemas ternarios o múltiples."""
+
+    binaries = savedata['Binary Systems'].copy()
+    singles = savedata['Single Systems'].copy()
+    stars = savedata['Stars'].copy()
+    compact = savedata['Compact Objects'].copy()
+    analyzed = {'Single': [], 'Binary': [], "Triple": [], 'Multiple': []}
+    for id in binaries:
+        prim = binaries[id]['primary']
+        secd = binaries[id]['secondary']
+        if prim in stars and secd in stars:
+            analyzed['Binary'].append(id)
+            del stars[secd]
+            del stars[prim]
+        elif prim in stars and secd in compact:
+            analyzed['Binary'].append(id)
+            del stars[prim]
+            del compact[secd]
+        elif prim in compact and secd in stars:
+            analyzed['Binary'].append(id)
+            del compact[prim]
+            del stars[secd]
+        elif prim in compact and secd in compact:
+            analyzed['Binary'].append(id)
+            del compact[prim]
+            del compact[secd]
+
+        elif prim in binaries and secd in stars:
+            analyzed['Triple'].append(id)
+            del stars[secd]
+        elif prim in binaries and secd in compact:
+            analyzed['Triple'].append(id)
+            del compact[secd]
+        elif prim in compact and secd in binaries:
+            analyzed['Triple'].append(id)
+            del compact[prim]
+        elif prim in stars and secd in binaries:
+            analyzed['Triple'].append(id)
+            del stars[prim]
+
+        elif prim in binaries and secd in binaries:
+            analyzed['Multiple'].append(id)
+    for id in singles:
+        if id in stars or id in compact:
+            analyzed['Single'].append(id)
+
+    return analyzed

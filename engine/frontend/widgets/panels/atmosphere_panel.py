@@ -1,10 +1,11 @@
 from engine.frontend.graphs.atmograph.atmograph import graph, atmo, reversed_atmo, interpolacion_lineal, convert
 from engine.frontend import WidgetHandler, ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO, COLOR_DISABLED, Group
 from engine.frontend.widgets.incremental_value import IncrementalValue
-from engine.backend import EventHandler, Systems, molecular_weight, q
+from engine.backend import EventHandler, molecular_weight, q
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.frontend.globales import render_textrect
 from pygame import Surface, draw, SRCALPHA, Rect
+from engine.equations.space import Universe
 from .common import ListedArea, ColoredBody
 from math import sqrt, log
 
@@ -166,7 +167,7 @@ class AtmospherePanel(BaseWidget):
         self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
         if planet is not None:
             text = 'Atmosphere of planet'
-            idx = Systems.get_current().planets.index(planet)
+            idx = Universe.current_planetary().planets.index(planet)
             text += ' #' + str(idx) + ' (' + planet.clase + ')'
 
             self.write(text, self.f1, centerx=self.rect.centerx, y=21)
@@ -261,7 +262,7 @@ class AtmospherePanel(BaseWidget):
             self.set_planet(self.curr_planet)
 
     def update(self):
-        idx = Systems.get_current_id(self)
+        idx = Universe.current_planetary().id
 
         if idx != self.last_idx:
             self.erase()
@@ -682,7 +683,7 @@ class AvailablePlanets(ListedArea):
     listed_type = ListedPlanet
 
     def show(self):
-        for system in Systems.get_planetary_systems():
+        for system in Universe.nei().systems():
             idx = system.id
             pop = [planet for planet in system.planets if planet.orbit is not None or planet.rogue is True]
             self.populate(pop, layer=idx)

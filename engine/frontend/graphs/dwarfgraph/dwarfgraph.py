@@ -1,17 +1,12 @@
 from pygame import KEYDOWN, QUIT, K_ESCAPE, MOUSEMOTION, MOUSEBUTTONDOWN, K_SPACE, KEYUP, K_LSHIFT, K_LCTRL, SCALED
+from ..common import Linea, Punto, find_and_interpolate, BodyMarker, MarkersManager, density
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO, Group
-from ..common import Linea, Punto, find_and_interpolate, BodyMarker
 from pygame import display, event, font, transform, image
 from pygame import init, quit, Rect, Surface
-from engine.backend import Systems, roll
+from engine.backend import roll, Config
 from pygame.sprite import Sprite
 from os import getcwd, path
-from math import pi, pow
 from sys import exit
-
-
-def density(m, r):
-    return m / ((4 / 3) * pi * pow(r, 3))
 
 
 class Number(Sprite):
@@ -55,7 +50,7 @@ bg = image.load(ruta)
 bg_rect = bg.get_rect(topleft=(54, 24))
 
 
-def dwarfgraph_loop(limit_mass=None):
+def dwarfgraph_loop(system, limit_mass=None):
     fondo = display.set_mode((ANCHO, ALTO), SCALED)
     fondo.fill(COLOR_BOX)
 
@@ -91,18 +86,17 @@ def dwarfgraph_loop(limit_mass=None):
         lim_rect = Rect(0, -100, 1, 1)
 
     move_x, move_y = True, True
+    markers = MarkersManager.dwarf_markers(system.id)
+    marcadores = Group()
+    if Config.get('mode') == 0:
+        for planet in system.planets:
+            if planet.relative_size == 'Dwarf':
+                mass = planet.mass.m
+                radius = planet.radius.m
 
-    if Systems.restricted_mode and Systems.get_current().is_a_system:
-        markers = Systems.bodies_markers[Systems.get_current().id]['dwarfgraph']
-        marcadores = Group()
-        # for planet in Systems.get_current().planets:
-        #     if planet.relative_size == 'Dwarf':
-        #         mass = planet.mass.m
-        #         radius = planet.radius.m
-        #
-        #         x = find_and_interpolate(mass, mass_keys, yes)
-        #         y = find_and_interpolate(radius, radius_keys, exes)
-        #         markers.append([x, y])
+                x = find_and_interpolate(mass, mass_keys, yes)
+                y = find_and_interpolate(radius, radius_keys, exes)
+                MarkersManager.set_marker([x, y])
 
         for x, y in markers:
             marcadores.add(BodyMarker(x, y))
@@ -206,17 +200,15 @@ def dwarfgraph_loop(limit_mass=None):
         if limit_mass is not None:
             fondo.blit(lim_img, lim_rect)
         numbers.draw(fondo)
-        if Systems.restricted_mode:
-            # noinspection PyUnboundLocalVariable
+        if Config.get('mode') == 0:
             marcadores.update()
             marcadores.draw(fondo)
         lineas.update()
         lineas.draw(fondo)
         display.update()
 
-    if done and len(data) and Systems.restricted_mode and Systems.get_current().is_a_system:
-        # noinspection PyUnboundLocalVariable
-        markers.append(punto.rect.center)
+    if done and len(data) and Config.get('mode') == 0:
+        MarkersManager.set_marker(punto.rect.center)
 
     display.quit()
     return data

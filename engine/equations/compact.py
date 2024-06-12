@@ -1,5 +1,5 @@
-from engine.backend.util import q, generate_id
 from .general import BodyInHydrostaticEquilibrium
+from engine.backend.util import q, generate_id
 from random import randint, choice
 from math import sqrt, pi
 
@@ -8,9 +8,11 @@ class CompactObject(BodyInHydrostaticEquilibrium):
     orbit = None
     celestial_type = 'compact'
 
+    neighbourhood_id = None
+
 
 class BinaryPartner:
-    prefix = None
+    prefix = ''
     sub_pos = None
     _system = None
     _shared_mass = None
@@ -88,6 +90,8 @@ class BlackHole(CompactObject, BinaryPartner):
     lifetime = None
     temperature = None
 
+    rogue = True  # Black holes, by definition, do not orbit anything
+
     def __init__(self, data):
         mass = data['mass']
         assert mass >= 5, "A stellar mass black hole must have 5 solar masses or more."
@@ -97,6 +101,7 @@ class BlackHole(CompactObject, BinaryPartner):
 
         self.id = data['id'] if 'id' in data else generate_id()
         self.evolution_id = self.id
+        self.neighbourhood_id = data['neighbourhood_id'] if 'neighbourhood_id' in data else None
 
         super().__init__(data)
         # https://en.wikipedia.org/wiki/Hawking_radiation
@@ -116,8 +121,18 @@ class BlackHole(CompactObject, BinaryPartner):
         self.temperature = q(self._temperature, 'kelvin')
         self.age = q(self._age, 'years')
 
+    @property
+    def radius(self):
+        return self.event_horizon
+
     def __repr__(self):
         return 'Black Hole'
+
+    def __str__(self):
+        if self.has_name:
+            return self.name
+        elif hasattr(self, 'idx'):
+            return f'Black Hole #{self.idx}'
 
 
 class NeutronStar(CompactObject, BinaryPartner):
@@ -133,6 +148,7 @@ class NeutronStar(CompactObject, BinaryPartner):
 
         self.id = data['id'] if 'id' in data else generate_id()
         self.evolution_id = self.id
+        self.neighbourhood_id = data['neighbourhood_id'] if 'neighbourhood_id' in data else None
         self.sub_cls = data['sub'] if 'sub' in data else choice(['RPP', 'RRAT', 'SGR', 'AXP'])
         if 'age' in data:
             self._age = data['age']
@@ -175,6 +191,7 @@ class WhiteDwarf(CompactObject, BinaryPartner):
 
         self.id = data['id'] if 'id' in data else generate_id()
         self.evolution_id = self.id
+        self.neighbourhood_id = data['neighbourhood_id'] if 'neighbourhood_id' in data else None
         self.sub_cls = data['sub'] if 'sub' in data else ''.join([str(randint(0, 9)) for _ in range(3)])
 
         luminosity = pow(mass, 3.5)
@@ -206,23 +223,24 @@ class BrownDwarf(CompactObject, BinaryPartner):
         mass = data['mass']
         assert 13 <= mass <= 80, 'Brown Dwarfs have masses between 13 and 80 Jupiter masses'
         self._mass = mass
-        self._radius = 0.089552239 * mass - 0.164179104  # this is made up (proportional)
+        self._radius = data['radius']
 
         self.mass = q(self._mass, 'jupiter_mass')
         self.radius = q(self._radius, 'jupiter_radius')
 
         self.id = data['id'] if 'id' in data else generate_id()
         self.evolution_id = self.id
+        self.neighbourhood_id = data['neighbourhood_id'] if 'neighbourhood_id' in data else None
 
         luminosity = pow(mass, 3.5)
         temperature = pow((luminosity / pow(self._radius, 2)), (1 / 4))
         # based on https://en.wikipedia.org/wiki/Stellar_classification#Cool_red_and_brown_dwarf_classes
         if 9 <= mass <= 25:
             self.classification = 'Y'
-        elif 550 <= temperature <= 1.300:
-            self.classification = 'T'
-        else:
+        elif 25 < mass <= 63:  # this is made up
             self.classification = 'L'
+        else:
+            self.classification = 'T'
 
         self.cls = self.classification
         self.luminosity = q(luminosity, 'sol_luminosity')

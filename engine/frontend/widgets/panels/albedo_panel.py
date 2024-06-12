@@ -1,7 +1,8 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, color_areas as k, Group
-from engine.backend import EventHandler, Systems, albedos, q
 from engine.frontend.widgets import BaseWidget, ValueText
+from engine.backend import EventHandler, albedos, q
 from .common import ListedArea, ColoredBody
+from engine.equations.space import Universe
 from pygame import Surface, Rect, draw
 from decimal import Decimal as Dc
 from ..pie import PieChart as Pc
@@ -170,9 +171,6 @@ class AlbedoPanel(BaseWidget):
         for prop in self.properties.widgets():
             prop.hide()
 
-        if not Systems.get_current().is_a_system:
-            self.parent.set_skippable('Orbit', True)
-
     def set_planet(self, planet):
         self.current = planet
         for chart in self.charts.widgets():
@@ -222,7 +220,7 @@ class AvailablePlanets(ListedArea):
     listed_type = UnbondedBody
 
     def show(self):
-        for system in Systems.get_planetary_systems():
+        for system in Universe.nei().systems():
             idx = system.id
             bodies = [body for body in system.planets]
             self.populate(bodies, layer=idx)

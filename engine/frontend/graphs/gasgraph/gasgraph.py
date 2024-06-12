@@ -1,17 +1,12 @@
+from ..common import find_and_interpolate, Linea, Punto, BodyMarker, MarkersManager, density
 from pygame import K_UP, K_DOWN, K_RIGHT, K_LEFT, K_SPACE, K_LSHIFT, K_LCTRL, K_ESCAPE
 from pygame import init, quit, display, font, event, Rect, Surface, image, mouse
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, ANCHO, ALTO, Group
 from pygame import KEYDOWN, QUIT, SCALED, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP
-from ..common import find_and_interpolate, Linea, Punto, BodyMarker
-from engine.backend import Systems, q
+from engine.backend import q, Config
 from pygame.sprite import Sprite
 from os import getcwd, path
 from sys import exit
-from math import pi
-
-
-def density(m, r):
-    return m / ((4 / 3) * pi * pow(r, 3))
 
 
 radius_keys = [1 + i / 100 for i in range(-3, 11)] + [1 + i / 10 for i in range(2, 10)]
@@ -42,7 +37,7 @@ class Number(Sprite):
         self.rect = self.image.get_rect(**kwargs)
 
 
-def gasgraph_loop(limit_mass=None):
+def gasgraph_loop(system, limit_mass=None):
     done = False
     data = {}
     text_mass = 'Mass: N/A'
@@ -102,17 +97,17 @@ def gasgraph_loop(limit_mass=None):
 
     move_x, move_y = True, True
 
-    if Systems.restricted_mode and Systems.get_current().is_a_system:
-        markers = Systems.bodies_markers[Systems.get_current().id]['gasgraph']
-        marcadores = Group()
-        # for planet in Systems.get_current().planets:
-        #     if planet.planet_type == 'gaseous':
-        #         mass = planet.mass.m
-        #         radius = planet.radius.m
-        #
-        #         x = find_and_interpolate(mass, mass_keys, yes)
-        #         y = find_and_interpolate(radius, radius_keys, exes)
-        #         markers.append([x, y])
+    marcadores = Group()
+    markers = MarkersManager.gas_markers(system.id)
+    if Config.get('mode') == 0:
+        for planet in system.planets:
+            if planet.planet_type == 'gaseous':
+                mass = planet.mass.m
+                radius = planet.radius.m
+
+                x = find_and_interpolate(mass, mass_keys, yes)
+                y = find_and_interpolate(radius, radius_keys, exes)
+                MarkersManager.set_marker([x, y])
 
         for x, y in markers:
             marcadores.add(BodyMarker(x, y))
@@ -240,17 +235,15 @@ def gasgraph_loop(limit_mass=None):
         if limit_mass is not None:
             fondo.blit(lim_img, lim_rect)
         numbers.draw(fondo)
-        if Systems.restricted_mode and Systems.get_current().is_a_system:
-            # noinspection PyUnboundLocalVariable
+        if Config.get('mode') == 0:
             marcadores.update()
             marcadores.draw(fondo)
         lineas.update()
         lineas.draw(fondo)
         display.update()
 
-    if done and len(data) and Systems.restricted_mode and Systems.get_current().is_a_system:
-        # noinspection PyUnboundLocalVariable
-        markers.append(punto.rect.center)
+    if done and len(data) and Config.get('mode') == 0:
+        MarkersManager.set_marker(punto.rect.center)
 
     display.quit()
     return data

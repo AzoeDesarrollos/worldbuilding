@@ -1,6 +1,5 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, Group
 from engine.frontend.widgets import BaseWidget
-from engine.backend.systems import Systems
 from engine.backend.config import Config
 from pygame import Surface, Rect
 from .common import RadioButton
@@ -90,8 +89,8 @@ class StartPanel(BaseWidget):
         selected.select()
 
         if selected is self.button_a:
-            Systems.set_mode('restricted')
+            Config.set('mode', 0)
         else:
-            Systems.set_mode('unrestricted')
+            Config.set('mode', 1)
 
         self.write2('Click anywhere to continue.', self.f, self.rect.w, centerx=self.rect.centerx, y=400, j=True)

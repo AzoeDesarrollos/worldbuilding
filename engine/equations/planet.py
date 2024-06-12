@@ -3,6 +3,7 @@ from engine.backend.util import generate_id, molecular_weight, q, albedos
 from .general import BodyInHydrostaticEquilibrium
 from .lagrange import get_lagrange_points
 from math import sqrt, pi, pow
+from .space import Universe
 from pygame import Color
 
 
@@ -37,6 +38,8 @@ class Planet(BodyInHydrostaticEquilibrium):
     _albedo = 29
     _surface_coverage = None
 
+    id = None
+
     def __init__(self, data):
         mass = data.get('mass', False)
         radius = data.get('radius', False)
@@ -52,8 +55,6 @@ class Planet(BodyInHydrostaticEquilibrium):
         unit = data.get('unit', "earth")
         self.unit = unit
         self.idx = data.get('idx', 0)
-        if 'parent' in data and data['parent'].is_a_system:
-            self.set_parent(data['parent'].star_system)
         self._mass = None if not mass else mass
         self._radius = None if not radius else radius
         self._gravity = None if not gravity else gravity
@@ -110,6 +111,9 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.tilt = data['tilt'] if 'tilt' in data else 'Not set'
 
         self.satellites = []
+        if 'parent' in data and data['parent'].is_a_system:
+            self.set_parent(data['parent'].parent)
+            self.parent.planetary.add_astro_obj(self)
 
         # ID values make each planet unique, even if they have the same characteristics.
         self.id = data['id'] if 'id' in data else generate_id()
@@ -191,6 +195,7 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.lagrange_points = get_lagrange_points(self.orbit.a.m, star.mass.m, self.mass.m)
 
         self.hill_sphere = self.set_hill_sphere()
+        Universe.visibility_by_albedo()
         if star.celestial_type == 'star':
             self.sky_color = self.set_sky_color(star)
         return self.orbit

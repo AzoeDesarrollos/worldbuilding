@@ -1,12 +1,13 @@
 from engine.equations.orbit import RawOrbit, PseudoOrbit, from_stellar_resonance, in_resonance
 from .common import TextButton, ListedArea, ToggleableButton, ColoredBody, ModifyArea
 from engine.frontend.globales import render_textrect, WidgetHandler, Group
-from engine.backend import EventHandler, Systems, roll, q, recomendation
+from engine.backend import EventHandler, roll, q, recomendation
 from engine.frontend.widgets.incremental_value import IncrementalValue
 from pygame import Surface, Rect, K_LCTRL, K_RCTRL, key as pyg_key
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.frontend.globales.constantes import *
 from engine.frontend.widgets.meta import Meta
+from engine.equations.space import Universe
 from ..values import ValueText
 from bisect import bisect_left
 from itertools import cycle
@@ -78,26 +79,29 @@ class OrbitPanel(BaseWidget):
                             self.digit_y, self.recomendation, layer=2)
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.save_orbits, 'Save')
-        EventHandler.register(self.load_orbits, 'LoadData')
+        EventHandler.register(self.hold_loaded_bodies, 'LoadStellar Orbits')
         EventHandler.register(self.export_data, 'ExportData')
 
+        self.held_data = {}
+
     def set_current(self):
-        star = Systems.get_current_star()
-        if star.id != 'rogues':
-            self.current = star
-            self.last_idx = self.current.id
-            self.orbits: list = self._orbits[star.id]
-            self.markers = self._markers[star.id]
-            self.buttons = self._buttons[star.id]
-            if self.is_visible:
-                if star.evolution_id != star.id:
-                    self.depopulate()
-                if not len(self.markers) or not self.markers[0].locked:
-                    self.populate()
-                self.prepare_and_sort()
-        else:
-            Systems.cycle_systems()
-            self.set_current()
+        star = Universe.nei().get_current().parent
+        if self.current is not None:
+            self.depopulate(self.current)
+        self.current = star
+        self.last_idx = self.current.id
+        self.orbits: list = self._orbits[star.id]
+        self.markers = self._markers[star.id]
+        self.buttons = self._buttons[star.id]
+        if self.is_visible:
+            if star.evolution_id != star.id:
+                self.depopulate(self.current)
+            if not len(self.markers) or not self.markers[0].locked:
+                self.populate()
+            self.prepare_and_sort()
+        # else:
+        #     Systems.cycle_systems()
+        #     self.set_current()
 
     def populate(self):
         star = self.current
@@ -126,9 +130,8 @@ class OrbitPanel(BaseWidget):
 
         self.sort_markers()
 
-    def depopulate(self):
+    def depopulate(self, star):
         flagged = []
-        star = self.current
         for marker in self._markers[star.id]:
             if marker.locked:
                 flagged.append(marker)
@@ -140,8 +143,8 @@ class OrbitPanel(BaseWidget):
 
     def add_orbit_marker(self, position, resonance=False, res_parent=None, res_order=None, obj=None):
         star = self.current if not hasattr(position, 'star') else position.star
-        inner = star.inner_boundry
-        outer = star.outer_boundry
+        inner = star.parent.inner_boundry
+        outer = star.parent.outer_boundry
         bc = False if resonance is False else True
         bd = None if resonance is False else []
         if type(position) is q:
@@ -259,7 +262,8 @@ class OrbitPanel(BaseWidget):
 
     def prepare_and_sort(self):
         listed = sorted(self.buttons, key=lambda b: b.get_value().m)
-        self.sort_buttons(listed)
+        if len(listed):
+            self.sort_buttons(listed)
 
     def check_orbits(self):
         self.orbits.sort(key=lambda o: o.value.m)
@@ -353,15 +357,15 @@ class OrbitPanel(BaseWidget):
             self.clear_ratios()
 
     def save_orbits(self, event):
-        for system in Systems.get_planetary_systems():
-            if system.star_system.letter == 'S':
+        for system in Universe.nei().systems():
+            if system.parent.letter == 'S':
                 for star in system:
                     for marker in self._orbits.get(star.id, []):
                         astrobody_id = marker.orbit.astrobody.id
                         d = self.create_save_data(marker.orbit)
                         self._loaded_orbits[astrobody_id] = d
             else:
-                star = system.star_system
+                star = system.parent
                 for marker in self._orbits.get(star.id, []):
                     d = self.create_save_data(marker.orbit)
                     if not isinstance(marker.orbit, (RawOrbit, PseudoOrbit)):
@@ -388,43 +392,50 @@ class OrbitPanel(BaseWidget):
         if hasattr(orb, 'argument_of_periapsis'):
             aop = orb.argument_of_periapsis
             d['AoP'] = aop.m if type(aop) is not str else aop
+        d['flagged'] = orb.flagged
         return d
 
-    def load_orbits(self, event):
-        if len(event.data.get('Stellar Orbits', [])):
-            self.fill_indexes()
-            self.set_current()
-            existing_ids = [marker.orbit.id for marker in self.orbits]
-            for id in event.data.get('Stellar Orbits', []):
-                if id not in existing_ids:
-                    orbit_data = event.data['Stellar Orbits'][id]
-                    a = q(orbit_data['a'], 'au')
-                    if 'e' not in orbit_data:
-                        self.add_orbit_marker(a)
-                    else:
-                        e = q(orbit_data['e'])
-                        i = q(orbit_data['i'], 'degree')
-                        aop = q(orbit_data['AoP'], 'degree') if orbit_data['AoP'] != 'undefined' else 'undefined'
-                        loan = q(orbit_data['LoAN'], 'degree')
-                        system = Systems.get_system_by_id(orbit_data['star_id'])
-                        if system is not None:
-                            planet = system.get_astrobody_by(id, tag_type='id')
-                            star = system.star_system
-                            planet.set_orbit(star, [a, e, i, loan, aop])
-                            planet.orbit.id = id
-                            self.add_orbit_marker(planet.orbit, obj=planet)
-                            self.planet_area.delete_objects(planet)
+    def hold_loaded_bodies(self, event):
+        if 'Stellar Orbits' in event.data and len(event.data['Stellar Orbits']):
+            self.held_data.update(event.data['Stellar Orbits'])
 
-        # borrar las órbitas cargadas para evitar que se dupliquen.
+    def load_orbits(self):
+        existing_ids = [marker.orbit.id for marker in self.orbits]
+        for id in self.held_data:
+            if id not in existing_ids:
+                orbit_data = self.held_data[id]
+                a = q(orbit_data['a'], 'au')
+                if 'e' not in orbit_data:
+                    self.add_orbit_marker(a)
+                else:
+                    e = q(orbit_data['e'])
+                    i = q(orbit_data['i'], 'degree')
+                    aop = q(orbit_data['AoP'], 'degree') if orbit_data['AoP'] != 'undefined' else 'undefined'
+                    loan = q(orbit_data['LoAN'], 'degree')
+                    systems = Universe.nei().true_systems
+                    system = [s for s in systems if s.id == orbit_data['star_id']]
+                    if len(system):
+                        system = system[0]
+                    if system is not None:
+                        planet = system.planetary.get_astrobody_by(id, tag_type='id')
+                        Universe.add_astro_obj(planet)
+                        star = system.star
+                        planet.set_orbit(star, [a, e, i, loan, aop])
+                        planet.orbit.id = id
+                        self.add_orbit_marker(planet.orbit, obj=planet)
+                        self.planet_area.delete_objects(planet)
+
+    # borrar las órbitas cargadas para evitar que se dupliquen.
+        self.held_data.clear()
         if self.is_visible:
             self.sort_markers()
 
     def fill_indexes(self):
-        systems = Systems.get_planetary_systems()
+        systems = Universe.nei().systems()
         assert len(systems), "There is no data to load"
         for system in systems:
             if system.is_a_system:
-                star = system.star_system
+                star = system.parent
                 if star.id not in self._markers:
                     self._markers[star.id] = []
                     self._orbits[star.id] = []
@@ -436,6 +447,7 @@ class OrbitPanel(BaseWidget):
         try:
             self.fill_indexes()
             self.set_current()
+            self.load_orbits()
             self.no_star_error = False
 
         except AssertionError:
@@ -484,8 +496,8 @@ class OrbitPanel(BaseWidget):
         m.select()
 
     def link_astrobody_to_stellar_orbit(self, astrobody, **kwargs):
-        system = Systems.get_current()
-        star = system.star_system
+        system = Universe.nei().get_current()
+        star = system.parent
         if self.resonance_mode is False:
             pos = q(roll(star.inner_boundry.m, star.outer_boundry.m), 'au')
             marker = self.add_orbit_marker(pos, obj=astrobody)
@@ -507,7 +519,7 @@ class OrbitPanel(BaseWidget):
         self.add_orbits_button.unlink()
 
     def update(self):
-        system = Systems.get_current()
+        system = Universe.nei().get_current()
         if system is not None:
             idx = system.id
         else:
@@ -686,7 +698,7 @@ class OrbitType(BaseWidget, Intertwined):
             if value is not None:
                 parametros.append(value)
 
-        main = self.parent.current
+        main = self.parent.current.parent
         if hasattr(self.linked_astrobody.orbit, 'longitude_of_the_ascending_node'):
             parametros.append(self.linked_astrobody.orbit.longitude_of_the_ascending_node.m)
             aop = self.linked_astrobody.orbit.argument_of_periapsis
@@ -817,7 +829,7 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
             self.increment = self.update_increment()
             self.increment *= delta
 
-            if Systems.get_current_star().validate_orbit(self.value.m + self.increment):
+            if Universe.nei().get_current().parent.validate_orbit(self.value.m + self.increment):
                 self.value += q(self.increment, self.value.u)
                 self.increment = 0
                 self.parent.sort_markers()
@@ -872,6 +884,7 @@ class OrbitButton(Meta, Intertwined):
         self.img_dis = self.f1.render(t, True, COLOR_DISABLED, COLOR_AREA)
         self.rect = self.img_sel.get_rect(topleft=self._rect.topleft)
         self.max_w = self.img_sel.get_rect().width
+        self.image = self.img_uns
 
     def move(self, x, y):
         self._rect.topleft = x, y
@@ -919,7 +932,7 @@ class AvailablePlanets(ListedArea):
     name = 'Planets'
 
     def show(self):
-        for system in Systems.get_planetary_systems():
+        for system in Universe.nei().systems():
             idx = system.id
             population = [i for i in system.planets + system.asteroids + system.binary_planets if i.orbit is None]
             self.populate(population, layer=idx)
@@ -943,6 +956,8 @@ class SetOrbitButton(TextButton):
             if self.linked_marker.orbit.stable:
                 self.parent.recomendation.notify()
                 self.parent.develop_orbit(self.linked_marker)
+                astrobody = self.linked_marker.linked_astrobody
+                Universe.add_astro_obj(astrobody)
 
     def lock(self):
         self.locked = True
@@ -1149,7 +1164,7 @@ class Recomendation(BaseWidget):
             self.format = None
 
         data = {'extra': ''}
-        planets_in_system = len(Systems.get_current().planets)
+        planets_in_system = len(Universe.current_planetary().planets)
         e = round(0.584 * pow(planets_in_system, -1.2), 3) if planets_in_system > 1 else None
         if planet.celestial_type == 'planet':
             if planet.habitable and orbit.temperature == 'habitable':
@@ -1168,8 +1183,8 @@ class Recomendation(BaseWidget):
 
             elif planet.clase == 'Dwarf Planet' or planet.celestial_type == 'asteroid':
                 giant_types = ['Gas Giant', 'Super Jupiter', 'Puffy Giant']
-                gas_giants = Systems.get_current().get_bodies_in_orbit_by_types(*giant_types)
-                terrestial_planets = Systems.get_current().get_bodies_in_orbit_by_types('Terrestial')
+                gas_giants = Universe.current_planetary().get_bodies_in_orbit_by_types(*giant_types)
+                terrestial_planets = Universe.current_planetary().get_bodies_in_orbit_by_types('Terrestial')
                 gas_giants.sort(key=lambda g: g.orbit.a.m, reverse=True)
                 terrestial_planets.sort(key=lambda g: g.orbit.a.m, reverse=True)
                 lim_min, lim_max = 0, orbit.a.m + 10
@@ -1199,7 +1214,8 @@ class Recomendation(BaseWidget):
         self.format = data
 
     def append_subclases(self, orbit, star):
-        gas_giants = Systems.get_current().get_bodies_in_orbit_by_types('Gas Giant', 'Super Jupiter', 'Puffy Giant')
+        types = 'Gas Giant', 'Super Jupiter', 'Puffy Giant'
+        gas_giants = Universe.current_planetary().get_bodies_in_orbit_by_types(types)
         gas_giants.sort(key=lambda g: g.orbit.a.m, reverse=True)
         lim_min = 0
         if len(gas_giants):
@@ -1276,7 +1292,7 @@ class Recomendation(BaseWidget):
 
         if planet.clase == 'Gas Giant':
             orbita = frost_line + 1 <= orbit.a.m <= frost_line + 1.2 or orbit.a.m >= frost_line + 1.2
-            gas_giants = [pln for pln in Systems.get_current().astro_bodies if
+            gas_giants = [pln for pln in Universe.current_planetary().astro_bodies if
                           pln.clase in ('Gas Giant', 'Super Jupiter', 'Puffy Giant')]
             gas_giants.sort(key=lambda g: g.mass, reverse=True)
             data = self.recomendation['giant'].copy()
@@ -1300,7 +1316,7 @@ class Recomendation(BaseWidget):
             elif not orbita:
                 data.update({'extra': ''})
                 clase = planet.clase == 'Gas Giant'
-                habitable = any([i.habitable for i in Systems.get_current().planets])
+                habitable = any([i.habitable for i in Universe.current_planetary().planets])
                 data.update({'eccentric': True, 'planet_type': 'Eccentric Jupiter', 'orbit': ''})
                 if all([clase, habitable]) is True and eccentricity is None:
                     data.update(**self.recomendation['eccentric_2'].copy())
@@ -1365,10 +1381,10 @@ class Recomendation(BaseWidget):
         self._marker = marker
         self._astro = a_body
         self._orbit = astro_orbit
-        self.suggest(a_body, astro_orbit, Systems.get_current_star())
+        self.suggest(a_body, astro_orbit, Universe.current_planetary().parent.star)
         self.analyze_orbits(marker)
         if a_body.celestial_type != 'system' and a_body.clase == 'Dwarf Planet' or a_body.celestial_type == 'asteroid':
-            self.append_subclases(astro_orbit, Systems.get_current_star())
+            self.append_subclases(astro_orbit, Universe.current_planetary().parent.star)
         self.show_suggestion(a_body, astro_orbit.temperature)
 
     def notify(self):

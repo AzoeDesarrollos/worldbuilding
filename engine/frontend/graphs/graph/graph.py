@@ -1,12 +1,11 @@
+from ..common import Linea, Punto, find_and_interpolate, find_and_interpolate_flipped, BodyMarker, MarkersManager
 from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_SPACE, K_LCTRL, K_LSHIFT
-from ..common import Linea, Punto, find_and_interpolate, find_and_interpolate_flipped, BodyMarker
 from pygame import font, Surface, Rect, image, mouse, event, Color as Clr, mask
-from engine.backend import abrir_json, interpolate, Systems
+from engine.backend import abrir_json, interpolate, Config
 from pygame import display, quit as py_quit, SCALED
 from engine.frontend.globales import Group
 from os import environ, getcwd, path
 import sys
-
 
 fuente1 = font.SysFont('verdana', 15)
 fuente2 = font.SysFont('verdana', 14)
@@ -48,7 +47,7 @@ composiciones = abrir_json(path.join(ruta, 'compositions.json'))
 mascara = mask.from_threshold(image.load(path.join(ruta, 'mask.png')), (255, 0, 255), (250, 1, 250))
 
 
-def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.0, radius_upper_limit=0.0,
+def graph_loop(system, mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.0, radius_upper_limit=0.0,
                is_gas_drwaf=False):
     m_lo_l = mass_lower_limit
     m_hi_l = mass_upper_limit
@@ -84,18 +83,18 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
 
     mouse.set_pos(rect.center)
     event.clear()
-    if Systems.restricted_mode and Systems.get_current().is_a_system:
-        markers = Systems.bodies_markers[Systems.get_current().id]['graph']
-        marcadores = Group()
+    marcadores = Group()
+    if Config.get('mode') == 0:
+        markers = MarkersManager.graph_markers(system.id)
 
-        # for planet in Systems.get_current().planets:
-        #     if planet.relative_size != 'Giant':
-        #         mass = planet.mass.m
-        #         radius = planet.radius.m
-        #
-        #         x = find_and_interpolate(mass, mass_keys, exes)
-        #         y = find_and_interpolate_flipped(radius, radius_keys, yes)
-        #         markers.append([x, y])
+        for planet in system.planets:
+            if planet.relative_size != 'Giant':
+                mass = planet.mass.m
+                radius = planet.radius.m
+
+                x = find_and_interpolate(mass, mass_keys, exes)
+                y = find_and_interpolate_flipped(radius, radius_keys, yes)
+                MarkersManager.set_marker([x, y])
 
         for x, y in markers:
             marcadores.add(BodyMarker(x, y))
@@ -306,16 +305,14 @@ def graph_loop(mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_limit=0.
             fondo.blit(texto2, rectT2)
             punto.update()
             lineas.update()
-            if Systems.restricted_mode and Systems.get_current().is_a_system:
-                # noinspection PyUnboundLocalVariable
+            if Config.get('mode') == 0:
                 marcadores.update()
                 marcadores.draw(fondo)
             lineas.draw(fondo)
             display.update()
 
-        elif len(data) and Systems.restricted_mode and Systems.get_current().is_a_system:
-            # noinspection PyUnboundLocalVariable
-            markers.append(punto.rect.center)
+        elif len(data) and Config.get('mode') == 0:
+            MarkersManager.set_marker(punto.rect.center)
 
     display.quit()
     return data

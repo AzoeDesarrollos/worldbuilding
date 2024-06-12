@@ -1,5 +1,5 @@
 from engine.frontend.globales import COLOR_AREA, COLOR_BOX, COLOR_TEXTO, COLOR_DISABLED, COLOR_SELECTED
-from engine.backend import EventHandler, Systems, material_densities, roll
+from engine.backend import EventHandler, material_densities, roll
 from engine.equations.satellite import major_moon_by_composition
 from engine.frontend.globales import ANCHO, ALTO, Group
 from engine.frontend.widgets.values import ValueText
@@ -54,23 +54,25 @@ class SatellitePanel(BasePanel):
         self.moons = []
         EventHandler.register(self.save_satellites, 'Save')
         EventHandler.register(self.name_current, 'NameObject')
-        EventHandler.register(self.load_satellites, 'LoadData')
+        EventHandler.register(self.hold_loaded_bodies, 'LoadSatellites')
         EventHandler.register(self.export_data, 'ExportData')
+        self.held_data = {}
 
-    def load_satellites(self, event):
-        for idx, id in enumerate(event.data['Satellites']):
-            satellite_data = event.data['Satellites'][id]
-            moon = major_moon_by_composition(satellite_data)
-            moon.idx = len([i for i in Systems.get_current().satellites if i.cls == moon.cls])
-            self.satellites.add(moon)
-            Universe.add_astro_obj(moon)
+    def hold_loaded_bodies(self, event):
+        if 'Satellites' in event.data and len(event.data['Satellites']):
+            self.held_data.update(event.data['Satellites'])
 
-    def load_data(self):
+    def load_satellites(self):
         self.enable()
-        for moon in self.satellites.widgets():
-            system = Systems.get_system_by_id(moon.system_id)
-            if system is not None and system.add_astro_obj(moon):
-                self.add_button(moon)
+        for idx, id in enumerate(self.held_data):
+            satellite_data = self.held_data[id]
+            satellite_data['id'] = id
+            moon = major_moon_by_composition(satellite_data)
+            moon.idx = len([i for i in Universe.current_planetary().satellites if i.cls == moon.cls])
+            system_id = satellite_data['system']
+            moon_system = Universe.nei().get_system(system_id).planetary
+            moon_system.add_astro_obj(moon)
+            self.add_button(moon)
 
     def save_satellites(self, event):
         data = {}
@@ -80,7 +82,8 @@ class SatellitePanel(BasePanel):
                 'name': moon.name,
                 'radius': moon.radius.m,
                 'composition': moon.composition,
-                'system': moon.system_id
+                'system': moon.system_id,
+                'flagged': moon.flagged
             }
             data[moon.id] = moon_data
             EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Satellites": data})
@@ -90,21 +93,21 @@ class SatellitePanel(BasePanel):
             button.hide()
         for button in self.satellites.get_widgets_from_layer(idx):
             button.show()
-        self.sort_buttons(self.satellites.get_widgets_from_layer(Systems.get_current().id), x=self.curr_x)
+        self.sort_buttons(self.satellites.get_widgets_from_layer(Universe.current_planetary().id), x=self.curr_x)
 
     def add_button(self, moon):
         button = SatelliteButton(self.current, moon, str(moon), self.curr_x, self.curr_y)
         if moon.system_id is not None:
             layer_number = moon.system_id
         else:
-            layer_number = Systems.get_current().id
+            layer_number = Universe.current_planetary().id
             moon.system_id = layer_number
 
         self.moons.append(moon)
         self.satellites.add(button, layer=layer_number)
         self.properties.add(button)
         if self.is_visible:
-            satellites = self.satellites.get_widgets_from_layer(Systems.get_current().id)
+            satellites = self.satellites.get_widgets_from_layer(Universe.current_planetary().id)
             self.sort_buttons(satellites, x=self.curr_x, y=self.curr_y)
             self.current.erase()
         self.button_add.disable()
@@ -114,7 +117,7 @@ class SatellitePanel(BasePanel):
         self.moons.remove(satellite)
         self.satellites.remove(button)
         button.hide()
-        self.sort_buttons(self.satellites.get_widgets_from_layer(Systems.get_current().id))
+        self.sort_buttons(self.satellites.get_widgets_from_layer(Universe.current_planetary().id))
         self.properties.remove(button)
         self.button_del.disable()
 
@@ -130,13 +133,17 @@ class SatellitePanel(BasePanel):
 
     def show(self):
         super().show()
-        self.load_data()
+        self.load_satellites()
         if self.mass_number is None:
             self.properties.add()
         for pr in self.properties.widgets():
             pr.show()
 
     def hide(self):
+        if len(self.moons) < 1:
+            self.parent.set_skippable('Calendar', True)
+        else:
+            self.parent.set_skippable('Calendar', False)
         super().hide()
         for pr in self.properties.widgets():
             pr.hide()
@@ -153,7 +160,7 @@ class SatellitePanel(BasePanel):
             button.deselect()
 
     def update(self):
-        idx = Systems.get_current_id(self)
+        idx = Universe.current_planetary().id
 
         if idx != self.last_idx:
             self.image.fill(COLOR_AREA, [0, 498, 130, 14])
@@ -246,9 +253,8 @@ class SatelliteType(ObjectType):
             data['orbit'] = self.current.orbit
 
         self.has_values = True
-        system = Systems.get_current()
-        if system.is_a_system:
-            data['parent'] = system.star_system
+        system = Universe.current_planetary()
+        data['parent'] = system.parent
         moon = major_moon_by_composition(data)
         if moon.idx is None:
             moon.idx = len([i for i in system.satellites if i.cls == moon.cls])
@@ -313,7 +319,7 @@ class SatelliteType(ObjectType):
             self.erase()
 
     def destroy_button(self):
-        destroyed = Systems.get_current().remove_astro_obj(self.current)
+        destroyed = Universe.current_planetary().remove_astro_obj(self.current)
         if destroyed:
             self.parent.del_button(self.current)
             self.erase()
@@ -477,7 +483,7 @@ class CopyCompositionButton(Meta):
         elif self.enabled:
             self.disable()
 
-        idx = Systems.get_current().id
+        idx = Universe.current_planetary().id
         if idx != self.last_idx:
             self.last_idx = idx
             self.current_cycler = self.cyclers[idx] if idx in self.cyclers else None

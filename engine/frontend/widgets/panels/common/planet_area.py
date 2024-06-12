@@ -1,6 +1,6 @@
 from engine.frontend.widgets.basewidget import BaseWidget
 from engine.frontend.globales import COLOR_AREA, Group
-from engine.backend.systems import Systems
+from engine.equations.space import Universe
 from pygame import Surface, Rect
 
 
@@ -58,7 +58,7 @@ class ListedArea(BaseWidget):
             if event.data['button'] == 1:
                 self.deselect_all()
             elif len(self.listed_objects.widgets()):
-                buttons = self.listed_objects.widgets()
+                buttons = self.listed_objects.get_widgets_from_layer(self.last_idx)
                 by_mass = sorted(buttons, key=lambda b: b.object_data.mass.to('earth_mass').m, reverse=1)
                 last_is_hidden = not by_mass[-1].is_visible
                 first_is_hidden = not by_mass[0].is_visible
@@ -66,6 +66,9 @@ class ListedArea(BaseWidget):
                     self.offset += 16
                 elif event.data['button'] == 5 and last_is_hidden:
                     self.offset -= 16
+
+    def reset_offset(self):
+        self.offset = 0
 
     def delete_objects(self, astronomical_object):
         layer = self.last_idx
@@ -95,21 +98,25 @@ class ListedArea(BaseWidget):
     def deselect_all(self):
         self.image.fill(COLOR_AREA, [0, 21, self.rect.w, self.rect.h])
         self.current = None
-        for listed in self.listed_objects.widgets():
+        for listed in self.listed_objects.get_widgets_from_layer(self.last_idx):
             listed.deselect()
 
     def disable_by_type(self, selected_type):
-        for listed in self.listed_objects.widgets():
+        for listed in self.listed_objects.get_widgets_from_layer(self.last_idx):
             if listed.object_data.celestial_type == selected_type:
                 listed.disable()
 
+    def enable_all(self):
+        for listed in self.listed_objects.get_widgets_from_layer(self.last_idx):
+            listed.enable()
+
     def disable_object(self, selected_object):
-        for listed in self.listed_objects.widgets():
+        for listed in self.listed_objects.get_widgets_from_layer(self.last_idx):
             if listed.object_data == selected_object:
                 listed.disable()
 
     def objects(self):
-        return [o.object_data for o in self.listed_objects.widgets()]
+        return [o.object_data for o in self.listed_objects.get_widgets_from_layer(self.last_idx)]
 
     def show_current(self, idx):
         self.sort()
@@ -125,7 +132,7 @@ class ListedArea(BaseWidget):
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
-        idx = Systems.get_current_id(self)
+        idx = Universe.current_planetary().id
         if idx != self.last_idx:
             self.last_idx = idx
         self.show_current(idx)

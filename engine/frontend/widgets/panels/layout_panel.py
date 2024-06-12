@@ -2,11 +2,11 @@ from engine.frontend.widgets.basewidget import BaseWidget
 from pygame import Surface, draw, transform, SRCALPHA
 from engine.frontend.globales.constantes import *
 from engine.frontend.globales.group import Group
-from engine.backend import EventHandler, Systems
 from engine.frontend.widgets.meta import Meta
 from engine.equations.space import Universe
 from engine.backend.util import abrir_json
 from engine.backend.config import Config
+from engine.backend import EventHandler
 from os.path import exists, join
 from os import getcwd
 from . import panels
@@ -22,7 +22,6 @@ class LayoutPanel(BaseWidget):
         self.rect = self.image.get_rect()
         self.name = 'Layout'
 
-        Systems.init()
         self.properties = Group()
 
         self.panels = []
@@ -35,12 +34,12 @@ class LayoutPanel(BaseWidget):
         a = Arrow(self, 'backward', 180, self.rect.left + 16, self.rect.bottom)
         b = Arrow(self, 'forward', 0, self.rect.right - 16, self.rect.bottom)
 
-        e = NewButton(self, 100, ALTO-28)
-        d = LoadButton(self, 210, ALTO-27)
-        c = SaveButton(self, 340, ALTO-27)
-        j = ExportButton(self, 470, ALTO+-28)
+        e = NewButton(self, 100, ALTO - 28)
+        d = LoadButton(self, 210, ALTO - 27)
+        c = SaveButton(self, 340, ALTO - 27)
+        j = ExportButton(self, 470, ALTO + -28)
 
-        f = SwapSystem(self, ANCHO - 200, 2, 'System')
+        f = SwapSystem(self, ANCHO - 220, 2, 'System')
         g = SwapGalaxy(self, 0, 2, 'Galaxy')
         h = SwapNeighbourhood(self, 150, 2, 'Neighbourhood')
 
@@ -166,7 +165,10 @@ class LoadButton(BaseButton):
     def on_mousebuttondown(self, event):
         if event.origin == self and self.enabled:
             data = self.check_data()
-            EventHandler.trigger('LoadData', 'LoadButton', data)
+            keys = 'Galaxies,Neighbourhoods,Stars,Compact,Binary,Single,Planets,'
+            keys += 'Satellites,Asteroids,Stellar Orbits,Planetary Orbits'
+            for body in keys.split(','):
+                EventHandler.trigger(f'Load{body}', 'LoadButton', data)
             self.disable()
 
 
@@ -183,6 +185,7 @@ class NewButton(BaseButton):
 class SwapSystem(Meta):
     enabled = False
     system_image = None
+    current = None
 
     def __init__(self, parent, x, y, name):
         super().__init__(parent)
@@ -201,12 +204,15 @@ class SwapSystem(Meta):
 
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and event.origin == self:
-            Systems.cycle_systems(self.parent.current.name)
+            self.current = Universe.nei().cycle_systems()
+            self.system_image.render__name()
 
     def update(self):
         super().update()
         if not self.enabled and self.parent.current.show_swap_system_button is True:
             self.enable()
+            self.current = Universe.nei().get_current()
+            self.system_image.enable()
 
     def show(self):
         super().show()
@@ -238,6 +244,8 @@ class SwapGalaxy(SwapSystem):
 
     def enable(self):
         super().enable()
+        self.current = Universe.current_galaxy
+        self.system_image.render__name()
 
 
 class SwapNeighbourhood(SwapSystem):
@@ -249,6 +257,7 @@ class SwapNeighbourhood(SwapSystem):
             if Universe.current_galaxy is not None:
                 neighbourhood = Universe.current_galaxy.cycle_neighbourhoods()
                 self.current = neighbourhood
+                self.system_image.render__name()
                 EventHandler.trigger('SwitchNeighbourhood', 'SwapNeighbourhoodButton', {'current': neighbourhood})
 
     def set_current(self):
@@ -267,6 +276,10 @@ class SwapNeighbourhood(SwapSystem):
         super().disable()
         self.system_image.color = COLOR_DISABLED
 
+    def enable(self):
+        super().enable()
+        self.system_image.render__name()
+
     def create_img(self):
         self.system_image = NeighbourhoodName(self, left=self.rect.right + 6, y=2)
 
@@ -278,62 +291,64 @@ class SwapNeighbourhood(SwapSystem):
 
 class SystemName(BaseWidget):
     color = COLOR_DISABLED
+    image = None
 
     def __init__(self, parent, **kwargs):
         super().__init__(parent)
         self.f = self.crear_fuente(13)
 
-        self.image = self.f.render(self.get_name(), True, COLOR_TEXTO, COLOR_BOX)
+        self.render__name()
         self._rect = self.image.get_rect(**kwargs)
         self.rect = self._rect.copy()
 
-    def get_name(self):
+    def render__name(self):
         if self.parent.parent.current.show_swap_system_button is False:
             name = None
         else:
-            star = Systems.get_current_star()
-            if star is not None and star.has_name:
-                name = star.name
-            else:
-                name = str(star)
+            current = self.parent.current
+            name = str(current.parent)
 
         if name is None:
             self.color = COLOR_DISABLED
             name = '-'
-        elif name == 'Rogue Planets':
-            self.color = COLOR_WARNING
         else:
             self.color = COLOR_TEXTO
-        return name
 
-    def update(self):
-        self.image = self.f.render(self.get_name(), True, self.color, COLOR_BOX)
-        self.rect = self.image.get_rect(topleft=self._rect.topleft)
+        self.image = self.f.render(name, True, self.color, COLOR_BOX)
+
+    def enable(self):
+        super().enable()
+        self.render__name()
 
 
 class GalaxyName(SystemName):
-    def get_name(self):
+    def render__name(self):
         if self.parent.current is not None:
             name = self.parent.current.id.split('-')[1]
             self.color = COLOR_TEXTO
-            return name
+
         else:
-            return '-'
+            name = '-'
+
+        self.image = self.f.render(name, True, self.color, COLOR_BOX)
 
 
 class NeighbourhoodName(SystemName):
     named = None
 
-    def get_name(self):
+    def render__name(self):
         name = str(self.parent.current)
         self.named = name
         if self.parent.enabled:
             self.color = COLOR_TEXTO
-            return name
+
         elif self.parent.locked:
-            return self.named
+            name = self.named
         else:
-            return '-'
+            name = '-'
+
+        self.image = self.f.render(name, True, self.color, COLOR_BOX)
+        # self.rect = self.image.get_rect(topleft=self._rect.topleft)
 
 
 class ExportButton(BaseButton):
@@ -342,6 +357,4 @@ class ExportButton(BaseButton):
 
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and event.origin == self:
-            if event.data['button'] == 1 and self.enabled and event.origin == self:
-                EventHandler.trigger('ExportData', 'ExportButton', {'panel': self.parent.current})
-
+            EventHandler.trigger('ExportData', 'ExportButton', {'panel': self.parent.current})

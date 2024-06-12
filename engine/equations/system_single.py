@@ -1,7 +1,8 @@
-from engine.backend import EventHandler, Systems
+from engine.equations.general import Flagable
 from .orbit import NeighbourhoodSystemOrbit
 from engine.equations.space import Universe
-from engine.equations.general import Flagable
+from engine.backend import EventHandler, q
+from math import sqrt
 
 
 class SingleSystem(Flagable):
@@ -12,8 +13,25 @@ class SingleSystem(Flagable):
     celestial_type = 'system'
     system_number = 'single'
 
+    _habitable_inner = 0
+    _habitable_outer = 0
+    _inner_boundry = 0
+    _outer_boundry = 0
+    _frost_line = 0
+
+    habitable_inner = None
+    habitable_outer = None
+    inner_boundry = None
+    outer_boundry = None
+    frost_line = None
+
+    inner_forbbiden_zone = None
+    outer_forbbiden_zone = None
+
     shared_mass = None
     age = None
+
+    planetary = None
 
     def __init__(self, star=None, neighbourhood_id=None):
         self.star = star
@@ -21,6 +39,28 @@ class SingleSystem(Flagable):
         self.id = star.id
         self.neighbourhood = neighbourhood_id
         EventHandler.register(self.save_single_systems, 'Save')
+        self.set_derivated_characteristics(star.luminosity.m)
+        self.set_qs()
+        self.parent = self.star.parent if self.star.parent is not None else None
+        self.star.set_parent(self)
+
+    def set_derivated_characteristics(self, luminosity):
+        mass = pow(luminosity, (1 / 3.5))
+        self._habitable_inner = round(sqrt(luminosity / 1.1), 3)
+        self._habitable_outer = round(sqrt(luminosity / 0.53), 3)
+        self._inner_boundry = round(mass * 0.01, 3)
+        self._outer_boundry = round(mass * 40, 3)
+        self._frost_line = round(4.85 * sqrt(luminosity), 3)
+
+    def set_qs(self):
+        self.habitable_inner = q(self._habitable_inner, 'au')
+        self.habitable_outer = q(self._habitable_outer, 'au')
+        self.inner_boundry = q(self._inner_boundry, 'au')
+        self.outer_boundry = q(self._outer_boundry, 'au')
+        self.frost_line = q(self._frost_line, 'au')
+
+    def validate_orbit(self, orbit):
+        return self._inner_boundry < orbit < self._outer_boundry
 
     @property
     def cartesian(self):
@@ -43,39 +83,33 @@ class SingleSystem(Flagable):
     def composition(self):
         return [self]
 
+    @property
+    def mass(self):
+        return self.star.mass
+
+    @property
+    def evolution_id(self):
+        return self.star.evolution_id
+
     def save_single_systems(self, event):
         data = {
             self.id: {
                 "star": self.star.id,
-                "position": dict(zip(['x', 'y', 'z'], self.cartesian)),
-                "neighbourhood_id": self.neighbourhood
+                "neighbourhood_id": self.neighbourhood,
+                "flagged": self.flagged
             }
         }
 
         EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Single Systems': data})
 
+    def __str__(self):
+        return str(self.star)
+
     def __repr__(self):
         return f'System of {str(self.star)}'
 
-
-def load_single_systems(event):
-    data = event.data['Single Systems']
-    for id in data:
-        system_data = event.data['Single Systems'][id]
-        star_id = system_data['star']
-        neighbourhood_id = system_data['neighbourhood_id']
-
-        star = Universe.get_astrobody_by(star_id, 'id')
-        proto_systems = [system for system in Universe.systems if system.composition == 'single']
-        position = list(system_data['position'].values())
-        for proto in proto_systems:
-            if proto.location == position:
-                Universe.systems.remove(proto)
-                break
-
-        Systems.set_planetary_system(star)
-        neighbourhood = Universe.current_galaxy.get_neighbourhood(neighbourhood_id)
-
-        system = SingleSystem(star, neighbourhood.id)
-        system.cartesian = system_data['position']
-        neighbourhood.add_true_system(system)
+    def __getitem__(self, item):
+        if item == 0:
+            return self.star
+        else:
+            raise StopIteration

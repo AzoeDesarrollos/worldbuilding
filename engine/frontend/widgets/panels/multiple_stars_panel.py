@@ -1,15 +1,14 @@
 from .star_system_panel import SystemType, UndoButton, SetupButton, SystemButton, DissolveButton, AutoButton
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
-from engine.equations.system_single import SingleSystem, load_single_systems
+from engine.equations.system_single import SingleSystem
 from engine.frontend.widgets.panels.common import ListedBody, ListedArea
 from engine.equations.orbit import NeighbourhoodSystemOrbit
 from engine.equations.system_binary import system_type
-from engine.backend import EventHandler, Systems
 from engine.equations.space import Universe
+from engine.backend import EventHandler
 from ..basewidget import BaseWidget
 from pygame import Surface, mouse
 from ..values import ValueText
-from random import choice
 
 
 class MultipleStarsPanel(BaseWidget):
@@ -21,11 +20,12 @@ class MultipleStarsPanel(BaseWidget):
 
     show_swap_system_button = False
 
-    _triple = 0
-    _multiple = 0
-
     _t_quantity = None
     _m_quantity = None
+
+    last_id = -1
+
+    planetary_systems_added = False
 
     def __init__(self, parent):
         self.name = 'Multiple Stars'
@@ -60,30 +60,31 @@ class MultipleStarsPanel(BaseWidget):
         self.discarded_protos = []
 
         EventHandler.register(self.save_systems, 'Save')
-        EventHandler.register(self.load_systems, 'LoadData')
+        EventHandler.register(self.hold_loaded_bodies, 'LoadBinary')
         EventHandler.register(self.name_current, 'NameObject')
-        EventHandler.register(load_single_systems, 'LoadData')
         EventHandler.register(self.export_data, 'ExportData')
+
+        self.held_data = {}
 
     @property
     def triple(self):
-        return self._triple
+        nei = Universe.nei()
+        return nei.quantities['Triple']
 
     @property
     def multiple(self):
-        return self._multiple
+        nei = Universe.nei()
+        return nei.quantities['Multiple']
 
-    def load_universe_data(self):
-        triple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Triple']
-        multiple_systems = Universe.current_galaxy.current_neighbourhood.quantities['Multiple']
-        if self._t_quantity is None:
-            self._t_quantity = triple_systems
-            self._triple = triple_systems
-        if self._m_quantity is None:
-            self._m_quantity = multiple_systems
-            self._multiple = multiple_systems
-        self.triple_remaining.value = f'{self._triple}/{self._t_quantity}'
-        self.multiple_remaining.value = f'{self._multiple}/{self._m_quantity}'
+    def load_universe_data(self, nei=None):
+        if nei is None:
+            nei = Universe.nei()
+        triple_systems = nei.quantities['Triple']
+        multiple_systems = nei.quantities['Multiple']
+        self._t_quantity = triple_systems
+        self._m_quantity = multiple_systems
+        self.triple_remaining.value = f'{self._t_quantity}'
+        self.multiple_remaining.value = f'{self._m_quantity}'
 
     def name_current(self, event):
         if event.data['object'] in self.systems:
@@ -92,8 +93,10 @@ class MultipleStarsPanel(BaseWidget):
 
     def create_button(self, system_data):
         self.parent.properties.widgets()[1].enable()
-        triple_systems = [system for system in Universe.systems if system.composition == 'triple']
-        multiple_systems = [system for system in Universe.systems if system.composition == 'multiple']
+        nei = Universe.current_galaxy.get_neighbourhood(system_data.neighbourhood_id)
+        triple_systems = [system for system in nei.proto_systems if system.composition == 'triple']
+        multiple_systems = [system for system in nei.proto_systems if system.composition == 'multiple']
+
         prim = system_data.primary
         scnd = system_data.secondary
         go_on_1 = prim.celestial_type != 'system' and scnd.celestial_type == 'system'  # triple
@@ -101,31 +104,31 @@ class MultipleStarsPanel(BaseWidget):
         go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'  # multiple
         chosen = None
         if go_on_1 or go_on_2:
-            chosen = choice(triple_systems)
-            self._triple -= 1
+            chosen = triple_systems.pop(0)
+            nei.quantities['Triple'] -= 1
         elif go_on_3:
-            chosen = choice(multiple_systems)
-            self._multiple -= 1
+            chosen = multiple_systems.pop(0)
+            nei.quantities['Multiple'] -= 1
 
         assert chosen is not None, "System is nonsensical"
-        Universe.systems.remove(chosen)
+        nei.remove_proto_system(chosen)
         system_data.cartesian = chosen.location
-        neighbourhood = Universe.current_galaxy.current_neighbourhood
-        offset = neighbourhood.location
+        # system_data.id = chosen.id
+        offset = nei.location
         system_data.orbit = NeighbourhoodSystemOrbit(*system_data.cartesian, offset)
         self.discarded_protos.append(chosen)
+        Universe.add_astro_obj(system_data)
         if system_data not in self.systems:
-            all_systems = set(neighbourhood.systems + self.systems)
+            all_systems = set(nei.true_systems + self.systems)
             idx = len([s for s in all_systems if system_data.compare(s) is True])
             button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
             self.systems.append(system_data)
-            self.system_buttons.add(button)
+            self.system_buttons.add(button, layer=nei.id)
             self.properties.add(button)
-            self.sort_buttons(self.system_buttons.widgets())
-            Systems.set_planetary_system(system_data)
-            Universe.nei().add_true_system(system_data)
+            self.sort_buttons(self.system_buttons.get_widgets_from_layer(nei.id))
+            nei.add_true_system(system_data)
             self.current.enable()
-            self.load_universe_data()
+            self.load_universe_data(nei)
             self.stars_area.enable_all()
             return button
 
@@ -153,14 +156,14 @@ class MultipleStarsPanel(BaseWidget):
         go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type == 'star'
         go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'
 
+        nei = Universe.nei()
         if go_on_1 or go_on_2:
-            self._triple += 1
+            nei.quantities['Triple'] += 1
         if go_on_3:
-            self._multiple += 1
+            nei.quantities['Multiple'] += 1
 
         self.dissolve_button.disable()
-        if system in self.systems:
-            Systems.dissolve_system(system)
+        EventHandler.trigger('DissolveSystem', self, {'system': system, 'nei': Universe.nei().id})
 
     def show(self):
         super().show()
@@ -169,70 +172,60 @@ class MultipleStarsPanel(BaseWidget):
         self.parent.swap_neighbourhood_button.unlock()
         if Universe.current_galaxy is not None:
             self.load_universe_data()
+            self.show_loaded_systems()
 
     def create_systems(self):
-        lock = False
-        widgets = self.stars_area.listed_objects.widgets()
-        singles = [system for system in Universe.systems if system.composition == 'single']
-        stars = [s.object_data for s in widgets if s.object_data.celestial_type == 'star']
-        binaries = [s.object_data for s in widgets if s.object_data.celestial_type != 'star']
-        if len(singles):
-            for star in stars:
-                try:
-                    chosen = choice(singles)
-                    singles.remove(chosen)
-                    Universe.remove_astro_obj(chosen)
-                    neighbourhood = Universe.current_galaxy.current_neighbourhood
-                    system = SingleSystem(star, neighbourhood.id)
+        for nei in Universe.current_galaxy.stellar_neighbourhoods:
+            widgets = self.stars_area.listed_objects.get_widgets_from_layer(nei.id)
+            singles = [system for system in nei.proto_systems if system.composition == 'single']
+            stars = [s.object_data for s in widgets if s.object_data.celestial_type == 'star']
+            if len(singles):
+                for star in stars:
+                    chosen = [proto for proto in singles if proto.id == star.id]
+                    if len(chosen):
+                        chosen = chosen[0]  # no more randomness
+                        del singles[singles.index(chosen)]
+                    else:
+                        chosen = singles.pop(0)
+
+                    nei.remove_proto_system(chosen)
+                    system = SingleSystem(star, nei.id)
                     system.cartesian = chosen.location
-                    offset = neighbourhood.location
+                    offset = nei.location
                     system.set_orbit(offset)
-                    Systems.set_planetary_system(star)
-                    Universe.current_galaxy.current_neighbourhood.add_true_system(system)
-                    lock = True
+                    nei.add_true_system(system)
 
-                except IndexError:
-                    self.parent.properties.widgets()[1].disable()
-                    self.parent.curr_idx -= 1
-                    total = self._triple + self._multiple
-                    verb = "s" if total == 1 else 're'
-                    pl = '' if total == 1 else 's'
-                    warning = f"Complete the systems before continuing.\n\nThere'{verb} {total} system{pl} left."
-                    raise AssertionError(warning)
+            if len(singles):
+                brown = [i for i in Universe.brown_dwarfs if i.parent is None and i.neighbourhood_id == nei.id]
+                white = [i for i in Universe.white_dwarfs if i.parent is None and i.neighbourhood_id == nei.id]
+                black = [i for i in Universe.black_holes if i.parent is None and i.neighbourhood_id == nei.id]
+                neutron = [i for i in Universe.neutron_stars if i.parent is None and i.neighbourhood_id == nei.id]
 
-        if len(singles):
-            brown = [i for i in Universe.brown_dwarfs if i.parent is None]
-            white = [i for i in Universe.white_dwarfs if i.parent is None]
-            black = [i for i in Universe.black_holes if i.parent is None]
-            neutron = [i for i in Universe.neutron_stars if i.parent is None]
+                stellar_mass_objects = brown + white + black + neutron
+                for it in stellar_mass_objects:
+                    chosen = singles.pop()
+                    nei.remove_proto_system(chosen)
+                    system = SingleSystem(it, nei.id)
+                    system.cartesian = chosen.location
+                    offset = Universe.nei().location
+                    system.set_orbit(offset)
+                    nei.add_true_system(system)
 
-            stellar_mass_objects = brown + white + black + neutron
-            for it in stellar_mass_objects:
-                chosen = choice(singles)
-                singles.remove(chosen)
-                Universe.remove_astro_obj(chosen)
-                system = SingleSystem(it, Universe.nei().id)
-                system.cartesian = chosen.location
-                offset = Universe.nei().location
-                system.set_orbit(offset)
-                Universe.nei().add_true_system(system)
-
-        for other in binaries:
-            Systems.set_planetary_system(other)
-
-        if lock:
-            self.parent.swap_neighbourhood_button.lock()
+        self.parent.swap_neighbourhood_button.disable()
 
     def hide(self):
-        self.create_systems()
+        if (self.triple == 0 and self.multiple == 0) and self.planetary_systems_added is False:
+            self.planetary_systems_added = True
+            self.create_systems()
+            Universe.nei().set_planetary_systems()
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
 
     def transfer_proto_system(self, discarded):
-        proto = [sys for sys in self.discarded_protos if sys.location == discarded.position]
+        proto = [sys for sys in self.discarded_protos if sys.location == discarded.cartesian]
         if len(proto):
-            proto = proto.pop()
+            proto = proto.pop(0)
         else:
             raise ValueError(f'{discarded} has an invalid location.')
         Universe.systems.append(proto)
@@ -248,8 +241,8 @@ class MultipleStarsPanel(BaseWidget):
                 'ecc_p': system.ecc_p.m,
                 "ecc_s": system.ecc_s.m,
                 "name": system.name,
-                "position": dict(zip(['x', 'y', 'z'], system.cartesian)),
-                "neighbourhood_id": Universe.current_galaxy.current_neighbourhood.id
+                "neighbourhood_id": system.neighbourhood_id,
+                "flagged": system.flagged
             }
             data[system.id] = d
 
@@ -257,10 +250,15 @@ class MultipleStarsPanel(BaseWidget):
             # so it doesn't save an empty dictionary.
             EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': data})
 
-    def load_systems(self, event):
-        self.load_universe_data()
-        for id in event.data['Binary Systems']:
-            system_data = event.data['Binary Systems'][id]
+    def hold_loaded_bodies(self, event):
+        if 'Binary Systems' in event.data and len(event.data['Binary Systems']):
+            self.held_data.update(event.data['Binary Systems'].copy())
+
+    def show_loaded_systems(self):
+        for id in self.held_data:
+            system_data = self.held_data[id]
+            nei = Universe.current_galaxy.get_neighbourhood(system_data['neighbourhood_id'])
+            self.load_universe_data(nei)
 
             prim = Universe.get_astrobody_by(system_data['primary'], 'id', silenty=True)
             scnd = Universe.get_astrobody_by(system_data['secondary'], 'id', silenty=True)
@@ -274,20 +272,29 @@ class MultipleStarsPanel(BaseWidget):
                     ecc_p = system_data['ecc_p']
                     ecc_s = system_data['ecc_s']
                     name = system_data['name']
-                    x = system_data['position']['x']
-                    y = system_data['position']['y']
-                    z = system_data['position']['z']
-                    offset = Universe.nei().location
 
-                    system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name)
-                    system.orbit = NeighbourhoodSystemOrbit(x, y, z, offset)
-                    system.cartesian = x, y, z
+                    system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name, nei_id=nei.id)
 
                     button = self.create_button(system)
                     button.hide()
 
+        self.stars_area.disable()
+
+    def show_current_set(self, new_id):
+        for button in self.system_buttons.widgets():
+            button.hide()
+        for button in self.system_buttons.get_widgets_from_layer(new_id):
+            button.show()
+
+        self.sort_buttons(self.system_buttons.get_widgets_from_layer(new_id))
+
     def update(self):
         self.load_universe_data()
+        current = Universe.nei()
+        if current.id != self.last_id:
+            self.last_id = current.id
+            self.stars_area.reset_offset()
+            self.show_current_set(current.id)
 
     def export_data(self, event):
         if event.data['panel'] is self:
@@ -354,7 +361,8 @@ class SystemsType(SystemType):
     def fill(self):
         if all([str(vt.value) != '' for vt in self.properties.widgets()[0:5]]):
             if self.current is None:
-                self.current = system_type(self.separation.value)(*self.get_determinants())
+                x = Universe.nei().id
+                self.current = system_type(self.separation.value)(*self.get_determinants(), nei_id=x)
             props = ['average_separation', 'ecc_p', 'ecc_s', 'barycenter', 'max_sep', 'min_sep', 'system_name']
             for i, attr in enumerate(props, start=2):
                 value = getattr(self.current, attr)
@@ -384,32 +392,30 @@ class AvailableSystems(ListedArea):
         for listed in self.listed_objects.widgets():
             listed.show()
 
-    def enable_all(self):
-        for listed in self.listed_objects.widgets():
-            listed.enable()
-
     def disable_all(self):
-        enabled_objects = [i for i in self.listed_objects.widgets() if i.enabled]
+        enabled_objects = [i for i in self.listed_objects.get_widgets_from_layer(Universe.nei().id)]
         if len(enabled_objects):
-            for listed in self.listed_objects.widgets():
+            for listed in enabled_objects:
                 listed.disable()
 
     def repopulate(self):
-        population = []
         self.clear()
-        if Universe.current_galaxy is not None:
-            for system in Universe.current_galaxy.current_neighbourhood.systems:
-                if len(system.composition()) == 2 and system not in population:
-                    population.append(system)
-        population.extend(Systems.loose_stars)
 
-        if len(population):
-            population.sort(key=lambda s: s.mass, reverse=True)
-            self.populate(population, layer='two')
+        for nei in Universe.current_galaxy.stellar_neighbourhoods:
+            stars = [star for star in Universe.get_loose_stars(nei.id)]
+            systems = [system for system in nei.true_systems]
+            population = stars + systems
+
+            if len(population):
+                population.sort(key=lambda s: s.mass, reverse=True)
+                self.populate(population, layer=nei.id)
 
     def update(self):
         if self.parent.triple < 1 and self.parent.multiple < 1:
             self.disable_all()
+        if Universe.nei().id != self.last_idx:
+            self.last_idx = Universe.nei().id
+        self.show_current(Universe.nei().id)
 
 
 class CreateSystemButton(SetupButton):

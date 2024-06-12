@@ -1,7 +1,8 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, render_textrect, WidgetHandler, Group
 from engine.frontend.widgets.values import ValueText
-from engine.backend import EventHandler, Systems
 from engine.frontend.widgets import BaseWidget
+from engine.equations.space import Universe
+from engine.backend import EventHandler
 from pygame import Surface, Rect
 
 
@@ -37,7 +38,7 @@ class NamingPanel(BaseWidget):
             item.hide()
 
     def add_current(self):
-        system = Systems.get_current()
+        system = Universe.nei().get_current()
         idx = system.id
         self.unnamed.empty()
         if system is not None:
@@ -93,7 +94,7 @@ class NamingPanel(BaseWidget):
         self.sort()
 
     def update(self):
-        idx = Systems.get_current_id(self)
+        idx = Universe.current_planetary().id
         if idx != self.last_idx:
             self.image.fill(COLOR_BOX, [0, 20, self.rect.w, self.rect.h - 52])
             self.show_current(idx)
@@ -108,7 +109,7 @@ class NamingPanel(BaseWidget):
     def cycle(self, delta):
         for elm in self.unnamed.widgets():
             elm.deselect()
-            elm.active = False
+            elm._active = False
             elm.disable()
             elm.text_area.disable()
         if 0 <= self.curr_idx + delta < len(self.unnamed.widgets()):
@@ -119,7 +120,7 @@ class NamingPanel(BaseWidget):
         self.current = self.unnamed.widgets()[self.curr_idx]
         self.current.select()
         self.current.enable()
-        self.current.active = True
+        self.current._active = True
         self.current.text_area.enable()
         WidgetHandler.origin = self.current.text_area.name
 

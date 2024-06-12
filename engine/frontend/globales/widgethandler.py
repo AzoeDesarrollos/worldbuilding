@@ -76,17 +76,16 @@ class WidgetHandler:
                 if key.name(e.key) in ('enter', 'return'):
                     EventHandler.trigger('Fin', cls.origin)
                 elif e.key == K_BACKSPACE:
-                    EventHandler.trigger('BackSpace', cls.origin)
+                    EventHandler.trigger('Key', cls.origin, {'value': 'Backspace'})
                 elif e.key == K_UP:
                     EventHandler.trigger('Arrow', cls.origin, {'word': 'arriba', 'delta': -1})
                 elif e.key == K_DOWN:
                     EventHandler.trigger('Arrow', cls.origin, {'word': 'abajo', 'delta': +1})
                 else:
                     name = key.name(e.key).strip('[]')
+                    symbols = '¿?/¡!%$#(){}[]+-*|°,.'
                     if len(name) == 1:  # single character, excludes "space" and things like that.
-                        if name == '.':  # bc there's not other way to identifying it.
-                            EventHandler.trigger('Key', cls.origin, {'value': '.'})
-                        elif name.isdigit():
+                        if name in symbols or name.isdigit():  # bc there's not other way to identifying it.
                             EventHandler.trigger('Key', cls.origin, {'value': name})
                         elif name.isalpha():
                             if e.mod & KMOD_LSHIFT or e.mod & KMOD_RSHIFT:

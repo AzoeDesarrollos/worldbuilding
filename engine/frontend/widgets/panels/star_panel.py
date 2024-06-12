@@ -2,14 +2,12 @@ from engine.frontend.globales import COLOR_AREA, COLOR_TEXTO, ANCHO, COLOR_BOX, 
 from engine.frontend.widgets.panels.common import TextButton, BaseSlider, BaseCursor
 from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.object_type import ObjectType
-from engine.equations.system_single import SingleSystem
-from engine.backend import EventHandler, Systems, roll
+from engine.backend import EventHandler, roll
 from pygame import Surface, SRCALPHA, Color, draw
 from engine.frontend.widgets.meta import Meta
 from .common import ColoredBody, ListedArea
 from engine.equations.space import Universe
 from engine.equations.star import Star
-from random import choice
 
 
 class StarPanel(BasePanel):
@@ -19,9 +17,12 @@ class StarPanel(BasePanel):
 
     show_swap_system_button = False
 
+    last_id = -1
+
     def __init__(self, parent):
         super().__init__('Star', parent)
         self.properties = Group()
+        self.button_group = Group()
         self.current = StarType(self)
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         f = self.crear_fuente(14, underline=True)
@@ -33,7 +34,7 @@ class StarPanel(BasePanel):
         self.properties.add(self.button_add, self.button_del, self.button_auto, layer=1)
         self.stars = []
         EventHandler.register(self.save_stars, 'Save')
-        EventHandler.register(self.load_stars, 'LoadData')
+        EventHandler.register(self.load_stars, 'LoadStars')
         EventHandler.register(self.name_current, 'NameObject')
         EventHandler.register(self.export_data, 'ExportData')
 
@@ -56,7 +57,7 @@ class StarPanel(BasePanel):
     @property
     def star_buttons(self):
         # adds readability
-        return self.properties.get_widgets_from_layer(2)
+        return self.button_group.get_widgets_from_layer(self.last_id)
 
     def save_stars(self, event):
         data1, data2 = {}, {}
@@ -66,7 +67,8 @@ class StarPanel(BasePanel):
                 'mass': star.mass.m,
                 'spin': star.spin,
                 'age': star.age.m,
-                "neighbourhood_id": Universe.nei().id
+                "neighbourhood_id": star.neighbourhood_id,
+                'flagged': star.flagged
             }
             data1[star.id] = star_data
 
@@ -83,24 +85,15 @@ class StarPanel(BasePanel):
             EventHandler.trigger(event.tipo + 'Data', 'Star', {"Single Systems": data2})
 
     def load_stars(self, event):
-        # systems = []
         for id in event.data['Stars']:
             star_data = event.data['Stars'][id]
             star_data.update({'id': id})
-            star = Universe.get_astrobody_by(id, 'id', silenty=True)
-            if not star:
-                star = self.current.set_star(star_data, inactive=True)
-                Universe.add_astro_obj(star)
+            star = self.current.set_star(star_data, inactive=True)
+            Universe.add_astro_obj(star)
             if star not in self.stars:
                 self.stars.append(star)
                 self.add_button(star)
                 Renderer.update()
-            # for keyword in ['Planets', 'Satellites', 'Asteroids']:
-            #     for id_p in event.data[keyword]:
-            #         data = event.data[keyword][id_p]
-            #         if data['system'] == id and star.id not in systems:
-            #             Systems.set_planetary_system(star)
-            #             systems.append(star.id)
 
         if len(self.star_buttons):
             self.current.enable()
@@ -111,53 +104,59 @@ class StarPanel(BasePanel):
 
     def show(self):
         super().show()
-        self.sort_buttons(self.star_buttons)
-        for obj in self.properties.widgets():
+        self.last_id = Universe.nei().id
+        for obj in self.properties.get_widgets_from_layer(1):
             obj.show()
+
+        self.sort_buttons(self.star_buttons)
         self.deselect_buttons()
         self.parent.swap_neighbourhood_button.unlock()
 
     def hide(self):
         super().hide()
-        binary_systems = 1
-        if Universe.current_galaxy is not None:
-            binary_systems = Universe.nei().quantities['Binary']
-            value_brown = Universe.nei().other['brown']
-            value_white = Universe.nei().other['white']
-            value_black_or_neutron = Universe.nei().other['black']
-            if not any([value_brown, value_white, value_black_or_neutron]):
-                self.parent.set_skippable('Compact Objects', True)
+        # binary_systems = 1
+        # if Universe.current_galaxy is not None:
+        #     binary_systems = Universe.nei().quantities['Binary']
+        #     value_brown = Universe.nei().other['brown']
+        #     value_white = Universe.nei().other['white']
+        #     value_black_or_neutron = Universe.nei().other['black']
+        #     if not any([value_brown, value_white, value_black_or_neutron]):
+        #         self.parent.set_skippable('Compact Objects', True)
 
         for obj in self.properties.widgets():
             obj.hide()
+        for button in self.button_group.widgets():
+            button.hide()
+        #
+        # if self.add_on_exit or not len(self.stars):
+        #     self.parent.set_skippable('Star System', True)
+        #     self.parent.set_skippable('Multiple Stars', True)
+        #     self.parent.swap_neighbourhood_button.lock()
+        # # elif binary_systems == 0:
+        # #     self.parent.set_skippable('Star System', True)
+        # else:
+        #     self.parent.set_skippable('Star System', False)
 
-        if self.add_on_exit or not len(self.stars):
-            self.parent.set_skippable('Star System', True)
-            self.parent.set_skippable('Multiple Stars', True)
-            if len(self.stars) == 1:
-                self.add_stars(self.stars[0])
-                self.parent.swap_neighbourhood_button.lock()
-        elif binary_systems == 0:
-            self.parent.set_skippable('Star System', True)
-        else:
-            self.parent.set_skippable('Star System', False)
-
-    @staticmethod
-    def add_stars(star):
-        singles = [system for system in Universe.systems if system.composition == 'single']
-        chosen = choice(singles)
-        Universe.remove_astro_obj(chosen)
-        system = SingleSystem(star)
-        system.cartesian = chosen.location
-        offset = Universe.nei().location
-        system.set_orbit(offset)
-        Systems.set_planetary_system(star)
-        Universe.nei().add_true_system(system)
+    # @staticmethod
+    # def add_stars(star):
+    #     singles = [system for system in Universe.systems if system.composition == 'single']
+    #     chosen = choice(singles)
+    #     Universe.remove_astro_obj(chosen)
+    #     system = SingleSystem(star)
+    #     system.cartesian = chosen.location
+    #     offset = Universe.nei().location
+    #     system.set_orbit(offset)
+    #     Systems.set_planetary_system(star)
+    #     Universe.nei().add_true_system(system)
 
     def add_button(self, star):
-        button = StarButton(self.current, star, str(star), self.curr_x, self.curr_y)
-        self.properties.add(button, layer=2)
-        Systems.add_star(star)
+        button = StarButton(self.current, star, str(star), 0, 0)
+        Universe.add_loose_star(star, star.neighbourhood_id)
+        if star.neighbourhood_id is not None:
+            self.button_group.add(button, layer=star.neighbourhood_id)
+        else:
+            self.button_group.add(button, layer=Universe.nei().id)
+
         self.selected_proto = None
         if star not in self.stars:
             self.stars.append(star)
@@ -169,7 +168,7 @@ class StarPanel(BasePanel):
 
     def del_button(self, star):
         button = [i for i in self.star_buttons if i.object_data == star][0]
-        self.properties.remove(button)
+        self.button_group.remove(button)
         button.kill()
         if self.is_visible:
             self.sort_buttons(self.star_buttons)
@@ -178,7 +177,17 @@ class StarPanel(BasePanel):
         list_of_dicts = [{'class': star.cls, 'idx': star.idx}]
         Universe.nei().add_proto_stars(list_of_dicts)
         self.potential_stars.show()
-        Systems.remove_star(star)
+        Universe.remove_astro_obj(star)
+        Universe.remove_loose_star(star, star.neighbourhood_id)
+
+    def show_current_set(self, new_id):
+        for button in self.button_group.widgets():
+            button.hide()
+
+        for button in self.button_group.get_widgets_from_layer(new_id):
+            button.show()
+
+        self.sort_buttons(self.star_buttons)
 
     def clear(self):
         self.deselect_buttons()
@@ -218,6 +227,11 @@ class StarPanel(BasePanel):
     def update(self):
         self.add_on_exit = len(self.stars) == 1
 
+        current = Universe.nei()
+        if current.id != self.last_id:
+            self.last_id = current.id
+            self.show_current_set(current.id)
+
     def name_current(self, event):
         if event.data['object'] in self.stars:
             star = event.data['object']
@@ -246,15 +260,22 @@ class StarType(ObjectType):
         self.hab_rect = self.habitable.get_rect(right=self.parent.rect.right - 10, y=self.parent.rect.y + 50)
 
     def set_star(self, star_data, inactive=False):
+        if 'neighbourhood_id' not in star_data:
+            neighbourhood = Universe.nei()
+            star_data.update({'neighbourhood_id': neighbourhood.id})
+        else:
+            n_id = star_data['neighbourhood_id']
+            neighbourhood = Universe.current_galaxy.get_neighbourhood(n_id)
+
         star = Star(star_data)
-        neighbourhood = Universe.nei()
+
         if neighbourhood is not None:
-            protos = [s for s in Universe.nei().proto_stars if s.cls == star.cls]
-            assert len(protos), "You are not building\nthe star correctly.\n\nCheck it's mass."
-            proto = protos.pop()
+            protos = [s for s in neighbourhood.proto_stars if s.cls == star.cls]
+            assert len(protos), f"You are not building\nthe star correctly.\n\nCheck it's mass."
+            proto = protos.pop(0)
             star.idx = proto.idx
             neighbourhood.proto_stars.remove(proto)
-            Systems.add_star(star)
+            Universe.add_astro_obj(star)
 
             self.parent.hold_proto(proto)
             if not inactive:
@@ -268,7 +289,7 @@ class StarType(ObjectType):
 
     def unset_star(self, proto):
         Universe.nei().proto_stars.append(proto)
-        Systems.remove_star(self.current)
+        Universe.remove_astro_obj(self.current)
         self.current = None
 
     def destroy_button(self):
@@ -321,9 +342,9 @@ class StarType(ObjectType):
             }
         }
         super().fill(tos)
-        system = Systems.get_current()
-        if system is not None:
-            system.update()
+        # system = Systems.get_current()
+        # if system is not None:
+        #     system.update()
 
         self.parent.age_bar.enable()
         self.parent.enable()
@@ -331,16 +352,16 @@ class StarType(ObjectType):
     def set_age(self, age_percent):
         if self.has_values:
             self.current.set_age(age_percent)
-            system = Systems.get_system_by_star(self.current)
-            if system is not None:
-                system.age = self.current.age
+            # system = Systems.get_system_by_star(self.current)
+            # if system is not None:
+            #     system.age = self.current.age
             self.fill()
 
-    def propagate_age_changes(self):
-        system = Systems.get_system_by_star(self.current)
-        if system is not None:
-            for astrobody in system.astro_bodies:
-                astrobody.update_everything(system.age)
+    # def propagate_age_changes(self): # WORK IN PROGRESS
+    #     system = Systems.get_system_by_star(self.current)
+    #     if system is not None:
+    #         for astrobody in system.astro_bodies:
+    #             astrobody.update_everything(system.age)
 
 
 class AddStarButton(TextButton):
@@ -409,8 +430,8 @@ class AgeCursor(BaseCursor):
 
     def on_mousebuttonup(self, event):
         super().on_mousebuttonup(event)
-        if event.data['button'] == 1 and event.origin == self:
-            self.parent.parent.current.propagate_age_changes()
+        # if event.data['button'] == 1 and event.origin == self:
+        #     self.parent.parent.current.propagate_age_changes()
 
     def on_movement(self, x: int):
         self.parent.parent.current.set_age((x - 50) / 400)
@@ -479,10 +500,11 @@ class AutomaticButton(TextButton):
 
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and event.origin == self:
-            proto_stars = Universe.nei().proto_stars.copy()
+            nei = Universe.nei()
+            proto_stars = nei.proto_stars.copy()
             for proto in proto_stars:
                 mass = round(roll(proto.min_mass, proto.max_mass), 3)
-                self.parent.current.set_star({'mass': mass})
+                self.parent.current.set_star({'mass': mass, 'neighbourhood_id': nei.id})
                 self.parent.button_add.trigger()
                 Renderer.update()
 

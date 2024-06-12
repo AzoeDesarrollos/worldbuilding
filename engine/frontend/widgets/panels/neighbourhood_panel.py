@@ -1,12 +1,14 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, Group, COLOR_AREA, COLOR_TEXTO, NUEVA_LINEA
 from engine.frontend.widgets import ValueText, BaseWidget, Meta
 from engine.frontend.widgets.panels.common import TextButton
+from engine.equations.system_binary import analyze_binaries
 from engine.equations.stellar_neighbourhood import *
 from engine.backend.eventhandler import EventHandler
-from engine.backend.util import turn_into_roman
 from engine.equations.space import Universe
 from engine.equations.galaxy import Galaxy
+from math import pi, acos, sin, cos, floor
 from pygame import Surface, draw, Rect
+from random import uniform
 
 
 class NeighbourhoodPanel(BaseWidget):
@@ -22,6 +24,7 @@ class NeighbourhoodPanel(BaseWidget):
 
     current_galaxy_id = None
     last_id = None
+    analized = None
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -62,7 +65,7 @@ class NeighbourhoodPanel(BaseWidget):
             value.modifiable = True
             self.properties.add(value, layer=2)
 
-        value = ValueText(self.neighbourhood, 'Density', 400, rect.bottom, size=16)
+        value = ValueText(self.neighbourhood, 'Density x1K', 400, rect.bottom, size=16)
         value.do_round = True
         self.properties.add(value, layer=2)
 
@@ -98,7 +101,7 @@ class NeighbourhoodPanel(BaseWidget):
         widgets = self.properties.get_widgets_from_layer(2)
         location = widgets[0].value
         radius = widgets[1].value
-        density = widgets[2].value
+        density = widgets[2].value / 1000 if type(widgets[2].value) is not str else widgets[2].value
         if data is None:
             data = {'location': location, 'radius': radius, 'density': density}
         else:

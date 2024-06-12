@@ -1,4 +1,4 @@
-from engine.backend import q, generate_id, turn_into_roman
+from engine.backend import q, generate_id
 from itertools import cycle
 
 
@@ -20,6 +20,8 @@ class Galaxy:
     stellar_neighbourhoods = None
     neighbourhood_cycler = None
     current_neighbourhood = None
+
+    flagged = False
 
     def __init__(self):
         self.stellar_neighbourhoods = []
@@ -47,12 +49,6 @@ class Galaxy:
         for neighbourhood in self.stellar_neighbourhoods:
             if neighbourhood.id == id:
                 return neighbourhood
-
-    def exists(self, neighbourhood_id):
-        for neighbourhood in self.stellar_neighbourhoods:
-            if neighbourhood.id == neighbourhood_id:
-                return True
-        return False
 
     def cycle_neighbourhoods(self):
         new = next(self.neighbourhood_cycler)
@@ -88,46 +84,5 @@ class Galaxy:
         is_equal = is_equal and self.outer == other.outer
         return is_equal
 
-
-class ProtoStar:
-    celestial_type = 'star'
-
-    def __init__(self, data):
-        self.cls = data['class']
-        self.id = generate_id()
-        self.idx = data['idx']
-        self.neighbourhood_idx = data['neighbourhood_idx']
-
-        m_min, m_max, mass = 0, 0, 0
-        b = self.idx + self.neighbourhood_idx
-        if self.cls.startswith('O'):
-            mass += 16.0 + b / 10
-            m_min, m_max = 16, None
-        elif self.cls.startswith('B'):
-            mass += 2.1 + b / 10
-            m_min, m_max = 2.1, 16
-        elif self.cls.startswith('A'):
-            mass += 1.4 + b / 10
-            m_min, m_max = 1.4, 2.1
-        elif self.cls.startswith('F'):
-            mass += 1.04 + b / 10
-            m_min, m_max = 1.04, 1.4
-        elif self.cls.startswith('G'):
-            mass += 0.8 + b / 10
-            m_min, m_max = 0.8, 1.04
-        elif self.cls.startswith('K'):
-            mass += 0.45 + b / 10
-            m_min, m_max = 0.45, 0.8
-        elif self.cls.startswith('M'):
-            mass += 0.08 + b / 100
-            m_min, m_max = 0.08, 0.45
-
-        self.min_mass = m_min
-        self.max_mass = m_max
-        self.mass = q(mass, 'sol_mass')
-
-    def __str__(self):
-        return f'{self.cls}{turn_into_roman(self.idx + 1)}'
-
-    def __repr__(self):
-        return f"ProtoStar {self.cls} #{self.idx}"
+    def flag(self):
+        self.flagged = True

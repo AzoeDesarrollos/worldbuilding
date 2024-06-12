@@ -1,14 +1,12 @@
-from engine.backend import EventHandler, Systems, q
-from .general import Flagable
+from engine.backend import EventHandler, q, Config
 from .space import Universe
 from math import exp
 
 
-class PlanetarySystem(Flagable):
+class PlanetarySystem:
     planets = None
     satellites = None
     asteroids = None
-    stars = None
     binary_planets = None
     id = None
 
@@ -27,9 +25,10 @@ class PlanetarySystem(Flagable):
         self.asteroids = []
         self.astro_bodies = []
         self.binary_planets = []
-        self.star_system = star_system
+        self.parent = star_system
+        self.parent.planetary = self
         self.id = star_system.id
-        if Systems.restricted_mode:
+        if Config.get('mode') == 0:
             self.set_available_mass()
         self.aparent_brightness = {}
         self.relative_sizes = {}
@@ -37,33 +36,34 @@ class PlanetarySystem(Flagable):
         if star_system.letter != 'S':
             self.age = star_system.age
 
+        EventHandler.register(self.dissolve_systems, 'DissolveSystem')
+
     def update(self):
-        if Systems.restricted_mode:
+        if Config.get('mode') == 0:
             self.set_available_mass()
 
     def get_available_mass(self):
-        if Systems.restricted_mode:
+        if Config.get('mode') == 0:
             return self.body_mass
         else:
             return 'Unlimited'
 
     def set_available_mass(self):
-        if self.star_system.parent is not None:
-            mass = self.star_system.parent.shared_mass
-        elif self.star_system.shared_mass is not None:
-            mass = self.star_system.shared_mass
-        else:
-            mass = self.star_system.mass
+        if self.parent.system_number == 'binary':
+            mass = self.parent.mass
+        elif self.parent.system_number == 'single':
+            mass = self.parent.star.mass
+        else:  # Triple System single companion
+            mass = self.parent.shared_mass
 
         self.body_mass = q(16 * exp(-0.6931 * mass.m) * 0.183391347289428, 'jupiter_mass')
 
-    @property
-    def star(self):
-        return self.star_system
-
-    @property
-    def mass(self):
-        return self.star_system.mass
+    def dissolve_systems(self, event):
+        for star in event.data['system'].composition():
+            if star.parent == self:
+                self.parent.star.flag()
+                for astro in self.astro_bodies:
+                    astro.flag()
 
     def astro_group(self, astro_obj):
         return self._get_astro_group(astro_obj)
@@ -72,7 +72,7 @@ class PlanetarySystem(Flagable):
         group = self._get_astro_group(astro_obj)
 
         if astro_obj not in group:
-            if Systems.restricted_mode and astro_obj.celestial_type != 'system':
+            if Config.get('mode') == 0 and astro_obj.celestial_type != 'system':
                 minus_mass = astro_obj.mass.to('jupiter_mass')
                 text = 'There is not enough mass in the system to create new bodies of this type.'
                 assert minus_mass <= self.body_mass, text
@@ -91,7 +91,7 @@ class PlanetarySystem(Flagable):
     def remove_astro_obj(self, astro_obj):
         Universe.remove_astro_obj(astro_obj)
         group = self._get_astro_group(astro_obj)
-        if Systems.restricted_mode and astro_obj.celestial_type != 'system':
+        if Config.get('mode') == 0 and astro_obj.celestial_type != 'system':
             plus_mass = astro_obj.mass.to('jupiter_mass')
             self.body_mass += plus_mass
         group.remove(astro_obj)
@@ -125,20 +125,20 @@ class PlanetarySystem(Flagable):
             astrobody = [body for body in self.astro_bodies if body.id == tag_identifier]
 
         if not len(astrobody):
-            if self.star_system.letter == 'P':
-                if self.star_system.id == tag_identifier:
-                    astrobody = [self.star_system]
+            if self.parent.letter == 'P':
+                if self.parent.id == tag_identifier:
+                    astrobody = [self.parent]
                 else:
-                    astrobody = [star for star in self.star_system.composition() if star.id == tag_identifier]
+                    astrobody = [star for star in self.parent.composition() if star.id == tag_identifier]
             else:  # tag_identifier could be a star's id
-                astrobody = [star for star in self.star_system if star.id == tag_identifier]
+                astrobody = [star for star in self.parent if star.id == tag_identifier]
 
-        if not len(astrobody) and self.star_system.parent is not None:  # tag_identifier could be a star's parent id
-            if self.star_system.parent.id == tag_identifier:
-                astrobody = [self.star_system]
+        if not len(astrobody) and self.parent.parent is not None:  # tag_identifier could be a star's parent id
+            if self.parent.parent.id == tag_identifier:
+                astrobody = [self.parent]
 
         if not silenty:
-            assert len(astrobody), 'the ID "{}" is invalid'.format(tag_identifier)
+            assert len(astrobody), f'the ID "{tag_identifier}" is invalid'
             return astrobody[0]
         else:
             if not len(astrobody):
@@ -156,7 +156,7 @@ class PlanetarySystem(Flagable):
 
     def is_habitable(self, planet) -> bool:
         pln_orbit = planet.orbit.semi_major_axis
-        star = self.star_system
+        star = self.parent
         return star.habitable_inner.m <= pln_orbit.m <= star.habitable_outer.m
 
     @property
@@ -169,15 +169,17 @@ class PlanetarySystem(Flagable):
 
     def get_unnamed(self):
         unnamed = []
-        if self.star_system.parent is not None:
-            if not self.star_system.parent.has_name:
-                unnamed.append(self.star_system.parent)
-        if not self.star_system.has_name:
-            unnamed.append(self.star_system)
-        if self.star_system.letter is not None:
-            for star in self.star_system:
-                if not star.has_name:
-                    unnamed.append(star)
+        # if self.parent
+
+        # if self.star_system.parent is not None:
+        #     if not self.star_system.parent.has_name:
+        #         unnamed.append(self.star_system.parent)
+        # if not self.star_system.has_name:
+        #     unnamed.append(self.star_system)
+        # if self.star_system.letter is not None:
+        #     for star in self.star_system:
+        #         if not star.has_name:
+        #             unnamed.append(star)
         for body in self.astro_bodies:
             if not body.has_name:
                 unnamed.append(body)
@@ -190,28 +192,37 @@ class PlanetarySystem(Flagable):
         return False
 
     def __repr__(self):
-        return 'System of ' + str(self.star_system)
+        return 'Planetary System of ' + str(self.parent)
+
+    def __str__(self):
+        return str(self.parent)
 
     def __getitem__(self, item):
-        if self.star_system.celestial_type != 'system':  # single-star system
+        if self.parent.system_number == 'single':  # single-star system
             if item == 0:
-                return self.star_system
+                return self.parent
             raise StopIteration()
 
-        elif self.star_system.celestial_type == 'system':  # binary systems
+        elif self.parent.system_number == 'binary':  # binary systems
             if item == 0:
-                return self.star_system.primary
+                return self.parent.primary
             elif item == 1:
-                return self.star_system.secondary
+                return self.parent.secondary
             raise StopIteration()
 
 
-class RoguePlanets:
+class Rogues:
     planets = []
     satellites = []
     asteroids = []
     astro_bodies = []
     binary_planets = []
+
+    black_holes = []
+    neutron_stars = []
+    brown_dwarfs = []
+    white_dwarfs = []
+    compact_objects = []
 
     has_name = True
     name = 'Rogue Planets'
@@ -221,6 +232,8 @@ class RoguePlanets:
     is_a_system = False
 
     letter = None
+
+    parent = None
 
     @classmethod
     def init(cls):
@@ -321,5 +334,4 @@ class RoguePlanets:
         return 'None'
 
 
-RoguePlanets.init()
-Systems.import_clases(rogues=RoguePlanets, planetary=PlanetarySystem)
+Rogues.init()

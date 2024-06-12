@@ -1,7 +1,7 @@
 from engine.frontend.widgets.panels.satellite_panel import CopyCompositionButton, RandomCompositionButton
 from engine.frontend.globales import COLOR_AREA, ALTO, ANCHO, COLOR_TEXTO, COLOR_BOX, Group
-from engine.backend import EventHandler, Systems, material_densities, q
 from engine.equations.satellite import minor_moon_by_composition
+from engine.backend import EventHandler, material_densities, q
 from engine.frontend.widgets.basewidget import BaseWidget
 from .common import TextButton, ColoredBody
 from engine.equations.space import Universe
@@ -13,7 +13,7 @@ from pygame import Rect
 
 
 class AsteroidPanel(BasePanel):
-    last_idx = None
+    last_id = None
 
     def __init__(self, parent):
         super().__init__('Asteroid', parent)
@@ -54,27 +54,36 @@ class AsteroidPanel(BasePanel):
         self.moons = []
         EventHandler.register(self.save_satellites, 'Save')
         EventHandler.register(self.name_current, 'NameObject')
-        EventHandler.register(self.load_satellites, 'LoadData')
+        EventHandler.register(self.hold_loaded_bodies, 'LoadAsteroids')
         EventHandler.register(self.export_data, 'ExportData')
+        self.held_data = {}
 
-    def load_satellites(self, event):
-        for id in event.data['Asteroids']:
-            asteorid_data = event.data['Asteroids'][id]
-            moon = minor_moon_by_composition(asteorid_data)
-            moon.idx = len([i for i in Systems.get_current().planets if i.clase == moon.clase])
-            self.asteroids.add(moon)
-            Universe.add_astro_obj(moon)
+    def hold_loaded_bodies(self, event):
+        if 'Asteroids' in event.data and len(event.data['Asteroids']):
+            self.held_data.update(event.data['Asteroids'])
 
-    def load_data(self):
+    def load_satellites(self):
         self.enable()
-        for moon in self.asteroids.widgets():
-            system = Systems.get_system_by_id(moon.system_id)
-            if system is not None and system.add_astro_obj(moon):
-                self.add_button(moon)
+        for id in self.held_data:
+            satellite_data = self.held_data[id]
+            satellite_data['id'] = id
+            moon = minor_moon_by_composition(satellite_data)
+            moon.idx = len([i for i in Universe.current_planetary().planets if i.clase == moon.clase])
+            # system = Systems.get_system_by_id(satellite_data['system'])
+            # if system is not None and system.add_astro_obj(moon):
+            self.current.current = moon
+            self.add_button()
+
+    # def load_data(self):
+    #     self.enable()
+    #     for moon in self.asteroids.widgets():
+    #         system = Systems.get_system_by_id(moon.system_id)
+    #         if system is not None and system.add_astro_obj(moon):
+    #             self.add_button(moon)
 
     def save_satellites(self, event):
         data = {}
-        for moon_button in [i for i in self.asteroids.widgets() if not i.object_data.flagged]:
+        for moon_button in [i for i in self.asteroids.widgets()]:
             moon = moon_button.object_data
             moon_data = {
                 'name': moon.name,
@@ -83,7 +92,8 @@ class AsteroidPanel(BasePanel):
                 'c axis': moon.c_axis.m,
                 'composition': moon.composition,
                 'system': moon.system_id,
-                'idx': moon.idx
+                'idx': moon.idx,
+                'flagged': moon.flagged
             }
             data[moon.id] = moon_data
             EventHandler.trigger(event.tipo + 'Data', 'Asteroid', {"Asteroids": data})
@@ -100,13 +110,13 @@ class AsteroidPanel(BasePanel):
         if self.current.current.system_id is not None:
             layer_number = self.current.current.system_id
         else:
-            layer_number = Systems.get_current().id
+            layer_number = Universe.current_planetary().id
             self.current.current.system_id = layer_number
         self.moons.append(self.current.current)
         self.asteroids.add(button, layer=layer_number)
         self.properties.add(button, layer=layer_number)
         if self.is_visible:
-            asteroids = self.asteroids.get_widgets_from_layer(Systems.get_current().id)
+            asteroids = self.asteroids.get_widgets_from_layer(Universe.current_planetary().id)
             self.sort_buttons(asteroids, x=self.curr_x, y=self.curr_y)
         self.current.erase()
         self.button_add.disable()
@@ -116,7 +126,7 @@ class AsteroidPanel(BasePanel):
         self.moons.remove(satellite)
         self.asteroids.remove(button)
         button.hide()
-        self.sort_buttons(self.asteroids.get_widgets_from_layer(Systems.get_current().id))
+        self.sort_buttons(self.asteroids.get_widgets_from_layer(Universe.current_planetary().id))
         self.properties.remove(button)
         self.button_del.disable()
 
@@ -125,7 +135,7 @@ class AsteroidPanel(BasePanel):
             button.hide()
         for button in self.asteroids.get_widgets_from_layer(idx):
             button.show()
-        self.sort_buttons(self.asteroids.get_widgets_from_layer(Systems.get_current().id))
+        self.sort_buttons(self.asteroids.get_widgets_from_layer(Universe.current_planetary().id))
 
     def select_one(self, btn):
         for button in self.asteroids.widgets():
@@ -138,10 +148,10 @@ class AsteroidPanel(BasePanel):
 
     def show(self):
         super().show()
-        self.load_data()
+        self.load_satellites()
         for pr in self.properties.get_widgets_from_layer(1):
             pr.show()
-        for pr in self.properties.get_widgets_from_layer(Systems.get_current_id(self)):
+        for pr in self.properties.get_widgets_from_layer(Universe.current_planetary().id):
             pr.show()
 
     def hide(self):
@@ -150,17 +160,18 @@ class AsteroidPanel(BasePanel):
         for pr in self.properties.widgets():
             pr.hide()
 
-        flag = Systems.get_current() is not None
-        flag = not len(Systems.get_current().asteroids + Systems.get_current().satellites) if flag else False
+        system = Universe.current_planetary()
+        flag = system is not None
+        flag = not len(system.asteroids + system.satellites) if flag else False
         self.parent.set_skippable('Planetary Orbit', flag)
 
     def update(self):
-        idx = Systems.get_current_id(self)
-        if idx != self.last_idx:
+        idx = Universe.current_planetary().id
+        if idx != self.last_id:
             self.image.fill(COLOR_AREA, [0, 498, 130, 14])
             self.current.pie.set_values()
             self.show_current(idx)
-            self.last_idx = idx
+            self.last_id = idx
 
     def clear(self):
         self.image.fill(COLOR_AREA, [0, 498, 130, 14])
@@ -257,19 +268,20 @@ class AsteroidType(BaseWidget):
         else:
             moon = self.current
 
+        system = Universe.current_planetary()
         if self.current is None:
-            if Systems.get_current().add_astro_obj(moon):
+            if system.add_astro_obj(moon):
                 Universe.add_astro_obj(moon)
                 self.current = moon
                 self.parent.button_add.enable()
         elif moon != self.current:
-            Systems.get_current().remove_astro_obj(self.current)
+            system.remove_astro_obj(self.current)
             Universe.remove_astro_obj(self.current)
-            if Systems.get_current().add_astro_obj(moon):
+            if system.add_astro_obj(moon):
                 self.current = moon
 
         if self.current.system_id is None:
-            self.current.system_id = Systems.get_current().id
+            self.current.system_id = Universe.current_planetary().id
         if self.current not in self.parent.moons:
             self.parent.button_add.enable()
         self.fill()
@@ -309,7 +321,7 @@ class AsteroidType(BaseWidget):
         super().disable()
 
     def destroy_button(self):
-        destroyed = Systems.get_current().remove_astro_obj(self.current)
+        destroyed = Universe.current_planetary().remove_astro_obj(self.current)
         if destroyed:
             self.parent.del_button(self.current)
             self.erase()

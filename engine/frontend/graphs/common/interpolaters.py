@@ -1,5 +1,6 @@
 from bisect import bisect_right
 from engine.backend.util import interpolate
+from math import pi
 
 
 def find_points(x: int, group_x: list, group_y: list):
@@ -35,3 +36,7 @@ def find_and_interpolate_flipped(x: int, group_x: list, group_y: list):
     b.sort(reverse=True)
 
     return find_and_interpolate(x, a, b)
+
+
+def density(m, r):
+    return m / ((4 / 3) * pi * pow(r, 3))

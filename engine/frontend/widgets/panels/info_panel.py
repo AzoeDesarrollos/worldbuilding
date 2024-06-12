@@ -1,10 +1,9 @@
 from engine.equations.tides import major_tides, minor_tides, is_tidally_locked
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
-from engine.equations.planetary_system import RoguePlanets
 from .common import ListedArea, ColoredBody, TextButton
 from engine.backend.eventhandler import EventHandler
-from engine.backend import generate_id, Systems, q
 from engine.equations.space import Universe
+from engine.backend import generate_id, q
 from ..basewidget import BaseWidget
 from pygame import Surface, Rect
 import os
@@ -19,7 +18,8 @@ class InformationPanel(BaseWidget):
     render = None
     render_rect = None
 
-    text = None
+    text_render = None
+    exportable_text = ''
 
     show_swap_system_button = True
 
@@ -46,14 +46,14 @@ class InformationPanel(BaseWidget):
 
     def on_mousebuttondown(self, event):
         if event.origin == self:
-            self.image.fill(COLOR_BOX, self.render_rect)
-            if event.data['button'] == 4:
+            if event.data['button'] == 4:  # abajo
                 if self.render_rect.top + 12 <= 250:
                     self.render_rect.move_ip(0, +12)
-            elif event.data['button'] == 5:
-                if self.render_rect.bottom - 12 >= 589:
+            elif event.data['button'] == 5:  # arriba
+                if self.render_rect.bottom - 12 >= 592:
                     self.render_rect.move_ip(0, -12)
-            self.image.blit(self.render, self.render_rect)
+
+            self.render_everything()
 
     def show_name(self, astrobody):
         self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
@@ -77,20 +77,17 @@ class InformationPanel(BaseWidget):
             prop.hide()
 
     def show_selected(self, astrobody):
-        system = Systems.get_current()
+        system = Universe.current_planetary().parent
         self.current = astrobody
         self.show_name(astrobody)
         diameter = astrobody.radius.to('earth_radius').m * 2
 
-        if system is not RoguePlanets:
-            if system.star_system.letter == 'S':
-                star = system.star_system.primary
-                stellar_tides = minor_tides(diameter, star.mass.m, astrobody.orbit.a.m)
-            else:
-                combined_mass = sum([star.mass.m for star in system.star_system])
-                stellar_tides = minor_tides(diameter, combined_mass, astrobody.orbit.a.m)
+        if system.letter == 'S':
+            star = system.primary
+            stellar_tides = minor_tides(diameter, star.mass.m, astrobody.orbit.a.m)
         else:
-            stellar_tides = q(0, 'meter')
+            combined_mass = sum([star.mass.m for star in system])
+            stellar_tides = minor_tides(diameter, combined_mass, astrobody.orbit.a.m)
 
         planet_tides = 0
         if astrobody.celestial_type == 'planet':
@@ -128,19 +125,19 @@ class InformationPanel(BaseWidget):
         neap_high = abs(q((planet_tides + lunar_tides - stellar_tides) * 0.54, 'm'))  # meters
         neap_low = -neap_high if neap_high.m != 0 else abs(neap_high)
 
-        rect = self.write(f'Tides on {str(astrobody)}:', self.f2, x=3, y=50)
+        title = f'Tides on {str(astrobody)}:'
         tides = [
-            {'name': 'Standard high', 'value': std_high, 'dy': 4},
-            {'name': 'Standard low', 'value': std_low, 'dy': 2},
-            {'name': 'Spring high', 'value': spring_high, 'dy': 12},
-            {'name': 'Spring low', 'value': spring_low, 'dy': 2},
-            {'name': 'Neap high', 'value': neap_high, 'dy': 12},
-            {'name': 'Neap low', 'value': neap_low, 'dy': 2}
+            {'name': '\nStandard high', 'value': std_high},
+            {'name': '\nStandard low', 'value': std_low},
+            {'name': '\n\nSpring high', 'value': spring_high},
+            {'name': '\nSpring low', 'value': spring_low},
+            {'name': '\n\nNeap high', 'value': neap_high},
+            {'name': '\nNeap low', 'value': neap_low}
         ]
+        texts = []
         for tide in tides:
             name = tide['name']
             v = tide['value']
-            dy = tide['dy']
             if 'e' in str(v.m):
                 valor = f"{v.m:.2e} "
                 unidad = f"{v.u:P~}"
@@ -148,7 +145,9 @@ class InformationPanel(BaseWidget):
             else:
                 formato = f'{v:.2~P}'
 
-            rect = self.write(f'{name}: {formato}', self.f1, x=3, y=rect.bottom + dy)
+            texts.append(f'{name}: {formato}')
+
+        tides_text = ''.join(texts)
 
         mass = None
         if primary != 'rogue':
@@ -162,7 +161,7 @@ class InformationPanel(BaseWidget):
                 mass = star.mass.m
 
         if primary == 'rogue':
-            text = f'{str(self.current)} is a rogue planet.'
+            text = f'{str(self.current)} is a rogue {astrobody.celestial_type}.'
         elif is_tidally_locked(lunar_tides + planet_tides, system.age.m / 10 ** 9, mass):
             text = f'{str(self.current)} is tidally locked to {primary}.'
             self.current.rotation = 'Tidally locked'
@@ -174,13 +173,18 @@ class InformationPanel(BaseWidget):
         else:
             text = f'{str(self.current)} is not tidally locked.'
 
-        r = self.write2(text, self.f2, width=self.info_rect.w, x=3, y=rect.bottom + 12)
+        self.text_render = Surface((ANCHO - 200, 230))
+        self.text_render.fill(COLOR_BOX)
+        render1 = self.write3(title, self.f2, self.perceptions_rect.w, j=1)
+        render2 = self.write3(tides_text, self.f1, self.perceptions_rect.w)
+        render3 = self.write3(text, self.f2, self.perceptions_rect.w)
 
-        self.extra_info(astrobody, r.bottom)
+        r = self.text_render.blit(render1, (0, 3))
+        r = self.text_render.blit(render2, (3, r.bottom))
+        self.text_render.blit(render3, (3, r.bottom+15))
 
-    def extra_info(self, astrobody, dy):
-        # self.image.fill(COLOR_BOX, self.perceptions_rect)
-        system = Systems.get_current()
+        # how other bodies are seen from this planet
+        system = Universe.current_planetary()
         visibility = Universe.aparent_brightness[astrobody.id]
         sizes = Universe.relative_sizes[astrobody.id]
         distances = Universe.distances[astrobody.id]
@@ -190,7 +194,7 @@ class InformationPanel(BaseWidget):
             body_visibility = visibility[body_id]
             body = Universe.get_astrobody_by(body_id, tag_type='id', silenty=True)
             if body is False:
-                for sys in Systems.get_planetary_systems():
+                for sys in Universe.nei().systems():
                     if sys != system and body_id not in analyzed:
                         body = sys.get_astrobody_by(body_id, tag_type='id', silenty=True)
                         if body is not False:
@@ -241,17 +245,24 @@ class InformationPanel(BaseWidget):
 
             text_lines.append(text)
         final_text = '\n'.join(text_lines)
-        self.text = final_text
+        self.exportable_text = final_text
         self.render = self.write3(final_text, self.f1, 380)
         if self.render_rect is None:
-            self.render_rect = self.render.get_rect(topleft=[3, dy])
-        self.image.fill(COLOR_BOX, self.info_rect)
-        self.image.blit(self.render, self.render_rect)
+            self.render_rect = self.render.get_rect(topleft=[3, 244])
+
+        self.render.set_clip(Rect(3, 250, 380, 346))
         self.print_button.enable()
+        self.render_everything()
+
+    def render_everything(self):
+        self.image.fill(COLOR_BOX)
+        self.image.blit(self.render, self.render_rect)
+        self.image.fill(COLOR_BOX, (0, 0, ANCHO, 32))
+        self.image.blit(self.text_render, (3, 18))
 
     @staticmethod
     def check_apsis(astrobody):
-        star_system = astrobody.find_topmost_parent(astrobody)
+        star_system = astrobody.find_topmost_parent()
         inner = astrobody.orbit.periapsis.to('au') >= star_system.habitable_inner.to('au')
         outer = astrobody.orbit.apoapsis.to('au') <= star_system.habitable_outer.to('au')
         return inner, outer
@@ -273,7 +284,7 @@ class AvailablePlanets(ListedArea):
     listed_type = Astrobody
 
     def show(self):
-        systems = Systems.get_planetary_systems()
+        systems = Universe.nei().systems()
         if len(systems):
             for system in systems:
                 idx = system.id
@@ -303,6 +314,6 @@ class PrintButton(TextButton):
             if not os.path.exists(ruta):
                 os.mkdir(ruta)
             with open(os.path.join(ruta, 'export_' + generate_id() + '.txt'), 'w+t', encoding='utf-8') as file:
-                for line in self.parent.text.splitlines(keepends=True):
+                for line in self.parent.exportable_text.splitlines(keepends=True):
                     file.write(line)
             self.disable()

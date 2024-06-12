@@ -4,11 +4,12 @@ from engine.equations.day_lenght import to_hours_mins_secs
 from engine.frontend.graphs.axial_tilt import axial_loop
 from engine.equations.planet import GasDwarf, Terrestial
 from engine.frontend import Renderer, WidgetHandler
-from engine.backend import EventHandler, Systems, q
 from .incremental_value import IncrementalValue
+from engine.equations.space import Universe
 from engine.backend.util import add_decimal
+from engine.backend import EventHandler, q
 from .meta import Meta, BaseWidget
-from pygame import Surface
+from pygame import Surface, error
 
 
 class ValueText(Meta):
@@ -95,7 +96,7 @@ class ValueText(Meta):
             p = self.parent
             if p.parent.name == 'Planet' and p.parent.enabled and not p.has_values:
                 data = None
-                system = Systems.get_current()
+                system = Universe.current_planetary()
                 self.active = True
                 available_mass = system.get_available_mass()  # if the "system" is Rogue Planets, mass is a str.
                 if p.parent.unit.name == 'Habitable':
@@ -105,7 +106,7 @@ class ValueText(Meta):
                         if available_mass < m_high:
                             m_high = available_mass
                         assert available_mass > 0.1, not_enough_mass
-                    data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
+                    data = graph_loop(system, mass_lower_limit=m_low, mass_upper_limit=m_high,
                                       radius_lower_limit=r_low, radius_upper_limit=r_high)
                 elif p.parent.unit.name == 'Terrestial':
                     m_high = 10
@@ -114,14 +115,17 @@ class ValueText(Meta):
                         if available_mass < m_high:
                             m_high = available_mass
                         assert m_high > 0.1, not_enough_mass
-                    data = graph_loop(mass_upper_limit=m_high)
+                    try:
+                        data = graph_loop(system, mass_upper_limit=m_high)
+                    except error:
+                        pass
                 elif p.parent.unit.name == 'Gas Dwarf':
                     m_low, m_high, r_low, r_high = GasDwarf
                     if type(available_mass) is q:
                         if available_mass.to('earth_mass').m < m_high:
                             m_high = available_mass.m
                         assert m_high > 0.2, not_enough_mass
-                    data = graph_loop(mass_lower_limit=m_low, mass_upper_limit=m_high,
+                    data = graph_loop(system, mass_lower_limit=m_low, mass_upper_limit=m_high,
                                       radius_lower_limit=r_low, radius_upper_limit=r_high,
                                       is_gas_drwaf=True)
                 elif p.parent.unit.name == 'Gas Giant':
@@ -129,14 +133,14 @@ class ValueText(Meta):
                     if type(available_mass) is q:
                         assert available_mass.m >= 0.03, not_enough_mass
                         m_high = round(available_mass.m, 2)
-                    data = gasgraph_loop(m_high)
+                    data = gasgraph_loop(system, m_high)
                 elif p.parent.unit.name == 'Dwarf Planet':
                     m_high = None
                     if type(available_mass) is q:
                         available_mass = round(available_mass.to('earth_mass').m, 4)
                         assert available_mass > 0.0001, not_enough_mass
                         m_high = available_mass if available_mass < 0.1 else None
-                    data = dwarfgraph_loop(m_high)
+                    data = dwarfgraph_loop(system, m_high)
                 if not p.has_values:
                     Renderer.reset()
                 if data is not None:
@@ -275,10 +279,9 @@ class NumberArea(BaseArea, IncrementalValue):
                 if char.isdigit() or char == '.':
                     self.value = str(self.value)
                     self.value += char
-
-            elif event.tipo == 'BackSpace':
-                if type(self.value) is str:
-                    self.value = self.value[0:len(str(self.value)) - 1]
+                elif char == 'Backspace':
+                    if type(self.value) is str:
+                        self.value = self.value[0:len(str(self.value)) - 1]
 
             elif event.tipo == 'Fin' and len(str(self.value)):
                 self.parent.deselect()
@@ -361,7 +364,7 @@ class NumberArea(BaseArea, IncrementalValue):
 
     def show(self):
         super().show()
-        EventHandler.register(self.input, 'Key', 'BackSpace', 'Fin')
+        EventHandler.register(self.input, 'Key', 'Fin')
 
     def hide(self):
         super().hide()
@@ -391,15 +394,15 @@ class TextArea(BaseArea):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        EventHandler.register(self.input, 'Typed', 'BackSpace', 'Fin', 'Key')
+        EventHandler.register(self.input, 'Typed', 'Fin', 'Key')
 
     def input(self, tecla):
         if self.enabled and tecla.origin == self:
             if tecla.tipo == 'Typed' or tecla.tipo == 'Key':
-                self.value += tecla.data['value']
-
-            elif tecla.tipo == 'BackSpace':
-                self.value = self.value[0:-1]
+                if tecla.data['value'] != 'Backspace':
+                    self.value += tecla.data['value']
+                else:
+                    self.value = self.value[0:-1]
 
             elif tecla.tipo == 'Fin':
                 self.great_grandparent.name_objects()

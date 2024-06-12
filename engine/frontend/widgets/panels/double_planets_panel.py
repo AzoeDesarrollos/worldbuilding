@@ -3,7 +3,7 @@ from .star_system_panel import SystemType, SystemButton, DissolveButton, AutoBut
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
 from engine.equations.system_binary import PlanetaryPTypeSystem
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.backend import Systems, q, EventHandler
+from engine.backend import q, EventHandler
 from engine.equations import Universe
 from pygame import Surface
 
@@ -12,7 +12,7 @@ class DoublePlanetsPanel(BaseWidget):
     skippable = True
     skip = False
 
-    last_idx = None
+    last_id = None
 
     curr_s_x = None
     curr_s_y = None
@@ -70,7 +70,7 @@ class DoublePlanetsPanel(BaseWidget):
 
     def create_buttons(self, planet):
         pm = planet.mass.to('earth_mass').m
-        layer = self.last_idx
+        layer = self.last_id
         widgets = self.primary_planets[layer]
         by_mass = sorted(widgets, key=lambda b: abs(pm / b.mass.to('earth_mass').m))
         by_mass.pop(by_mass.index(planet))
@@ -104,7 +104,7 @@ class DoublePlanetsPanel(BaseWidget):
 
     def create_system_button(self, system_data):
         if system_data not in self.systems:
-            Systems.get_current().add_astro_obj(system_data)
+            Universe.current_planetary().add_astro_obj(system_data)
             idx = len([s for s in self.systems if system_data.compare(s) is True])
             button = SystemButton(self, system_data, idx, 0, 0)
             self.systems.append(system_data)
@@ -129,7 +129,8 @@ class DoublePlanetsPanel(BaseWidget):
                 'ecc_p': system.ecc_p.m,
                 "ecc_s": system.ecc_s.m,
                 "name": system.name,
-                "neighbourhood_id": Universe.nei().id
+                "neighbourhood_id": Universe.nei().id,
+                "flagged": system.flagged
             }
             if system.cartesian is not None:
                 data.update({"position": dict(zip(['x', 'y', 'z'], system.cartesian))})
@@ -143,7 +144,10 @@ class DoublePlanetsPanel(BaseWidget):
             prim = Universe.get_astrobody_by(system_data['primary'], 'id', silenty=True)
             scnd = Universe.get_astrobody_by(system_data['secondary'], 'id', silenty=True)
             if 'system_id' in system_data:
-                sstm = Systems.get_star_by_id(system_data['system_id'])
+                systems = Universe.nei().true_systems
+                sstm = [s for s in systems if s.id == system_data['system_id']]
+                if len(sstm):
+                    sstm = sstm[0]
             else:
                 continue
             if prim.celestial_type == 'planet' and scnd.celestial_type == 'planet':
@@ -151,15 +155,8 @@ class DoublePlanetsPanel(BaseWidget):
                 ecc_p = system_data['ecc_p']
                 ecc_s = system_data['ecc_s']
 
-                # name = system_data['name']
-                if 'position' in system_data:
-                    x = system_data['position']['x']
-                    y = system_data['position']['y']
-                    z = system_data['position']['z']
-                # offset = Universe.nei().location
-
                 system = PlanetaryPTypeSystem(sstm, prim, scnd, avg_s, ecc_p, ecc_s, idx=id)
-                # system.cartesian = x, y, z
+
                 self.systems.append(system)
 
                 Universe.add_astro_obj(system)
@@ -173,7 +170,10 @@ class DoublePlanetsPanel(BaseWidget):
                 e = orbit_data['e']
                 i = orbit_data['i']
                 system = [s for s in self.systems if s.id == orbit_data['astrobody']][0]
-                sstm = Systems.get_star_by_id(orbit_data['star_id'])
+                systems = Universe.nei().true_systems
+                sstm = [s for s in systems if s.id == orbit_data['star_id']]
+                if len(sstm):
+                    sstm = sstm[0]
                 system.set_orbit(sstm, (a, e, i))
 
     def select_one(self, btn):
@@ -204,11 +204,11 @@ class DoublePlanetsPanel(BaseWidget):
         vt.set_min_and_max(min_v=chosen.m)
 
     def update(self):
-        idx = Systems.get_current_id(self)
-        if idx != self.last_idx:
-            self.last_idx = idx
-            if self.last_idx not in self.primary_planets:
-                self.primary_planets[self.last_idx] = []
+        idx = Universe.nei().id
+        if idx != self.last_id:
+            self.last_id = idx
+            if self.last_id not in self.primary_planets:
+                self.primary_planets[self.last_id] = []
 
     def export_data(self, event):
         if event.data['panel'] is self:
@@ -236,7 +236,7 @@ class DoublesType(SystemType):
     def fill(self):
         if all([str(vt.value) != '' for vt in self.properties.widgets()[0:5]]):
             if self.current is None:
-                star = Systems.get_current_star()
+                star = Universe.nei().current_planetary().parent
                 self.current = PlanetaryPTypeSystem(star, *self.get_determinants())
             props = ['average_separation', 'ecc_p', 'ecc_s', 'barycenter', 'max_sep', 'min_sep']
             for i, attr in enumerate(props, start=2):
@@ -263,12 +263,10 @@ class AvailablePlanets(ListedArea):
     listed_type = PotentialPlanet
 
     def show(self):
-        for system in Systems.get_planetary_systems():
+        for system in Universe.nei().systems():
             idx = system.id
             self.populate(system.planets, layer=idx)
             self.parent.populate(*system.planets, layer=idx)
-        # else:
-        #     hide the panel
         super().show()
 
 
@@ -325,6 +323,6 @@ class DissolveSystemsButton(DissolveButton):
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
             system = self.parent.current.current
-            Systems.get_current().remove_astro_obj(system)
+            Universe.current_planetary().remove_astro_obj(system)
             self.parent.planets_area.show()
             self.parent.current.destroy()
