@@ -74,6 +74,8 @@ class SatellitePanel(BasePanel):
             moon_system.add_astro_obj(moon)
             self.add_button(moon)
 
+        self.held_data.clear()
+
     def save_satellites(self, event):
         data = {}
         for moon_button in self.satellites.widgets():
@@ -255,14 +257,14 @@ class SatelliteType(ObjectType):
         self.has_values = True
         system = Universe.current_planetary()
         data['parent'] = system.parent
-        moon = major_moon_by_composition(data)
+        if self.current is None:
+            moon = major_moon_by_composition(data)
+        else:
+            moon = self.current
+
         if moon.idx is None:
             moon.idx = len([i for i in system.satellites if i.cls == moon.cls])
         if self.current is None:
-            if system.add_astro_obj(moon):
-                self.current = moon
-        else:
-            system.remove_astro_obj(self.current)
             if system.add_astro_obj(moon):
                 self.current = moon
 

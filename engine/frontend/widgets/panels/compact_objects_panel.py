@@ -171,6 +171,8 @@ class CompactObjectsPanel(BaseWidget):
             self.white.clear()
             self.neutron.clear()
             self.load_universe_data()
+            for button in self.buttons.widgets():
+                button.deselect()
 
     @staticmethod
     def calculate_mass():

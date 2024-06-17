@@ -89,7 +89,6 @@ class StarPanel(BasePanel):
             star_data = event.data['Stars'][id]
             star_data.update({'id': id})
             star = self.current.set_star(star_data, inactive=True)
-            Universe.add_astro_obj(star)
             if star not in self.stars:
                 self.stars.append(star)
                 self.add_button(star)
