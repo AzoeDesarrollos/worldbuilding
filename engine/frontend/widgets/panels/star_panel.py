@@ -103,7 +103,8 @@ class StarPanel(BasePanel):
 
     def show(self):
         super().show()
-        self.last_id = Universe.nei().id
+        if Universe.nei() is not None:
+            self.last_id = Universe.nei().id
         for obj in self.properties.get_widgets_from_layer(1):
             obj.show()
 
@@ -227,7 +228,7 @@ class StarPanel(BasePanel):
         self.add_on_exit = len(self.stars) == 1
 
         current = Universe.nei()
-        if current.id != self.last_id:
+        if current is not None and current.id != self.last_id:
             self.last_id = current.id
             self.show_current_set(current.id)
 
@@ -485,7 +486,7 @@ class PotentialStars(ListedArea):
         if Universe.current_galaxy is not None:
             neighbourhood = Universe.nei()
         idx = -1 if neighbourhood is None else neighbourhood.id
-        if idx != self.last_idx:
+        if idx != self.last_id:
             self.last_idx = idx
         self.show_current(self.last_idx)
 

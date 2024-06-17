@@ -93,10 +93,8 @@ class PlanetPanel(BasePanel):
         self.current.load_data(idx)
         for button in self.planet_buttons.widgets():
             button.hide()
-        for button in self.planet_buttons.get_widgets_from_layer(idx):
-            button.show()
         if len(self.planet_buttons):
-            planets = self.planet_buttons.get_widgets_from_layer(self.last_id)
+            planets = self.planet_buttons.get_widgets_from_layer(idx)
             self.sort_buttons(planets)
 
     def select_one(self, btn=None):
@@ -160,7 +158,10 @@ class PlanetPanel(BasePanel):
             button.disable()
 
     def update(self):
-        idx = Universe.current_planetary().id
+        if Universe.current_galaxy is not None:
+            idx = Universe.current_planetary().id
+        else:
+            idx = self.last_id
 
         if idx != self.last_id:
             self.show_current(idx)
@@ -451,9 +452,10 @@ class ShownMass(BaseWidget):
             return 'Unlimited'
 
     def update(self):
-        self.parent.image.fill(COLOR_BOX, self.mass_rect)
-        self.mass_img = self.f2.render(self.show_mass(), True, self.mass_color, COLOR_BOX)
-        self.parent.image.blit(self.mass_img, self.mass_rect)
+        if Universe.current_galaxy is not None:
+            self.parent.image.fill(COLOR_BOX, self.mass_rect)
+            self.mass_img = self.f2.render(self.show_mass(), True, self.mass_color, COLOR_BOX)
+            self.parent.image.blit(self.mass_img, self.mass_rect)
 
 
 class AddPlanetButton(TextButton):

@@ -107,7 +107,7 @@ class SatellitePanel(BasePanel):
 
         self.moons.append(moon)
         self.satellites.add(button, layer=layer_number)
-        self.properties.add(button)
+        self.properties.add(button, layer=2)
         if self.is_visible:
             satellites = self.satellites.get_widgets_from_layer(Universe.current_planetary().id)
             self.sort_buttons(satellites, x=self.curr_x, y=self.curr_y)
@@ -136,10 +136,10 @@ class SatellitePanel(BasePanel):
     def show(self):
         super().show()
         self.load_satellites()
-        if self.mass_number is None:
-            self.properties.add()
-        for pr in self.properties.widgets():
+        for pr in self.properties.get_widgets_from_layer(1):
             pr.show()
+        if self.last_idx is not None:
+            self.show_current(self.last_idx)
 
     def hide(self):
         if len(self.moons) < 1:
@@ -162,7 +162,10 @@ class SatellitePanel(BasePanel):
             button.deselect()
 
     def update(self):
-        idx = Universe.current_planetary().id
+        if Universe.current_galaxy is not None:
+            idx = Universe.current_planetary().id
+        else:
+            idx = self.last_idx
 
         if idx != self.last_idx:
             self.image.fill(COLOR_AREA, [0, 498, 130, 14])
@@ -485,7 +488,11 @@ class CopyCompositionButton(Meta):
         elif self.enabled:
             self.disable()
 
-        idx = Universe.current_planetary().id
+        if Universe.current_galaxy is not None:
+            idx = Universe.current_planetary().id
+        else:
+            idx = self.last_idx
+
         if idx != self.last_idx:
             self.last_idx = idx
             self.current_cycler = self.cyclers[idx] if idx in self.cyclers else None

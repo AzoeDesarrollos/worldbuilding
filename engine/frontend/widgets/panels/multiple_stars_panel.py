@@ -27,6 +27,8 @@ class MultipleStarsPanel(BaseWidget):
 
     planetary_systems_added = False
 
+    already_chosen = False
+
     def __init__(self, parent):
         self.name = 'Multiple Stars'
         super().__init__(parent)
@@ -103,17 +105,17 @@ class MultipleStarsPanel(BaseWidget):
         go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type != 'system'  # triple
         go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'  # multiple
         chosen = None
-        if go_on_1 or go_on_2:
+        if (go_on_1 or go_on_2) and len(triple_systems):
             chosen = triple_systems.pop(0)
             nei.quantities['Triple'] -= 1
-        elif go_on_3:
+        elif go_on_3 and len(multiple_systems):
             chosen = multiple_systems.pop(0)
             nei.quantities['Multiple'] -= 1
 
         assert chosen is not None, "System is nonsensical"
         nei.remove_proto_system(chosen)
         system_data.cartesian = chosen.location
-        # system_data.id = chosen.id
+
         offset = nei.location
         system_data.orbit = NeighbourhoodSystemOrbit(*system_data.cartesian, offset)
         self.discarded_protos.append(chosen)
@@ -214,11 +216,14 @@ class MultipleStarsPanel(BaseWidget):
         self.parent.swap_neighbourhood_button.disable()
 
     def hide(self):
-        if (self.triple == 0 and self.multiple == 0) and self.planetary_systems_added is False:
-            self.planetary_systems_added = True
-            self.create_systems()
-            Universe.nei().set_planetary_systems()
         super().hide()
+        current = Universe.nei()
+        if current is not None:
+            if (self.triple == 0 and self.multiple == 0) and self.planetary_systems_added is False:
+                self.planetary_systems_added = True
+                self.create_systems()
+                current.set_planetary_systems()
+        self.already_chosen = True
         for prop in self.properties.widgets():
             prop.hide()
 
@@ -289,12 +294,13 @@ class MultipleStarsPanel(BaseWidget):
         self.sort_buttons(self.system_buttons.get_widgets_from_layer(new_id))
 
     def update(self):
-        self.load_universe_data()
         current = Universe.nei()
-        if current.id != self.last_id:
-            self.last_id = current.id
-            self.stars_area.reset_offset()
-            self.show_current_set(current.id)
+        if current is not None:
+            self.load_universe_data()
+            if current.id != self.last_id:
+                self.last_id = current.id
+                self.stars_area.reset_offset()
+                self.show_current_set(current.id)
 
     def export_data(self, event):
         if event.data['panel'] is self:
@@ -387,7 +393,8 @@ class AvailableSystems(ListedArea):
     listed_type = ListedSystem
 
     def show(self):
-        self.repopulate()
+        if Universe.current_galaxy is not None:
+            self.repopulate()
         super().show()
         for listed in self.listed_objects.widgets():
             listed.show()
@@ -411,11 +418,13 @@ class AvailableSystems(ListedArea):
                 self.populate(population, layer=nei.id)
 
     def update(self):
-        if self.parent.triple < 1 and self.parent.multiple < 1:
-            self.disable_all()
-        if Universe.nei().id != self.last_idx:
-            self.last_idx = Universe.nei().id
-        self.show_current(Universe.nei().id)
+        current = Universe.nei()
+        if current is not None:
+            if self.parent.triple < 1 and self.parent.multiple < 1:
+                self.disable_all()
+            if current.id != self.last_id:
+                self.last_idx = current.id
+            self.show_current(current.id)
 
 
 class CreateSystemButton(SetupButton):

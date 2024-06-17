@@ -209,10 +209,12 @@ class SwapSystem(Meta):
 
     def update(self):
         super().update()
-        if not self.enabled and self.parent.current.show_swap_system_button is True:
-            self.enable()
-            self.current = Universe.nei().get_current()
-            self.system_image.enable()
+        current = Universe.nei()
+        if current is not None:
+            if not self.enabled and self.parent.current.show_swap_system_button is True:
+                self.enable()
+                self.current = current.get_current()
+                self.system_image.enable()
 
     def show(self):
         super().show()

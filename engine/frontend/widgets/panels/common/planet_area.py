@@ -7,7 +7,7 @@ from pygame import Surface, Rect
 class ListedArea(BaseWidget):
     name = 'Astronomical Objects'
 
-    last_idx = None
+    last_id = None
 
     listed_type = None
 
@@ -44,8 +44,8 @@ class ListedArea(BaseWidget):
             if listed not in self.listed_objects.get_widgets_from_layer(layer):
                 self.listed_objects.add(listed, layer=layer)
 
-        if self.last_idx is None and layer is not None:
-            self.last_idx = layer
+        if self.last_id is None and layer is not None:
+            self.last_id = layer
         self.sort()
 
     def hide(self):
@@ -58,7 +58,7 @@ class ListedArea(BaseWidget):
             if event.data['button'] == 1:
                 self.deselect_all()
             elif len(self.listed_objects.widgets()):
-                buttons = self.listed_objects.get_widgets_from_layer(self.last_idx)
+                buttons = self.listed_objects.get_widgets_from_layer(self.last_id)
                 by_mass = sorted(buttons, key=lambda b: b.object_data.mass.to('earth_mass').m, reverse=1)
                 last_is_hidden = not by_mass[-1].is_visible
                 first_is_hidden = not by_mass[0].is_visible
@@ -71,7 +71,7 @@ class ListedArea(BaseWidget):
         self.offset = 0
 
     def delete_objects(self, astronomical_object):
-        layer = self.last_idx
+        layer = self.last_id
         widgets = self.listed_objects.get_widgets_from_layer(layer)
         listed = [i for i in widgets if i.object_data is astronomical_object]
         if len(listed):
@@ -80,7 +80,7 @@ class ListedArea(BaseWidget):
         self.sort()
 
     def sort(self):
-        layer = self.last_idx
+        layer = self.last_id
         widgets = self.listed_objects.get_widgets_from_layer(layer)
         by_mass = sorted(widgets, key=lambda b: b.object_data.mass.to('earth_mass').m, reverse=1)
         for i, listed in enumerate(by_mass):
@@ -98,25 +98,25 @@ class ListedArea(BaseWidget):
     def deselect_all(self):
         self.image.fill(COLOR_AREA, [0, 21, self.rect.w, self.rect.h])
         self.current = None
-        for listed in self.listed_objects.get_widgets_from_layer(self.last_idx):
+        for listed in self.listed_objects.get_widgets_from_layer(self.last_id):
             listed.deselect()
 
     def disable_by_type(self, selected_type):
-        for listed in self.listed_objects.get_widgets_from_layer(self.last_idx):
+        for listed in self.listed_objects.get_widgets_from_layer(self.last_id):
             if listed.object_data.celestial_type == selected_type:
                 listed.disable()
 
     def enable_all(self):
-        for listed in self.listed_objects.get_widgets_from_layer(self.last_idx):
+        for listed in self.listed_objects.get_widgets_from_layer(self.last_id):
             listed.enable()
 
     def disable_object(self, selected_object):
-        for listed in self.listed_objects.get_widgets_from_layer(self.last_idx):
+        for listed in self.listed_objects.get_widgets_from_layer(self.last_id):
             if listed.object_data == selected_object:
                 listed.disable()
 
     def objects(self):
-        return [o.object_data for o in self.listed_objects.get_widgets_from_layer(self.last_idx)]
+        return [o.object_data for o in self.listed_objects.get_widgets_from_layer(self.last_id)]
 
     def show_current(self, idx):
         self.sort()
@@ -132,9 +132,13 @@ class ListedArea(BaseWidget):
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
-        idx = Universe.current_planetary().id
-        if idx != self.last_idx:
-            self.last_idx = idx
+        if Universe.current_galaxy is not None:
+            idx = Universe.current_planetary().id
+        else:
+            idx = self.last_id
+
+        if idx != self.last_id:
+            self.last_id = idx
         self.show_current(idx)
 
     def lock(self):

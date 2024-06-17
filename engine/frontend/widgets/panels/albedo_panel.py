@@ -220,10 +220,11 @@ class AvailablePlanets(ListedArea):
     listed_type = UnbondedBody
 
     def show(self):
-        for system in Universe.nei().systems():
-            idx = system.id
-            bodies = [body for body in system.planets]
-            self.populate(bodies, layer=idx)
+        if Universe.current_galaxy is not None:
+            for system in Universe.nei().systems():
+                idx = system.id
+                bodies = [body for body in system.planets]
+                self.populate(bodies, layer=idx)
 
         super().show()
 

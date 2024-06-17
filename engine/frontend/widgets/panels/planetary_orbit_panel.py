@@ -162,29 +162,30 @@ class PlanetaryOrbitPanel(BaseWidget):
             self.create_hill_marker(planet)
 
     def add_objects(self):
-        system = Universe.current_planetary()
-        if system is not None:
-            self.image.fill(COLOR_BOX, [0, 32, self.rect.w, 380])
-            planets = [p for p in system.planets if p.relative_size != 'Giant']
-            for obj in system.satellites + system.asteroids + planets:
-                btn = ObjectButton(self, obj)
-                if btn not in self.buttons:
-                    if obj not in self.objects:
-                        self.objects.append(obj)
+        if Universe.current_galaxy is not None:
+            system = Universe.current_planetary()
+            if system is not None:
+                self.image.fill(COLOR_BOX, [0, 32, self.rect.w, 380])
+                planets = [p for p in system.planets if p.relative_size != 'Giant']
+                for obj in system.satellites + system.asteroids + planets:
+                    btn = ObjectButton(self, obj)
+                    if btn not in self.buttons:
+                        if obj not in self.objects:
+                            self.objects.append(obj)
 
-                    if obj.orbit is not None and obj.orbit.star.celestial_type == 'planet':
-                        markers = self._markers[obj.orbit.star.id]
-                        marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
-                        marker = markers[marker_idx]
-                        btn.link_marker(marker)
-                        btn.update_text(obj.orbit.a)
+                        if obj.orbit is not None and obj.orbit.star.celestial_type == 'planet':
+                            markers = self._markers[obj.orbit.star.id]
+                            marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
+                            marker = markers[marker_idx]
+                            btn.link_marker(marker)
+                            btn.update_text(obj.orbit.a)
 
-                    if btn is not None and (obj.orbit is None or btn.completed):
-                        self.buttons.add(btn, layer=system.id)
-                        self.properties.add(btn, layer=4)
+                        if btn is not None and (obj.orbit is None or btn.completed):
+                            self.buttons.add(btn, layer=system.id)
+                            self.properties.add(btn, layer=4)
 
-            bodies = self.buttons.get_widgets_from_layer(system.id)
-            self.sort_buttons(bodies)
+                bodies = self.buttons.get_widgets_from_layer(system.id)
+                self.sort_buttons(bodies)
 
         else:
             self.show_no_system_error()
@@ -467,10 +468,12 @@ class AvailablePlanets(ListedArea):
     listed_type = OrbitableObject
 
     def show(self):
-        for system in Universe.nei().systems():
-            idx = system.id
-            bodies = [body for body in system.astro_bodies if body.hill_sphere is not None]
-            self.populate(bodies, layer=idx)
+        current = Universe.nei()
+        if current is not None:
+            for system in current.systems():
+                idx = system.id
+                bodies = [body for body in system.astro_bodies if body.hill_sphere is not None]
+                self.populate(bodies, layer=idx)
         super().show()
 
     def delete_objects(self, astronomical_object):

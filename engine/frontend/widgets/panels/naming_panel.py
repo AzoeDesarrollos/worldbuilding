@@ -9,7 +9,7 @@ from pygame import Surface, Rect
 class NamingPanel(BaseWidget):
     skippable = False
     skip = False
-    last_idx = -1
+    last_id = -1
 
     curr_idx = 0
     current = None
@@ -33,7 +33,7 @@ class NamingPanel(BaseWidget):
 
     def hide(self):
         super().hide()
-        self.last_idx = -1
+        self.last_id = -1
         for item in self.unnamed.widgets():
             item.hide()
 
@@ -94,11 +94,15 @@ class NamingPanel(BaseWidget):
         self.sort()
 
     def update(self):
-        idx = Universe.current_planetary().id
-        if idx != self.last_idx:
+        if Universe.current_galaxy is not None:
+            idx = Universe.current_planetary().id
+        else:
+            idx = self.last_id
+
+        if idx != self.last_id:
             self.image.fill(COLOR_BOX, [0, 20, self.rect.w, self.rect.h - 52])
             self.show_current(idx)
-            self.last_idx = idx
+            self.last_id = idx
         elif self.no_system_error:
             text = "There are no more astronomical bodies to name for this system."
             self.render_text(text)

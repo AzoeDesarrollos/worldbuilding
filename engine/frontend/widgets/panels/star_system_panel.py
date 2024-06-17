@@ -150,7 +150,8 @@ class StarSystemPanel(BaseWidget):
                 Universe.add_astro_obj(system)
 
                 button = self.create_button(system)
-                button.hide()
+                if button is not None:
+                    button.hide()
 
     def select_one(self, btn):
         for button in self.system_buttons.widgets():
@@ -226,12 +227,13 @@ class StarSystemPanel(BaseWidget):
         self.sort_buttons(self.system_buttons.get_widgets_from_layer(new_id))
 
     def update(self):
-        self.load_universe_data()
         current = Universe.nei()
-        if current.id != self.last_id:
-            self.last_id = current.id
-            self.stars_area.reset_offset()
-            self.show_current_set(current.id)
+        if current is not None:
+            self.load_universe_data()
+            if current.id != self.last_id:
+                self.last_id = current.id
+                self.stars_area.reset_offset()
+                self.show_current_set(current.id)
 
     def export_data(self, event):
         if event.data['panel'] is self:
@@ -405,22 +407,24 @@ class AvailableStars(ListedArea):
 
     def show(self):
         self.clear()
-        for nei in Universe.current_galaxy.stellar_neighbourhoods:
-            stars = [star for star in Universe.get_loose_stars(nei.id)]
-            self.populate(stars, layer=nei.id)
+        if Universe.current_galaxy is not None:
+            for nei in Universe.current_galaxy.stellar_neighbourhoods:
+                stars = [star for star in Universe.get_loose_stars(nei.id)]
+                self.populate(stars, layer=nei.id)
         super().show()
 
     def update(self):
-        if self.parent.quantity < 1:
-            self.disable_by_type('star')
-        else:
-            self.enable_all()
+        if Universe.current_galaxy is not None:
+            if self.parent.quantity < 1:
+                self.disable_by_type('star')
+            else:
+                self.enable_all()
 
-        self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
+            self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
 
-        if Universe.nei().id != self.last_idx:
-            self.last_idx = Universe.nei().id
-        self.show_current(Universe.nei().id)
+            if Universe.nei().id != self.last_id:
+                self.last_idx = Universe.nei().id
+            self.show_current(Universe.nei().id)
 
 
 class SetupButton(TextButton):

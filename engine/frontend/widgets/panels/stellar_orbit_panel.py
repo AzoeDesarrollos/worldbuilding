@@ -445,10 +445,11 @@ class OrbitPanel(BaseWidget):
     def show(self):
         super().show()
         try:
-            self.fill_indexes()
-            self.set_current()
-            self.load_orbits()
-            self.no_star_error = False
+            if Universe.current_galaxy is not None:
+                self.fill_indexes()
+                self.set_current()
+                self.load_orbits()
+                self.no_star_error = False
 
         except AssertionError:
             self.no_star_error = True
@@ -519,11 +520,12 @@ class OrbitPanel(BaseWidget):
         self.add_orbits_button.unlink()
 
     def update(self):
-        system = Universe.nei().get_current()
-        if system is not None:
-            idx = system.id
-        else:
-            idx = self.last_idx
+        current = Universe.nei()
+        idx = self.last_idx
+        if current is not None:
+            system = current.get_current()
+            if system is not None:
+                idx = system.id
 
         if not self.no_star_error:
             self.image.fill(COLOR_AREA, self.area_buttons)
@@ -932,10 +934,12 @@ class AvailablePlanets(ListedArea):
     name = 'Planets'
 
     def show(self):
-        for system in Universe.nei().systems():
-            idx = system.id
-            population = [i for i in system.planets + system.asteroids + system.binary_planets if i.orbit is None]
-            self.populate(population, layer=idx)
+        current = Universe.nei()
+        if current is not None:
+            for system in current.systems():
+                idx = system.id
+                population = [i for i in system.planets + system.asteroids + system.binary_planets if i.orbit is None]
+                self.populate(population, layer=idx)
         super().show()
 
 

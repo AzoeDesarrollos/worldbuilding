@@ -159,7 +159,8 @@ class AtmospherePanel(BaseWidget):
         for element in self.elements.widgets():
             element.show()
         self.atmograph.show()
-        self.planets.show()
+        if Universe.nei() is not None:
+            self.planets.show()
         self.show_name()
         self.show_pressure.show()
 
@@ -262,7 +263,10 @@ class AtmospherePanel(BaseWidget):
             self.set_planet(self.curr_planet)
 
     def update(self):
-        idx = Universe.current_planetary().id
+        if Universe.current_galaxy is not None:
+            idx = Universe.current_planetary().id
+        else:
+            idx = self.last_idx
 
         if idx != self.last_idx:
             self.erase()

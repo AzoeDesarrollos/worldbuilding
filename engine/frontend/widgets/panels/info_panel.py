@@ -284,7 +284,7 @@ class AvailablePlanets(ListedArea):
     listed_type = Astrobody
 
     def show(self):
-        systems = Universe.nei().systems()
+        systems = Universe.nei().systems() if Universe.nei() is not None else []
         if len(systems):
             for system in systems:
                 idx = system.id

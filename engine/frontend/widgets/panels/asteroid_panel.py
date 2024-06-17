@@ -151,8 +151,10 @@ class AsteroidPanel(BasePanel):
         self.load_satellites()
         for pr in self.properties.get_widgets_from_layer(1):
             pr.show()
-        for pr in self.properties.get_widgets_from_layer(Universe.current_planetary().id):
-            pr.show()
+
+        if Universe.current_galaxy is not None:
+            for pr in self.properties.get_widgets_from_layer(Universe.current_planetary().id):
+                pr.show()
 
     def hide(self):
         super().hide()
@@ -160,13 +162,18 @@ class AsteroidPanel(BasePanel):
         for pr in self.properties.widgets():
             pr.hide()
 
-        system = Universe.current_planetary()
-        flag = system is not None
-        flag = not len(system.asteroids + system.satellites) if flag else False
-        self.parent.set_skippable('Planetary Orbit', flag)
+        if Universe.current_galaxy is not None:
+            system = Universe.current_planetary()
+            flag = system is not None
+            flag = not len(system.asteroids + system.satellites) if flag else False
+            self.parent.set_skippable('Planetary Orbit', flag)
 
     def update(self):
-        idx = Universe.current_planetary().id
+        if Universe.current_galaxy is not None:
+            idx = Universe.current_planetary().id
+        else:
+            idx = self.last_id
+
         if idx != self.last_id:
             self.image.fill(COLOR_AREA, [0, 498, 130, 14])
             self.current.pie.set_values()
