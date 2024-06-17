@@ -151,15 +151,15 @@ class PlanetaryOrbitPanel(BaseWidget):
 
     def populate(self):
         planet = self.current
-        if planet.id not in self._markers:
-            self._markers[planet.id] = []
-        self.markers = self._markers[planet.id]
+        names = []
         for marker in self.markers:
+            names.append(marker.name)
             if marker not in self.properties.widgets():
                 self.properties.add(marker, layer=3)
             marker.show()
 
-        self.create_hill_marker(planet)
+        if "Hill Sphere" not in names:
+            self.create_hill_marker(planet)
 
     def add_objects(self):
         system = Universe.current_planetary()
@@ -206,9 +206,8 @@ class PlanetaryOrbitPanel(BaseWidget):
             if force:
                 self.planet_area.select_by_data(planet)
             self.hide_everything()
-            self.current = planet
-            if not len(self.markers):
-                self.populate()
+            self.set_current(planet)
+            self.populate()
             if planet.id not in self.satellites:
                 self.satellites[planet.id] = []
         for button in self.buttons.widgets():
@@ -223,6 +222,12 @@ class PlanetaryOrbitPanel(BaseWidget):
                 self.create_roches_marker(densest[0])
             self.add_orbits_button.disable()
         self.sort_markers()
+
+    def set_current(self, planet):
+        self.current = planet
+        if planet.id not in self._markers:
+            self._markers[planet.id] = []
+        self.markers = self._markers[planet.id]
 
     def select_one(self, button):
         for bttn in self.buttons.widgets():
