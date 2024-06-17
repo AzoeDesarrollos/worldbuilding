@@ -81,7 +81,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         bodies = []
         for idx in self.held_data:
             system_id = self.held_data[idx]['star_id']
-            system = Universe.get_astrobody_by(system_id, tag_type='id')
+            system = Universe.get_astrobody_by(system_id, tag_type='id').parent.planetary
             bodies.append(system.get_astrobody_by(idx, tag_type='id'))
 
         bodies.sort(key=lambda b: b.mass, reverse=True)
@@ -100,6 +100,7 @@ class PlanetaryOrbitPanel(BaseWidget):
 
                 system = Universe.get_astrobody_by(orbit_data['star_id'], tag_type='id')
                 if system is not None:
+                    system = system.parent.planetary
                     planet = system.get_astrobody_by(body.id, tag_type='id')
                     if planet.id not in self.satellites:
                         self.satellites[planet.id] = []
@@ -190,6 +191,7 @@ class PlanetaryOrbitPanel(BaseWidget):
 
     def show(self):
         super().show()
+        self.load_orbits()
         for prop in self.properties.get_widgets_from_layer(2):
             prop.show()
         self.add_objects()
