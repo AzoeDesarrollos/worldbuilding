@@ -16,6 +16,7 @@ class BaseWidget(Sprite):
 
     default_spacing = 5
     area_buttons = None
+    has_mouse_over = False
 
     def __init__(self, parent=None):
         super().__init__()

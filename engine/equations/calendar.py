@@ -3,13 +3,15 @@ from math import trunc
 
 class SolarCalendar:
     def __init__(self, planet, moon):
-        month_year = planet.period / moon.period
+        planet_period = planet.orbit.period.to('earth_day').m
+        print(planet_period)
+        month_year = planet_period / moon.orbit.period.to('earth_day').m
 
-        self.year_local = trunc(planet.period)
+        self.year_local = trunc(planet_period)
         year_leap, day_local = 0, 0
         while trunc(day_local) != 24:
             year_leap += 1
-            day_local = round((planet.period / (self.year_local + (1 / year_leap if year_leap > 0 else 1)) * 24), 4)
+            day_local = round((planet_period / (self.year_local + (1 / year_leap if year_leap > 0 else 1)) * 24), 4)
 
         self.day_local = day_local
         self.year_leap = year_leap

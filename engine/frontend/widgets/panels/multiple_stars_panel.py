@@ -62,7 +62,7 @@ class MultipleStarsPanel(BaseWidget):
         self.discarded_protos = []
 
         EventHandler.register(self.save_systems, 'Save')
-        EventHandler.register(self.hold_loaded_bodies, 'LoadBinary')
+        EventHandler.register(self.load_systems, 'LoadBinary')
         EventHandler.register(self.name_current, 'NameObject')
         EventHandler.register(self.export_data, 'ExportData')
 
@@ -174,13 +174,12 @@ class MultipleStarsPanel(BaseWidget):
         self.parent.swap_neighbourhood_button.unlock()
         if Universe.current_galaxy is not None:
             self.load_universe_data()
-            self.show_loaded_systems()
 
     def create_systems(self):
         for nei in Universe.current_galaxy.stellar_neighbourhoods:
-            widgets = self.stars_area.listed_objects.get_widgets_from_layer(nei.id)
+            widgets = self.stars_area.get_population()[nei.id]
             singles = [system for system in nei.proto_systems if system.composition == 'single']
-            stars = [s.object_data for s in widgets if s.object_data.celestial_type == 'star']
+            stars = [s for s in widgets if s.celestial_type == 'star']
             if len(singles):
                 for star in stars:
                     chosen = [proto for proto in singles if proto.id == star.id]
@@ -255,33 +254,30 @@ class MultipleStarsPanel(BaseWidget):
             # so it doesn't save an empty dictionary.
             EventHandler.trigger(event.tipo + 'Data', 'Systems', {'Binary Systems': data})
 
-    def hold_loaded_bodies(self, event):
+    def load_systems(self, event):
         if 'Binary Systems' in event.data and len(event.data['Binary Systems']):
-            self.held_data.update(event.data['Binary Systems'].copy())
+            for id in event.data['Binary Systems']:
+                system_data = event.data['Binary Systems'][id]
+                nei = Universe.current_galaxy.get_neighbourhood(system_data['neighbourhood_id'])
+                self.load_universe_data(nei)
 
-    def show_loaded_systems(self):
-        for id in self.held_data:
-            system_data = self.held_data[id]
-            nei = Universe.current_galaxy.get_neighbourhood(system_data['neighbourhood_id'])
-            self.load_universe_data(nei)
+                prim = Universe.get_astrobody_by(system_data['primary'], 'id', silenty=True)
+                scnd = Universe.get_astrobody_by(system_data['secondary'], 'id', silenty=True)
+                if prim is not False and scnd is not False:
+                    go_on_1 = prim.celestial_type != 'system' and scnd.celestial_type == 'system'  # triple
+                    go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type != 'system'  # triple
+                    go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'  # multiple
 
-            prim = Universe.get_astrobody_by(system_data['primary'], 'id', silenty=True)
-            scnd = Universe.get_astrobody_by(system_data['secondary'], 'id', silenty=True)
-            if prim is not False and scnd is not False:
-                go_on_1 = prim.celestial_type != 'system' and scnd.celestial_type == 'system'  # triple
-                go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type != 'system'  # triple
-                go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'  # multiple
+                    if any([go_on_1, go_on_2, go_on_3]):
+                        avg_s = system_data['avg_s']
+                        ecc_p = system_data['ecc_p']
+                        ecc_s = system_data['ecc_s']
+                        name = system_data['name']
 
-                if any([go_on_1, go_on_2, go_on_3]):
-                    avg_s = system_data['avg_s']
-                    ecc_p = system_data['ecc_p']
-                    ecc_s = system_data['ecc_s']
-                    name = system_data['name']
+                        system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name, nei_id=nei.id)
 
-                    system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name, nei_id=nei.id)
-
-                    button = self.create_button(system)
-                    button.hide()
+                        button = self.create_button(system)
+                        button.hide()
 
         self.stars_area.disable()
 
@@ -416,6 +412,16 @@ class AvailableSystems(ListedArea):
             if len(population):
                 population.sort(key=lambda s: s.mass, reverse=True)
                 self.populate(population, layer=nei.id)
+
+    @staticmethod
+    def get_population():
+        total_population = {}
+        for nei in Universe.current_galaxy.stellar_neighbourhoods:
+            stars = [star for star in Universe.get_loose_stars(nei.id)]
+            systems = [system for system in nei.true_systems]
+            total_population[nei.id] = stars + systems
+
+        return total_population
 
     def update(self):
         current = Universe.nei()

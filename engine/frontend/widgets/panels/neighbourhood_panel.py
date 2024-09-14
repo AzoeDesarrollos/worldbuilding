@@ -181,9 +181,9 @@ class NeighbourhoodPanel(BaseWidget):
             prop.show()
         self.neighbourhood.populate()
         self.sort_buttons(self.properties.get_widgets_from_layer(5))
-        if Universe.current_galaxy is not None:
-            self.parent.swap_galaxy_button.enable()
-            self.parent.swap_neighbourhood_button.disable()
+        # if Universe.current_galaxy is not None:
+        self.parent.swap_galaxy_button.enable()
+        self.parent.swap_neighbourhood_button.disable()
 
     def hide(self):
         super().hide()

@@ -115,6 +115,8 @@ class WidgetHandler:
                 for widget in cls.contents.sprites():
                     if widget.rect.collidepoint((x, y)) or widget is cls.active:
                         widget.on_mousemotion(e.rel)
+                    else:
+                        widget.has_mouse_over = False
 
         x, y = mouse.get_pos()
         for widget in cls.contents.sprites():

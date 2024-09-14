@@ -42,10 +42,11 @@ class PlanetaryOrbitPanel(BaseWidget):
         self.objects = []
         self.satellites = {}
         text = "Here you can link your natural satellites to your planets."
-        text += "\n Click first on the parent body on the right and then,"
-        text += "\n click on the satellite you with to link at the bottom."
-        text += "\n A random orbit will apear for it. Click on the orbit to start modifiying it."
-        self.erase_text_area = self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
+        text += "\n\nClick first on the parent body on the right and then,"
+        text += " click on the satellite you want to link at the bottom."
+        text += "\n\n A random orbit will apear for it. Click on the orbit to start modifiying it."
+        f = self.crear_fuente(14)
+        self.erase_text_area = self.write2(text, f, fg=COLOR_AREA, width=300, centerx=200, y=100, j=1)
         self.area_buttons = self.image.fill(COLOR_AREA, [0, 420, self.rect.w, 200])
         self.area_markers = Rect(3, 58, 380, 20 * 16)
         self.curr_x = self.area_buttons.x + 3
@@ -81,7 +82,7 @@ class PlanetaryOrbitPanel(BaseWidget):
         bodies = []
         for idx in self.held_data:
             system_id = self.held_data[idx]['star_id']
-            system = Universe.get_astrobody_by(system_id, tag_type='id').parent.planetary
+            system = Universe.get_astrobody_by(system_id, tag_type='id').parent.parent.planetary
             bodies.append(system.get_astrobody_by(idx, tag_type='id'))
 
         bodies.sort(key=lambda b: b.mass, reverse=True)
@@ -100,7 +101,7 @@ class PlanetaryOrbitPanel(BaseWidget):
 
                 system = Universe.get_astrobody_by(orbit_data['star_id'], tag_type='id')
                 if system is not None:
-                    system = system.parent.planetary
+                    system = system.parent.parent.planetary
                     planet = system.get_astrobody_by(body.id, tag_type='id')
                     if planet.id not in self.satellites:
                         self.satellites[planet.id] = []
@@ -111,6 +112,10 @@ class PlanetaryOrbitPanel(BaseWidget):
                     self.satellites[planet.id].append(satellite)
                     satellite.set_orbit(planet, [a, e, i, loan, aop])
                     self.add_existing(satellite, planet)
+        else:
+            self.show_markers_button.enable()
+
+        self.held_data.clear()
 
     def save_orbits(self, event):
         orbits = {}
@@ -187,9 +192,6 @@ class PlanetaryOrbitPanel(BaseWidget):
                 bodies = self.buttons.get_widgets_from_layer(system.id)
                 self.sort_buttons(bodies)
 
-        else:
-            self.show_no_system_error()
-
     def show(self):
         super().show()
         self.load_orbits()
@@ -216,12 +218,12 @@ class PlanetaryOrbitPanel(BaseWidget):
             button.deselect()
 
         self.visible_markers = True
-        if not force:
-            sats = self.satellites[planet.id]
-            densest = sorted(sats, key=lambda i: i.density.to('earth_density').m, reverse=True)
-            if len(densest):
-                self.create_roches_marker(densest[0])
-            self.add_orbits_button.disable()
+        sats = self.satellites[planet.id]
+        names = [marker.name for marker in self.markers]
+        densest = sorted(sats, key=lambda i: i.density.to('earth_density').m, reverse=True)
+        if len(densest) and "Roche's Limit" not in names:
+            self.create_roches_marker(densest[0])
+        self.add_orbits_button.disable()
         self.sort_markers()
 
     def set_current(self, planet):
@@ -470,7 +472,7 @@ class AvailablePlanets(ListedArea):
     def show(self):
         current = Universe.nei()
         if current is not None:
-            for system in current.systems():
+            for system in current.get_p_systems():
                 idx = system.id
                 bodies = [body for body in system.astro_bodies if body.hill_sphere is not None]
                 self.populate(bodies, layer=idx)
@@ -531,7 +533,8 @@ class ObjectButton(ColoredBody):
                 self.disable()
             else:
                 self.parent.on_button_press(self.object_data)
-                self.info.link_marker(self.linked_marker)
+                if self.linked_marker != self.info.linked_marker:
+                    self.info.link_marker(self.linked_marker)
                 self.info.show()
 
     def move(self, x, y):

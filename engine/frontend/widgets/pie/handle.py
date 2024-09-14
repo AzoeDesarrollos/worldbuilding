@@ -1,4 +1,4 @@
-from pygame import Surface, transform, SRCALPHA, Color
+from pygame import Surface, transform, SRCALPHA, Color, mouse
 from engine.backend.eventhandler import EventHandler
 from math import sin, cos, radians, sqrt
 from ..meta import Meta
@@ -30,6 +30,7 @@ class Handle(Meta):
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.pressed = True
+            mouse.set_pos(self.rect.center)
             self.parent.set_active(self)
             EventHandler.trigger('SetOrigin', self, {'origin': self})
 
@@ -40,6 +41,7 @@ class Handle(Meta):
 
     def on_mouseover(self):
         if self.enabled:
+            mouse.set_pos(self.rect.center)
             self.selected = True
 
     def on_mousemotion(self, rel):

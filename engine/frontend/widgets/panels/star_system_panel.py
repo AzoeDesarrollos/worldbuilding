@@ -41,7 +41,7 @@ class StarSystemPanel(BaseWidget):
                             self.stars_area, self.current, self.auto_button)
         self.system_buttons = Group()
         EventHandler.register(self.save_systems, 'Save')
-        EventHandler.register(self.hold_loaded_bodies, 'LoadBinary')
+        EventHandler.register(self.load_systems, 'LoadBinary')
         EventHandler.register(self.name_current, 'NameObject')
         EventHandler.register(self.export_data, 'ExportData')
 
@@ -52,7 +52,7 @@ class StarSystemPanel(BaseWidget):
         self.properties.add(self.remaining)
 
         self.discarded_protos = []
-        self.held_data = {}
+        # self.held_data = {}
 
     def name_current(self, event):
         if event.data['object'] in self.systems:
@@ -125,33 +125,30 @@ class StarSystemPanel(BaseWidget):
         self.quantity = binary_systems
         self.remaining.value = f'{self.quantity}'
 
-    def hold_loaded_bodies(self, event):
+    def load_systems(self, event):
         if 'Binary Systems' in event.data and len(event.data['Binary Systems']):
-            self.held_data.update(event.data['Binary Systems'])
+            for id in event.data['Binary Systems']:
+                system_data = event.data['Binary Systems'][id]
+                nei = Universe.current_galaxy.get_neighbourhood(system_data['neighbourhood_id'])
+                self.load_universe_data(nei)
 
-    def show_systems(self):
-        for id in self.held_data:
-            system_data = self.held_data[id]
-            nei = Universe.current_galaxy.get_neighbourhood(system_data['neighbourhood_id'])
-            self.load_universe_data(nei)
+                prim = Universe.get_astrobody_by(system_data['primary'], 'id')
+                scnd = Universe.get_astrobody_by(system_data['secondary'], 'id')
 
-            prim = Universe.get_astrobody_by(system_data['primary'], 'id')
-            scnd = Universe.get_astrobody_by(system_data['secondary'], 'id')
+                if self.check_system(prim_scnd=[prim, scnd]):
+                    Universe.remove_loose_star(prim, nei.id)
+                    Universe.remove_loose_star(scnd, nei.id)
+                    avg_s = system_data['avg_s']
+                    ecc_p = system_data['ecc_p']
+                    ecc_s = system_data['ecc_s']
 
-            if self.check_system(prim_scnd=[prim, scnd]):
-                Universe.remove_loose_star(prim, nei.id)
-                Universe.remove_loose_star(scnd, nei.id)
-                avg_s = system_data['avg_s']
-                ecc_p = system_data['ecc_p']
-                ecc_s = system_data['ecc_s']
+                    name = system_data['name']
+                    system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name, nei_id=nei.id)
+                    Universe.add_astro_obj(system)
 
-                name = system_data['name']
-                system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name, nei_id=nei.id)
-                Universe.add_astro_obj(system)
-
-                button = self.create_button(system)
-                if button is not None:
-                    button.hide()
+                    button = self.create_button(system)
+                    if button is not None:
+                        button.hide()
 
     def select_one(self, btn):
         for button in self.system_buttons.widgets():
@@ -190,7 +187,7 @@ class StarSystemPanel(BaseWidget):
 
     def show(self):
         self.parent.swap_neighbourhood_button.unlock()
-        self.show_systems()
+        # self.show_systems()
         if Universe.current_galaxy is not None:
             for system in Universe.nei().true_systems:
                 if self.check_system(sstm=system):

@@ -77,10 +77,10 @@ class ListedArea(BaseWidget):
         if len(listed):
             listed[0].kill()
             self.listed_objects.remove(listed[0])
-        self.sort()
+        self.sort(layer)
 
-    def sort(self):
-        layer = self.last_id
+    def sort(self, _layer=None):
+        layer = self.last_id if _layer is None else _layer
         widgets = self.listed_objects.get_widgets_from_layer(layer)
         by_mass = sorted(widgets, key=lambda b: b.object_data.mass.to('earth_mass').m, reverse=1)
         for i, listed in enumerate(by_mass):
@@ -128,7 +128,7 @@ class ListedArea(BaseWidget):
 
     def remove_listed(self, listed):
         self.listed_objects.remove(listed)
-        self.sort()
+        self.sort(listed.object_data.neighbourhood_id)
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))

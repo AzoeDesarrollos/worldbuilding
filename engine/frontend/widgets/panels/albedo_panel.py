@@ -221,7 +221,7 @@ class AvailablePlanets(ListedArea):
 
     def show(self):
         if Universe.current_galaxy is not None:
-            for system in Universe.nei().systems():
+            for system in Universe.nei().get_p_systems():
                 idx = system.id
                 bodies = [body for body in system.planets]
                 self.populate(bodies, layer=idx)

@@ -51,9 +51,12 @@ class Galaxy:
                 return neighbourhood
 
     def cycle_neighbourhoods(self):
-        new = next(self.neighbourhood_cycler)
-        self.current_neighbourhood = new
-        return new
+        if len(self.stellar_neighbourhoods):
+            new = next(self.neighbourhood_cycler)
+            self.current_neighbourhood = new
+            return new
+        else:
+            return self.current_neighbourhood
 
     def set_radius(self, radius):
         self.radius = q(radius, 'ly')

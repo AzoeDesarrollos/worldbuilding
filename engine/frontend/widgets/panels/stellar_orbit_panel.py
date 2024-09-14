@@ -66,7 +66,12 @@ class OrbitPanel(BaseWidget):
         self.show_markers_button.disable()
         self.add_orbits_button = SetOrbitButton(self, ANCHO - 94, 394)
         self.resonances_button = AddResonanceButton(self, ANCHO - 140, 416)
-
+        text = "Here you can link your planets to your star systems."
+        text += "\nCurrently there is no star, but if you create one, it's parameters will appear."
+        text += " Click on any object at the right to begin. A random orbit will be created for it."
+        text += "\nYou can use your mouse will to modifiy it."
+        f = self.crear_fuente(14)
+        self.erase_text_area = self.write2(text, f, fg=COLOR_AREA, width=300, centerx=200, y=100, j=1)
         self.digit_x = RatioDigit(self, 'x', self.resonances_button.rect.left - 60, self.resonances_button.rect.y)
         self.write(':', self.crear_fuente(16), topleft=[self.digit_x.rect.right + 1, self.resonances_button.rect.y - 1])
         self.digit_y = RatioDigit(self, 'y', self.digit_x.rect.right + 9, self.resonances_button.rect.y)
@@ -142,9 +147,7 @@ class OrbitPanel(BaseWidget):
             each.kill()
 
     def add_orbit_marker(self, position, resonance=False, res_parent=None, res_order=None, obj=None):
-        star = self.current if not hasattr(position, 'star') else position.star
-        inner = star.parent.inner_boundry
-        outer = star.parent.outer_boundry
+        star = self.current
         bc = False if resonance is False else True
         bd = None if resonance is False else []
         if type(position) is q:
@@ -160,11 +163,11 @@ class OrbitPanel(BaseWidget):
             test = True  # saved orbits are valid by definition
             color = COLOR_STARORBIT
         elif resonance is False:
-            test = inner < position < outer
+            test = star.inner_boundry < position < star.outer_boundry
             color = COLOR_TEXTO
         elif resonance is True:
             bd = [res_parent, res_order]
-            test = inner < position  # TNOs orbit well outside of 40AUs.
+            test = star.inner_boundry < position  # TNOs orbit well outside of 40AUs.
             color = COLOR_RESONANT
 
         if test is True:
@@ -357,7 +360,7 @@ class OrbitPanel(BaseWidget):
             self.clear_ratios()
 
     def save_orbits(self, event):
-        for system in Universe.nei().systems():
+        for system in Universe.nei().get_p_systems():
             if system.parent.letter == 'S':
                 for star in system:
                     for marker in self._orbits.get(star.id, []):
@@ -431,7 +434,7 @@ class OrbitPanel(BaseWidget):
             self.sort_markers()
 
     def fill_indexes(self):
-        systems = Universe.nei().systems()
+        systems = Universe.nei().get_p_systems()
         assert len(systems), "There is no data to load"
         for system in systems:
             if system.is_a_system:
@@ -446,6 +449,7 @@ class OrbitPanel(BaseWidget):
         super().show()
         try:
             if Universe.current_galaxy is not None:
+                self.image.fill(COLOR_BOX, self.erase_text_area)
                 self.fill_indexes()
                 self.set_current()
                 self.load_orbits()
@@ -456,6 +460,8 @@ class OrbitPanel(BaseWidget):
 
         for prop in self.properties.get_widgets_from_layer(2):
             prop.show()
+        if self.no_star_error:
+            self.recomendation.hide()
         self.visible_markers = True
         self.show_markers_button.show()
 
@@ -700,7 +706,7 @@ class OrbitType(BaseWidget, Intertwined):
             if value is not None:
                 parametros.append(value)
 
-        main = self.parent.current.parent
+        main = self.parent.current.star if hasattr(self.parent.current, "star") else self.parent.current
         if hasattr(self.linked_astrobody.orbit, 'longitude_of_the_ascending_node'):
             parametros.append(self.linked_astrobody.orbit.longitude_of_the_ascending_node.m)
             aop = self.linked_astrobody.orbit.argument_of_periapsis
@@ -775,7 +781,7 @@ class OrbitMarker(Meta, IncrementalValue, Intertwined):
             self.orbit = value
             self.text = '{:~}'.format(value.a)
             self.color = COLOR_SELECTED
-            self.completed = True
+            # self.completed = True
         elif is_complete_orbit is None:
             self.color = COLOR_TEXTO
             self.text = '{:~}'.format(value)
@@ -936,7 +942,7 @@ class AvailablePlanets(ListedArea):
     def show(self):
         current = Universe.nei()
         if current is not None:
-            for system in current.systems():
+            for system in current.get_p_systems():
                 idx = system.id
                 population = [i for i in system.planets + system.asteroids + system.binary_planets if i.orbit is None]
                 self.populate(population, layer=idx)

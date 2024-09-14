@@ -42,7 +42,7 @@ class PlanetPanel(BasePanel):
     def save_planets(self, event):
         data = {}
         for nei in Universe.current_galaxy.stellar_neighbourhoods:
-            for system in nei.systems():
+            for system in nei.get_p_systems():
                 for planet in system.planets:
                     planet_data = {
                         'name': planet.name,
@@ -221,7 +221,7 @@ class PlanetType(ObjectType):
 
     def load_data(self, idx):
         if len(self.held_data):
-            for system in Universe.nei().systems():
+            for system in Universe.nei().get_p_systems():
                 for id in self.held_data:
                     planet_data = self.held_data[id]
                     if planet_data['system'] == system.id:

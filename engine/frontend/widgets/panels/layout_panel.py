@@ -158,6 +158,12 @@ class LoadButton(BaseButton):
             if any([data[item] for item in data]):
                 return data
 
+    def reload(self):
+        idx = self.parent.curr_idx
+        for x in range(idx):
+            panel = self.parent.panels[x]
+            panel.hide()
+
     def reset(self):
         if self.check_data() is not None:
             self.enable()
@@ -167,9 +173,11 @@ class LoadButton(BaseButton):
             data = self.check_data()
             keys = 'Galaxies,Neighbourhoods,Stars,Compact,Binary,Single,Planets,'
             keys += 'Satellites,Asteroids,Stellar Orbits,Planetary Orbits'
+            self.disable()
             for body in keys.split(','):
                 EventHandler.trigger(f'Load{body}', 'LoadButton', data)
-            self.disable()
+                EventHandler.process()
+            self.reload()
 
 
 class NewButton(BaseButton):
@@ -203,9 +211,9 @@ class SwapSystem(Meta):
         self.system_image = SystemName(self, left=self.rect.right + 6, y=2)
 
     def on_mousebuttondown(self, event):
-        if event.data['button'] == 1 and event.origin == self:
+        if event.data['button'] == 1 and event.origin == self and self.enabled:
             self.current = Universe.nei().cycle_systems()
-            self.system_image.render__name()
+            self.system_image.render_name()
 
     def update(self):
         super().update()
@@ -247,7 +255,7 @@ class SwapGalaxy(SwapSystem):
     def enable(self):
         super().enable()
         self.current = Universe.current_galaxy
-        self.system_image.render__name()
+        self.system_image.render_name()
 
 
 class SwapNeighbourhood(SwapSystem):
@@ -259,12 +267,13 @@ class SwapNeighbourhood(SwapSystem):
             if Universe.current_galaxy is not None:
                 neighbourhood = Universe.current_galaxy.cycle_neighbourhoods()
                 self.current = neighbourhood
-                self.system_image.render__name()
+                self.system_image.render_name()
                 EventHandler.trigger('SwitchNeighbourhood', 'SwapNeighbourhoodButton', {'current': neighbourhood})
 
     def set_current(self):
         if Universe.current_galaxy is not None:
             self.current = Universe.current_galaxy.current_neighbourhood
+            self.system_image.render_name()
 
     def lock(self):
         self.locked = True
@@ -280,7 +289,7 @@ class SwapNeighbourhood(SwapSystem):
 
     def enable(self):
         super().enable()
-        self.system_image.render__name()
+        self.system_image.render_name()
 
     def create_img(self):
         self.system_image = NeighbourhoodName(self, left=self.rect.right + 6, y=2)
@@ -299,16 +308,16 @@ class SystemName(BaseWidget):
         super().__init__(parent)
         self.f = self.crear_fuente(13)
 
-        self.render__name()
+        self.render_name()
         self._rect = self.image.get_rect(**kwargs)
         self.rect = self._rect.copy()
 
-    def render__name(self):
-        if self.parent.parent.current.show_swap_system_button is False:
-            name = None
-        else:
+    def render_name(self):
+        name = None
+        if self.parent.parent.current.show_swap_system_button is not False:
             current = self.parent.current
-            name = str(current.parent)
+            if current is not None:
+                name = str(current.parent)
 
         if name is None:
             self.color = COLOR_DISABLED
@@ -320,11 +329,11 @@ class SystemName(BaseWidget):
 
     def enable(self):
         super().enable()
-        self.render__name()
+        self.render_name()
 
 
 class GalaxyName(SystemName):
-    def render__name(self):
+    def render_name(self):
         if self.parent.current is not None:
             name = self.parent.current.id.split('-')[1]
             self.color = COLOR_TEXTO
@@ -338,7 +347,7 @@ class GalaxyName(SystemName):
 class NeighbourhoodName(SystemName):
     named = None
 
-    def render__name(self):
+    def render_name(self):
         name = str(self.parent.current)
         self.named = name
         if self.parent.enabled:

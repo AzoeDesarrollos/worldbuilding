@@ -487,8 +487,8 @@ class PotentialStars(ListedArea):
             neighbourhood = Universe.nei()
         idx = -1 if neighbourhood is None else neighbourhood.id
         if idx != self.last_id:
-            self.last_idx = idx
-        self.show_current(self.last_idx)
+            self.last_id = idx
+        self.show_current(self.last_id)
 
 
 class AutomaticButton(TextButton):

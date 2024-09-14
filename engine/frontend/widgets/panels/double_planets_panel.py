@@ -204,7 +204,8 @@ class DoublePlanetsPanel(BaseWidget):
         vt.set_min_and_max(min_v=chosen.m)
 
     def update(self):
-        idx = Universe.nei().id
+        neighbourhood = Universe.nei()
+        idx = neighbourhood.id if neighbourhood is not None else self.last_id
         if idx != self.last_id:
             self.last_id = idx
             if self.last_id not in self.primary_planets:
@@ -263,10 +264,12 @@ class AvailablePlanets(ListedArea):
     listed_type = PotentialPlanet
 
     def show(self):
-        for system in Universe.nei().systems():
-            idx = system.id
-            self.populate(system.planets, layer=idx)
-            self.parent.populate(*system.planets, layer=idx)
+        neighbourhood = Universe.nei()
+        if neighbourhood is not None:
+            for system in neighbourhood.get_p_systems():
+                idx = system.id
+                self.populate(system.planets, layer=idx)
+                self.parent.populate(*system.planets, layer=idx)
         super().show()
 
 

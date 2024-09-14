@@ -124,7 +124,7 @@ class DefinedNeighbourhood:
     def get_current(self):
         return self._current_planetary
 
-    def systems(self):
+    def get_p_systems(self):
         return self.planetary_systems
 
     def set_planetary_systems(self):

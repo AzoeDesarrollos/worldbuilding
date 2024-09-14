@@ -194,7 +194,7 @@ class InformationPanel(BaseWidget):
             body_visibility = visibility[body_id]
             body = Universe.get_astrobody_by(body_id, tag_type='id', silenty=True)
             if body is False:
-                for sys in Universe.nei().systems():
+                for sys in Universe.nei().get_p_systems():
                     if sys != system and body_id not in analyzed:
                         body = sys.get_astrobody_by(body_id, tag_type='id', silenty=True)
                         if body is not False:
@@ -284,15 +284,15 @@ class AvailablePlanets(ListedArea):
     listed_type = Astrobody
 
     def show(self):
-        systems = Universe.nei().systems() if Universe.nei() is not None else []
+        systems = Universe.nei().get_p_systems() if Universe.nei() is not None else []
         if len(systems):
             for system in systems:
                 idx = system.id
                 bodies = [body for body in system.astro_bodies]
                 bodies = [body for body in bodies if body.orbit is not None or body.rogue is True]
                 self.populate(bodies, layer=idx)
-        else:
-            self.parent.show_no_system_error()
+        # else:
+        #     self.parent.show_no_system_error()
         super().show()
 
     def on_mousebuttondown(self, event):
