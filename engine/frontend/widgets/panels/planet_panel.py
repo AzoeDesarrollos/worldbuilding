@@ -125,8 +125,6 @@ class PlanetPanel(BasePanel):
         super().show()
         for item in self.properties.get_widgets_from_layer(1):
             item.show()
-        # if self.last_id is not None:
-        #     self.show_current(self.last_id)
         self.enable_buttons()
         if self.current.has_values:
             self.current.fill()
