@@ -1,6 +1,6 @@
 from math import trunc, ceil, floor, sqrt
 from .eventhandler import EventHandler
-from random import random, uniform
+from .mersenne_twister import random
 from datetime import datetime
 from pint import UnitRegistry
 from os import getcwd, path
@@ -53,7 +53,7 @@ def save(event):
 def roll(a: float = 0.0, b: float = 0.0):
     """Base function to generate random float values"""
     if a != 0.0 or b != 0.0:
-        return uniform(a, b)
+        return a + (b - a) * random()
     else:
         return random()
 
@@ -129,7 +129,6 @@ def salir_handler(event):
     data = event.data.get('mensaje', '')
     print('Saliendo...\nStatus: ' + data)
     quit()
-    # noinspection PyUnreachableCode
     exit()
 
 
@@ -244,7 +243,6 @@ material_densities = abrir_json(path.join(filepath, 'material_densities.json'))
 molecular_weight = abrir_json(path.join(filepath, 'molecular_weight.json'))
 recomendation = abrir_json(path.join(filepath, 'recomendation.json'))
 albedos = abrir_json(path.join(filepath, 'albedo_values.json'))
-
 
 EventHandler.register(save, "SaveDataFile")
 

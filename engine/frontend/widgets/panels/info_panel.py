@@ -181,7 +181,7 @@ class InformationPanel(BaseWidget):
 
         r = self.text_render.blit(render1, (0, 3))
         r = self.text_render.blit(render2, (3, r.bottom))
-        self.text_render.blit(render3, (3, r.bottom+15))
+        self.text_render.blit(render3, (3, r.bottom + 15))
 
         # how other bodies are seen from this planet
         system = Universe.current_planetary()

@@ -7,7 +7,7 @@ from .common import RadioButton
 
 class StartPanel(BaseWidget):
     skippable = True
-    skip = True
+    _skip = True
 
     show_swap_system_button = False
 
@@ -61,6 +61,14 @@ class StartPanel(BaseWidget):
 
         if selected is not None:
             self.select_one(selected)
+
+    @property
+    def skip(self):
+        return self._skip
+
+    @skip.setter
+    def skip(self, value):
+        self._skip = value
 
     def on_mousebuttondown(self, event):
         if event.origin == self:

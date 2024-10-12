@@ -33,7 +33,7 @@ class OrbitPanel(BaseWidget):
 
     resonance_mode = False
 
-    skip = False
+    _skip = False
 
     show_swap_system_button = True
 
@@ -67,11 +67,11 @@ class OrbitPanel(BaseWidget):
         self.add_orbits_button = SetOrbitButton(self, ANCHO - 94, 394)
         self.resonances_button = AddResonanceButton(self, ANCHO - 140, 416)
         text = "Here you can link your planets to your star systems."
-        text += "\nCurrently there is no star, but if you create one, it's parameters will appear."
-        text += " Click on any object at the right to begin. A random orbit will be created for it."
-        text += "\nYou can use your mouse will to modifiy it."
+        text += "\n\nCurrently there is no star, but if you create one, it's parameters will appear."
+        text += "\n\nClick on any object at the right to begin. A random orbit will be created for it."
+        text += "\n\nYou can use your mouse will to modifiy it."
         f = self.crear_fuente(14)
-        self.erase_text_area = self.write2(text, f, fg=COLOR_AREA, width=300, centerx=200, y=100, j=1)
+        self.erase_text_area = self.write2(text, f, fg=COLOR_AREA, width=300, centerx=200, y=50, j=1)
         self.digit_x = RatioDigit(self, 'x', self.resonances_button.rect.left - 60, self.resonances_button.rect.y)
         self.write(':', self.crear_fuente(16), topleft=[self.digit_x.rect.right + 1, self.resonances_button.rect.y - 1])
         self.digit_y = RatioDigit(self, 'y', self.digit_x.rect.right + 9, self.resonances_button.rect.y)
@@ -88,6 +88,14 @@ class OrbitPanel(BaseWidget):
         EventHandler.register(self.export_data, 'ExportData')
 
         self.held_data = {}
+
+    @property
+    def skip(self):
+        return self._skip
+
+    @skip.setter
+    def skip(self, value):
+        self._skip = value
 
     def set_current(self):
         star = Universe.nei().get_current().parent
@@ -428,7 +436,7 @@ class OrbitPanel(BaseWidget):
                         self.add_orbit_marker(planet.orbit, obj=planet)
                         self.planet_area.delete_objects(planet)
 
-    # borrar las órbitas cargadas para evitar que se dupliquen.
+        # borrar las órbitas cargadas para evitar que se dupliquen.
         self.held_data.clear()
         if self.is_visible:
             self.sort_markers()

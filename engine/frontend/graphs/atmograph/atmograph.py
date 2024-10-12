@@ -55,8 +55,8 @@ def atmo(vol, rect):
 
 
 def reversed_atmo(value):
-    return find_and_interpolate_flipped(value-1, nums_psi, pos_psi)
+    return find_and_interpolate_flipped(value - 1, nums_psi, pos_psi)
 
 
 def convert(selected_pressure):
-    return q(find_and_interpolate(selected_pressure, pos_psi, nums_psi)+1, 'psi')
+    return q(find_and_interpolate(selected_pressure, pos_psi, nums_psi) + 1, 'psi')

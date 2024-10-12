@@ -128,10 +128,10 @@ class StarPanel(BasePanel):
         for button in self.button_group.widgets():
             button.hide()
         #
-        # if self.add_on_exit or not len(self.stars):
-        #     self.parent.set_skippable('Star System', True)
-        #     self.parent.set_skippable('Multiple Stars', True)
-        #     self.parent.swap_neighbourhood_button.lock()
+        if not len(self.stars):
+            self.parent.set_skippable('Star System', True)
+            self.parent.set_skippable('Multiple Stars', True)
+            self.parent.swap_neighbourhood_button.lock()
         # # elif binary_systems == 0:
         # #     self.parent.set_skippable('Star System', True)
         # else:

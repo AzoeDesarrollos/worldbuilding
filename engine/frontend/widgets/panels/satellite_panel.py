@@ -1,5 +1,5 @@
 from engine.frontend.globales import COLOR_AREA, COLOR_BOX, COLOR_TEXTO, COLOR_DISABLED, COLOR_SELECTED
-from engine.backend import EventHandler, material_densities, roll
+from engine.backend import EventHandler, material_densities, roll, Config, choice
 from engine.equations.satellite import major_moon_by_composition
 from engine.frontend.globales import ANCHO, ALTO, Group
 from engine.frontend.widgets.values import ValueText
@@ -12,7 +12,6 @@ from .base_panel import BasePanel
 from pygame import Surface, Rect
 from itertools import cycle
 from ..pie import PieChart
-from random import choice
 
 
 class SatellitePanel(BasePanel):
@@ -35,7 +34,7 @@ class SatellitePanel(BasePanel):
         self.f3 = self.crear_fuente(11)
         self.area_type = Rect(32, 32, ANCHO, ALTO - (self.area_buttons.h + 200))
         text = 'Create your major satellites here.\n\n'
-        text += 'Input its mass first, and then select its composition below.\n\n'
+        text += 'Input its radius first, and then select its composition below.\n\n'
         text += 'You can copy its compostition from a given planet or set it randomly.\n\n'
         text += 'You can also set the percentages manually.'
         self.erase_text_area = self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, x=250, y=100, j=1)
@@ -294,6 +293,7 @@ class SatelliteType(ObjectType):
         widgets += self.properties.get_widgets_from_layer(2)
         for arg in widgets:
             arg.enable()
+            arg.modifiable = True
 
         for obj in self.pie.chart.widgets():
             obj.enable()

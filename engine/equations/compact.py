@@ -1,6 +1,6 @@
 from .general import BodyInHydrostaticEquilibrium
 from engine.backend.util import q, generate_id
-from random import randint, choice
+from engine.backend import randint, choice
 from math import sqrt, pi
 
 

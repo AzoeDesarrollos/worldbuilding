@@ -8,7 +8,7 @@ from engine.equations import Universe, SolarCalendar
 
 class CalendarPanel(BaseWidget):
     skippable = True
-    skip = False
+    _skip = False
 
     locked = False
 
@@ -27,6 +27,14 @@ class CalendarPanel(BaseWidget):
 
         self.properties.add(self.planet_area, layer=1)
 
+    @property
+    def skip(self):
+        return self._skip
+
+    @skip.setter
+    def skip(self, value):
+        self._skip = value
+
     def select_astrobody(self, planet):
         densest = sorted(planet.satellites, key=lambda i: i.density.to('earth_density').m, reverse=True)
         satellite = densest[0]
@@ -35,7 +43,20 @@ class CalendarPanel(BaseWidget):
             w = s_caledar.week_days
             m = s_caledar.month_days
             d = s_caledar.month_local * m
-            # dy = 0
+            r = s_caledar.days_remaining
+            l = s_caledar.year_leap
+
+            x = self.planet_area.rect.x
+            y = self.planet_area.rect.bottom + 2
+            width = self.planet_area.rect.width
+
+            t = (f'{s_caledar.month_local} months of {m} days.'
+                 f'\n4 {w}-day long weeks per month.'
+                 f'\n{d} days in in a common year.'
+                 f'\n{d + r} days in in a leap year.'
+                 f'\n\nleap years every {l} years.')
+
+            self.write2(t, self.crear_fuente(12), width=width, y=y, x=x)
 
             title_sprite = YearTitle(self, 200, 32)
             self.properties.add(title_sprite, layer=2)
@@ -47,13 +68,13 @@ class CalendarPanel(BaseWidget):
                 self.properties.add(month, layer=2)
                 month.show()
             # y = dy
-            for dr in range(s_caledar.days_remaining):
-                day = DaySprite(self, d + dr + 1, None, 11, True)
-                self.properties.add(day, layer=2)
-                day.show()
-                # y += 200
-                # x = 100
-                day.move(210, 540)
+            # for dr in range(r):
+            #     day = DaySprite(self, d + dr + 1, None, 11, True)
+            #     self.properties.add(day, layer=2)
+            #     day.show()
+            #     # y += 200
+            #     # x = 100
+            #     day.move(210, 540)
 
     def show(self):
         super().show()
@@ -120,24 +141,11 @@ class DaySprite(BaseWidget):
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.has_mouse_over = True
-            print(self)
             mouse.set_pos(self.rect.center)
 
     def on_mousebuttonup(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.has_mouse_over = False
-
-    def on_mousemotion(self, rel):
-        if self.has_mouse_over and self.moveable:
-            self.move(*rel)
-            days = spritecollide(self, self.parent.days.widgets(), 0, collided=collide_rect)
-            if self in days:
-                days.remove(self)
-            day_left, day_right = days if len(days) == 2 else [None, None]
-            if day_right is not None:
-                day_right.rect.x += self.size
-            if day_left is not None:
-                day_left.rect.x -= self.size
 
     def move(self, dx, dy):
         self.rect.move_ip(dx, dy)

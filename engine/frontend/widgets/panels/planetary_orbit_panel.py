@@ -14,7 +14,7 @@ from itertools import cycle
 
 class PlanetaryOrbitPanel(BaseWidget):
     skippable = True
-    skip = False
+    _skip = False
     current = None
     markers = None
     satellites = None
@@ -73,6 +73,14 @@ class PlanetaryOrbitPanel(BaseWidget):
         EventHandler.register(self.hold_loaded_bodies, 'LoadPlanetary Orbits')
         EventHandler.register(self.export_data, 'ExportData')
         self.held_data = {}
+
+    @property
+    def skip(self):
+        return self._skip
+
+    @skip.setter
+    def skip(self, value):
+        self._skip = value
 
     def hold_loaded_bodies(self, event):
         if 'Planetary Orbits' in event.data and len(event.data['Planetary Orbits']):

@@ -1,85 +1,85 @@
 {
-  "100% hydrogen":{
-    "planet":"gaseous",
-    "hydrogen":100,
-    "helium":0,
-    "iron":0,
-    "silicates":0,
-    "water ice":0,
-    "type":"homogeneous"
-    },
-  "100% iron":{
-    "planet":"terrestial",
-    "hydrogen":0,
-    "helium":0,
-    "iron":100,
-    "silicates":0,
-    "water ice":0,
-    "type":"homogeneous"
-    },
-  "100% silicates":{
-    "planet":"terrestial",
-    "hydrogen":0,
-    "helium":0,
-    "iron":0,
-    "silicates":100,
-    "water ice":0,
-    "type":"homogeneous"
-    },
-  "100% water ice":{
-    "planet":"terrestial",
-    "hydrogen":0,
-    "helium":0,
-    "iron":0,
-    "silicates":0,
-    "water ice":100,
-    "type":"homogeneous"
-    },
-  "25% water ice, 52,5% silicates, 22,5% iron":{
-    "planet":"terrestial",
-    "hydrogen":0,
-    "helium":0,
-    "iron":22.5,
-    "silicates":52.5,
-    "water ice":25,
-    "type":"diffentiated"
-    },
-  "30% silicates, 70% iron":{
-    "planet":"terrestial",
-    "hydrogen":0,
-    "helium":0,
-    "iron":70,
-    "silicates":30,
-    "water ice":0,
-    "type":"diffentiated"
-    },
-  "47% water ice, 47,5% silicates, 5,5% iron":{
-    "planet":"terrestial",
-    "hydrogen":0,
-    "helium":0,
-    "iron":5.5,
-    "silicates":47.5,
-    "water ice":47,
-    "type":"diffentiated"
-    },
-  "67,5% silicates, 32,5% iron":{
-    "planet":"terrestial",
-    "hydrogen":0	,
-    "helium":0	,
-    "iron":32.5,
-    "silicates":67.5,
-    "water ice":0	,
-    "type":"diffentiated"
-    },
-  "75% hydrogen, 25% helium":{
-    "planet":"gaseous",
-    "hydrogen":75,
-    "helium":25,
-    "iron":0,
-    "silicates":0,
-    "water ice":0,
-    "type":"diffentiated"
-    },
+  "100% hydrogen": {
+    "planet": "gaseous",
+    "hydrogen": 100,
+    "helium": 0,
+    "iron": 0,
+    "silicates": 0,
+    "water ice": 0,
+    "type": "homogeneous"
+  },
+  "100% iron": {
+    "planet": "terrestial",
+    "hydrogen": 0,
+    "helium": 0,
+    "iron": 100,
+    "silicates": 0,
+    "water ice": 0,
+    "type": "homogeneous"
+  },
+  "100% silicates": {
+    "planet": "terrestial",
+    "hydrogen": 0,
+    "helium": 0,
+    "iron": 0,
+    "silicates": 100,
+    "water ice": 0,
+    "type": "homogeneous"
+  },
+  "100% water ice": {
+    "planet": "terrestial",
+    "hydrogen": 0,
+    "helium": 0,
+    "iron": 0,
+    "silicates": 0,
+    "water ice": 100,
+    "type": "homogeneous"
+  },
+  "25% water ice, 52,5% silicates, 22,5% iron": {
+    "planet": "terrestial",
+    "hydrogen": 0,
+    "helium": 0,
+    "iron": 22.5,
+    "silicates": 52.5,
+    "water ice": 25,
+    "type": "diffentiated"
+  },
+  "30% silicates, 70% iron": {
+    "planet": "terrestial",
+    "hydrogen": 0,
+    "helium": 0,
+    "iron": 70,
+    "silicates": 30,
+    "water ice": 0,
+    "type": "diffentiated"
+  },
+  "47% water ice, 47,5% silicates, 5,5% iron": {
+    "planet": "terrestial",
+    "hydrogen": 0,
+    "helium": 0,
+    "iron": 5.5,
+    "silicates": 47.5,
+    "water ice": 47,
+    "type": "diffentiated"
+  },
+  "67,5% silicates, 32,5% iron": {
+    "planet": "terrestial",
+    "hydrogen": 0,
+    "helium": 0,
+    "iron": 32.5,
+    "silicates": 67.5,
+    "water ice": 0,
+    "type": "diffentiated"
+  },
+  "75% hydrogen, 25% helium": {
+    "planet": "gaseous",
+    "hydrogen": 75,
+    "helium": 25,
+    "iron": 0,
+    "silicates": 0,
+    "water ice": 0,
+    "type": "diffentiated"
+  },
   "75% water ice, 22% silicates, 3% iron": {
     "planet": "terrestial",
     "hydrogen": 0,

@@ -26,7 +26,7 @@ class ObjectType(BaseWidget):
         self.properties = Group()
         self.relatives = Group()
         self.absolutes = Group()
-        for i, button in enumerate(relative_names+absolute_names):
+        for i, button in enumerate(relative_names + absolute_names):
             vt = ValueText(self, button, 50, 40 + i * 13 * 2)
             if button in relative_names:
                 self.relatives.add(vt)

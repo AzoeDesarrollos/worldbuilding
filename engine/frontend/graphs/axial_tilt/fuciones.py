@@ -43,13 +43,13 @@ def graph_seasonal_var(panel, tilt):
     draw.aalines(graph_surf, blanco, False, points=puntos)
     draw.rect(graph_surf, gris, graph_surf.get_rect(), 2)
 
-    rect = Rect(graph_rect.right+2, 0, 6, 1)
+    rect = Rect(graph_rect.right + 2, 0, 6, 1)
     for y in range(0, graph_rect.h):
         r = red_gradient(y)
         b = blue_gradient(y)
         color = Color(r, 0, b)
         panel.fill(color, rect)
-        rect.y = y+1
+        rect.y = y + 1
 
     panel.blit(f_render, f_rect)
     panel.blit(graph_surf, graph_rect)

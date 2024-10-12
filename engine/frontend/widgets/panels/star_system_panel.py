@@ -11,7 +11,7 @@ from random import choice
 
 class StarSystemPanel(BaseWidget):
     selected = None
-    skip = False
+    _skip = False
     skippable = True
 
     show_swap_system_button = False
@@ -52,7 +52,14 @@ class StarSystemPanel(BaseWidget):
         self.properties.add(self.remaining)
 
         self.discarded_protos = []
-        # self.held_data = {}
+
+    @property
+    def skip(self):
+        return self._skip
+
+    @skip.setter
+    def skip(self, value):
+        self._skip = value
 
     def name_current(self, event):
         if event.data['object'] in self.systems:
@@ -420,7 +427,7 @@ class AvailableStars(ListedArea):
             self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))
 
             if Universe.nei().id != self.last_id:
-                self.last_idx = Universe.nei().id
+                self.last_id = Universe.nei().id
             self.show_current(Universe.nei().id)
 
 

@@ -182,25 +182,25 @@ def gasgraph_loop(system, limit_mass=None):
 
                 elif e.key == K_UP:
                     if y - 1 >= img_rect.top:
-                        ev = event.Event(MOUSEMOTION,  pos=(x, y - 1), buttons=mouse.get_pressed())
+                        ev = event.Event(MOUSEMOTION, pos=(x, y - 1), buttons=mouse.get_pressed())
                         mouse.set_pos(x, y - 1)
                         event.post(ev)
 
                 elif e.key == K_DOWN:
                     if y + 1 < img_rect.bottom:
-                        ev = event.Event(MOUSEMOTION,  pos=(x, y + 1), buttons=mouse.get_pressed())
+                        ev = event.Event(MOUSEMOTION, pos=(x, y + 1), buttons=mouse.get_pressed())
                         mouse.set_pos(x, y + 1)
                         event.post(ev)
 
                 elif e.key == K_RIGHT:
                     if x + 1 < img_rect.right:
-                        ev = event.Event(MOUSEMOTION,  pos=(x + 1, y), buttons=mouse.get_pressed())
+                        ev = event.Event(MOUSEMOTION, pos=(x + 1, y), buttons=mouse.get_pressed())
                         mouse.set_pos(x + 1, y)
                         event.post(ev)
 
                 elif e.key == K_LEFT:
                     if x - 1 >= img_rect.left:
-                        ev = event.Event(MOUSEMOTION,  pos=(x - 1, y), buttons=mouse.get_pressed())
+                        ev = event.Event(MOUSEMOTION, pos=(x - 1, y), buttons=mouse.get_pressed())
                         mouse.set_pos(x - 1, y)
                         event.post(ev)
 

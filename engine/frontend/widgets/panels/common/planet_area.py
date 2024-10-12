@@ -128,7 +128,10 @@ class ListedArea(BaseWidget):
 
     def remove_listed(self, listed):
         self.listed_objects.remove(listed)
-        self.sort(listed.object_data.neighbourhood_id)
+        if hasattr(listed.object_data, 'neighbourhood_id'):
+            self.sort(listed.object_data.neighbourhood_id)
+        elif hasattr(listed.object_data, 'system_id'):
+            self.sort(listed.object_data.system_id)
 
     def update(self):
         self.image.fill(COLOR_AREA, (0, 17, self.rect.w, self.rect.h - 17))

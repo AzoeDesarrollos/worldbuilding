@@ -371,7 +371,7 @@ class NeighbourhoodSystemOrbit(Orbit):
         # spherical coordinates
         rho = sqrt(x ** 2 + y ** 2 + z ** 2)
         phi = acos(z / rho)
-        super().__init__(q(rho+offset, 'light_years'), q(0), q(phi, 'degrees'), unit='light_years')
+        super().__init__(q(rho + offset, 'light_years'), q(0), q(phi, 'degrees'), unit='light_years')
 
 
 def from_stellar_resonance(star, planet, resonance: str):

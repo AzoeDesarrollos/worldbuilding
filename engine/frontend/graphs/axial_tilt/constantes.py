@@ -8,6 +8,6 @@ verde = Color(0, 255, 0)
 magenta = Color(255, 0, 255)
 amarillo = Color(255, 255, 0)
 
-gris = Color([200]*3)
-gris_oscuro = Color([100]*3)
+gris = Color([200] * 3)
+gris_oscuro = Color([100] * 3)
 dark_green = Color(0, 150, 0)

@@ -10,7 +10,7 @@ from pygame import Surface
 
 class DoublePlanetsPanel(BaseWidget):
     skippable = True
-    skip = False
+    _skip = False
 
     last_id = None
 
@@ -47,6 +47,14 @@ class DoublePlanetsPanel(BaseWidget):
         EventHandler.register(self.save_systems, 'Save')
         EventHandler.register(self.load_systems, 'LoadData')
         EventHandler.register(self.export_data, 'ExportData')
+
+    @property
+    def skip(self):
+        return self._skip
+
+    @skip.setter
+    def skip(self, value):
+        self._skip = value
 
     def populate(self, *planets, layer: str):
         if layer not in self.primary_planets:
@@ -205,7 +213,7 @@ class DoublePlanetsPanel(BaseWidget):
 
     def update(self):
         neighbourhood = Universe.nei()
-        idx = neighbourhood.id if neighbourhood is not None else self.last_id
+        idx = neighbourhood.current_planetary.id if neighbourhood is not None else self.last_id
         if idx != self.last_id:
             self.last_id = idx
             if self.last_id not in self.primary_planets:
@@ -237,7 +245,7 @@ class DoublesType(SystemType):
     def fill(self):
         if all([str(vt.value) != '' for vt in self.properties.widgets()[0:5]]):
             if self.current is None:
-                star = Universe.nei().current_planetary().parent
+                star = Universe.nei().current_planetary.parent.star
                 self.current = PlanetaryPTypeSystem(star, *self.get_determinants())
             props = ['average_separation', 'ecc_p', 'ecc_s', 'barycenter', 'max_sep', 'min_sep']
             for i, attr in enumerate(props, start=2):

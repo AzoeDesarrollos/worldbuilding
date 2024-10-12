@@ -99,9 +99,8 @@ class BinarySystem(AbstractBinary):
 
     def __str__(self):
         s = '-' if self.prefix else ''
-        return f'{self.prefix}{s}{self.letter}{self.sub_cls}-Type #{self.idx}'
-        # else:
-        #     return f'{self.parent.letter}{turn_into_roman(self.sub_pos)}{self.letter}{turn_into_roman(self.idx)}'
+        cls = f'{self.sub_cls} ' if self.sub_cls != '' else ''
+        return f'{self.prefix}{s}{self.letter}-Type {cls}#{self.idx}'
 
     def __repr__(self):
         return self.letter + '-Type Binary System'

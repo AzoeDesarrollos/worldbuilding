@@ -164,15 +164,6 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.temperature = q(self._temperature, 'earth_temperature').to('celsius')
         return t
 
-    # def get_temperature(self):
-    #     if self.rogue is False:
-    #         star = self.orbit.star
-    #         orbit = self.orbit.a
-    #         t = planet_temperature(star.mass.m, orbit.m, float(self.albedo.m), self.greenhouse.m)
-    #         return t
-    #     else:
-    #         return q(2.7, 'Kelvin')  # temperature of the vacuum of space.
-
     def set_orbit(self, star, orbital_parameters, abnormal=False):
         if self.celestial_type != 'system' and not abnormal:
             if star.celestial_type in ('star', 'system'):
@@ -415,7 +406,7 @@ class Planet(BodyInHydrostaticEquilibrium):
         if self.has_name:
             return self.name
         else:
-            return "{} #{}".format(self.clase, self.idx)
+            return f"{self.clase} #{self.idx}"
 
     def __getitem__(self, item):
         if type(item) is int:

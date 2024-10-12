@@ -16,7 +16,7 @@ class BasePanel(BaseWidget):
     def __init__(self, name, parent, modes=2):
         super().__init__(parent)
         self.name = name
-        self.image = Surface((ANCHO, ALTO-32))
+        self.image = Surface((ANCHO, ALTO - 32))
         self.rect = self.image.get_rect()
 
         self.f = self.crear_fuente(16, underline=True)

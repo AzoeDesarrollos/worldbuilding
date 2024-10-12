@@ -206,7 +206,8 @@ class PlanetType(ObjectType):
         EventHandler.register(self.hold_loaded_bodies, 'LoadPlanets')
 
     def enable(self):
-        for arg in self.properties.widgets():
+        widgets = self.properties.widgets()
+        for arg in widgets:
             arg.enable()
         super().enable()
 
@@ -222,8 +223,9 @@ class PlanetType(ObjectType):
     def load_data(self, idx):
         if len(self.held_data):
             for system in Universe.nei().get_p_systems():
-                for id in self.held_data:
+                for i, id in enumerate(self.held_data):
                     planet_data = self.held_data[id]
+                    planet_data['idx'] = i
                     if planet_data['system'] == system.id:
                         do_erase = idx == system.id
                         planet_data['id'] = id

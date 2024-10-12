@@ -183,7 +183,7 @@ class Minor(Satellite, StarSystemBody):
 
     def get_radius(self):
         # chapuza
-        return q((self.a_axis.m+self.b_axis.m+self.c_axis.m)/3, 'km')
+        return q((self.a_axis.m + self.b_axis.m + self.c_axis.m) / 3, 'km')
 
     def set_rogue(self):
         self.rogue = True

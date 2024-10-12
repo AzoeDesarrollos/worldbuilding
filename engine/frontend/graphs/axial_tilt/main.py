@@ -167,7 +167,7 @@ def axial_loop(planet):
         elif tilt + delta > 180:
             tilt = 0
 
-        tilt += delta/mod
+        tilt += delta / mod
         screen.fill(COLOR_BOX)
         panel.fill(COLOR_BOX)
         interactive_loop(tilt)

@@ -4,7 +4,6 @@ from math import trunc
 class SolarCalendar:
     def __init__(self, planet, moon):
         planet_period = planet.orbit.period.to('earth_day').m
-        print(planet_period)
         month_year = planet_period / moon.orbit.period.to('earth_day').m
 
         self.year_local = trunc(planet_period)

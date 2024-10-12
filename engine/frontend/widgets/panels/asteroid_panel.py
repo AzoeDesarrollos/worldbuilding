@@ -288,7 +288,7 @@ class AsteroidType(BaseWidget):
                 self.current = moon
 
         if self.current.system_id is None:
-            self.current.system_id = Universe.current_planetary().id
+            self.current.system_id = system.id
         if self.current not in self.parent.moons:
             self.parent.button_add.enable()
         self.fill()

@@ -46,7 +46,7 @@ class CompactObjectsPanel(BaseWidget):
         r, c = self.rect.right, COLOR_AREA
         self.white_rect = self.write2(exp_white, font, 300, fg=c, top=50, right=self.rect.right)
         self.brown_rect = self.write2(exp_brown, font, 300, fg=c, top=self.white_rect.bottom + 20, right=r)
-        self.black_rect = self.write2(exp_black, font, 300, fg=c, top=self.brown_rect.bottom + 50, right=r)
+        self.black_rect = self.write2(exp_black, font, 300, fg=c, top=self.brown_rect.bottom + 20, right=r)
         self.neutron_rect = self.write2(exp_neutron, font, 300, fg=c, top=self.black_rect.bottom + 50, right=r)
 
         area_font = self.crear_fuente(14, underline=True)
@@ -337,9 +337,9 @@ class NeutronStarType(BaseWidget):
 
     def enable(self):
         super().enable()
-        for widget in self.parent.properties.get_widgets_from_layer(2):
-            widget.enable()
-            widget.modifiable = True
+        mass_widget = self.parent.properties.get_widgets_from_layer(2)[0]
+        mass_widget.enable()
+        mass_widget.modifiable = True
 
 
 class BlackHoleType(BaseWidget):

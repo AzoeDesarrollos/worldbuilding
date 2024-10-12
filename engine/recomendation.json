@@ -1,54 +1,54 @@
 {
-  "texts":{
+  "texts": {
     "text": "You {verb} a{n} {planet_type}.{orbit}\n\nIts orbital eccentricity value should be {e}.\n\nIts orbital inclination should be {i}. {extra}",
     "tno": "You {verb} a{extra}Kupier Belt object.{orbit}",
     "belt": "You {verb} a Small Solar System Body. {orbit}",
     "binary": "You {verb} a Binary Planet System. {orbit}"
   },
- "classical":{
-   "n": "Classical",
-   "e": "lower than 0.2",
-   "i": "lower than 10°"
- },
- "sdo":{
-   "n": "Scattered Disk Object",
-   "e": "between 0.2 and 0.8",
-   "i": "between 25° and 40°"
- },
- "sednoid":{
-   "n": "Sednoid",
-   "e": "greater than 0.8",
-   "i":"between 10° and 25°"
- },
- "detached":{
-   "n": "Detached object",
-   "e": "between 0.2 and 0.8",
-   "i": "greater than 25°"
- },
- "resonant":{
-   "n": "Resonant Kupier Belt",
-   "e": "greater or equal to 0.25",
-   "i": "between 10° and 25°"
- },
- "giant":{
-   "e": "between 0.001 and 0.09",
-   "i": "between 0° and 90° (but don't go wild)"
- },
- "hot":{
-   "i":"between 10° of the reference plane"
- },
- "eccentric_1":{
-   "e":"0.1 or greater"
- },
- "eccentric_2":{
-   "e": "between 0.1 and 0.2"
- },
- "habitable":{
-   "e":"lower or equal to 0.2",
-   "i":"0°"
- },
- "inner":{
-   "i": "lower than 3°",
-   "e":"lower or equal to 0.2"
- }
+  "classical": {
+    "n": "Classical",
+    "e": "lower than 0.2",
+    "i": "lower than 10°"
+  },
+  "sdo": {
+    "n": "Scattered Disk Object",
+    "e": "between 0.2 and 0.8",
+    "i": "between 25° and 40°"
+  },
+  "sednoid": {
+    "n": "Sednoid",
+    "e": "greater than 0.8",
+    "i": "between 10° and 25°"
+  },
+  "detached": {
+    "n": "Detached object",
+    "e": "between 0.2 and 0.8",
+    "i": "greater than 25°"
+  },
+  "resonant": {
+    "n": "Resonant Kupier Belt",
+    "e": "greater or equal to 0.25",
+    "i": "between 10° and 25°"
+  },
+  "giant": {
+    "e": "between 0.001 and 0.09",
+    "i": "between 0° and 90° (but don't go wild)"
+  },
+  "hot": {
+    "i": "between 10° of the reference plane"
+  },
+  "eccentric_1": {
+    "e": "0.1 or greater"
+  },
+  "eccentric_2": {
+    "e": "between 0.1 and 0.2"
+  },
+  "habitable": {
+    "e": "lower or equal to 0.2",
+    "i": "0°"
+  },
+  "inner": {
+    "i": "lower than 3°",
+    "e": "lower or equal to 0.2"
+  }
 }

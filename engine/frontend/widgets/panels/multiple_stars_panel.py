@@ -13,7 +13,7 @@ from ..values import ValueText
 
 class MultipleStarsPanel(BaseWidget):
     skippable = True
-    skip = False
+    _skip = False
 
     curr_x = 0
     curr_y = 440
@@ -27,7 +27,7 @@ class MultipleStarsPanel(BaseWidget):
 
     planetary_systems_added = False
 
-    already_chosen = False
+    # already_chosen = False
 
     def __init__(self, parent):
         self.name = 'Multiple Stars'
@@ -67,6 +67,14 @@ class MultipleStarsPanel(BaseWidget):
         EventHandler.register(self.export_data, 'ExportData')
 
         self.held_data = {}
+
+    @property
+    def skip(self):
+        return self._skip
+
+    @skip.setter
+    def skip(self, value):
+        self._skip = value
 
     @property
     def triple(self):
@@ -212,6 +220,8 @@ class MultipleStarsPanel(BaseWidget):
                     system.set_orbit(offset)
                     nei.add_true_system(system)
 
+            nei.set_planetary_systems()
+
         self.parent.swap_neighbourhood_button.disable()
 
     def hide(self):
@@ -221,8 +231,8 @@ class MultipleStarsPanel(BaseWidget):
             if (self.triple == 0 and self.multiple == 0) and self.planetary_systems_added is False:
                 self.planetary_systems_added = True
                 self.create_systems()
-                current.set_planetary_systems()
-        self.already_chosen = True
+                self.parent.swap_neighbourhood_button.disable()
+
         for prop in self.properties.widgets():
             prop.hide()
 
@@ -429,7 +439,7 @@ class AvailableSystems(ListedArea):
             if self.parent.triple < 1 and self.parent.multiple < 1:
                 self.disable_all()
             if current.id != self.last_id:
-                self.last_idx = current.id
+                self.last_id = current.id
             self.show_current(current.id)
 
 

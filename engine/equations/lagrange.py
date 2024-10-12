@@ -119,7 +119,6 @@ def lagrange_three(sma, m_primary, m_secondary, ref='primary'):
 
 
 def lagrange_four(sma, m_primary, m_secondary, req='distance', ref='primary'):
-
     sma = _lagrange(sma, m_primary, m_secondary)[3]
     secondary_distance = sma  # in meters
     primary_distance = sma  # in meters
@@ -143,7 +142,6 @@ def lagrange_four(sma, m_primary, m_secondary, req='distance', ref='primary'):
 
 
 def lagrange_five(sma, m_primary, m_secondary, req='distance', ref='primary'):
-
     sma = _lagrange(sma, m_primary, m_secondary)[3]
     secondary_distance = sma  # in meters
     primary_distance = sma  # in meters

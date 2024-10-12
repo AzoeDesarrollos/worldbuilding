@@ -17,7 +17,7 @@ class Star(BodyInHydrostaticEquilibrium):
     classification = 'G'
 
     letter = None
-    idx = None
+    idx = 0
 
     _lifetime = 0
     _temperature = 0
@@ -317,7 +317,7 @@ class Star(BodyInHydrostaticEquilibrium):
         else:
             s = '-' if self.prefix else ''
             n = str(self.parent.idx) if hasattr(self.parent, 'idx') else ''
-            return f"{self.prefix+n}{s}{self.cls}{self.sub_classification}{turn_into_roman(self.idx + 1)}"
+            return f"{self.prefix + n}{s}{self.cls}{self.sub_classification}{turn_into_roman(self.idx + 1)}"
 
     def __repr__(self):
         if self.has_name is False:

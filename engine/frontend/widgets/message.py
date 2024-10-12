@@ -50,9 +50,10 @@ class PopUpMessage(BaseWidget):
         if self.blinking:
             self.ticks += 1
             t = self.ticks
-            if (0 < t <= j) or (j*2+1 <= t <= j*3) or (j*4+1 <= t <= j*5) or (j*6+1 <= t <= j*7):
+            if (0 < t <= j) or (j * 2 + 1 <= t <= j * 3) or (j * 4 + 1 <= t <= j * 5) or (j * 6 + 1 <= t <= j * 7):
                 self.image.fill((200, 50, 0), self.blink_area)
-            elif (j+1 <= t <= j*2) or (j*3+1 <= t <= j*4) or (j*5+1 <= t <= j*6) or (j*7+1 <= t <= j*8):
+            elif (j + 1 <= t <= j * 2) or (j * 3 + 1 <= t <= j * 4) or (j * 5 + 1 <= t <= j * 6) or (
+                    j * 7 + 1 <= t <= j * 8):
                 self.image.fill((255, 255, 0), self.blink_area)
             else:
                 self.image.fill((100, 100, 100), self.blink_area)

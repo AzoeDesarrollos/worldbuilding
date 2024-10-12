@@ -13,7 +13,7 @@ from random import uniform
 
 class NeighbourhoodPanel(BaseWidget):
     skippable = True
-    skip = False
+    _skip = False
 
     locked = False
 
@@ -76,6 +76,14 @@ class NeighbourhoodPanel(BaseWidget):
         EventHandler.register(self.switch_current, 'SwitchGalaxy')
         EventHandler.register(self.export_data, 'ExportData')
         self.neighbourhoods = []
+
+    @property
+    def skip(self):
+        return self._skip
+
+    @skip.setter
+    def skip(self, value):
+        self._skip = value
 
     def on_mousebuttondown(self, event):
         if event.origin == self:

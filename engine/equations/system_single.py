@@ -1,6 +1,5 @@
 from engine.equations.general import Flagable
 from .orbit import NeighbourhoodSystemOrbit
-from engine.equations.space import Universe
 from engine.backend import EventHandler, q
 from math import sqrt
 
