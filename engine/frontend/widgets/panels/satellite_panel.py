@@ -1,5 +1,5 @@
 from engine.frontend.globales import COLOR_AREA, COLOR_BOX, COLOR_TEXTO, COLOR_DISABLED, COLOR_SELECTED
-from engine.backend import EventHandler, material_densities, roll, Config, choice
+from engine.backend import EventHandler, material_densities, roll, choice
 from engine.equations.satellite import major_moon_by_composition
 from engine.frontend.globales import ANCHO, ALTO, Group
 from engine.frontend.widgets.values import ValueText

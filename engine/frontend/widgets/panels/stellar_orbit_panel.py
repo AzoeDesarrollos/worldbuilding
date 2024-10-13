@@ -423,10 +423,10 @@ class OrbitPanel(BaseWidget):
                     i = q(orbit_data['i'], 'degree')
                     aop = q(orbit_data['AoP'], 'degree') if orbit_data['AoP'] != 'undefined' else 'undefined'
                     loan = q(orbit_data['LoAN'], 'degree')
-                    systems = Universe.nei().true_systems
-                    system = [s for s in systems if s.id == orbit_data['star_id']]
-                    if len(system):
-                        system = system[0]
+                    systems = [s for s in Universe.nei().true_systems if s.id == orbit_data['star_id']]
+                    system = None
+                    if len(systems):
+                        system = systems[0]
                     if system is not None:
                         planet = system.planetary.get_astrobody_by(id, tag_type='id')
                         Universe.add_astro_obj(planet)
@@ -716,7 +716,7 @@ class OrbitType(BaseWidget, Intertwined):
 
         main = self.parent.current.star if hasattr(self.parent.current, "star") else self.parent.current
         if hasattr(self.linked_astrobody.orbit, 'longitude_of_the_ascending_node'):
-            parametros.append(self.linked_astrobody.orbit.longitude_of_the_ascending_node.m)
+            parametros.append(self.linked_astrobody.orbit.longitude_of_the_ascending_node)
             aop = self.linked_astrobody.orbit.argument_of_periapsis
             parametros.append(aop.m if type(aop) is q else aop)
 

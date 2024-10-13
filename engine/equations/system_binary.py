@@ -1,6 +1,6 @@
 from .orbit import NeighbourhoodSystemOrbit, BinaryPlanetOrbit, PlanetOrbit, BinaryStarOrbit
 from engine.backend.util import generate_id, q
-from .general import Flagable
+from .general import Flagable, Point
 from .space import Universe
 from .planet import Planet
 from math import sqrt
@@ -159,7 +159,7 @@ class BinarySystem(AbstractBinary):
 
     @cartesian.setter
     def cartesian(self, values):
-        self._cartesian = values
+        self._cartesian = Point(*values)
 
     def set_orbit(self, offset):
         self.orbit = NeighbourhoodSystemOrbit(*self._cartesian, offset)

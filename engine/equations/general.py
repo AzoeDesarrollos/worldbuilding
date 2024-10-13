@@ -183,8 +183,8 @@ class Ellipse:
         self._e = float(e.m)
         self._b = self._a * sqrt(1 - (self._e ** 2))
         self._c = sqrt(self._a ** 2 - self._b ** 2)
-        self.f1 = Point(self._c, 0, 'right')
-        self.f2 = Point(-self._c, 0, 'left')
+        self.f1 = Point(self._c, name='right')
+        self.f2 = Point(-self._c, name='left')
 
     def get_rect(self, x, y):
         """returns the rect of the ellipse for the use of pygame.draw.ellipse().
@@ -210,19 +210,59 @@ class OblateSpheroid(Ellipse, BodyInHydrostaticEquilibrium):
 
 
 class Point:
-    def __init__(self, x, y=0, name=None):
+    def __init__(self, x, y=0, z=0, name=None):
         self.x = x
         self.y = y
+        self.z = z
         self.name = name
 
     def how_close(self, other):
-        return eucledian_distance([self.x, self.y], [other.x, other.y])
+        if not hasattr(other, 'z'):
+            return eucledian_distance([self.x, self.y], [other.x, other.y])
+        else:
+            return eucledian_distance(self, other)
+
+    def __getitem__(self, item):
+        if item == 0 and len(self) == 1:
+            return self.x
+        elif item == 1 and len(self) == 2:
+            return self.y
+        elif item == 2 and len(self) == 3:
+            return self.z
+        else:
+            raise StopIteration
+
+    def __len__(self):
+        if self.y == 0:
+            return 1
+        elif self.z == 0:
+            return 2
+        else:
+            return 3
 
     def __repr__(self):
         if self.name is not None:
             return self.name
         else:
             return str(self)
+
+    def __sub__(self, other):
+        if len(self) == len(other):
+            diffs = []
+            for i, value in enumerate(self):
+                result = self[i] - other[i]
+                diffs.append(result)
+            return sum(diffs)
+        else:
+            raise ValueError("Points must have equal lenghts")
+
+    def __iter__(self):
+        if len(self) == 1:
+            return iter([self.x])
+        elif len(self) == 2:
+            return iter([self.x, self.y])
+        else:
+            return iter([self.x, self.y, self.z])
 
 
 class AxialTilt:

@@ -3,8 +3,8 @@ from ..common import Linea, Punto, find_and_interpolate, BodyMarker, MarkersMana
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_TEXTO, Group
 from pygame import display, event, font, transform, image
 from pygame import init, quit, Rect, Surface
-from engine.backend import roll, Config
 from pygame.sprite import Sprite
+from engine.backend import roll
 from os import getcwd, path
 from sys import exit
 
@@ -88,18 +88,18 @@ def dwarfgraph_loop(system, limit_mass=None):
     move_x, move_y = True, True
     markers = MarkersManager.dwarf_markers(system.id)
     marcadores = Group()
-    if Config.get('mode') == 0:
-        for planet in system.planets:
-            if planet.relative_size == 'Dwarf':
-                mass = planet.mass.m
-                radius = planet.radius.m
 
-                x = find_and_interpolate(mass, mass_keys, yes)
-                y = find_and_interpolate(radius, radius_keys, exes)
-                MarkersManager.set_marker([x, y])
+    for planet in system.planets:
+        if planet.relative_size == 'Dwarf':
+            mass = planet.mass.m
+            radius = planet.radius.m
 
-        for x, y in markers:
-            marcadores.add(BodyMarker(x, y))
+            x = find_and_interpolate(mass, mass_keys, yes)
+            y = find_and_interpolate(radius, radius_keys, exes)
+            MarkersManager.set_marker([x, y])
+
+    for x, y in markers:
+        marcadores.add(BodyMarker(x, y))
 
     while not done:
         for e in event.get([KEYDOWN, QUIT, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP]):
@@ -200,14 +200,14 @@ def dwarfgraph_loop(system, limit_mass=None):
         if limit_mass is not None:
             fondo.blit(lim_img, lim_rect)
         numbers.draw(fondo)
-        if Config.get('mode') == 0:
-            marcadores.update()
-            marcadores.draw(fondo)
+
+        marcadores.update()
+        marcadores.draw(fondo)
         lineas.update()
         lineas.draw(fondo)
         display.update()
 
-    if done and len(data) and Config.get('mode') == 0:
+    if done and len(data):
         MarkersManager.set_marker(punto.rect.center)
 
     display.quit()

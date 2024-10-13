@@ -1,4 +1,4 @@
-from engine.backend import EventHandler, q, Config
+from engine.backend import EventHandler, q
 from .space import Universe
 from math import exp
 
@@ -33,8 +33,7 @@ class PlanetarySystem:
         self.parent = star_system
         self.parent.planetary = self
         self.id = star_system.id
-        if Config.get('mode') == 0:
-            self.set_available_mass()
+        self.set_available_mass()
         self.aparent_brightness = {}
         self.relative_sizes = {}
         self.distances = {}
@@ -44,14 +43,10 @@ class PlanetarySystem:
         EventHandler.register(self.dissolve_systems, 'DissolveSystem')
 
     def update(self):
-        if Config.get('mode') == 0:
-            self.set_available_mass()
+        self.set_available_mass()
 
     def get_available_mass(self):
-        if Config.get('mode') == 0:
-            return self.body_mass
-        else:
-            return 'Unlimited'
+        return self.body_mass
 
     def set_available_mass(self):
         if self.parent.system_number == 'binary':
@@ -74,6 +69,7 @@ class PlanetarySystem:
         return self._get_astro_group(astro_obj)
 
     def add_astro_obj(self, astro_obj):
+        Universe.add_astro_obj(astro_obj)
         group = self._get_astro_group(astro_obj)
 
         if self._adding_a_planet:
@@ -84,7 +80,7 @@ class PlanetarySystem:
                 astro_obj.idx = len(kind) - 1
 
         if astro_obj not in group:
-            if Config.get('mode') == 0 and astro_obj.celestial_type != 'system':
+            if astro_obj.celestial_type != 'system':
                 minus_mass = astro_obj.mass.to('jupiter_mass')
                 text = 'There is not enough mass in the system to create new bodies of this type.'
                 assert minus_mass <= self.body_mass, text
@@ -103,7 +99,7 @@ class PlanetarySystem:
     def remove_astro_obj(self, astro_obj):
         Universe.remove_astro_obj(astro_obj)
         group = self._get_astro_group(astro_obj)
-        if Config.get('mode') == 0 and astro_obj.celestial_type != 'system':
+        if astro_obj.celestial_type != 'system':
             plus_mass = astro_obj.mass.to('jupiter_mass')
             self.body_mass += plus_mass
         group.remove(astro_obj)

@@ -4,7 +4,6 @@ from os import path, getcwd
 
 class Config:
     _default = {
-        'mode': 0,
         'ignore skip-rules': False,
         'repeat warnings': False
     }

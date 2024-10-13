@@ -1,8 +1,8 @@
 from ..common import Linea, Punto, find_and_interpolate, find_and_interpolate_flipped, BodyMarker, MarkersManager
 from pygame import KEYDOWN, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP, SRCALPHA, K_ESCAPE, K_SPACE, K_LCTRL, K_LSHIFT
 from pygame import font, Surface, Rect, image, mouse, event, Color as Clr, mask
-from engine.backend import abrir_json, interpolate, Config
 from pygame import display, quit as py_quit, SCALED
+from engine.backend import abrir_json, interpolate
 from engine.frontend.globales import Group
 from os import environ, getcwd, path
 import sys
@@ -84,20 +84,19 @@ def graph_loop(system, mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_
     mouse.set_pos(rect.center)
     event.clear()
     marcadores = Group()
-    if Config.get('mode') == 0:
-        markers = MarkersManager.graph_markers(system.id)
+    markers = MarkersManager.graph_markers(system.id)
 
-        for planet in system.planets:
-            if planet.relative_size != 'Giant':
-                mass = planet.mass.m
-                radius = planet.radius.m
+    for planet in system.planets:
+        if planet.relative_size != 'Giant':
+            mass = planet.mass.m
+            radius = planet.radius.m
 
-                x = find_and_interpolate(mass, mass_keys, exes)
-                y = find_and_interpolate_flipped(radius, radius_keys, yes)
-                MarkersManager.set_marker([x, y])
+            x = find_and_interpolate(mass, mass_keys, exes)
+            y = find_and_interpolate_flipped(radius, radius_keys, yes)
+            MarkersManager.set_marker([x, y])
 
-        for x, y in markers:
-            marcadores.add(BodyMarker(x, y))
+    for x, y in markers:
+        marcadores.add(BodyMarker(x, y))
 
     done = False
     composition_text_comp = None
@@ -305,13 +304,13 @@ def graph_loop(system, mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_
             fondo.blit(texto2, rectT2)
             punto.update()
             lineas.update()
-            if Config.get('mode') == 0:
-                marcadores.update()
-                marcadores.draw(fondo)
+
+            marcadores.update()
+            marcadores.draw(fondo)
             lineas.draw(fondo)
             display.update()
 
-        elif len(data) and Config.get('mode') == 0:
+        elif len(data):
             MarkersManager.set_marker(punto.rect.center)
 
     display.quit()

@@ -4,8 +4,8 @@ from engine.frontend.widgets import ValueText, BaseWidget, Meta
 from engine.frontend.widgets.panels.common import TextButton
 from engine.backend.eventhandler import EventHandler
 from engine.equations.space import Universe
-from engine.backend import q, roll, Config
 from random import expovariate, choice
+from engine.backend import q, roll
 from pygame import Surface, Rect
 from time import sleep
 
@@ -131,12 +131,6 @@ class CompactObjectsPanel(BaseWidget):
             self.remanent.value = self.calculate_mass()
             self.sort_buttons(self.properties.get_widgets_from_layer(6))
             self.auto_button.enable()
-
-        elif Config.get('mode') == 1:
-            self.brown.enable()
-            self.white.enable()
-            self.neutron.enable()
-            self.black.enable()
 
         super().show()
         for prop in self.properties.widgets():

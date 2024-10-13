@@ -33,16 +33,20 @@ class InformationPanel(BaseWidget):
 
         self.f1 = self.crear_fuente(14)
         self.f2 = self.crear_fuente(16)
-        text = 'Click on any Astronmical Object to get information about its tide interaction and distances to other'
-        text += ' celestial bodies.'
+
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
-        offset = Rect(0, 0, self.rect.w - self.planet_area.rect.w, self.rect.h)
-        self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, centerx=offset.centerx, y=100, j=1)
+        self.write_info_text()
         self.print_button = PrintButton(self, *self.planet_area.rect.midbottom)
         self.properties.add(self.planet_area, self.print_button, layer=2)
         self.perceptions_rect = Rect(3, 250, 380, ALTO)
         self.info_rect = Rect(3, self.perceptions_rect.bottom, 380, ALTO - (self.perceptions_rect.h + 380 + 21))
         EventHandler.register(self.export_data, 'ExportData')
+
+    def write_info_text(self):
+        text = 'Click on any Astronmical Object to get information about its tide interaction and distances to other'
+        text += ' celestial bodies.'
+        offset = Rect(0, 0, self.rect.w - self.planet_area.rect.w, self.rect.h)
+        self.write2(text, self.crear_fuente(14), fg=COLOR_AREA, width=300, centerx=offset.centerx, y=100, j=1)
 
     def on_mousebuttondown(self, event):
         if event.origin == self:
@@ -61,9 +65,12 @@ class InformationPanel(BaseWidget):
         text = 'Information about ' + str(astrobody)
         self.write(text, self.f1, centerx=(ANCHO // 4) * 1.5, y=21)
 
-    def clear(self):
-        # self.image.fill(COLOR_BOX)
+    def clear(self, write=False):
+        self.image.fill(COLOR_BOX)
         self.render = None
+        self.render_rect = None
+        if write:
+            self.write_info_text()
 
     def show(self):
         super().show()
@@ -71,12 +78,12 @@ class InformationPanel(BaseWidget):
             prop.show()
 
     def hide(self):
-        self.clear()
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
 
     def show_selected(self, astrobody):
+        self.clear()
         system = Universe.current_planetary().parent
         self.current = astrobody
         self.show_name(astrobody)
@@ -112,10 +119,8 @@ class InformationPanel(BaseWidget):
             primary = 'planet'
             lunar_tides = major_tides(diameter, astrobody.orbit.star.mass.m, astrobody.orbit.a.to('earth_diameter').m)
 
-        # if stellar_tides > lunar_tides:
-        #     primary = 'star'
-        if astrobody.rogue:
-            primary = 'rogue'
+        if stellar_tides > lunar_tides:
+            primary = 'star'
         std_high = abs(q((planet_tides + lunar_tides) * 0.54, 'm'))
         std_low = -std_high if std_high.m != 0 else abs(std_high)
 
@@ -150,19 +155,16 @@ class InformationPanel(BaseWidget):
         tides_text = ''.join(texts)
 
         mass = None
-        if primary != 'rogue':
-            star = self.current.orbit.star
-            if star.celestial_type == 'star':
-                if star.letter is None:
-                    mass = star.mass.m
-                else:
-                    mass = star.shared_mass.m
-            else:
+        star = self.current.orbit.star
+        if star.celestial_type == 'star':
+            if star.letter is None:
                 mass = star.mass.m
+            else:
+                mass = star.shared_mass.m
+        elif star.celestial_type == 'planet':
+            mass = star.mass.m
 
-        if primary == 'rogue':
-            text = f'{str(self.current)} is a rogue {astrobody.celestial_type}.'
-        elif is_tidally_locked(lunar_tides + planet_tides, system.age.m / 10 ** 9, mass):
+        if is_tidally_locked(lunar_tides + planet_tides, system.age.m / 10 ** 9, mass):
             text = f'{str(self.current)} is tidally locked to {primary}.'
             self.current.rotation = 'Tidally locked'
             self.current.spin = 'Locked'
@@ -298,7 +300,7 @@ class AvailablePlanets(ListedArea):
     def on_mousebuttondown(self, event):
         if event.origin == self:
             super().on_mousebuttondown(event)
-            self.parent.clear()
+            self.parent.clear(write=True)
 
 
 class PrintButton(TextButton):

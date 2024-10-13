@@ -1,6 +1,6 @@
 from ..common import find_and_interpolate, find_and_interpolate_flipped
 from pygame import image, PixelArray
-from bisect import bisect_left
+from bisect import bisect_right
 from engine.backend import q
 from os import getcwd, path
 
@@ -19,7 +19,8 @@ def interpolacion_lineal(vol):
     pos_o2 = [47, 81, 114, 147, 179, 213, 246, 279, 311, 345, 378]
     pos_o2.sort(reverse=True)
     nums_o2 = [i for i in range(0, 101, 10)]
-    antes = 11 - bisect_left(nums_o2, vol)
+    nums_o2 = [float(i) for i in nums_o2]
+    antes = bisect_right(nums_o2, vol)
     despues = antes + 1
 
     x1 = nums_o2[antes]

@@ -21,7 +21,7 @@ class AtmospherePanel(BaseWidget):
     written_info = None
     total = 0
 
-    last_idx = None
+    last_id = None
 
     show_swap_system_button = True
 
@@ -40,7 +40,7 @@ class AtmospherePanel(BaseWidget):
         self.f5 = self.crear_fuente(11, bold=True)
 
         self.write('Composition', self.f2, centerx=65, y=35)
-        self.water_state_rect = self.write('State of Water at Surface: ', f4, x=3, y=ALTO - 50)
+        self.water_state_rect = self.write('Phase of Water at Surface: ', f4, x=3, y=ALTO - 50)
         self.write_water_state('unknown')
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.export_data, 'ExportData')
@@ -219,10 +219,15 @@ class AtmospherePanel(BaseWidget):
         if 0 <= self.curr_idx + delta < len(self.elements.widgets()):
             self.curr_idx += delta
             self.current = self.elements.widgets()[self.curr_idx]
+            do_enable = True
+        else:
+            do_enable = False
+            self.atmograph.enable()
 
-        # self.current.select()
-        self.current.enable()
-        WidgetHandler.origin = self.current.percent.name
+        if do_enable:
+            self.current.enable()
+            self.current.select()
+            WidgetHandler.origin = self.current.percent
 
     def global_warming(self):
         gases = ['CO2', 'H2O', 'CH4', 'N2O', 'O3']  # Greenhouse gases
@@ -255,8 +260,6 @@ class AtmospherePanel(BaseWidget):
 
         self.image.fill(COLOR_BOX, (0, ALTO - 85, 170, 34))
         self.write('Total: ' + str(round(self.total, 2)) + '%', self.f2, x=3, y=ALTO - 87)
-        a = self.atmograph
-        self.image.fill(COLOR_BOX, [a.rect.x, a.rect.bottom, 200, 21])
 
         self.write('Greenhouse effect: ' + str(self.global_warming()), self.f1, x=3, y=ALTO - 67)
         if self.curr_planet is not None:
@@ -266,12 +269,10 @@ class AtmospherePanel(BaseWidget):
         if Universe.current_galaxy is not None:
             idx = Universe.current_planetary().id
         else:
-            idx = self.last_idx
-
-        if idx != self.last_idx:
-            self.erase()
-            self.show_current()
-            self.last_idx = idx
+            idx = self.last_id
+        self.show_current()
+        if idx == self.last_id:
+            self.last_id = idx
 
     def export_data(self, event):
         if event.data['panel'] is self:
@@ -420,8 +421,14 @@ class PercentageCell(BaseWidget, IncrementalValue):
         self.grandparent = self.parent.parent
 
     def on_keydown(self, tecla):
-        if self.enabled and self.selected and tecla.origin == self.name:
-            gp = self.grandparent
+        gp = self.grandparent
+        if tecla.tipo == 'Fin' and tecla.origin == self:
+            gp.cycle(+1)
+
+        elif tecla.tipo == 'Arrow' and tecla.origin == self:
+            gp.cycle(tecla.data['delta'])
+
+        elif self.enabled and self.selected and tecla.origin is self:
             if tecla.data is not None and tecla.tipo == 'Key':
 
                 if tecla.data['value'] == '.':
@@ -429,29 +436,18 @@ class PercentageCell(BaseWidget, IncrementalValue):
                         self.value = "0."
                     elif '.' not in self.value:
                         self.value += '.'
-                else:
+                elif tecla.data['value'].isdigit():
                     self.value += tecla.data['value']
 
-            elif tecla.tipo == 'Fin' and tecla.origin == self.name:
-                gp.cycle(+1)
-
-            elif tecla.tipo == 'BackSpace':
-                self.value = self.value[0:-1]
-
-            elif tecla.tipo == 'Arrow' and tecla.origin == self.name:
-                gp.cycle(tecla.data['delta'])
-
-        elif tecla.origin != self.name:
-            self.deselect()
-
-        return self.grandparent
+                elif tecla.data['value'] == 'Backspace':
+                    self.value = self.value[0:-1]
 
     def on_mousebuttondown(self, event):
         if event.origin == self:
             self.increment = self.update_increment()
             value = 0
             if event.data['button'] == 1 and self.enabled:
-                for element in self.grandparent.elements:
+                for element in self.grandparent.elements.widgets():
                     element.percent.deselect()
                 self.enabled = True
                 self.select()
@@ -474,12 +470,11 @@ class PercentageCell(BaseWidget, IncrementalValue):
         EventHandler.deregister(self.on_keydown, 'Arrow')
 
     def deselect(self):
-        if self.enabled:
-            self.selected = False
-            self.image.fill((0, 0, 0))
-            w, h = self.rect.size
-            self.image.fill(COLOR_BOX, [1, 1, w - 2, h - 2])
-            EventHandler.deregister(self.on_keydown)
+        self.selected = False
+        self.image.fill((0, 0, 0))
+        w, h = self.rect.size
+        self.image.fill(COLOR_BOX, [1, 1, w - 2, h - 2])
+        EventHandler.deregister(self.on_keydown)
 
     def select(self):
         if self.enabled:
@@ -487,7 +482,8 @@ class PercentageCell(BaseWidget, IncrementalValue):
             self.image.fill((255, 255, 255))
             w, h = self.rect.size
             self.image.fill(COLOR_BOX, [1, 1, w - 2, h - 2])
-            EventHandler.register(self.on_keydown, 'Key', 'BackSpace', 'Fin')
+            EventHandler.register(self.on_keydown, 'Key', 'Fin')
+            EventHandler.trigger('SetOrigin', self, {"origin": self})
 
     def get_value(self):
         if self.value == '':
@@ -512,7 +508,7 @@ class PercentageCell(BaseWidget, IncrementalValue):
         color = COLOR_DISABLED
         state = self.parent.calculate_temperature()
         if self.parent.is_enabled():
-            self.enabled = False
+            self.enabled = True
         elif state != 'gas':
             self.enabled = False
             self.value = state
@@ -539,7 +535,7 @@ class Atmograph(BaseWidget):
     vol_n2 = 0
     pressure = None
 
-    enabled = False
+    enabled = True
     reached = False
 
     def __init__(self, parent, x, y):
@@ -593,14 +589,14 @@ class Atmograph(BaseWidget):
             delta_y = 0
             n2 = self.parent.elements.widgets()[9]
             n2_value = n2.percent.get_value()
+            warning_text = 'Pressure at sea level depends on Nitrogen concentration.' \
+                           ' Its value must be greater than 0.'
+            assert n2_value, warning_text
             vol_n2 = interpolacion_lineal(float(n2_value))
             if vol_n2 != self.vol_n2:
                 self.reached = False
             self.vol_n2 = interpolacion_lineal(float(n2_value))
 
-            warning_text = 'Pressure at sea level depends on Nitrogen concentration.' \
-                           ' Please, fill its value before proceeding.'
-            assert n2_value, warning_text
             max_pressure, min_pressure = atmo(float(n2_value), self.rect)
 
             if event.data['button'] == 1 and not self.reached:
@@ -625,7 +621,7 @@ class Atmograph(BaseWidget):
             # return self.name
 
     def on_keydown(self, event):
-        if event.origin == self.name:
+        if event.origin == self:
             if event.tipo == 'Arrow':
                 word = event.data['word']
 
@@ -646,6 +642,9 @@ class Atmograph(BaseWidget):
                 self.reached = True
                 self.parent.show_pressure.elevate_pressure()
 
+    def on_mouseover(self):
+        WidgetHandler.origin = self
+
     def altitude_at_pressure(self, pressure):
         gravity = self.parent.curr_planet.gravity.to('earth_gravity').m
         return round(log(pressure / self.pressure) / (-gravity / self.parent.scale_height()), 3)
@@ -658,11 +657,11 @@ class Atmograph(BaseWidget):
             draw.line(self.canvas, (255, 0, 0, 255), (self.vol_n2, 0), (self.vol_n2, self.rect.height))
             draw.line(self.canvas, (0, 0, 0, 255), (0, self.max_p), (self.rect.right, self.max_p))
             draw.line(self.canvas, (0, 0, 0, 255), (0, self.min_p), (self.rect.right, self.min_p))
-            draw.line(self.canvas, (0, 255, 0, 255), (0, self.pressure), (self.rect.right, selected_pressure))
+            draw.line(self.canvas, (0, 255, 0, 255), (0, selected_pressure), (self.rect.right, selected_pressure))
             self.image.blit(graph, (0, 0))
             self.image.blit(self.canvas, (0, 0))
 
-            pressure = convert(self.pressure)
+            pressure = convert(selected_pressure)
             self.parent.show_pressure.update_text(pressure)
         else:
             img = self.unbreatheable()

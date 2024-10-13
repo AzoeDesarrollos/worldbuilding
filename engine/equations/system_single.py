@@ -1,4 +1,4 @@
-from engine.equations.general import Flagable
+from engine.equations.general import Flagable, Point
 from .orbit import NeighbourhoodSystemOrbit
 from engine.backend import EventHandler, q
 from math import sqrt
@@ -73,8 +73,8 @@ class SingleSystem(Flagable):
         elif type(values) in (list, tuple):
             x, y, z = values
 
-        self._cartesian = x, y, z
-        self.star.cartesian = x, y, z
+        self._cartesian = Point(x, y, z)
+        self.star.cartesian = Point(x, y, z)
 
     def set_orbit(self, offset):
         self._orbit = NeighbourhoodSystemOrbit(*self._cartesian, offset)

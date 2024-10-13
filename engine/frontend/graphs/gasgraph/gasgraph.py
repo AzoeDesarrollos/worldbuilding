@@ -3,11 +3,10 @@ from pygame import K_UP, K_DOWN, K_RIGHT, K_LEFT, K_SPACE, K_LSHIFT, K_LCTRL, K_
 from pygame import init, quit, display, font, event, Rect, Surface, image, mouse
 from engine.frontend.globales import COLOR_TEXTO, COLOR_BOX, ANCHO, ALTO, Group
 from pygame import KEYDOWN, QUIT, SCALED, MOUSEMOTION, MOUSEBUTTONDOWN, KEYUP
-from engine.backend import q, Config
 from pygame.sprite import Sprite
+from engine.backend import q
 from os import getcwd, path
 from sys import exit
-
 
 radius_keys = [1 + i / 100 for i in range(-3, 11)] + [1 + i / 10 for i in range(2, 10)]
 mass_keys = [i / 100 for i in range(3, 11)]
@@ -19,7 +18,6 @@ fuente = font.SysFont('Verdana', 11)
 fuente2 = font.SysFont('Verdana', 13)
 mass_imgs = [fuente.render(str(mass_keys[i]), True, COLOR_TEXTO, COLOR_BOX) for i in range(len(mass_keys))]
 radius_imgs = [fuente.render(str(radius_keys[i]), True, COLOR_TEXTO, COLOR_BOX) for i in range(len(radius_keys))]
-
 
 if path.exists(path.join(getcwd(), "lib")):
     ruta = path.join(getcwd(), 'lib', 'engine', 'frontend', 'graphs', 'gasgraph', 'gasgraph.png')
@@ -99,18 +97,18 @@ def gasgraph_loop(system, limit_mass=None):
 
     marcadores = Group()
     markers = MarkersManager.gas_markers(system.id)
-    if Config.get('mode') == 0:
-        for planet in system.planets:
-            if planet.planet_type == 'gaseous':
-                mass = planet.mass.m
-                radius = planet.radius.m
 
-                x = find_and_interpolate(mass, mass_keys, yes)
-                y = find_and_interpolate(radius, radius_keys, exes)
-                MarkersManager.set_marker([x, y])
+    for planet in system.planets:
+        if planet.planet_type == 'gaseous':
+            mass = planet.mass.m
+            radius = planet.radius.m
 
-        for x, y in markers:
-            marcadores.add(BodyMarker(x, y))
+            x = find_and_interpolate(mass, mass_keys, yes)
+            y = find_and_interpolate(radius, radius_keys, exes)
+            MarkersManager.set_marker([x, y])
+
+    for x, y in markers:
+        marcadores.add(BodyMarker(x, y))
 
     while not done:
         x, y = mouse.get_pos()
@@ -235,14 +233,13 @@ def gasgraph_loop(system, limit_mass=None):
         if limit_mass is not None:
             fondo.blit(lim_img, lim_rect)
         numbers.draw(fondo)
-        if Config.get('mode') == 0:
-            marcadores.update()
-            marcadores.draw(fondo)
+        marcadores.update()
+        marcadores.draw(fondo)
         lineas.update()
         lineas.draw(fondo)
         display.update()
 
-    if done and len(data) and Config.get('mode') == 0:
+    if done and len(data):
         MarkersManager.set_marker(punto.rect.center)
 
     display.quit()

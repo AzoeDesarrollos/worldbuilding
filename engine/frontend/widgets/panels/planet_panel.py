@@ -3,11 +3,11 @@ from engine.frontend.widgets.panels.base_panel import BasePanel
 from engine.frontend.widgets.sprite_star import PlanetSprite
 from engine.frontend.widgets.object_type import ObjectType
 from engine.frontend.widgets.basewidget import BaseWidget
-from engine.backend import EventHandler, Config
 from engine.frontend.widgets.meta import Meta
 from .common import ColoredBody, TextButton
 from engine.equations.space import Universe
 from engine.equations.planet import Planet
+from engine.backend import EventHandler
 from itertools import cycle
 from pygame import Rect
 
@@ -425,31 +425,23 @@ class ShownMass(BaseWidget):
             self.current_unit = next(self.unit_cycler)
 
     def show_mass(self):
-        if Config.get('mode') == 0:
-            system = Universe.nei().get_current()
-            if not self.parent.enabled:
-                self.parent.enable()
+        system = Universe.nei().get_current()
+        if not self.parent.enabled:
+            self.parent.enable()
 
-            if system.has_name and system.name == 'Rogue Planets':
-                return 'Unlimited'
+        mass = system.get_available_mass().to(self.current_unit)
+        if not self.parent.enabled:
+            self.parent.enable()
+
+        if mass is not None:
+            rounded = round(mass, 4)
+            if rounded.m <= 0:
+                mass = mass.to('kg')
             else:
-                mass = system.get_available_mass()
-
-            mass = mass.to(self.current_unit)
-
-            if mass is not None:
-                rounded = round(mass, 4)
-                if rounded.m <= 0:
-                    mass = mass.to('kg')
-                else:
-                    mass = mass.to(self.current_unit)
-                return '{:,g~}'.format(mass)
-            else:
-                return ''
+                mass = mass.to(self.current_unit)
+            return '{:,g~}'.format(mass)
         else:
-            if not self.parent.enabled and not Config.get('mode') == 0:
-                self.parent.enable()
-            return 'Unlimited'
+            return ''
 
     def update(self):
         if Universe.current_galaxy is not None:

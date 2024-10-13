@@ -2,6 +2,7 @@ from engine.frontend.globales import COLOR_ICYMOON, COLOR_ROCKYMOON, COLOR_IRONM
 from .general import BodyInHydrostaticEquilibrium, Flagable, StarSystemBody
 from engine.backend.util import roll, generate_id, q, material_densities
 from .orbit import SatelliteOrbit, PlanetOrbit
+from engine.equations.space import Universe
 from .lagrange import get_lagrange_points
 from math import pi, sqrt
 
@@ -45,6 +46,7 @@ class Satellite(StarSystemBody, Flagable):
         self.lagrange_points = get_lagrange_points(semi_major_axis, planet_mass, self.mass.to('earth_mass').m)
 
         self.hill_sphere = self.set_hill_sphere()
+        Universe.visibility_by_albedo()
         return self.orbit
 
     def set_hill_sphere(self):
