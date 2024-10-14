@@ -303,6 +303,9 @@ class NumberArea(BaseArea, IncrementalValue):
                     if self.grandparent.current is not None:
                         self.grandparent.total_albedo()
 
+                elif self.grandparent.name == 'Calendar':
+                    self.grandparent.add_remaning_days()
+
     def set_value(self, quantity, is_percentage=False):
         if type(quantity) is q and not is_percentage:
             self.value = float(quantity.m)
