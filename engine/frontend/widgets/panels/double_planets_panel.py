@@ -45,7 +45,7 @@ class DoublePlanetsPanel(BaseWidget):
                             self.setup_button, self.dissolve_button, layer=1)
 
         EventHandler.register(self.save_systems, 'Save')
-        EventHandler.register(self.load_systems, 'LoadData')
+        EventHandler.register(self.load_systems, 'LoadBinary')
         EventHandler.register(self.export_data, 'ExportData')
 
     @property
@@ -270,13 +270,26 @@ class PotentialPlanet(ListedBody):
 class AvailablePlanets(ListedArea):
     name = 'Planets'
     listed_type = PotentialPlanet
+    excluded = None
+
+    def __init__(self, parent, x, y, w, h):
+        super().__init__(parent, x, y, w, h)
+        self.excluded = []
+        EventHandler.register(self.exclude, 'ExcludePlanet')
+
+    def exclude(self, event):
+        """Excludes planets that already have satellites to form double-planet systems"""
+        for planet_id in event.data['planets']:
+            if planet_id not in self.excluded:
+                self.excluded.append(planet_id)
 
     def show(self):
         neighbourhood = Universe.nei()
         if neighbourhood is not None:
             for system in neighbourhood.get_p_systems():
                 idx = system.id
-                self.populate(system.planets, layer=idx)
+                planets = [p for p in system.planets if p.id not in self.excluded]
+                self.populate(planets, layer=idx)
                 self.parent.populate(*system.planets, layer=idx)
         super().show()
 

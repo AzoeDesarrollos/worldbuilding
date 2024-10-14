@@ -85,6 +85,11 @@ class PlanetaryOrbitPanel(BaseWidget):
     def hold_loaded_bodies(self, event):
         if 'Planetary Orbits' in event.data and len(event.data['Planetary Orbits']):
             self.held_data.update(event.data['Planetary Orbits'])
+            # this bit comunicates with the double planets panel to exclude planets already in orbit.
+            event_data = {'planets': []}
+            for idx in event.data['Planetary Orbits']:
+                event_data['planets'].append(idx)
+            EventHandler.trigger('ExcludePlanet', self, event_data)
 
     def load_orbits(self):
         bodies = []

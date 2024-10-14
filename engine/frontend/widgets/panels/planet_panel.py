@@ -128,6 +128,8 @@ class PlanetPanel(BasePanel):
         self.enable_buttons()
         if self.current.has_values:
             self.current.fill()
+        if self.last_id is not None:
+            self.show_current(self.last_id)
 
     def hide(self):
         if len(self.planets) <= 1:

@@ -131,9 +131,7 @@ class CalendarPanel(BaseWidget):
     def hide(self):
         self.image.fill(COLOR_BOX)
         super().hide()
-        for prop in self.properties.get_widgets_from_layer(1):
-            prop.hide()
-        for prop in self.properties.get_widgets_from_layer(2):
+        for prop in self.properties.widgets():
             prop.hide()
 
     def on_mousebuttondown(self, event):
@@ -260,7 +258,7 @@ class MonthSprite(BaseWidget):
 
     def hide(self):
         super().hide()
-        for day in self.days.widgets():
+        for day in self.day_g.widgets():
             day.hide()
 
     def move(self, dx, dy):
