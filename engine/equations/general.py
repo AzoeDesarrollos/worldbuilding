@@ -210,7 +210,9 @@ class OblateSpheroid(Ellipse, BodyInHydrostaticEquilibrium):
 
 
 class Point:
-    def __init__(self, x, y=0, z=0, name=None):
+    x, y, z = None, None, None  # None, porque 0 y -0 son también valores válidos.
+
+    def __init__(self, x, y=None, z=None, name=''):
         self.x = x
         self.y = y
         self.z = z
@@ -233,15 +235,15 @@ class Point:
             raise StopIteration
 
     def __len__(self):
-        if self.y == 0:
+        if self.y is None:
             return 1
-        elif self.z == 0:
+        elif self.z is None:
             return 2
         else:
             return 3
 
     def __repr__(self):
-        if self.name is not None:
+        if self.name != '':
             return self.name
         else:
             return str(self)

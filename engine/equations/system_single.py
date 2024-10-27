@@ -73,11 +73,12 @@ class SingleSystem(Flagable):
         elif type(values) in (list, tuple):
             x, y, z = values
 
-        self._cartesian = Point(x, y, z)
-        self.star.cartesian = Point(x, y, z)
+        self._cartesian = Point(x, y, z, name='SystemLocation')
+        self.star.cartesian = Point(x, y, z, name='StarLocation')
 
     def set_orbit(self, offset):
-        self._orbit = NeighbourhoodSystemOrbit(*self._cartesian, offset)
+        x, y, z = self._cartesian
+        self._orbit = NeighbourhoodSystemOrbit(x, y, z, offset)
 
     def composition(self):
         return [self]
