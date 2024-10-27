@@ -40,7 +40,7 @@ class LayoutPanel(BaseWidget):
         j = ExportButton(self, 470, ALTO + -28)
 
         f = SwapSystem(self, ANCHO - 220, 2, 'System')
-        g = SwapGalaxy(self, 0, 2, 'Galaxy')
+        g = SwapGalaxy(self, 0, 2)
         h = SwapNeighbourhood(self, 150, 2, 'Neighbourhood')
 
         self.load_button = d
@@ -238,6 +238,10 @@ class SwapSystem(Meta):
 class SwapGalaxy(SwapSystem):
     current = None
 
+    def __init__(self, parent, x, y):
+        super().__init__(parent, x, y, 'Galaxy')
+        EventHandler.register(self.clear, 'ClearGalaxy')
+
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and event.origin == self and self.enabled:
             galaxy = Universe.cycle_galaxies()
@@ -255,6 +259,10 @@ class SwapGalaxy(SwapSystem):
     def enable(self):
         super().enable()
         self.current = Universe.current_galaxy
+        self.system_image.render_name()
+
+    def clear(self, event):
+        self.current = event.data['current']  # None
         self.system_image.render_name()
 
 

@@ -12,8 +12,8 @@ fuente2 = font.SysFont('verdana', 14)
 negro, blanco, rojo = Clr(0, 0, 0, 255), Clr(255, 255, 255, 255), Clr(255, 0, 0, 255)
 
 environ['SDL_VIDEO_CENTERED'] = "{!s},{!s}".format(0, 0)
-witdh, height = (590, 630)
-frect = Rect(0, 0, witdh, height)
+width, height = (590, 630)
+frect = Rect(0, 0, width, height)
 
 r = fuente2.render
 texto1 = r('- Hold Shift to lock mass or Control to lock radius -', True, negro, blanco)
@@ -54,7 +54,7 @@ def graph_loop(system, mass_lower_limit=0.0, mass_upper_limit=0.0, radius_lower_
     r_lo_l = radius_lower_limit
     r_hi_l = radius_upper_limit
 
-    fondo = display.set_mode((witdh, height), SCALED)
+    fondo = display.set_mode((width, height), SCALED)
     rect = Rect(60, 2, 529, 476)
     lineas = Group()
 

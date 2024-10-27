@@ -1,4 +1,4 @@
-from engine.frontend.widgets.panels.common import ListedBody, ListedArea, ColoredBody, TextButton
+from .common import ColoredBody, ListedArea, TextButton
 from .star_system_panel import SystemType, SystemButton, DissolveButton, AutoButton
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, Group
 from engine.equations.system_binary import PlanetaryPTypeSystem
@@ -255,7 +255,7 @@ class DoublesType(SystemType):
             self.parent.setup_button.enable()
 
 
-class PotentialPlanet(ListedBody):
+class PotentialPlanet(ColoredBody):
     # Because it has the "potential" to form a double planet system.
 
     def on_mousebuttondown(self, event):

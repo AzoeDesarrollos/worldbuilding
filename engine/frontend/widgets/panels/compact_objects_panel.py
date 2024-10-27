@@ -129,8 +129,8 @@ class CompactObjectsPanel(BaseWidget):
         if Universe.current_galaxy is not None:
             self.load_universe_data()
             self.remanent.value = self.calculate_mass()
-            self.sort_buttons(self.properties.get_widgets_from_layer(6))
             self.auto_button.enable()
+            self.show_current(self.last_id)
 
         super().show()
         for prop in self.properties.widgets():
@@ -144,7 +144,7 @@ class CompactObjectsPanel(BaseWidget):
             button.hide()
 
     def review(self, object_data):
-        for button in self.properties.get_widgets_from_layer(6):
+        for button in self.properties.widgets():
             button.deselect()
 
         if object_data.compact_subtype == 'black':
@@ -273,7 +273,7 @@ class CompactObjectsPanel(BaseWidget):
 
     def update(self):
         current = Universe.nei()
-        if current is not None and current.id != self.last_id:
+        if all([current is not None, current.id != self.last_id]):
             self.last_id = current.id
             self.show_current(current.id)
 
@@ -320,7 +320,7 @@ class NeutronStarType(BaseWidget):
 
     def clear(self):
         for widget in self.parent.properties.get_widgets_from_layer(2):
-            widget.value = ''
+            widget.clear()
         self.current = None
 
     def disable(self):
@@ -369,7 +369,7 @@ class BlackHoleType(BaseWidget):
 
     def clear(self):
         for widget in self.parent.properties.get_widgets_from_layer(3):
-            widget.value = ''
+            widget.clear()
         self.current = None
 
     def disable(self):
@@ -465,7 +465,7 @@ class BrownDwarfType(BaseWidget):
 
     def clear(self):
         for widget in self.parent.properties.get_widgets_from_layer(5):
-            widget.value = ''
+            widget.clear()
         self.current = None
 
     def disable(self):

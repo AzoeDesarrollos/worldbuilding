@@ -74,12 +74,13 @@ class StarSystemPanel(BaseWidget):
         self.current.current = star
         self.current.reset(star)
 
-    def create_button(self, system_data, new=False):
+    def create_button(self, system_data):
         nei = Universe.current_galaxy.get_neighbourhood(system_data.neighbourhood_id)
         binary_systems = [system for system in nei.proto_systems if system.composition == 'binary']
         if len(binary_systems) and system_data not in self.systems:
-            if new is False:
-                chosen = [proto for proto in binary_systems if proto.id == system_data.id].pop(0)
+            is_chosen = [proto for proto in binary_systems if proto.id == system_data.id]
+            if len(is_chosen):
+                chosen = is_chosen.pop(0)
             else:
                 chosen = binary_systems.pop(0)
             nei.remove_proto_system(chosen)
@@ -441,7 +442,7 @@ class SetupButton(TextButton):
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
             sistema = self.parent.current.current
-            self.parent.create_button(sistema, new=True)
+            self.parent.create_button(sistema)
             self.parent.undo_button.disable()
             self.parent.current.erase()
             buttons = self.parent.system_buttons.get_widgets_from_layer(self.parent.last_id)

@@ -72,13 +72,6 @@ class PlanetarySystem:
         Universe.add_astro_obj(astro_obj)
         group = self._get_astro_group(astro_obj)
 
-        if self._adding_a_planet:
-            kind = self._get_astro_kind(astro_obj)
-
-            if astro_obj not in kind:
-                kind.append(astro_obj)
-                astro_obj.idx = len(kind) - 1
-
         if astro_obj not in group:
             if astro_obj.celestial_type != 'system':
                 minus_mass = astro_obj.mass.to('jupiter_mass')
@@ -113,7 +106,6 @@ class PlanetarySystem:
         return True
 
     def _get_astro_kind(self, astro_obj):
-        self._adding_a_planet = False
         if astro_obj.planet_type == 'gaseous':
             return self.gas_giants
         elif astro_obj.planet_type == 'rocky':
@@ -125,7 +117,6 @@ class PlanetarySystem:
         group = None
         if astro_obj.celestial_type == 'planet':
             group = self.planets
-            self._adding_a_planet = True
         elif astro_obj.celestial_type == 'satellite':
             group = self.satellites
         elif astro_obj.celestial_type == 'asteroid':

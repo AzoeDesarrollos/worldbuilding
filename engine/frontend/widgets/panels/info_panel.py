@@ -213,6 +213,7 @@ class InformationPanel(BaseWidget):
             distance = round(distances[body_id], 3)
             if type(body_visibility) is q:
                 v = body_visibility.to('W/m^2')
+                v2 = round(body_visibility.m, 2)
                 if 'e' in str(v.m):
                     valor = f"{v.m:.2e} "
                     unidad = f"{v.u:P~}"
@@ -221,6 +222,8 @@ class InformationPanel(BaseWidget):
                     formato2 = f'of {round(v, 3):~P}'
                 text = f'* The {body.celestial_type} {body}, at a distance of {distance:~P} '
                 text += f'has an apparent brightness, as seen from {astrobody}, ' + formato2
+                if astrobody.parent == body:
+                    text += f"({v2}% that of Earth's)"
                 text += f" and a relative size {formato1} in it's sky."
             elif body_visibility == 'naked':
                 text = f'* {body} can be seen from {astrobody} with naked human eyes'

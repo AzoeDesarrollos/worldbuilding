@@ -1,6 +1,6 @@
 from engine.frontend.globales import COLOR_TEXTO, COLOR_TERRESTIAL, COLOR_GASDWARF, COLOR_HABITABLE
 from engine.frontend.globales import COLOR_GASGIANT, COLOR_PUFFYGIANT, COLOR_DWARFPLANET
-from engine.frontend.globales import COLOR_ROCKYMOON, COLOR_ICYMOON, COLOR_IRONMOON
+from engine.frontend.globales import COLOR_ROCKYMOON, COLOR_ICYMOON, COLOR_IRONMOON, COLOR_OPEN_OCEAN
 from .listed_body import ListedBody
 
 
@@ -9,7 +9,7 @@ class ColoredBody(ListedBody):
         self._color = self.set_color(astro)
         super().__init__(parent, astro, name, x, y)
 
-        self.name = 'Button of '+str(self.object_data)
+        self.name = 'Button of '+ str(self.object_data)
 
     def set_color(self, astro):
         color = COLOR_TEXTO
@@ -17,6 +17,8 @@ class ColoredBody(ListedBody):
             if astro.clase == 'Terrestial Planet':
                 if astro.habitable:
                     color = COLOR_HABITABLE
+                elif astro.planet_subtype == 'Water World':
+                    color = COLOR_OPEN_OCEAN
                 else:
                     color = COLOR_TERRESTIAL
             elif astro.clase in ('Gas Giant', 'Super Jupiter'):

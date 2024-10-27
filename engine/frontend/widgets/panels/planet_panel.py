@@ -55,7 +55,8 @@ class PlanetPanel(BasePanel):
                         'system': system.id,  # the ID of the system is the same as the its star's ID
                         'albedo': planet.albedo.m,
                         'tilt': planet.tilt.m if type(planet.tilt) is not str else planet.tilt,
-                        'flagged': planet.flagged
+                        'flagged': planet.flagged,
+                        'biomes': planet.biomes if planet.biomes is not None else None
                     }
                     data[planet.id] = planet_data
         EventHandler.trigger(event.tipo + 'Data', 'Planet', {"Planets": data})
@@ -326,7 +327,8 @@ class PlanetType(ObjectType):
             attrs['parent'] = system
             self.current = Planet(attrs)
             self.toggle_habitable()
-            if system.get_available_mass() == 'Unlimited' or self.current.mass <= system.body_mass:
+            available_mass = system.get_available_mass()
+            if available_mass == 'Unlimited' or system.body_mass > 0:
                 self.parent.button_add.enable()
                 self.parent.mass_number.mass_color = COLOR_TEXTO
             else:

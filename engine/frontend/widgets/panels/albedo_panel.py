@@ -29,7 +29,7 @@ class AlbedoPanel(BaseWidget):
 
         self.properties = Group()
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 300)
-        self.properties.add(self.planet_area, layer=2)
+        self.properties.add(self.planet_area, layer=1)
 
         h = round((ALTO - 32 - 32) / 3)
         a1 = Rect(0, 32, ANCHO - self.planet_area.rect.w, h)
@@ -123,6 +123,14 @@ class AlbedoPanel(BaseWidget):
         for chart in self.charts.widgets():
             chart.hide()
 
+    def surface_coverage(self):
+        arcs = self.pie_land.arcs + self.pie_ocean.arcs + self.pie_clouds.arcs + self.pie_coverage.arcs
+        data = {'clouds': self.clouds_text.value}
+        for arc in arcs:
+            if arc.enabled:
+                data[arc.name] = float(arc.get_value().strip(' %'))
+        self.current.set_biomes(data)
+
     def total_albedo(self):
         """Computes the total bond albedo (WIP)"""
         arcs = self.pie_land.arcs + self.pie_ocean.arcs + self.pie_clouds.arcs
@@ -137,6 +145,7 @@ class AlbedoPanel(BaseWidget):
 
         value = (round(total_albedo, 2) * Dc(100))
         self.current.albedo = float(value)
+        self.surface_coverage()
         self.albedo_vt.text_area.set_value(q(float(value)), is_percentage=True)
 
     def total_coverage(self, global_title: str, title: str):
@@ -157,12 +166,14 @@ class AlbedoPanel(BaseWidget):
     def clear(self):
         for chart in self.charts.widgets():
             chart.disable()
+        for vt in self.properties.get_widgets_from_layer(2):
+            vt.text_area.clear()
+            vt.text_area.unit = ''
+        self.clouds_text.text_area.set_value(q(50), is_percentage=True)
 
     def show(self):
         super().show()
-        for prop in self.properties.get_widgets_from_layer(2):
-            prop.show()
-        for prop in self.properties.get_widgets_from_layer(3):
+        for prop in self.properties.widgets():
             prop.show()
 
     def hide(self):
@@ -173,21 +184,44 @@ class AlbedoPanel(BaseWidget):
 
     def set_planet(self, planet):
         self.current = planet
+        self.clear()
         for chart in self.charts.widgets():
             chart.set_values()
             chart.disable()
+        if not self.current.biomes:
+            if planet.planet_subtype == 'Earth-like Planet':
+                for chart in self.charts.widgets():
+                    chart.enable()
+            elif planet.planet_subtype == 'Water World':
+                self.pie_clouds.enable()
+                self.pie_ocean.enable()
+                self.pie_coverage.enable()
+                self.pie_coverage.set_values({'Ocean': 100, 'Land': 0}, use_names=True)
+            elif planet.planet_type == 'gaseous':
+                self.pie_clouds.enable()
+                self.clouds_text.text_area.set_value(q(100), is_percentage=True)
 
-        if planet.habitable:
-            for chart in self.charts.widgets():
-                chart.enable()
-        elif planet.planet_type == 'gaseous':
-            self.pie_clouds.enable()
-            self.clouds_text.text_area.set_value(q(100), is_percentage=True)
-        elif planet.planet_subtype == 'Water World':
-            self.pie_clouds.enable()
-            self.pie_ocean.enable()
-            self.pie_coverage.enable()
-            self.pie_coverage.set_values({'Ocean': 100, 'Land': 0}, use_names=True)
+        else:
+            if planet.habitable:
+                for chart in self.charts.widgets():
+                    chart.enable()
+            pb = self.current.biomes
+            self.pie_coverage.set_values({'Ocean': pb['ocean'], 'Land': pb['land']}, use_names=True)
+            self.clouds_text.text_area.set_value(pb['clouds'], is_percentage=True)
+            self.pie_clouds.set_values({'Thin Clouds': pb['thin_clouds'],
+                                        'Thick Clouds': pb['thick_clouds']},
+                                       use_names=True)
+            self.pie_ocean.set_values({"Sea Ice": pb['sea_ice'], 'Open Ocean': pb['open_ocean']}, use_names=True)
+            self.pie_land.set_values({
+                "Desert": pb['desert'],
+                "Forest": pb['forest'],
+                "Grassland": pb["grassland"],
+                "Inland Water Bodies": pb['inland_water_bodies'],
+                "Urban": pb["urban"],
+                "Snow and Ice": pb["snow_and_ice"]
+            }, use_names=True)
+
+            self.total_albedo()
 
     @staticmethod
     def elevate_changes(key, new_value: float):

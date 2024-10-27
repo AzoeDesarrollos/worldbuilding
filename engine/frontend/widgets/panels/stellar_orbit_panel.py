@@ -1216,7 +1216,7 @@ class Recomendation(BaseWidget):
                     last_terrestial = terrestial_planets[0]
                     lim_terra = last_terrestial.orbit.a.m
 
-                if lim_min <= orbit.a.m < star.outer_boundry.m:
+                if lim_min <= orbit.a.m < star.parent.outer_boundry.m:
                     data = self.recomendation['texts']['tno']
                 elif lim_terra <= orbit.a.m < lim_max:
                     data = self.recomendation['texts']['belt']
@@ -1240,7 +1240,7 @@ class Recomendation(BaseWidget):
             last_gas_giant = gas_giants[0]
             lim_min = last_gas_giant.orbit.a.m
         txt = ''
-        if lim_min <= orbit.a.m < star.outer_boundry.m:
+        if lim_min <= orbit.a.m < star.parent.outer_boundry.m:
             if orbit.stable:
                 txt = ' It may fit into one of the following categories, '
                 txt += 'provided it has the appropiate values for ecentricity and inclination.'
@@ -1265,7 +1265,7 @@ class Recomendation(BaseWidget):
 
     def analyze_giants(self, planet, orbit, star, eccentricity=None):
         data = {'extra': ''}
-        frost_line = star.frost_line.m
+        frost_line = star.parent.frost_line.m
 
         clase = planet.clase in ('Puffy Giant', 'Gas Giant')
         orbita = 0.04 <= orbit.a.m <= 0.5
@@ -1293,7 +1293,7 @@ class Recomendation(BaseWidget):
             return data
 
         if planet.clase == 'Gas Dwarf':
-            orbita = 1.2 + frost_line <= orbit.a.m <= star.outer_boundry.m
+            orbita = 1.2 + frost_line <= orbit.a.m <= star.parent.outer_boundry.m
             data = self.recomendation['giant'].copy()
             data['extra'] = ''
             if not orbita:
@@ -1319,7 +1319,7 @@ class Recomendation(BaseWidget):
                 data['e'] = eccentricity
             is_largest_gas_giant = gas_giants[0] == planet
             if is_largest_gas_giant:
-                distance = abs(round(orbit.a.m - star.frost_line.m, 3))
+                distance = abs(round(orbit.a.m - star.parent.frost_line.m, 3))
                 txt = "\n\n"
                 txt += "As this is your largest gas giant, it should orbit 1 to 1.2 AU away from its star's frost line."
                 txt += f" Currently, its orbit is {distance} AU away from the frost line."

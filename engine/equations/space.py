@@ -91,12 +91,13 @@ class Universe:
                 cls.compact_objects.append(astro_obj)
             else:
                 cls.astro_bodies.append(astro_obj)
-        if hasattr(astro_obj, 'clase'):
+        if hasattr(astro_obj, 'clase') and astro_obj.idx is None:
             astro_obj.idx = len([i for i in group if i.clase == astro_obj.clase]) - 1
-        elif hasattr(astro_obj, 'cls'):
-            astro_obj.idx = len([i for i in group if i.cls == astro_obj.cls]) - 1
         elif group in [cls.binary_planets, cls.brown_dwarfs, cls.white_dwarfs, cls.neutron_stars, cls.black_holes]:
-            astro_obj.idx = len(group) - 1
+            subgroup = [astro for astro in group if astro.neighbourhood_id == astro_obj.neighbourhood_id]
+            astro_obj.idx = len(subgroup) - 1
+        elif hasattr(astro_obj, 'cls') and astro_obj.idx is None:
+            astro_obj.idx = len([i for i in group if i.cls == astro_obj.cls]) - 1
         elif astro_obj.celestial_type == 'galaxy' and len(group) == 1:
             next(cls.galaxy_cycler)
             cls.current_galaxy = astro_obj

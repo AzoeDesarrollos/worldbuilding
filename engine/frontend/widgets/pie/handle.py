@@ -41,7 +41,7 @@ class Handle(Meta):
 
     def on_mouseover(self):
         if self.enabled:
-            mouse.set_pos(self.rect.center)
+            # mouse.set_pos(self.rect.center)
             self.selected = True
 
     def on_mousemotion(self, rel):

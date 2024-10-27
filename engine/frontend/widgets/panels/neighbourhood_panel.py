@@ -179,8 +179,14 @@ class NeighbourhoodPanel(BaseWidget):
 
     def clear(self, event=None):
         if event is None or event.data['panel'] is self:
-            self.neighbourhood.clear()
-            for value_text in self.properties.get_widgets_from_layer(2):
+            if self.neighbourhood.has_values:
+                self.neighbourhood.clear()
+                layer = 2
+            else:
+                self.galaxy.clear()
+                layer = 1
+
+            for value_text in self.properties.get_widgets_from_layer(layer):
                 value_text.clear()
 
     def show(self):
@@ -239,7 +245,6 @@ class GalaxyType(BaseWidget):
     def fill(self, data=None):
         galaxy = Galaxy()
         galaxy.initialize(data)
-        Universe.add_astro_obj(galaxy)
         if not self.has_values:
             self.current = galaxy
             self.parent.current_galaxy_id = galaxy.id
@@ -273,6 +278,12 @@ class GalaxyType(BaseWidget):
         for key in event.data['Galaxies']:
             data = {'radius': event.data['Galaxies'][key]['radius'], 'id': key}
             self.fill(data)
+
+    def clear(self):
+        self.has_values = False
+        self.parent.current_galaxy_id = None
+        self.current = None
+        EventHandler.trigger('ClearGalaxy', self, {'current': None})
 
     def switch_current(self, event):
         self.current = event.data['current']
@@ -480,7 +491,9 @@ class StellarNeighbourhood:
         self.parent = parent
 
     def set_galaxy(self):
-        self.galaxy = self.parent.parent.galaxy.current
+        galaxy = self.parent.parent.galaxy.current
+        Universe.add_astro_obj(galaxy)
+        self.galaxy = galaxy
 
     def set_location(self, location, known_density=None):
         self.location = location

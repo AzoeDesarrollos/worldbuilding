@@ -10,6 +10,16 @@ class CompactObject(BodyInHydrostaticEquilibrium):
 
     neighbourhood_id = None
 
+    _idx = None
+
+    @property
+    def idx(self):
+        return self._idx
+
+    @idx.setter
+    def idx(self, value):
+        self._idx = value
+
 
 class BinaryPartner:
     prefix = ''
@@ -132,7 +142,7 @@ class BlackHole(CompactObject, BinaryPartner):
         if self.has_name:
             return self.name
         elif hasattr(self, 'idx'):
-            return f'Black Hole #{self.idx}'
+            return f'Black Hole #{self._idx}'
 
 
 class NeutronStar(CompactObject, BinaryPartner):
@@ -217,7 +227,6 @@ class WhiteDwarf(CompactObject, BinaryPartner):
 
 class BrownDwarf(CompactObject, BinaryPartner):
     compact_subtype = None  # this is intentional, because it is not compact.
-    idx = 0
 
     def __init__(self, data):
         mass = data['mass']
@@ -253,4 +262,4 @@ class BrownDwarf(CompactObject, BinaryPartner):
         self.age = q(self._age, 'years')
 
     def __repr__(self):
-        return f"{self.cls}{self.idx + 1}"
+        return f"{self.cls}{self._idx}"

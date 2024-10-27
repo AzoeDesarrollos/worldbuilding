@@ -40,6 +40,10 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     id = None
 
+    biomes = None
+
+    _idx = None
+
     def __init__(self, data):
         mass = data.get('mass', False)
         radius = data.get('radius', False)
@@ -54,11 +58,13 @@ class Planet(BodyInHydrostaticEquilibrium):
 
         unit = data.get('unit', "earth")
         self.unit = unit
-        self.idx = data.get('idx', 0)
+        self._idx = data.get('idx', 0)
         self._mass = None if not mass else mass
         self._radius = None if not radius else radius
         self._gravity = None if not gravity else gravity
         self._temperature = 0
+
+        self.biomes = data.get('biomes', {})
 
         rotation = data.get('rotation', 1)
         self._rotation = rotation
@@ -120,6 +126,11 @@ class Planet(BodyInHydrostaticEquilibrium):
 
         self.system_id = data.get('system', None)
 
+    def set_biomes(self, coverage):
+        for name in coverage:
+            key = name.replace(' ', '_').lower()
+            self.biomes[key] = coverage[name]
+
     @property
     def albedo(self):
         return self._albedo
@@ -151,10 +162,13 @@ class Planet(BodyInHydrostaticEquilibrium):
         radius = self.radius
         gravity = self.gravity
 
-        habitable = q(0.1, 'earth_mass') < mass < q(3.5, 'earth_mass')
-        habitable = habitable and q(0.5, 'earth_radius') < radius < q(1.5, 'earth_radius')
-        habitable = habitable and q(0.4, 'earth_gravity') < gravity < q(1.6, 'earth_gravity')
-        habitable = habitable and (0 <= tilt.a.m <= 80 or 110 <= tilt.a.m <= 180)
+        if type(tilt) is not str:
+            habitable = q(0.1, 'earth_mass') < mass < q(3.5, 'earth_mass')
+            habitable = habitable and q(0.5, 'earth_radius') < radius < q(1.5, 'earth_radius')
+            habitable = habitable and q(0.4, 'earth_gravity') < gravity < q(1.6, 'earth_gravity')
+            habitable = habitable and (0 <= tilt.a.m <= 80 or 110 <= tilt.a.m <= 180)
+        else:
+            habitable = False
 
         self.habitable = habitable
 
@@ -406,13 +420,21 @@ class Planet(BodyInHydrostaticEquilibrium):
         if self.has_name:
             return self.name
         else:
-            return f"{self.clase} #{self.idx}"
+            return f"{self.clase} #{self._idx}"
 
     def __getitem__(self, item):
         if type(item) is int:
             if item == 0:
                 return self
             raise StopIteration()
+
+    @property
+    def idx(self):
+        return self._idx
+
+    @idx.setter
+    def idx(self, value):
+        self._idx = value
 
 
 def planet_temperature(star_mass, semi_major_axis, albedo, greenhouse):
