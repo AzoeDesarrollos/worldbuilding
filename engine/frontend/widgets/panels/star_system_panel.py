@@ -484,6 +484,11 @@ class SystemButton(ColoredBody):
             if hasattr(self.parent, 'dissolve_button'):
                 self.parent.dissolve_button.enable()
 
+    def hide(self):
+        self.deselect()
+        self.parent.current.erase()
+        super().hide()
+
 
 class UndoButton(TextButton):
     enabled = False

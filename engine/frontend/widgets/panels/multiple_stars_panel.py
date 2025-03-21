@@ -27,7 +27,7 @@ class MultipleStarsPanel(BaseWidget):
 
     planetary_systems_added = False
 
-    # already_chosen = False
+    created_systems = False  # flag to prevent an infinite loop
 
     def __init__(self, parent):
         self.name = 'Multiple Stars'
@@ -223,18 +223,22 @@ class MultipleStarsPanel(BaseWidget):
             nei.set_planetary_systems()
 
         self.parent.swap_neighbourhood_button.disable()
+        self.created_systems = True
 
     def hide(self):
         super().hide()
         current = Universe.nei()
         if current is not None:
-            if (self.triple == 0 and self.multiple == 0) and self.planetary_systems_added is False:
-                self.planetary_systems_added = True
-                self.create_systems()
-                self.parent.swap_neighbourhood_button.disable()
+            if self.triple == 0 and self.multiple == 0:
+                super().hide()
+                if not self.created_systems:  # flag to prevent an infinite loop
+                    self.create_systems()
+                    self.parent.swap_neighbourhood_button.disable()
 
-        for prop in self.properties.widgets():
-            prop.hide()
+                for prop in self.properties.widgets():
+                    prop.hide()
+            else:
+                raise AssertionError('Construct all the multiple and triple systems before leaving this panel')
 
     def transfer_proto_system(self, discarded):
         proto = [sys for sys in self.discarded_protos if sys.location == discarded.cartesian]
