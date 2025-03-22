@@ -1,5 +1,6 @@
 from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, Group, WidgetHandler
 from engine.frontend.widgets import BaseWidget, ValueText
+from engine.backend.eventhandler import EventHandler
 from engine.equations import Universe, SolarCalendar
 from .common import ListedArea, ColoredBody
 from pygame import Surface, mouse
@@ -13,7 +14,8 @@ class CalendarPanel(BaseWidget):
 
     show_swap_system_button = True
 
-    remaining = 0
+    calendar: SolarCalendar = None  # this is just an alias
+    held_data = None
 
     def __init__(self, parent):
         self.name = 'Calendar'
@@ -26,7 +28,7 @@ class CalendarPanel(BaseWidget):
 
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
 
-        self.add_text = ValueText(self, 'Add', 390, 464 + 13, size=12)
+        self.add_text = ValueText(self, 'Add', 390, 480, size=12)
         self.add_text.modifiable = True
         self.add_text.hide()
 
@@ -36,6 +38,10 @@ class CalendarPanel(BaseWidget):
         self.month_text.hide()
         self.properties.add(self.planet_area, layer=1)
         self.properties.add(self.add_text, self.month_text, layer=2)
+
+        self.held_data = {}
+        EventHandler.register(self.save_days, 'Save')
+        EventHandler.register(self.hold_loaded_data, "LoadCalendars")
 
     @property
     def skip(self):
@@ -48,44 +54,51 @@ class CalendarPanel(BaseWidget):
     def select_astrobody(self, planet):
         densest = sorted(planet.satellites, key=lambda i: i.density.to('earth_density').m, reverse=True)
         satellite = densest[0]
-        if satellite.title == 'Major':
-            s_caledar = SolarCalendar(planet, satellite)
-            w = s_caledar.week_days
-            m = s_caledar.month_days
-            d = s_caledar.month_local * m
-            r = s_caledar.days_remaining
-            l = s_caledar.year_leap
-            self.remaining = r
+        if satellite.title == 'Major' and planet.calendar is None:
+            calendar = SolarCalendar(planet, satellite)
+            planet.set_calendar(calendar)
+            self.calendar = planet.calendar
+            if planet.id in self.held_data:
+                for month_key in self.held_data[planet.id]:
+                    self.calendar.months[int(month_key)]["leap"] += self.held_data[planet.id][month_key]
+                    self.calendar.days_remaining -= self.held_data[planet.id][month_key]
 
-            x = self.planet_area.rect.x
-            y = self.planet_area.rect.bottom + 2
-            width = self.planet_area.rect.width
+        w = self.calendar.week_days
+        m = self.calendar.month_days
+        d = self.calendar.month_local * m  # year length
+        r = self.calendar.days_remaining
+        l = self.calendar.year_leap
+        a = self.calendar.year_local
 
-            t = (f'{s_caledar.month_local} months of {m} days.'
-                 f'\n4 {w}-day long weeks per month.'
-                 f'\n{d} days in in a common year.'
-                 f'\n{d + r} days in in a leap year.'
-                 f'\n\nleap years every {l} years.')
+        x = self.planet_area.rect.x
+        y = self.planet_area.rect.bottom + 2
+        width = self.planet_area.rect.width
 
-            self.write2(t, self.fuente, width=width, y=y, x=x)
+        t = (f'{self.calendar.month_local} months of {m} days.'
+             f'\n4 {w}-day long weeks per month.'
+             f'\n{d} days in in a common year.'
+             f'\n{a} days in in a leap year.'
+             f'\n\nleap years every {l} years.')
 
-            title_sprite = YearTitle(self, 200, 32)
-            self.properties.add(title_sprite, layer=5)
-            title_sprite.show()
-            for mi in range(s_caledar.month_local):
-                dx = 150 * (mi % 2) + 16
-                dy = (75 * (mi // 2)) + 32
-                month = MonthSprite(self, mi, w, m, d, dx, dy)
-                self.properties.add(month, layer=3)
-                month.show()
+        self.write2(t, self.fuente, width=width, y=y, x=x)
 
-            if r > 0:
-                self.write_remaining_text()
+        title_sprite = YearTitle(self, 200, 32)
+        self.properties.add(title_sprite, layer=5)
+        title_sprite.show()
+        for mi in self.calendar.months.keys():
+            dx = 150 * (mi % 2) + 16
+            dy = (75 * (mi // 2)) + 32
+            month = MonthSprite(self, mi, w, d, dx, dy)
+            self.properties.add(month, layer=3)
+            month.show()
+
+        if r > 0:
+            self.write_remaining_text()
 
     def write_remaining_text(self, recreate=False):
         self.image.fill(COLOR_BOX, [390, 464, 200, 32])
         self.locked = False
-        remaining_text = f'There are {self.remaining} days remaining'
+        remaining_text = f'Distribute {self.calendar.days_remaining} leap years days'
         self.write2(remaining_text, self.fuente, width=200, x=390, y=464)
 
         if recreate is False:
@@ -106,20 +119,22 @@ class CalendarPanel(BaseWidget):
             value_month = int(val_month)
 
         if value_day is not None and value_month is not None:
-            months = self.properties.get_widgets_from_layer(3)
-            months.sort(key=lambda m: m.number)
-            month = months[value_month - 1]
-            if self.remaining - value_day > 0:
-                self.remaining -= value_day
-                month.add_days(value_day)
+            month_index = value_month - 1
+            month = self.properties.get_widgets_from_layer(3)[month_index]
+            if self.calendar.days_remaining - value_day >= 0:
+                self.calendar.days_remaining -= value_day
+                self.calendar.months[month_index]["leap"] += value_day
                 wid_month.value = ''
                 wid_day.value = ''
-                self.write_remaining_text()
-            elif self.remaining - value_day == 0:
-                month.add_days(value_day)
+
+            if self.calendar.days_remaining == 0:
                 self.image.fill(COLOR_BOX, [390, 464, 200, 32])
                 wid_month.hide()
                 wid_day.hide()
+            else:
+                self.write_remaining_text()
+
+            month.recreate()
         elif value_month is None:
             WidgetHandler.origin = wid_month.text_area
 
@@ -145,6 +160,21 @@ class CalendarPanel(BaseWidget):
             for prop in self.properties.get_widgets_from_layer(3):
                 prop.move(0, delta)
 
+    @staticmethod
+    def save_days(event):
+        data = {}
+        for nei in Universe.current_galaxy.stellar_neighbourhoods:
+            for system in nei.get_p_systems():
+                for planet in [planet for planet in system.planets if planet.calendar is not None]:
+                    months = planet.calendar.months
+                    leaps = {m: months[m]['leap'] for m in months if months[m]['leap'] > 0}
+                    data[planet.id] = leaps
+
+        EventHandler.trigger(event.tipo + 'Data', 'Calendar', {"Calendars": data})
+
+    def hold_loaded_data(self, event):
+        if 'Calendars' in event.data and len(event.data['Calendars']):
+            self.held_data.update(event.data['Calendars'])
 
 class CalendablePlanets(ColoredBody):
     def on_mousebuttondown(self, event):
@@ -195,19 +225,19 @@ class DaySprite(BaseWidget):
         self.rect.move_ip(dx, dy)
 
     def __repr__(self):
-        return "Day"
+        return f"Day #{self.day_month} of {str(self.parent)}"
 
 
 class MonthSprite(BaseWidget):
     image, rect = None, None
+    day_g = None
 
-    def __init__(self, parent, idx, week_lenght, days_n, year_lenght, dx, dy):
+    def __init__(self, parent, idx, week_lenght, year_lenght, dx, dy):
         super().__init__(parent)
         self.number = idx + 1
         self.year = year_lenght
         self.week = week_lenght
-        self.days = days_n
-        self.day_g = Group()
+        self.day_g = []
 
         self.x, self.y = dx, dy
         x, y = 0 + dx, 32 + dy
@@ -215,7 +245,7 @@ class MonthSprite(BaseWidget):
         self.create_days()
 
     def create_title(self, x, y):
-        title = self.write3(f"Month #{self.number}", self.crear_fuente(14), 100)
+        title = self.write3(f"Month #{self.number}", self.crear_fuente(14), self.week * 12, j=1)
         self.image = Surface((self.week * 12, (8 * 9) - 2))
         self.image.fill(COLOR_BOX)
         self.image.blit(title, (0, 0))
@@ -224,45 +254,48 @@ class MonthSprite(BaseWidget):
     def create_days(self):
         x = 0 + self.x
         y = 32 + self.y
-        for i in range(self.days):
-            day = DaySprite(self, i + 1, i % self.days, 11, i >= self.year)
+        common = self.parent.calendar.months[self.number - 1]['common']
+        leap = self.parent.calendar.months[self.number - 1]['leap']
+        days = common + leap
+        for i in range(days):
+            day = DaySprite(self, i + 1, i % days, 11, i >= common)
             day.month_id = self.number
             x += day.size + 1
             if i % self.week == 0:
                 y += day.size + 1
                 x = self.x
 
-            elif i % self.days == 0:
+            elif i % days == 0:
                 y += day.size + 20
                 x = 50 + self.x
 
             day.move(x, y)
             day.show()
             self.parent.properties.add(day, layer=4)
-            self.day_g.add(day, layer=1)
+            self.day_g.append(day)
 
-    def add_days(self, delta):
-        self.days += delta
-        parent_days = self.parent.properties.get_widgets_from_layer(4)
-        for day in parent_days:
-            if day in self.day_g:
-                self.parent.properties.remove(day)
-        self.day_g.empty()
+    def recreate(self):
+        for day in self.day_g:
+            day.kill()
+        self.day_g.clear()
 
         self.create_days()
 
     def show(self):
         super().show()
-        for day in self.day_g.widgets():
+        for day in self.day_g:
             day.show()
 
     def hide(self):
         super().hide()
-        for day in self.day_g.widgets():
+        for day in self.day_g:
             day.hide()
 
     def move(self, dx, dy):
         self.rect.move_ip(dx, dy)
+
+    def __repr__(self):
+        return f"Month #{self.number}"
 
 
 class YearTitle(BaseWidget):

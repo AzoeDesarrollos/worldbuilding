@@ -15,7 +15,7 @@ def save(event):
     data = abrir_json(ruta)
     read_data = data.copy()
     keys = 'Galaxies,Neighbourhoods,Stars,Single Systems,Binary Systems,Stellar Orbits,'
-    keys += 'Planetary Orbits,Asteroids,Planets,Satellites,Compact Objects'
+    keys += 'Planetary Orbits,Asteroids,Planets,Satellites,Compact Objects,Calendars'
     for key in keys.split(','):
         new_data = event.data.get(key, [])
         for item_id in new_data:

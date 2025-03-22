@@ -44,6 +44,8 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     _idx = None
 
+    calendar = None
+
     def __init__(self, data):
         mass = data.get('mass', False)
         radius = data.get('radius', False)
@@ -130,6 +132,9 @@ class Planet(BodyInHydrostaticEquilibrium):
         for name in coverage:
             key = name.replace(' ', '_').lower()
             self.biomes[key] = coverage[name]
+
+    def set_calendar(self, calendar):
+        self.calendar = calendar
 
     @property
     def albedo(self):

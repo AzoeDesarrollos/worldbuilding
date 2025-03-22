@@ -172,7 +172,7 @@ class LoadButton(BaseButton):
         if event.origin == self and self.enabled:
             data = self.check_data()
             keys = 'Galaxies,Neighbourhoods,Stars,Compact,Binary,Single,Planets,'
-            keys += 'Satellites,Asteroids,Stellar Orbits,Planetary Orbits'
+            keys += 'Satellites,Asteroids,Stellar Orbits,Planetary Orbits,Calendars'
             self.disable()
             for body in keys.split(','):
                 EventHandler.trigger(f'Load{body}', 'LoadButton', data)

@@ -16,6 +16,7 @@ class Systems:
         'Planetary Orbits': {},
         'Stellar Orbits': {},
         'Compact Objects': {},
+        'Calendars': {}
     }
 
     @classmethod

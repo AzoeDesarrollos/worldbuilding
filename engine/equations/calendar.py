@@ -2,6 +2,10 @@ from math import trunc
 
 
 class SolarCalendar:
+    months = None
+
+    days_remaining = None
+
     def __init__(self, planet, moon):
         planet_period = planet.orbit.period.to('earth_day').m
         month_year = planet_period / moon.orbit.period.to('earth_day').m
@@ -19,6 +23,7 @@ class SolarCalendar:
 
         self.days_month = self.year_local / self.month_local
         self.month_days = trunc(self.days_month)
+        self.months = {month_n: {"common": self.month_days, "leap": 0} for month_n in range(self.month_local)}
         days_year = self.month_local * self.month_days
         self.days_remaining = self.year_local - days_year
 
