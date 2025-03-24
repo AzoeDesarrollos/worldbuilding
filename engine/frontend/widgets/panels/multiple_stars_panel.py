@@ -25,7 +25,7 @@ class MultipleStarsPanel(BaseWidget):
 
     last_id = -1
 
-    planetary_systems_added = False
+    used_protos = None
 
     created_systems = False  # flag to prevent an infinite loop
 
@@ -43,6 +43,7 @@ class MultipleStarsPanel(BaseWidget):
         self.write('Subsystems', f, COLOR_AREA, x=3, y=420)
 
         self.system_buttons = Group()
+        self.used_protos = {}
 
         self.systems = []
         self.current = SystemsType(self)
@@ -65,6 +66,7 @@ class MultipleStarsPanel(BaseWidget):
         EventHandler.register(self.load_systems, 'LoadBinary')
         EventHandler.register(self.name_current, 'NameObject')
         EventHandler.register(self.export_data, 'ExportData')
+        EventHandler.register(self.dissolve_system, 'DissolveSystem')
 
         self.held_data = {}
 
@@ -123,6 +125,7 @@ class MultipleStarsPanel(BaseWidget):
         assert chosen is not None, "System is nonsensical"
         nei.remove_proto_system(chosen)
         system_data.cartesian = chosen.location
+        self.used_protos[system_data.id] = chosen
 
         offset = nei.location
         system_data.orbit = NeighbourhoodSystemOrbit(*system_data.cartesian, offset)
@@ -162,18 +165,23 @@ class MultipleStarsPanel(BaseWidget):
 
         prim = system.primary
         scnd = system.secondary
-        go_on_1 = prim.celestial_type == 'star' and scnd.celestial_type == 'system'
-        go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type == 'star'
+        go_on_1 = prim.celestial_type in ('star', 'compact') and scnd.celestial_type == 'system'
+        go_on_2 = prim.celestial_type == 'system' and scnd.celestial_type in ('star', 'compact')
         go_on_3 = prim.celestial_type == 'system' and scnd.celestial_type == 'system'
 
-        nei = Universe.nei()
+        nei_id = system.neighbourhood_id
+        nei = Universe.current_galaxy.get_neighbourhood(nei_id)
         if go_on_1 or go_on_2:
             nei.quantities['Triple'] += 1
+            nei.proto_systems.append(self.used_protos[system.id])
         if go_on_3:
             nei.quantities['Multiple'] += 1
+            nei.proto_systems.append(self.used_protos[system.id])
+
+        del self.used_protos[system.id]
 
         self.dissolve_button.disable()
-        EventHandler.trigger('DissolveSystem', self, {'system': system, 'nei': Universe.nei().id})
+        EventHandler.trigger('DissolveSystem', self, {'system': system, 'nei': nei_id})
 
     def show(self):
         super().show()
@@ -226,7 +234,6 @@ class MultipleStarsPanel(BaseWidget):
         self.created_systems = True
 
     def hide(self):
-        super().hide()
         current = Universe.nei()
         if current is not None:
             if self.triple == 0 and self.multiple == 0:
@@ -287,6 +294,10 @@ class MultipleStarsPanel(BaseWidget):
                         ecc_p = system_data['ecc_p']
                         ecc_s = system_data['ecc_s']
                         name = system_data['name']
+                        if prim.celestial_type in ('star', 'compact'):
+                            Universe.remove_loose_star(prim, nei.id)
+                        if scnd.celestial_type in ('star', 'compact'):
+                            Universe.remove_loose_star(scnd, nei.id)
 
                         system = system_type(avg_s)(prim, scnd, avg_s, ecc_p, ecc_s, id=id, name=name, nei_id=nei.id)
 
@@ -294,6 +305,17 @@ class MultipleStarsPanel(BaseWidget):
                         button.hide()
 
         self.stars_area.disable()
+
+    def dissolve_system(self, event):
+        systems = [i for i in self.systems]
+        for system in systems:
+            prim = system.primary
+            scnd = system.secondary
+            dissolved = event.data['system']
+            if dissolved in (prim, scnd):
+                self.del_button(system)
+                nei = Universe.current_galaxy.get_neighbourhood(event.data['nei'])
+                self.load_universe_data(nei)
 
     def show_current_set(self, new_id):
         for button in self.system_buttons.widgets():

@@ -1,4 +1,5 @@
 from .orbit import NeighbourhoodSystemOrbit, BinaryPlanetOrbit, PlanetOrbit, BinaryStarOrbit
+from engine.backend.eventhandler import EventHandler
 from engine.backend.util import generate_id, q
 from .general import Flagable, Point
 from .space import Universe
@@ -159,13 +160,21 @@ class BinarySystem(AbstractBinary):
 
     @cartesian.setter
     def cartesian(self, values):
-        self._cartesian = Point(*values)
+        self._cartesian = Point(*values, name='SystemLocation')
 
     def set_orbit(self, offset):
-        self.orbit = NeighbourhoodSystemOrbit(*self._cartesian, offset)
+        x, y, z = self._cartesian
+        self.orbit = NeighbourhoodSystemOrbit(x, y, z, offset)
 
 
-class PTypeSystem(BinarySystem):
+class DissolvableSystem(BinarySystem):
+    def dissolve(self):
+        parent = self.find_topmost_parent()
+        if parent is not None:
+            EventHandler.trigger('DissolveSystem', self, {'system': parent, 'nei': self.neighbourhood_id})
+
+
+class PTypeSystem(DissolvableSystem):
     letter = 'P'
 
     habitable_inner = 0
@@ -223,7 +232,7 @@ class PTypeSystem(BinarySystem):
         return self
 
 
-class STypeSystem(BinarySystem):
+class STypeSystem(DissolvableSystem):
     letter = 'S'
 
     def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None, nei_id=None):

@@ -95,7 +95,7 @@ class StarSystemPanel(BaseWidget):
             button = SystemButton(self, system_data, idx, self.curr_x, self.curr_y)
             self.systems.append(system_data)
             self.system_buttons.add(button, layer=system_data.neighbourhood_id)
-            # self.properties.add(button)
+
             nei.add_true_system(system_data)
             self.current.enable()
             if self.is_visible:
@@ -173,6 +173,7 @@ class StarSystemPanel(BaseWidget):
 
         button.kill()
         EventHandler.trigger('DissolveSystem', self, {'system': system, 'nei': Universe.nei().id})
+        EventHandler.process()
 
     @staticmethod
     def check_system(sstm=None, prim_scnd=None):
@@ -195,7 +196,6 @@ class StarSystemPanel(BaseWidget):
 
     def show(self):
         self.parent.swap_neighbourhood_button.unlock()
-        # self.show_systems()
         if Universe.current_galaxy is not None:
             for system in Universe.nei().true_systems:
                 if self.check_system(sstm=system):
@@ -208,11 +208,15 @@ class StarSystemPanel(BaseWidget):
         self.sort_buttons(self.system_buttons.get_widgets_from_layer(self.last_id))
 
     def hide(self):
-        super().hide()
-        for prop in self.properties.widgets():
-            prop.hide()
-        for button in self.system_buttons.widgets():
-            button.hide()
+        nei = Universe.nei()
+        if nei.quantities['Binary'] > 0:
+            raise AssertionError('Construct all the binary system, before leaving this panel')
+        else:
+            super().hide()
+            for prop in self.properties.widgets():
+                prop.hide()
+            for button in self.system_buttons.widgets():
+                button.hide()
 
     def transfer_proto_system(self, discarded):
         proto = [sys for sys in self.discarded_protos if sys.location == discarded.cartesian]
@@ -287,17 +291,13 @@ class SystemType(BaseWidget):
     def set_bodies(self, obj):
         if str(self.primary.value) == '':
             self.primary.value = obj
-            self.has_values = True
         elif str(self.secondary.value) == '':
             self.secondary.value = obj
-            self.has_values = True
         else:
             old_value = self.secondary.value
             self.replace_secondary(old_value, obj)
             self.secondary.value = obj
-            self.has_values = True
-
-        self.parent.undo_button.enable()
+        self.has_values = True
 
         Universe.remove_loose_star(obj, self.parent.last_id)
 
@@ -310,6 +310,9 @@ class SystemType(BaseWidget):
 
             if hasattr(self.parent, 'auto_button'):
                 self.parent.auto_button.enable()
+
+        else:
+            self.parent.undo_button.enable()
 
     def unset_stars(self):
         self.parent.stars_area.clear()
@@ -350,6 +353,7 @@ class SystemType(BaseWidget):
     def reset(self, system_data):
         self.set_bodies(system_data.primary)
         self.set_bodies(system_data.secondary)
+        self.parent.undo_button.disable()
         self.separation.value = system_data.average_separation
         self.ecc_p.value = system_data.ecc_p
         self.ecc_s.value = system_data.ecc_s
@@ -369,6 +373,10 @@ class SystemType(BaseWidget):
         self.parent.transfer_proto_system(self.current)
         self.parent.del_button(self.current)
         self.erase()
+
+        stars = Universe.get_loose_stars(self.parent.last_id)
+        self.parent.stars_area.clear()
+        self.parent.stars_area.populate(stars, layer=self.parent.last_id)
 
     def show(self):
         for prop in self.properties.widgets():
@@ -422,6 +430,7 @@ class AvailableStars(ListedArea):
         if Universe.current_galaxy is not None:
             if self.parent.quantity < 1:
                 self.disable_by_type('star')
+                self.disable_by_type('compact')
             else:
                 self.enable_all()
 
@@ -459,9 +468,6 @@ class DissolveButton(TextButton):
 
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
-            # system = self.parent.current.current
-            # Systems.dissolve_system(system)
-            self.parent.stars_area.show()
             self.parent.current.destroy()
 
 
@@ -500,6 +506,7 @@ class UndoButton(TextButton):
     def on_mousebuttondown(self, event):
         if self.enabled and event.data['button'] == 1 and event.origin == self:
             self.parent.current.unset_stars()
+            self.parent.auto_button.disable()
             self.disable()
 
 
@@ -538,6 +545,7 @@ class AutomaticSystemDataButton(TextButton):
             self.disable()
             x, y = self.parent.setup_button.rect.center
             mouse.set_pos(x, y)
+            self.parent.undo_button.disable()
 
 
 AutoButton = AutomaticSystemDataButton

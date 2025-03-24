@@ -258,6 +258,15 @@ class Point:
         else:
             raise ValueError("Points must have equal lenghts")
 
+    def __eq__(self, other):
+        if len(self) == len(other):
+            dx = self.x == other[0]
+            dy = self.y == other[1] if len(other) >= 2 else False
+            dz = self.z == other[2] if len(other) >= 3 else False
+            return all([dx, dy, dz])
+
+        return False
+
     def __iter__(self):
         if len(self) == 1:
             return iter([self.x])

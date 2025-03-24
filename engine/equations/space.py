@@ -315,6 +315,9 @@ class Universe:
     def dissolve_system(cls, event):
         system = event.data['system']
         nei_id = event.data['nei']
+        if system in cls.systems:
+            system.dissolve()
+            cls.systems.remove(system)
         if system.letter is not None:
             for star in system.composition():
                 cls.add_loose_star(star, nei_id)
