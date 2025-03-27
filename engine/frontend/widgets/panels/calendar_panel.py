@@ -85,10 +85,12 @@ class CalendarPanel(BaseWidget):
         title_sprite = YearTitle(self, 200, 32)
         self.properties.add(title_sprite, layer=5)
         title_sprite.show()
+        week_day = 0
         for mi in self.calendar.months.keys():
-            dx = 150 * (mi % 2) + 16
-            dy = (75 * (mi // 2)) + 32
-            month = MonthSprite(self, mi, w, d, dx, dy)
+            dx = 120 * (mi % 3) + 16
+            dy = (100 * (mi // 3)) + 70
+            month = MonthSprite(self, mi, week_day, w, d, dx, dy)
+            week_day = month.last_week_day + 1
             self.properties.add(month, layer=3)
             month.show()
 
@@ -176,6 +178,7 @@ class CalendarPanel(BaseWidget):
         if 'Calendars' in event.data and len(event.data['Calendars']):
             self.held_data.update(event.data['Calendars'])
 
+
 class CalendablePlanets(ColoredBody):
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
@@ -201,7 +204,7 @@ class DaySprite(BaseWidget):
     moveable = False
     month_id = None
 
-    def __init__(self, parent, idx, day_month, size, remaining=False):
+    def __init__(self, parent, idx, day_month, week_day, size, remaining=False):
         super().__init__(parent)
         self.size = size
         self.image = Surface((self.size, self.size))
@@ -211,6 +214,7 @@ class DaySprite(BaseWidget):
         self.rect = self.image.get_rect()
         self.number = idx
         self.day_month = day_month
+        self.week_day = week_day
 
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
@@ -232,47 +236,40 @@ class MonthSprite(BaseWidget):
     image, rect = None, None
     day_g = None
 
-    def __init__(self, parent, idx, week_lenght, year_lenght, dx, dy):
+    def __init__(self, parent, idx, first_week_day, week_lenght, year_lenght, dx, dy):
         super().__init__(parent)
         self.number = idx + 1
         self.year = year_lenght
         self.week = week_lenght
         self.day_g = []
 
-        self.x, self.y = dx, dy
-        x, y = 0 + dx, 32 + dy
-        self.create_title(x, y)
-        self.create_days()
+        self.create_title(dx, dy)
+        self.first_day = first_week_day if first_week_day < week_lenght else 0
+        self.last_week_day = self.create_days()
 
     def create_title(self, x, y):
-        title = self.write3(f"Month #{self.number}", self.crear_fuente(14), self.week * 12, j=1)
-        self.image = Surface((self.week * 12, (8 * 9) - 2))
-        self.image.fill(COLOR_BOX)
-        self.image.blit(title, (0, 0))
+        self.image = self.write3(f"Month #{self.number}", self.crear_fuente(14), self.week * 12, j=1)
         self.rect = self.image.get_rect(topleft=(x, y - 8))
 
     def create_days(self):
-        x = 0 + self.x
-        y = 32 + self.y
+        dx = self.rect.x
+        dy = self.rect.y + self.rect.h
         common = self.parent.calendar.months[self.number - 1]['common']
         leap = self.parent.calendar.months[self.number - 1]['leap']
-        days = common + leap
-        for i in range(days):
-            day = DaySprite(self, i + 1, i % days, 11, i >= common)
+        days = [i for i in range(common + leap)]
+        for i, day_i in enumerate(days, start=self.first_day):
+            day = DaySprite(self, day_i, day_i % len(days), i % self.week, 11, day_i >= common)
             day.month_id = self.number
-            x += day.size + 1
-            if i % self.week == 0:
-                y += day.size + 1
-                x = self.x
-
-            elif i % days == 0:
-                y += day.size + 20
-                x = 50 + self.x
+            x = dx + (i % self.week) * (day.size + 1)
+            y = dy + (i // self.week) * (day.size + 1)
 
             day.move(x, y)
             day.show()
             self.parent.properties.add(day, layer=4)
             self.day_g.append(day)
+
+        else:
+            return self.day_g[-1].week_day
 
     def recreate(self):
         for day in self.day_g:
