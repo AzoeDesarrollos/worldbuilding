@@ -69,8 +69,10 @@ class NeighbourhoodPanel(BaseWidget):
         value.do_round = True
         self.properties.add(value, layer=2)
 
-        self.button_add = AddNeighbourhoodButton(self, ANCHO - 15, 416)
-        self.properties.add(self.button_add, layer=3)
+        self.add_nei_button = AddNeighbourhoodButton(self, ANCHO - 15, 416)
+        self.add_galaxy_btn = AddGalaxyButton(self.galaxy, ANCHO - 15, 110)
+        self.set_galaxy_btn = SetGalaxyButton(self, ANCHO - 150, 110)
+        self.properties.add(self.add_nei_button, self.add_galaxy_btn, self.set_galaxy_btn, layer=3)
 
         EventHandler.register(self.clear, 'ClearData')
         EventHandler.register(self.switch_current, 'SwitchGalaxy')
@@ -196,7 +198,6 @@ class NeighbourhoodPanel(BaseWidget):
         self.neighbourhood.populate()
         self.sort_buttons(self.properties.get_widgets_from_layer(5))
 
-        self.parent.swap_galaxy_button.enable()
         self.parent.swap_neighbourhood_button.disable()
 
     def hide(self):
@@ -256,16 +257,9 @@ class GalaxyType(BaseWidget):
             widgets[1].value = galaxy.inner
             widgets[2].value = galaxy.outer
 
-            widgets = self.parent.properties.get_widgets_from_layer(2)
-            widgets[0].set_min_and_max(galaxy.inner.m, galaxy.outer.m)
-            widgets[2].value = 'Unknown'
-            for widget in widgets:
-                widget.enable()
             self.has_values = True
 
-            swap_galaxy_button = self.parent.parent.swap_galaxy_button
-            swap_galaxy_button.enable()
-            swap_galaxy_button.current = self.current
+            self.parent.add_galaxy_btn.enable()
 
     def save_galaxy(self, event):
         widget = self.parent.properties.get_widgets_from_layer(1)[0]
@@ -283,7 +277,9 @@ class GalaxyType(BaseWidget):
         self.has_values = False
         self.parent.current_galaxy_id = None
         self.current = None
-        EventHandler.trigger('ClearGalaxy', self, {'current': None})
+        for widget in self.parent.properties.get_widgets_from_layer(1):
+            widget.clear()
+        # EventHandler.trigger('ClearGalaxy', self, {'current': None})
 
     def switch_current(self, event):
         self.current = event.data['current']
@@ -333,7 +329,7 @@ class NeighbourhoodType(BaseWidget):
             self.clear()
             self.populate()
             self.has_values = True
-            self.parent.button_add.enable()
+            self.parent.add_nei_button.enable()
 
             if valid:
                 self.parent.image.blit(self.habitable, self.hab_rect)
@@ -492,7 +488,6 @@ class StellarNeighbourhood:
 
     def set_galaxy(self):
         galaxy = self.parent.parent.galaxy.current
-        Universe.add_astro_obj(galaxy)
         self.galaxy = galaxy
 
     def set_location(self, location, known_density=None):
@@ -673,7 +668,7 @@ class NeighbourhoodButton(Meta):
             radius = self.object_data.radius
             self.parent.get_values(location, radius)
             self.parent.select_one(self)
-            self.parent.button_add.disable()
+            self.parent.add_nei_button.disable()
             # esto está un poco sucio porque se está está poniendo por afuera.
             self.parent.parent.swap_neighbourhood_button.current = self.object_data
             Universe.current_galaxy.current_neighbourhood = self.object_data
@@ -693,4 +688,42 @@ class AddNeighbourhoodButton(TextButton):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.create_neighbourhood()
             self.parent.clear()
+            self.disable()
+
+
+class AddGalaxyButton(TextButton):
+    enabled = False
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent, 'Create Galaxy', x, y)
+        self.rect.right = x
+
+    def on_mousebuttondown(self, event):
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
+            galaxy = self.parent.current
+            Universe.add_astro_obj(galaxy)
+            swap_galaxy_button = self.parent.parent.parent.swap_galaxy_button
+            swap_galaxy_button.enable()
+            swap_galaxy_button.set_current(galaxy)
+            # self.parent.clear()
+            self.disable()
+            self.parent.parent.set_galaxy_btn.enable()
+
+
+class SetGalaxyButton(TextButton):
+    enabled = False
+
+    def __init__(self, parent, x, y):
+        super().__init__(parent, '[Set]', x, y)
+        self.rect.right = x
+
+    def on_mousebuttondown(self, event):
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
+            widgets = self.parent.properties.get_widgets_from_layer(2)
+            galaxy = self.parent.galaxy.current
+            widgets[0].set_min_and_max(galaxy.inner.m, galaxy.outer.m)
+            widgets[2].value = 'Unknown'
+            for widget in widgets:
+                widget.enable()
+
             self.disable()

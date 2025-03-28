@@ -209,7 +209,7 @@ class StarSystemPanel(BaseWidget):
 
     def hide(self):
         nei = Universe.nei()
-        if nei.quantities['Binary'] > 0:
+        if nei is not None and nei.quantities['Binary'] > 0:
             raise AssertionError('Construct all the binary system, before leaving this panel')
         else:
             super().hide()

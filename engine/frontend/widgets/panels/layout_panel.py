@@ -245,11 +245,15 @@ class SwapGalaxy(SwapSystem):
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and event.origin == self and self.enabled:
             galaxy = Universe.cycle_galaxies()
-            self.current = galaxy
+            self.set_current(galaxy)
             EventHandler.trigger('SwitchGalaxy', 'SwapGalaxyButton', {'current': galaxy})
 
     def create_img(self):
         self.system_image = GalaxyName(self, left=self.rect.right + 6, y=2)
+
+    def set_current(self, galaxy):
+        self.current = galaxy
+        self.system_image.render_name()
 
     def update(self):
         if all([not self.has_mouseover, not self.selected, self.enabled]):
@@ -341,6 +345,8 @@ class SystemName(BaseWidget):
 
 
 class GalaxyName(SystemName):
+    name = '-'
+
     def render_name(self):
         if self.parent.current is not None:
             name = self.parent.current.id.split('-')[1]
@@ -349,7 +355,9 @@ class GalaxyName(SystemName):
         else:
             name = '-'
 
-        self.image = self.f.render(name, True, self.color, COLOR_BOX)
+        if name != self.name:
+            self.name = name
+        self.image = self.f.render(self.name, True, self.color, COLOR_BOX)
 
 
 class NeighbourhoodName(SystemName):

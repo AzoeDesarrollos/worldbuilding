@@ -191,6 +191,9 @@ class NeutronStar(CompactObject, BinaryPartner):
 class WhiteDwarf(CompactObject, BinaryPartner):
     compact_subtype = 'white'
 
+    #  these are stellar remnants of low mass stars. The creation of one of these means
+    #  that there has been a supernova in the neighbourhood.
+
     def __init__(self, data):
         mass = data['mass']
         assert 0.17 <= mass <= 1.4, 'White Dwarfs have masses between 0.17 and 1.4 solar masses'

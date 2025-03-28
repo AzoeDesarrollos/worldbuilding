@@ -273,7 +273,7 @@ class CompactObjectsPanel(BaseWidget):
 
     def update(self):
         current = Universe.nei()
-        if all([current is not None, current.id != self.last_id]):
+        if current is not None and current.id != self.last_id:
             self.last_id = current.id
             self.show_current(current.id)
 
