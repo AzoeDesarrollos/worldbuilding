@@ -99,8 +99,7 @@ class Universe:
         elif hasattr(astro_obj, 'cls') and astro_obj.idx is None:
             astro_obj.idx = len([i for i in group if i.cls == astro_obj.cls]) - 1
         elif astro_obj.celestial_type == 'galaxy' and len(group) == 1:
-            next(cls.galaxy_cycler)
-            cls.current_galaxy = astro_obj
+            cls.current_galaxy = next(cls.galaxy_cycler)
 
     @classmethod
     def contains(cls, astro_obj):
@@ -162,11 +161,6 @@ class Universe:
                     else:
                         for star in system.composition():
                             stars.append(star)
-            # for system in Systems.get_stars_and_systems():
-            #     if system.star_system.letter == 'P':
-            #         stars = [system.star_system]
-            #     else:
-            #         stars = [s for s in system.star_system]
 
             for star in stars:
                 if body.orbit is not None and star.id not in cls.aparent_brightness[body.id]:

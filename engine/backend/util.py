@@ -117,7 +117,7 @@ def add_decimal(text: str):
 
 def guardar_json(ruta, datos, encoding='utf-8'):
     with open(ruta, mode='w', encoding=encoding) as file:
-        json.dump(datos, file, ensure_ascii=False, indent=2, separators=(',', ':'), sort_keys=True)
+        json.dump(datos, file, ensure_ascii=False, indent=2, separators=(',', ': '), sort_keys=True)
 
 
 def abrir_json(ruta, encoding='utf-8'):

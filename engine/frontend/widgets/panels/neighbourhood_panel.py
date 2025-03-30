@@ -4,10 +4,10 @@ from engine.frontend.widgets.panels.common import TextButton
 from engine.equations.system_binary import analyze_binaries
 from engine.equations.stellar_neighbourhood import *
 from engine.backend.eventhandler import EventHandler
+from pygame import Surface, draw, Rect, mouse
 from engine.equations.space import Universe
 from engine.equations.galaxy import Galaxy
 from math import pi, acos, sin, cos, floor
-from pygame import Surface, draw, Rect
 from random import uniform
 
 
@@ -113,7 +113,8 @@ class NeighbourhoodPanel(BaseWidget):
         radius = widgets[1].value
         density = widgets[2].value / 1000 if type(widgets[2].value) is not str else widgets[2].value
         if data is None:
-            data = {'location': location, 'radius': radius, 'density': density}
+            galaxy = self.galaxy.current
+            data = {'location': location, 'radius': radius, 'density': density, 'galaxy_id': galaxy.id}
         else:
             density = data['density']
             radius = data['radius']
@@ -129,10 +130,10 @@ class NeighbourhoodPanel(BaseWidget):
         self.neighbourhoods.append(object_data)
         self.current_nei = object_data
         button = NeighbourhoodButton(self, object_data)
-        self.neighbourhood_buttons.add(button, layer=self.current_galaxy_id)
+        self.neighbourhood_buttons.add(button, layer=data['galaxy_id'])
         self.properties.add(button, layer=5)
         if self.is_visible:
-            self.sort_buttons(self.properties.get_widgets_from_layer(5))
+            self.sort_buttons(self.neighbourhood_buttons.get_widgets_from_layer(data['galaxy_id']))
 
         self.neighbourhood.characteristics.set_location(data['location'], known_density=data['density'])
         self.neighbourhood.characteristics.set_radius(data['radius'])
@@ -163,8 +164,8 @@ class NeighbourhoodPanel(BaseWidget):
 
         return button
 
-    def set_analyzed(self, pairs):
-        self.analized = pairs
+    def set_analyzed(self, data):
+        self.analized = analyze_binaries(data)
 
     def get_values(self, location, radius):
         density = self.galaxy.current.get_density_at_location(location)
@@ -174,8 +175,9 @@ class NeighbourhoodPanel(BaseWidget):
         den_text.value = str(round(density, 3))
         self.neighbourhood.fill()
 
-    def create_neighbourhood(self, data=None):
+    def create_neighbourhood(self, data=None, show=True):
         button = self.create_button(data)
+        button.show() if show else button.hide()
         self.galaxy.current.add_neighbourhood(button.object_data)
         return button
 
@@ -196,7 +198,8 @@ class NeighbourhoodPanel(BaseWidget):
         for prop in self.properties.widgets():
             prop.show()
         self.neighbourhood.populate()
-        self.sort_buttons(self.properties.get_widgets_from_layer(5))
+        buttons = self.neighbourhood_buttons.get_widgets_from_layer(self.current_galaxy_id)
+        self.sort_buttons(buttons)
 
         self.parent.swap_neighbourhood_button.disable()
 
@@ -213,7 +216,7 @@ class NeighbourhoodPanel(BaseWidget):
         if self.parent.current is self:
             self.neighbourhood.clear()
             self.galaxy.current = event.data['current']
-            self.neighbourhood.characteristics.set_galaxy()
+            self.neighbourhood.characteristics.set_galaxy(event.data['current'])
             for widget in self.properties.get_widgets_from_layer(2):
                 widget.clear()
             for button in self.properties.get_widgets_from_layer(5):
@@ -225,6 +228,10 @@ class NeighbourhoodPanel(BaseWidget):
     def update(self):
         if self.current_galaxy_id != self.last_id:
             self.last_id = self.current_galaxy_id
+            for button in self.properties.get_widgets_from_layer(5):
+                button.hide()
+            for button in self.neighbourhood_buttons.get_widgets_from_layer(self.last_id):
+                button.show()
 
     def export_data(self, event):
         if event.data['panel'] is self:
@@ -243,7 +250,7 @@ class GalaxyType(BaseWidget):
         EventHandler.register(self.load_galaxies, 'LoadGalaxies')
         EventHandler.register(self.switch_current, 'SwitchGalaxy')
 
-    def fill(self, data=None):
+    def fill(self, data=None, active=True):
         galaxy = Galaxy()
         galaxy.initialize(data)
         if not self.has_values:
@@ -259,7 +266,11 @@ class GalaxyType(BaseWidget):
 
             self.has_values = True
 
+        if active:
             self.parent.add_galaxy_btn.enable()
+        else:
+            Universe.add_astro_obj(galaxy)
+            self.parent.parent.swap_galaxy_button.enable()
 
     def save_galaxy(self, event):
         widget = self.parent.properties.get_widgets_from_layer(1)[0]
@@ -271,7 +282,7 @@ class GalaxyType(BaseWidget):
     def load_galaxies(self, event):
         for key in event.data['Galaxies']:
             data = {'radius': event.data['Galaxies'][key]['radius'], 'id': key}
-            self.fill(data)
+            self.fill(data, active=False)
 
     def clear(self):
         self.has_values = False
@@ -307,7 +318,8 @@ class NeighbourhoodType(BaseWidget):
         self.eraser = Rect(390, self.parent.rect.y + 160, 150, 24)
 
     def fill(self):
-        self.characteristics.set_galaxy()
+        galaxy = self.parent.galaxy.current
+        self.characteristics.set_galaxy(galaxy)
         widgets = self.parent.properties.get_widgets_from_layer(2)
         location_text, radius_text, density_text = widgets
         location_valid, radius_valid, valid = False, False, False
@@ -351,16 +363,18 @@ class NeighbourhoodType(BaseWidget):
         EventHandler.trigger(event.tipo + 'Data', 'Neighbourhood', {"Neighbourhoods": macro_data})
 
     def load_neighbourhoods(self, event):
-        self.parent.set_analyzed(analyze_binaries(event.data))
-        self.characteristics.set_galaxy()
+        self.parent.set_analyzed(event.data)
         if len(event.data['Neighbourhoods']):
-            for key in event.data['Neighbourhoods']:
+            nei_ids = [key for key in event.data['Neighbourhoods']]
+            for key in nei_ids:
                 neighbourhood_data = event.data['Neighbourhoods'][key]
                 location = neighbourhood_data['location']
                 density = neighbourhood_data['density']
                 neighbourhood_data['id'] = key
-                self.parent.galaxy.current.record_density_at_location(location, density)
-                nei = self.parent.create_neighbourhood(neighbourhood_data)
+                galaxy = Universe.get_astrobody_by(neighbourhood_data['galaxy_id'], tag_type='id')
+                self.characteristics.set_galaxy(galaxy)
+                galaxy.record_density_at_location(location, density)
+                nei = self.parent.create_neighbourhood(neighbourhood_data, key == nei_ids[-1])
                 nei.object_data.process_data(event.data)
 
     def clear(self):
@@ -486,8 +500,7 @@ class StellarNeighbourhood:
     def __init__(self, parent):
         self.parent = parent
 
-    def set_galaxy(self):
-        galaxy = self.parent.parent.galaxy.current
+    def set_galaxy(self, galaxy):
         self.galaxy = galaxy
 
     def set_location(self, location, known_density=None):
@@ -705,7 +718,6 @@ class AddGalaxyButton(TextButton):
             swap_galaxy_button = self.parent.parent.parent.swap_galaxy_button
             swap_galaxy_button.enable()
             swap_galaxy_button.set_current(galaxy)
-            # self.parent.clear()
             self.disable()
             self.parent.parent.set_galaxy_btn.enable()
 
@@ -727,3 +739,8 @@ class SetGalaxyButton(TextButton):
                 widget.enable()
 
             self.disable()
+
+    def enable(self):
+        super().enable()
+        pos = self.rect.center
+        mouse.set_pos(pos)
