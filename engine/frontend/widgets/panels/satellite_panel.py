@@ -1,5 +1,5 @@
 from engine.frontend.globales import COLOR_AREA, COLOR_BOX, COLOR_TEXTO, COLOR_DISABLED, COLOR_SELECTED
-from engine.backend import EventHandler, material_densities, roll, choice
+from engine.backend import EventHandler, material_densities, roll, choice, ureg
 from engine.equations.satellite import major_moon_by_composition
 from engine.frontend.globales import ANCHO, ALTO, Group
 from engine.frontend.widgets.values import ValueText
@@ -17,6 +17,8 @@ from ..pie import PieChart
 class SatellitePanel(BasePanel):
     mass_number = None
     last_idx = None
+
+    with_additional_mode = False
 
     def __init__(self, parent):
         super().__init__('Satellite', parent, modes=3)
@@ -229,6 +231,7 @@ class SatelliteType(ObjectType):
             for material in self.properties.get_widgets_from_layer(2):
                 if material.text_area.value:  # not empty
                     text = material.text_area.value.strip(' %')
+                    # noinspection PyUnresolvedReferences
                     data['composition'][material.text.lower()] = float(text)
 
         for item in self.properties.get_widgets_from_layer(1):
@@ -344,6 +347,13 @@ class SatelliteType(ObjectType):
                 'escape_velocity': 'EVm'
             }
         }
+        if self.parent.with_additional_mode:
+            tos[3] = {
+                'mass': 'Mp',
+                'radius': 'Rp',
+                'gravity': 'Gp',
+                'escape_velocity': 'Ep'
+            }
         for element in self.properties.get_widgets_from_layer(1)[1:]:
             element.enable()
         super().fill(tos)
@@ -362,7 +372,7 @@ class SatelliteType(ObjectType):
         for elemento in self.properties.get_widgets_from_layer(2):
             elemento.value = str(round(new[elemento.text.lower()], 2)) + ' %'
             elemento.text_area.show()
-        self.has_values = True
+        # self.has_values = True
         self.pie.set_values(new)
 
 
@@ -474,6 +484,16 @@ class CopyCompositionButton(Meta):
             d = {'water ice': 0, 'silicates': 0, 'iron': 0}
             for element in d:
                 d[element] = self.current.composition[element]
+
+            attrs = "mass", "radius", "gravity", "escape_velocity", "density", "volume"
+            units = 'kg', 'km', 'm/s**2', 'km/s', "g/cm ** 3", "km ** 3"
+            for i, attr in enumerate(attrs):
+                value = getattr(self.current, attr).to(units[i]).m
+                txt = f"{attr[0].upper()}p = {value} * {units[i]}"
+                ureg.define(txt)
+            self.parent.update_modes(4)
+            self.parent.with_additional_mode = True
+
             self.parent.current.paste_composition(d)
             self.parent.write_name(self.current)
 

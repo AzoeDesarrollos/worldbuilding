@@ -15,6 +15,9 @@ from pygame import Rect
 class AsteroidPanel(BasePanel):
     last_id = None
 
+    with_additional_mode = False
+    loaded = False
+
     def __init__(self, parent):
         super().__init__('Asteroid', parent)
         self.properties = Group()
@@ -64,22 +67,16 @@ class AsteroidPanel(BasePanel):
 
     def load_satellites(self):
         self.enable()
-        for id in self.held_data:
-            satellite_data = self.held_data[id]
-            satellite_data['id'] = id
-            moon = minor_moon_by_composition(satellite_data)
-            moon.idx = len([i for i in Universe.current_planetary().planets if i.clase == moon.clase])
-            # system = Systems.get_system_by_id(satellite_data['system'])
-            # if system is not None and system.add_astro_obj(moon):
-            self.current.current = moon
-            self.add_button()
+        if not self.loaded:
+            for id in self.held_data:
+                satellite_data = self.held_data[id]
+                satellite_data['id'] = id
+                moon = minor_moon_by_composition(satellite_data)
+                moon.idx = len([i for i in Universe.current_planetary().planets if i.clase == moon.clase])
+                self.current.current = moon
+                self.add_button()
 
-    # def load_data(self):
-    #     self.enable()
-    #     for moon in self.asteroids.widgets():
-    #         system = Systems.get_system_by_id(moon.system_id)
-    #         if system is not None and system.add_astro_obj(moon):
-    #             self.add_button(moon)
+        self.loaded = True
 
     def save_satellites(self, event):
         data = {}
@@ -135,7 +132,9 @@ class AsteroidPanel(BasePanel):
             button.hide()
         for button in self.asteroids.get_widgets_from_layer(idx):
             button.show()
-        self.sort_buttons(self.asteroids.get_widgets_from_layer(Universe.current_planetary().id))
+        if self.is_visible:
+            asteroids = self.asteroids.get_widgets_from_layer(Universe.current_planetary().id)
+            self.sort_buttons(asteroids, x=self.curr_x, y=self.curr_y)
 
     def select_one(self, btn):
         for button in self.asteroids.widgets():
@@ -260,6 +259,7 @@ class AsteroidType(BaseWidget):
         if not len(data['composition']):
             for material in self.properties.get_widgets_from_layer(4):
                 if material.text_area.value:  # not empty
+                    # noinspection PyUnresolvedReferences
                     data['composition'][material.text.lower()] = float(material.text_area.value.strip(' %'))
 
         if self.current is not None:
@@ -344,8 +344,19 @@ class AsteroidType(BaseWidget):
                 'Mass': 'Me',
                 'Density': 'De',
                 'Volume': 'Ve'
-            }
+            },
+            2: {
+                'Mass': 'kg',
+                'Density': 'g/cm ** 3',
+                'Volume': 'km**3',
+            },
         }
+        if self.parent.with_additional_mode:
+            tos[3] = {
+                'Mass': 'Mp',
+                'Density': 'Dp',
+                'Volume': 'Vp',
+            }
         self.parent.image.fill(COLOR_BOX, self.parent.erase_text_area)
         elementos = self.properties.get_widgets_from_layer(2)
         for elemento in elementos:
