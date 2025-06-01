@@ -87,7 +87,7 @@ class StarSystemPanel(BaseWidget):
             self.discarded_protos.append(chosen)
             system_data.cartesian = chosen.location
             offset = nei.location
-            system_data.set_orbit(offset)
+            system_data.set_orbit(system_data.id, offset)
             nei.quantities['Binary'] -= 1
             Universe.add_astro_obj(system_data)
 

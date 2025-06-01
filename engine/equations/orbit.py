@@ -139,7 +139,7 @@ class Orbit(Flagable, Ellipse):
 
     subtype = 'Orbit'
 
-    def __init__(self, a, e, i, unit):
+    def __init__(self, id, a, e, i, unit):
         super().__init__(a, e)
         self._unit = unit
         assert 0 <= float(i.m) <= 180, 'inclination values range from 0 to 180 degrees.'
@@ -147,6 +147,7 @@ class Orbit(Flagable, Ellipse):
         self._Q = abs(self._a * (1 + self._e))
         self._q = abs(self._a * (1 - self._e))
         self.set_focus(self._q)
+        self.id = id
 
         if self._i in (0, 180):
             self.motion = 'equatorial'
@@ -277,8 +278,8 @@ class PlanetOrbit(Orbit):
 
     subtype = 'Planetary'
 
-    def __init__(self, star, a, e, i, loan=None, aop=None):
-        super().__init__(a, e, i, 'au')
+    def __init__(self, star, id, a, e, i, loan=None, aop=None):
+        super().__init__(id, a, e, i, 'au')
         self.reset_period_and_speed(star)
         if loan is None and aop is None:
             orbital_properties = set_orbital_properties(self._i)
@@ -304,8 +305,8 @@ class SatelliteOrbit(Orbit):
 
     subtype = 'Satellital'
 
-    def __init__(self, a, e, i, loan=None, aop=None):
-        super().__init__(a, e, i, 'earth_radius')
+    def __init__(self, id, a, e, i, loan=None, aop=None):
+        super().__init__(id, a, e, i, 'earth_radius')
         if loan is None and aop is None:
             orbital_properties = set_orbital_properties(self._i)
             self.longitude_of_the_ascending_node = orbital_properties[0]
@@ -327,8 +328,8 @@ class SatelliteOrbit(Orbit):
 class BinaryStarOrbit(Orbit):
     subtype = 'StellarBinary'
 
-    def __init__(self, star, other, a, e):
-        super().__init__(a, e, q(0, 'degrees'), 'au')
+    def __init__(self, star, other, id, a, e):
+        super().__init__(id, a, e, q(0, 'degrees'), 'au')
         self.reset_period_and_speed(star.mass.m + other.mass.m)
 
     def reset_period_and_speed(self, main_body_mass):
@@ -341,8 +342,8 @@ class BinaryPlanetOrbit(Orbit):
 
     subtype = 'PlanetaryBinary'
 
-    def __init__(self, planet, other, a, e):
-        super().__init__(a, e, q(0, 'degrees'), 'earth_radius')
+    def __init__(self, planet, other, id, a, e):
+        super().__init__(id, a, e, q(0, 'degrees'), 'earth_radius')
         self.reset_period_and_speed(planet.mass.m + other.mass.m)
 
     def reset_period_and_speed(self, main_body_mass):
@@ -367,11 +368,11 @@ class GalacticNeighbourhoodOrbit(Orbit):
 class NeighbourhoodSystemOrbit(Orbit):
     subtype = 'Neighbourhood'
 
-    def __init__(self, x, y, z, offset):
+    def __init__(self, id, x, y, z, offset):
         # spherical coordinates
         rho = sqrt(x ** 2 + y ** 2 + z ** 2)
         phi = acos(z / rho)
-        super().__init__(q(rho + offset, 'light_years'), q(0), q(phi, 'degrees'), unit='light_years')
+        super().__init__(id, q(rho + offset, 'light_years'), q(0), q(phi, 'degrees'), unit='light_years')
 
 
 def from_stellar_resonance(star, planet, resonance: str):

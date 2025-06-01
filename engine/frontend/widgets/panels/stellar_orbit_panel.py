@@ -411,10 +411,10 @@ class OrbitPanel(BaseWidget):
             self.held_data.update(event.data['Stellar Orbits'])
 
     def load_orbits(self):
-        existing_ids = [marker.orbit.id for marker in self.orbits]
+        existing_ids = [marker.orbit.id for marker in self.orbits] if self.orbits is not None else []
         for id in self.held_data:
-            if id not in existing_ids:
-                orbit_data = self.held_data[id]
+            orbit_data = self.held_data[id]
+            if id not in existing_ids and orbit_data['star_id'] == self.current.id:
                 a = q(orbit_data['a'], 'au')
                 if 'e' not in orbit_data:
                     self.add_orbit_marker(a)
@@ -431,13 +431,13 @@ class OrbitPanel(BaseWidget):
                         planet = system.planetary.get_astrobody_by(id, tag_type='id')
                         Universe.add_astro_obj(planet)
                         star = system.star
-                        planet.set_orbit(star, [a, e, i, loan, aop])
-                        planet.orbit.id = id
+                        planet.set_orbit(star, id, [a, e, i, loan, aop])
                         self.add_orbit_marker(planet.orbit, obj=planet)
+                        self.planet_area.last_id = star.id
                         self.planet_area.delete_objects(planet)
 
         # borrar las órbitas cargadas para evitar que se dupliquen.
-        self.held_data.clear()
+        # self.held_data.clear()
         if self.is_visible:
             self.sort_markers()
 
@@ -720,7 +720,7 @@ class OrbitType(BaseWidget, Intertwined):
             aop = self.linked_astrobody.orbit.argument_of_periapsis
             parametros.append(aop.m if type(aop) is q else aop)
 
-        orbit = self.linked_astrobody.set_orbit(main, parametros)
+        orbit = self.linked_astrobody.set_orbit(main, self.linked_astrobody.id, parametros)
         self.linked_marker.orbit = orbit
         self.show()
         self.parent.planet_area.delete_objects(self.linked_astrobody)

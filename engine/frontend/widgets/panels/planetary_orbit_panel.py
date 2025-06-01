@@ -123,7 +123,7 @@ class PlanetaryOrbitPanel(BaseWidget):
                         self._markers[planet.id] = []
                     satellite = system.get_astrobody_by(orbit_data['astrobody'], tag_type='id')
                     self.satellites[planet.id].append(satellite)
-                    satellite.set_orbit(planet, [a, e, i, loan, aop])
+                    satellite.set_orbit(planet, satellite.id, [a, e, i, loan, aop])
                     self.add_existing(satellite, planet)
         else:
             self.show_markers_button.enable()

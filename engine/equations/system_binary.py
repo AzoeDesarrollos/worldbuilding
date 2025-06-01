@@ -162,9 +162,9 @@ class BinarySystem(AbstractBinary):
     def cartesian(self, values):
         self._cartesian = Point(*values, name='SystemLocation')
 
-    def set_orbit(self, offset):
+    def set_orbit(self, id, offset):
         x, y, z = self._cartesian
-        self.orbit = NeighbourhoodSystemOrbit(x, y, z, offset)
+        self.orbit = NeighbourhoodSystemOrbit(id, x, y, z, offset)
 
 
 class DissolvableSystem(BinarySystem):
@@ -188,8 +188,8 @@ class PTypeSystem(DissolvableSystem):
 
     def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None, nei_id=None):
         super().__init__(name, primary, secondary, avgsep, ep, es, id=id, nei_id=nei_id)
-        self.primary.orbit = self._orbit_type(self.primary, self.secondary, self.primary_max_sep, self.ecc_p)
-        self.secondary.orbit = self._orbit_type(self.secondary, self.primary, self.secondary_max_sep, self.ecc_s)
+        self.primary.orbit = self._orbit_type(self.primary, self.secondary, id, self.primary_max_sep, self.ecc_p)
+        self.secondary.orbit = self._orbit_type(self.secondary, self.primary, id, self.secondary_max_sep, self.ecc_s)
 
         assert self.min_sep.m > 0.1, "Stars will merge at {:~} minimum distance".format(self.min_sep)
         self.age = max([self.primary.age, self.secondary.age])
@@ -237,8 +237,8 @@ class STypeSystem(DissolvableSystem):
 
     def __init__(self, primary, secondary, avgsep, ep=0, es=0, id=None, name=None, nei_id=None):
         super().__init__(name, primary, secondary, avgsep, ep, es, id=id, nei_id=nei_id)
-        self.primary.orbit = self._orbit_type(self.primary, self.secondary, self.primary_max_sep, self.ecc_p)
-        self.secondary.orbit = self._orbit_type(self.secondary, self.primary, self.secondary_max_sep, self.ecc_s)
+        self.primary.orbit = self._orbit_type(self.primary, self.secondary, id, self.primary_max_sep, self.ecc_p)
+        self.secondary.orbit = self._orbit_type(self.secondary, self.primary, id, self.secondary_max_sep, self.ecc_s)
         self.age = max([self.primary.age, self.secondary.age])
         self.primary.set_parent(self)
         self.secondary.set_parent(self)
@@ -280,9 +280,9 @@ class PlanetaryPTypeSystem(BinarySystem, Planet):
     def __repr__(self):
         return 'P-Type Planetary System'
 
-    def set_orbit(self, star, orbital_parameters, abnormal=False):
+    def set_orbit(self, star, id, orbital_parameters, abnormal=False):
         # the orbit of the whole system is a planetary orbit since it orbits a star, presumably
-        self.orbit = PlanetOrbit(star, *orbital_parameters)
+        self.orbit = PlanetOrbit(star, id, *orbital_parameters)
         self.temperature = 'undefined'
         self.orbit.set_astrobody(star, self)
         self.primary.parent = self

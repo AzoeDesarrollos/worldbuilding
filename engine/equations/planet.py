@@ -183,10 +183,11 @@ class Planet(BodyInHydrostaticEquilibrium):
         self.temperature = q(self._temperature, 'earth_temperature').to('celsius')
         return t
 
-    def set_orbit(self, star, orbital_parameters, abnormal=False):
+
+    def set_orbit(self, star, id, orbital_parameters, abnormal=False):
         if self.celestial_type != 'system' and not abnormal:
             if star.celestial_type in ('star', 'system'):
-                self.orbit = PlanetOrbit(star, *orbital_parameters)
+                self.orbit = PlanetOrbit(star, id, *orbital_parameters)
                 temp = star.temperature_mass
             else:
                 self.orbit = SatelliteOrbit(*orbital_parameters)
@@ -407,7 +408,7 @@ class Planet(BodyInHydrostaticEquilibrium):
 
             self.set_qs(self.unit)
             self.set_habitability(self.tilt)
-            self.set_orbit(star, [a, e, i, loan, aop])
+            self.set_orbit(star, orbit.id, [a, e, i, loan, aop])
 
         super().update_everything(age)
 

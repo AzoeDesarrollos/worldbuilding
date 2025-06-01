@@ -33,12 +33,12 @@ class Satellite(StarSystemBody, Flagable):
         density = q(sum([comp[material] * material_densities[material] for material in comp]), 'g/cm^3')
         return density
 
-    def set_orbit(self, main, orbital_parameters):
+    def set_orbit(self, main, id, orbital_parameters):
         if main.celestial_type != 'star':
-            self.orbit = SatelliteOrbit(*orbital_parameters)
+            self.orbit = SatelliteOrbit(id, *orbital_parameters)
             main.satellites.append(self)
         else:
-            self.orbit = PlanetOrbit(main, *orbital_parameters)
+            self.orbit = PlanetOrbit(main, id, *orbital_parameters)
         self.orbit.set_astrobody(main, self)
 
         semi_major_axis = self.orbit.semi_major_axis.to('au').m

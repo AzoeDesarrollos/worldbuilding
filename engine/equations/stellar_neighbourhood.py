@@ -45,7 +45,7 @@ class DefinedNeighbourhood:
             "Triple": 0,
             "Multiple": 0
         }
-        self.orbit = GalacticNeighbourhoodOrbit(self.location)
+        self.orbit = GalacticNeighbourhoodOrbit(self.id, self.location)
         self.true_systems = []
         self.planetary_systems = []
         self.system_cycler = cycle(self.planetary_systems)

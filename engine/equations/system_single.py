@@ -76,9 +76,9 @@ class SingleSystem(Flagable):
         self._cartesian = Point(x, y, z, name='SystemLocation')
         self.star.cartesian = Point(x, y, z, name='StarLocation')
 
-    def set_orbit(self, offset):
+    def set_orbit(self, id, offset):
         x, y, z = self._cartesian
-        self._orbit = NeighbourhoodSystemOrbit(x, y, z, offset)
+        self._orbit = NeighbourhoodSystemOrbit(id, x, y, z, offset)
 
     def composition(self):
         return [self]
