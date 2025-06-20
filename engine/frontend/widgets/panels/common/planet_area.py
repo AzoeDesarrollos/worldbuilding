@@ -33,12 +33,12 @@ class ListedArea(BaseWidget):
         if layer not in self.stored_objects:
             self.stored_objects[layer] = {}
 
-            for i, obj in enumerate(population):
-                x = self.rect.x + 3
-                y = i * 18 + self.rect.y + 21
-                listed_obj = self.listed_type(self, obj, str(obj), x, y)
-                if obj.id not in self.stored_objects[layer]:
-                    self.stored_objects[layer][obj.id] = listed_obj
+        for i, obj in enumerate(population):
+            x = self.rect.x + 3
+            y = i * 18 + self.rect.y + 21
+            listed_obj = self.listed_type(self, obj, str(obj), x, y)
+            if obj.id not in self.stored_objects[layer]:
+                self.stored_objects[layer][obj.id] = listed_obj
 
         for listed in [self.stored_objects[layer][idx] for idx in self.stored_objects[layer]]:
             if listed not in self.listed_objects.get_widgets_from_layer(layer):

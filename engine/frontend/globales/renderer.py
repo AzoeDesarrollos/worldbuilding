@@ -31,7 +31,8 @@ class Renderer:
 
     @classmethod
     def del_widget(cls, widget):
-        cls.contents.remove(widget)
+        if widget in cls.contents.sprites():
+            cls.contents.remove(widget)
 
     @classmethod
     def update(cls):

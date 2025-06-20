@@ -213,7 +213,7 @@ class ValueText(Meta):
 
     def clear_selection(self, event):
         if event.origin is not self:
-            self.active = False
+            # self.active = False
             self.text_area.disable()
 
     def clear(self):

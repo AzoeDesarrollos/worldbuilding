@@ -22,7 +22,7 @@ class RadioButton(BaseWidget):
         draw.circle(img, 'black', (radio, radio), radio)
         draw.circle(img, COLOR_AREA, (radio, radio), radio - 1)
         if fill:
-            draw.circle(img, 'black', (radio, radio), radio-3)
+            draw.circle(img, 'black', (radio, radio), radio - 3)
         return img
 
     def on_mousebuttondown(self, event):

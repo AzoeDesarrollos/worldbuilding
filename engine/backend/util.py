@@ -12,10 +12,14 @@ import json
 
 def save(event):
     ruta = path.join(getcwd(), 'data', 'savedata.json')
-    data = abrir_json(ruta)
-    read_data = data.copy()
     keys = 'Galaxies,Neighbourhoods,Stars,Single Systems,Binary Systems,Stellar Orbits,'
     keys += 'Planetary Orbits,Asteroids,Planets,Satellites,Compact Objects,Calendars'
+    if not path.exists(ruta):
+        data = {key: {} for key in keys.split(',')}
+    else:
+        data = abrir_json(ruta)
+
+    read_data = data.copy()
     for key in keys.split(','):
         new_data = event.data.get(key, [])
         for item_id in new_data:
@@ -117,7 +121,10 @@ def add_decimal(text: str):
 
 def guardar_json(ruta, datos, encoding='utf-8'):
     with open(ruta, mode='w', encoding=encoding) as file:
-        json.dump(datos, file, ensure_ascii=False, indent=2, separators=(',', ': '), sort_keys=True)
+        try:
+            json.dump(datos, file, ensure_ascii=False, indent=2, separators=(',', ': '), sort_keys=True)
+        except TypeError as error:
+            raise AssertionError(error)
 
 
 def abrir_json(ruta, encoding='utf-8'):
@@ -146,11 +153,11 @@ def interpolate(x, x1, x2, y1, y2):
 
 
 def small_angle_aproximation(body, distance):
-    d = body.radius.to('km').m * 2
+    diameter = body.radius.to('km').m * 2
     if distance != 0:
-        sma = q(d / distance, 'radian').to('degree')
+        sma = q(((diameter * 206.265) / distance) / 3600, 'degree')
     else:
-        sma = d
+        sma = diameter
     decimals = 1
     while round(sma, decimals) == 0:
         decimals += 1
@@ -260,6 +267,7 @@ __all__ = [
     "recomendation",
     "albedos",
     "q",
+    "ureg",
     "eucledian_distance",
     "turn_into_roman"
 ]

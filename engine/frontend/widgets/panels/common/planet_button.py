@@ -9,7 +9,7 @@ class ColoredBody(ListedBody):
         self._color = self.set_color(astro)
         super().__init__(parent, astro, name, x, y)
 
-        self.name = 'Button of '+ str(self.object_data)
+        self.name = 'Button of ' + str(self.object_data)
 
     def set_color(self, astro):
         color = COLOR_TEXTO

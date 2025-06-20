@@ -199,8 +199,12 @@ class Universe:
                             ab = q(star.luminosity.m / pow(d.to('au').m, 2), 'Vs')
                         elif hasattr(star, 'system_number') and star.system_number == 'single':
                             ab = q(star.star.luminosity.m / pow(d.to('au').m, 2), 'Vs')
-                        elif star.system_number != 'single':
-                            ab = q(star.star_system.luminosity.m / pow(d.to('au').m, 2), 'Vs')
+                        elif star.system_number != 'single' and star.system.letter == "P":
+                            ab = q(star.system.luminosity.m / pow(d.to('au').m, 2), 'Vs')
+                        elif star.system_number != 'single' and star.system.letter == "S":
+                            ab = q(star.luminosity.m / pow(d.to('au').m, 2), 'Vs')
+                            # print(f'S-System: star {star.classification}')
+                            # ab = q(star.system.luminosity.m / pow(d.to('au').m, 2), 'Vs')
 
                     if star not in cls.relative_sizes[body.id]:
                         d = cls.distances[body.id][star.id]

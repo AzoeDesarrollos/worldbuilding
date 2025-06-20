@@ -71,9 +71,13 @@ class SatellitePanel(BasePanel):
             moon = major_moon_by_composition(satellite_data)
             moon.idx = len([i for i in Universe.current_planetary().satellites if i.cls == moon.cls])
             system_id = satellite_data['system']
-            moon_system = Universe.nei().get_system(system_id).planetary
-            moon_system.add_astro_obj(moon)
-            self.add_button(moon)
+            for galaxy in Universe.galaxies:
+                for nei in galaxy.stellar_neighbourhoods:
+                    system = nei.get_system(system_id)
+                    if system is not None:
+                        moon_system = system.planetary
+                        moon_system.add_astro_obj(moon)
+                        self.add_button(moon)
 
         self.held_data.clear()
 

@@ -75,8 +75,9 @@ class BaseWidget(Sprite):
         Renderer.del_widget(self)
         WidgetHandler.del_widget(self)
         if hasattr(self, 'properties'):
-            for widget in self.properties.widgets():
-                widget.deregister()
+            if hasattr(self.properties, "widgets"):
+                for widget in self.properties.widgets():
+                    widget.deregister()
 
     def kill(self) -> None:
         self.hide()

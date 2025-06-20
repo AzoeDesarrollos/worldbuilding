@@ -213,7 +213,7 @@ class Orbit(Flagable, Ellipse):
         self._Q = abs(self._a * (1 + self._e))
         self._q = abs(self._a * (1 - self._e))
         if self.temperature != 'N/A':
-            self._temperature = self.astrobody.set_temperature(self._star.mass.m, self._a)
+            self._temperature = self.astrobody.get_temperature()
         self.reset_period_and_speed(self._star)
         Universe.visibility_by_albedo()
 
@@ -354,8 +354,8 @@ class BinaryPlanetOrbit(Orbit):
 class GalacticNeighbourhoodOrbit(Orbit):
     subtype = 'Galatic'
 
-    def __init__(self, a):
-        super().__init__(q(a, 'light_years'), q(0), q(0, 'degrees'), unit='light_years')
+    def __init__(self, id, a):
+        super().__init__(id, q(a, 'light_years'), q(0), q(0, 'degrees'), unit='light_years')
         # age = self.star.age.m
         # self.star.z = q(49 * cos((2 * pi / 72) * age), 'kpc')
         # # z difined as the star's shift ("bobbing") with respect to the galactic plane

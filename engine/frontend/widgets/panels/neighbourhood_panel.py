@@ -133,7 +133,7 @@ class NeighbourhoodPanel(BaseWidget):
         self.neighbourhood_buttons.add(button, layer=data['galaxy_id'])
         self.properties.add(button, layer=5)
         if self.is_visible:
-            self.sort_buttons(self.neighbourhood_buttons.get_widgets_from_layer(data['galaxy_id']))
+            self.sort_buttons(self.neighbourhood_buttons.get_widgets_from_layer(self.current_galaxy_id))
 
         self.neighbourhood.characteristics.set_location(data['location'], known_density=data['density'])
         self.neighbourhood.characteristics.set_radius(data['radius'])
@@ -187,7 +187,7 @@ class NeighbourhoodPanel(BaseWidget):
                 self.neighbourhood.clear()
                 layer = 2
             else:
-                self.galaxy.clear()
+                self.galaxy.clear(event)
                 layer = 1
 
             for value_text in self.properties.get_widgets_from_layer(layer):
@@ -195,10 +195,17 @@ class NeighbourhoodPanel(BaseWidget):
 
     def show(self):
         super().show()
+        buttons = self.neighbourhood_buttons.get_widgets_from_layer(self.current_galaxy_id)
         for prop in self.properties.widgets():
             prop.show()
+
+        for button in self.neighbourhood_buttons.widgets():
+            if button in buttons:
+                button.show()
+            else:
+                button.hide()
+
         self.neighbourhood.populate()
-        buttons = self.neighbourhood_buttons.get_widgets_from_layer(self.current_galaxy_id)
         self.sort_buttons(buttons)
 
         self.parent.swap_neighbourhood_button.disable()
@@ -207,7 +214,7 @@ class NeighbourhoodPanel(BaseWidget):
         super().hide()
         for prop in self.properties.widgets():
             prop.hide()
-        self.parent.swap_galaxy_button.disable()
+        # self.parent.swap_galaxy_button.disable()
         self.parent.swap_neighbourhood_button.enable()
         self.parent.swap_neighbourhood_button.set_current()
 
@@ -222,8 +229,7 @@ class NeighbourhoodPanel(BaseWidget):
             for button in self.properties.get_widgets_from_layer(5):
                 button.deselect()
                 button.hide()
-            for button in self.neighbourhood_buttons.get_widgets_from_layer(self.current_galaxy_id):
-                button.show()
+            self.sort_buttons(self.neighbourhood_buttons.get_widgets_from_layer(self.current_galaxy_id))
 
     def update(self):
         if self.current_galaxy_id != self.last_id:
@@ -249,6 +255,7 @@ class GalaxyType(BaseWidget):
         EventHandler.register(self.save_galaxy, 'Save')
         EventHandler.register(self.load_galaxies, 'LoadGalaxies')
         EventHandler.register(self.switch_current, 'SwitchGalaxy')
+        EventHandler.register(self.clear, "ClearData")
 
     def fill(self, data=None, active=True):
         galaxy = Galaxy()
@@ -284,13 +291,15 @@ class GalaxyType(BaseWidget):
             data = {'radius': event.data['Galaxies'][key]['radius'], 'id': key}
             self.fill(data, active=False)
 
-    def clear(self):
+    def clear(self, event):
         self.has_values = False
         self.parent.current_galaxy_id = None
         self.current = None
         for widget in self.parent.properties.get_widgets_from_layer(1):
             widget.clear()
-        # EventHandler.trigger('ClearGalaxy', self, {'current': None})
+
+        if event.data['panel'] is self.parent:
+            EventHandler.trigger('ClearGalaxy', self, {'current': None})
 
     def switch_current(self, event):
         self.current = event.data['current']
@@ -375,6 +384,8 @@ class NeighbourhoodType(BaseWidget):
                 self.characteristics.set_galaxy(galaxy)
                 galaxy.record_density_at_location(location, density)
                 nei = self.parent.create_neighbourhood(neighbourhood_data, key == nei_ids[-1])
+                stars = self.characteristics.individual_stars
+                nei.object_data.add_proto_stars(stars)
                 nei.object_data.process_data(event.data)
 
     def clear(self):
@@ -545,13 +556,12 @@ class StellarNeighbourhood:
         self.main_sequence_stars = sum([self._o_stars, self._b_stars, self._a_stars, self._f_stars, self._g_stars,
                                         self._k_stars, self._m_stars])
 
-        # The distribution of individual stars into systems only takes into account main sequence stars because
-        # the program doesn't allow for neither the creation of brown or white dwarves or black holes yet.
-        # this might change in future revisions.
-        self._binary = int(round(((self.main_sequence_stars / 1.58) * 0.33), 0))
-        self._triple = int(round(((self.main_sequence_stars / 1.58) * 0.08), 0))
-        self._multiple = int(round(((self.main_sequence_stars / 1.58) * 0.03), 0))
-        self._single = int(self.main_sequence_stars - ((self._binary * 2) + (self._triple * 3) + (self._multiple * 4)))
+        # The distribution of individual stars into systems takes into account all stars because
+        # the program allows for the creation of brown and white dwarves as well as black holes.
+        self._binary = int(round(((self._total_stars / 1.58) * 0.33), 0))
+        self._triple = int(round(((self._total_stars / 1.58) * 0.08), 0))
+        self._multiple = int(round(((self._total_stars / 1.58) * 0.03), 0))
+        self._single = int(self._total_stars - ((self._binary * 2) + (self._triple * 3) + (self._multiple * 4)))
         # se agregan los cuerpos compactos porque por definición son sistemas simples.
         self._single += int(self._w_dwarfs + self._b_dwarfs + self._other)
 

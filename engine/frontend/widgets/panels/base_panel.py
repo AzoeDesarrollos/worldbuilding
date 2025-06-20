@@ -6,6 +6,7 @@ from itertools import cycle
 
 class BasePanel(BaseWidget):
     current = None
+    modes = None
     mode = None
     name = None
     skip = False
@@ -27,8 +28,7 @@ class BasePanel(BaseWidget):
         rt1_rect = self.rt1_uns.get_rect(x=12, y=70)
         self.relative_text = self.rt1_uns
         self.relative_text_area = rt1_rect.inflate(10, 10)
-        self.modes = cycle(list(range(modes)))
-        self.mode = next(self.modes)
+        self.update_modes(modes)
 
         rt2 = transform.rotate(f2.render('Absolute Values', True, COLOR_TEXTO, COLOR_BOX), 90)
         rt2_rect = rt2.get_rect(x=6, y=220)
@@ -37,9 +37,13 @@ class BasePanel(BaseWidget):
         self.image.blit(self.relative_text, self.relative_text_area)
         self.image.blit(rt2, rt2_rect)
 
+    def update_modes(self, modes):
+        self.modes = cycle(list(range(modes)))
+        self.mode = next(self.modes)
+
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
-            if self.relative_text_area.collidepoint(event.data['pos']):
+            if self.relative_text_area.collidepoint(event.data['pos']) and self.current.has_values:
                 self.image.fill(COLOR_BOX, self.relative_text_area)
                 self.mode = next(self.modes)
                 if self.mode == 1:
@@ -47,8 +51,7 @@ class BasePanel(BaseWidget):
                 else:
                     self.relative_text = self.rt1_uns
 
-                if self.current.has_values:
-                    self.current.fill()
+                self.current.fill()
                 self.image.blit(self.relative_text, self.relative_text_area)
 
     def show(self):

@@ -88,6 +88,8 @@ class AtmospherePanel(BaseWidget):
         self.image.fill(COLOR_BOX, (0, 21, self.rect.w, 16))
         self.image.fill(COLOR_BOX, [3, ALTO - 87, 190, 21])
         self.write_water_state('unknown')
+        self.atmograph.reached = False
+        self.atmograph.enabled = True
 
     def warn(self, element):
         min_atm, max_atm = element.min_atm, element.max_atm
@@ -453,10 +455,11 @@ class PercentageCell(BaseWidget, IncrementalValue):
                 self.select()
                 self.grandparent.set_current(self.parent)
                 return self.__repr__()
-            elif event.data['button'] == 5 and float(self.value) + self.increment <= 100:
-                value = round(float(self.value) + self.increment, 3)
-            elif event.data['button'] == 4 and float(self.value) - self.increment >= 0:
-                value = round(float(self.value) - self.increment, 3)
+            elif self.value != '':
+                if event.data['button'] == 5 and float(self.value) + self.increment <= 100:
+                    value = round(float(self.value) + self.increment, 3)
+                elif event.data['button'] == 4 and float(self.value) - self.increment >= 0:
+                    value = round(float(self.value) - self.increment, 3)
             if event.data['button'] in (4, 5):
                 self.value = str(value)
                 self.increment = 0
@@ -475,6 +478,7 @@ class PercentageCell(BaseWidget, IncrementalValue):
         w, h = self.rect.size
         self.image.fill(COLOR_BOX, [1, 1, w - 2, h - 2])
         EventHandler.deregister(self.on_keydown)
+        # self.grandparent
 
     def select(self):
         if self.enabled:

@@ -5,6 +5,7 @@ class SolarCalendar:
     months = None
 
     days_remaining = None
+    special_monthless_period = 0
 
     def __init__(self, planet, moon):
         planet_period = planet.orbit.period.to('earth_day').m
@@ -14,7 +15,7 @@ class SolarCalendar:
         year_leap, day_local = 0, 0
         while trunc(day_local) != 24:
             year_leap += 1
-            day_local = round((planet_period / (self.year_local + (1 / year_leap if year_leap > 0 else 1)) * 24), 4)
+            day_local = round((planet_period / (self.year_local + (1 / year_leap)) * 24), 4)
 
         self.day_local = day_local
         self.year_leap = year_leap
@@ -23,7 +24,8 @@ class SolarCalendar:
 
         self.days_month = self.year_local / self.month_local
         self.month_days = trunc(self.days_month)
-        self.months = {month_n: {"common": self.month_days, "leap": 0} for month_n in range(self.month_local)}
+        c, l, i = "common", "leap", 'intercalary'
+        self.months = {month_n: {c: self.month_days, l: 0, i: []} for month_n in range(self.month_local)}
         days_year = self.month_local * self.month_days
         self.days_remaining = self.year_local - days_year
 

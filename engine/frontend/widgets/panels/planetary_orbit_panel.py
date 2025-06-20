@@ -2,10 +2,10 @@ from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, COLOR_AREA, COLOR_S
 from .common import ColoredBody, ListedArea, ModifyArea, TextButton, ToggleableButton
 from engine.equations.orbit import PseudoOrbit, RawOrbit, from_planetary_resonance
 from engine.frontend.widgets.incremental_value import IncrementalValue
+from engine.backend import EventHandler, q, roll, generate_id
 from engine.frontend.widgets.basewidget import BaseWidget
 from .stellar_orbit_panel import OrbitType, RatioDigit
 from engine.frontend.globales import WidgetHandler
-from engine.backend import EventHandler, q, roll
 from engine.frontend.widgets.meta import Meta
 from engine.equations.space import Universe
 from pygame import Surface, Rect
@@ -39,7 +39,6 @@ class PlanetaryOrbitPanel(BaseWidget):
         self._markers = {}
         self.markers = []
         self.added = []
-        self.objects = []
         self.satellites = {}
         text = "Here you can link your natural satellites to your planets."
         text += "\n\nClick first on the parent body on the right and then,"
@@ -185,22 +184,19 @@ class PlanetaryOrbitPanel(BaseWidget):
             if system is not None:
                 self.image.fill(COLOR_BOX, [0, 32, self.rect.w, 380])
                 planets = [p for p in system.planets if p.relative_size != 'Giant']
-                for obj in system.satellites + system.asteroids + planets:
-                    btn = ObjectButton(self, obj)
-                    if btn not in self.buttons:
-                        if obj not in self.objects:
-                            self.objects.append(obj)
+                objs = system.satellites + system.asteroids + planets
+                pairs = [[obj, ObjectButton(self, obj)] for obj in objs]
+                for obj, btn in pairs:
+                    if obj.orbit is not None and obj.orbit.star.celestial_type == 'planet':
+                        markers = self._markers[obj.orbit.star.id]
+                        marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
+                        marker = markers[marker_idx]
+                        btn.link_marker(marker)
+                        btn.update_text(obj.orbit.a)
 
-                        if obj.orbit is not None and obj.orbit.star.celestial_type == 'planet':
-                            markers = self._markers[obj.orbit.star.id]
-                            marker_idx = [i for i in range(len(markers)) if markers[i].obj == obj][0]
-                            marker = markers[marker_idx]
-                            btn.link_marker(marker)
-                            btn.update_text(obj.orbit.a)
-
-                        if btn is not None and (obj.orbit is None or btn.completed):
-                            self.buttons.add(btn, layer=system.id)
-                            self.properties.add(btn, layer=4)
+                    if btn is not None and (obj.orbit is None or btn.completed):
+                        self.buttons.add(btn, layer=system.id)
+                        self.properties.add(btn, layer=4)
 
                 bodies = self.buttons.get_widgets_from_layer(system.id)
                 self.sort_buttons(bodies)
@@ -214,6 +210,7 @@ class PlanetaryOrbitPanel(BaseWidget):
 
     def hide(self):
         super().hide()
+        self.buttons.clear()
         for prop in self.properties.widgets():
             prop.hide()
 
@@ -514,6 +511,7 @@ class ObjectButton(ColoredBody):
         self.orbit_data = None
         super().__init__(parent, obj, str(obj), 0, 0)
         self.img_dis = self.img_uns
+        self.id = generate_id()
 
     def update_text(self, orbit):
         self.completed = True
@@ -546,6 +544,7 @@ class ObjectButton(ColoredBody):
                 self.disable()
             else:
                 self.parent.on_button_press(self.object_data)
+                assert self.info is not None, "Select an Astrobody first."
                 if self.linked_marker != self.info.linked_marker:
                     self.info.link_marker(self.linked_marker)
                 self.info.show()
@@ -719,6 +718,7 @@ class SetOrbitButton(TextButton):
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
             self.parent.link_satellite_to_planet(self.linked_marker)
+            self.disable()
 
     def link(self, marker):
         self.linked_marker = marker

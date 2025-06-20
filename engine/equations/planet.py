@@ -19,7 +19,7 @@ class Planet(BodyInHydrostaticEquilibrium):
 
     orbit = None
     _greenhouse = 1
-    temperature = q(0, 'celsius')
+    # temperature = q(0, 'celsius')
 
     atmosphere = None
 
@@ -177,12 +177,19 @@ class Planet(BodyInHydrostaticEquilibrium):
 
         self.habitable = habitable
 
-    def set_temperature(self, star_mass, semi_major_axis):
-        t = planet_temperature(star_mass, semi_major_axis, float(self.albedo.m), self.greenhouse.m)
+    def get_temperature(self):
+        t = planet_temperature(self.parent.mass.m, self.orbit.a.m, float(self.albedo.m), self.greenhouse.m)
         self._temperature = round(t.to('earth_temperature').m)
-        self.temperature = q(self._temperature, 'earth_temperature').to('celsius')
-        return t
+        # self.temperature = q(self._temperature, 'earth_temperature').to('celsius')
+        # return t.m
 
+    @property
+    def temperature(self):
+        return q(self._temperature, 'earth_temperature').to('celsius')
+
+    @temperature.deleter
+    def temperature(self):
+        self._temperature = 0
 
     def set_orbit(self, star, id, orbital_parameters, abnormal=False):
         if self.celestial_type != 'system' and not abnormal:
@@ -197,7 +204,8 @@ class Planet(BodyInHydrostaticEquilibrium):
             self.orbit = BinaryPlanetOrbit(self, other, *orbital_parameters)
             temp = star.temperature_mass
 
-        self.temperature = self.set_temperature(temp, self.orbit.semi_minor_axis.m)
+        t = planet_temperature(temp, self.orbit.semi_minor_axis.m, float(self.albedo.m), self.greenhouse.m)
+        self._temperature = round(t.to('earth_temperature').m)
         self.orbit.set_astrobody(star, self)
 
         if hasattr(star, 'letter') and star.letter == 'P':
@@ -224,7 +232,7 @@ class Planet(BodyInHydrostaticEquilibrium):
     def unset_orbit(self):
         del self.orbit
         self.orbit = None
-        self.temperature = q(0, 'celsius')
+        # del self.temperature
         self.hill_sphere = 0
         self.roches_limit = None
         self.sky_color = None

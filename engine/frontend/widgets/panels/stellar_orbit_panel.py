@@ -103,6 +103,7 @@ class OrbitPanel(BaseWidget):
             self.depopulate(self.current)
         self.current = star
         self.last_idx = self.current.id
+        self.load_orbits()
         self.orbits: list = self._orbits[star.id]
         self.markers = self._markers[star.id]
         self.buttons = self._buttons[star.id]
@@ -194,6 +195,7 @@ class OrbitPanel(BaseWidget):
         orbit_type = OrbitType(self)
         button = OrbitButton(self, color)
         self._buttons[star.id].append(button)
+        self.buttons = self._buttons[star.id]
 
         # Buttons, OrbitTypes and Markers are all Intertwined.
         orbit_type.intertwine(m=marker, b=button)
@@ -240,9 +242,10 @@ class OrbitPanel(BaseWidget):
 
     def on_mousebuttondown(self, event):
         if event.origin == self:
-            if self.area_markers.collidepoint(event.data['pos']) and self.markers is not None:
+            data = event.data
+            if self.area_markers.collidepoint(data['pos']) and self.markers is not None and data['button'] in (4, 5):
                 last_is_hidden = not self.markers[-1].is_visible
-                if len(self.markers) >= 8 and event.data['button'] in (4, 5):
+                if len(self.markers) >= 8:
                     if event.data['button'] == 4 and self.offset < 0:
                         self.offset += 20
                     elif event.data['button'] == 5 and last_is_hidden:

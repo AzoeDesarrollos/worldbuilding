@@ -128,7 +128,7 @@ class MultipleStarsPanel(BaseWidget):
         self.used_protos[system_data.id] = chosen
 
         offset = nei.location
-        system_data.orbit = NeighbourhoodSystemOrbit(*system_data.cartesian, offset)
+        system_data.orbit = NeighbourhoodSystemOrbit(system_data.id, *system_data.cartesian, offset)
         self.discarded_protos.append(chosen)
         Universe.add_astro_obj(system_data)
         if system_data not in self.systems:
@@ -138,7 +138,8 @@ class MultipleStarsPanel(BaseWidget):
             self.systems.append(system_data)
             self.system_buttons.add(button, layer=nei.id)
             self.properties.add(button)
-            self.sort_buttons(self.system_buttons.get_widgets_from_layer(nei.id))
+            if self.is_visible:
+                self.sort_buttons(self.system_buttons.get_widgets_from_layer(nei.id))
             nei.add_true_system(system_data)
             self.current.enable()
             self.load_universe_data(nei)
@@ -209,10 +210,10 @@ class MultipleStarsPanel(BaseWidget):
                     system = SingleSystem(star, nei.id)
                     system.cartesian = chosen.location
                     offset = nei.location
-                    system.set_orbit(offset)
+                    system.set_orbit(nei.id, offset)
                     nei.add_true_system(system)
 
-            if len(singles):
+            if len(singles) >= 1:
                 brown = [i for i in Universe.brown_dwarfs if i.parent is None and i.neighbourhood_id == nei.id]
                 white = [i for i in Universe.white_dwarfs if i.parent is None and i.neighbourhood_id == nei.id]
                 black = [i for i in Universe.black_holes if i.parent is None and i.neighbourhood_id == nei.id]
@@ -225,7 +226,7 @@ class MultipleStarsPanel(BaseWidget):
                     system = SingleSystem(it, nei.id)
                     system.cartesian = chosen.location
                     offset = Universe.nei().location
-                    system.set_orbit(offset)
+                    system.set_orbit(nei.id, offset)
                     nei.add_true_system(system)
 
             nei.set_planetary_systems()

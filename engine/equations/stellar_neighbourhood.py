@@ -23,6 +23,8 @@ class DefinedNeighbourhood:
 
     flagged = False
 
+    parent = None
+
     def __init__(self, idx, data):
         self.idx = idx
         self.id = data['id'] if 'id' in data else generate_id()
@@ -31,6 +33,7 @@ class DefinedNeighbourhood:
         self.radius = data['radius']
         self.density = data['density']
         self.other = data['other']
+        self.parent = data['galaxy_id']
         self.proto_stars = []
         self.proto_systems = []
         self.pre_processed_system_positions = {
