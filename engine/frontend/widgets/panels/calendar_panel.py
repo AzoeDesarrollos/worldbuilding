@@ -5,6 +5,7 @@ from engine.backend.eventhandler import EventHandler
 from engine.equations import Universe, SolarCalendar
 from pygame.sprite import LayeredUpdates
 from pygame import Surface, mouse, draw
+from itertools import cycle
 
 
 class CalendarPanel(BaseWidget):
@@ -19,6 +20,9 @@ class CalendarPanel(BaseWidget):
     held_data = None
 
     first_week_day: int = 0
+
+    start_day_cycler = None
+    reverse_day_cycler = None
 
     def __init__(self, parent):
         self.name = 'Calendar'
@@ -58,6 +62,7 @@ class CalendarPanel(BaseWidget):
         self.properties.add(self.intercalary, self.where, layer=2)
 
         self.held_data = {}
+        self.months = []
         EventHandler.register(self.save_days, 'Save')
         EventHandler.register(self.hold_loaded_data, "LoadCalendars")
 
@@ -94,6 +99,11 @@ class CalendarPanel(BaseWidget):
         x = self.planet_area.rect.x
         y = self.planet_area.rect.bottom + 2
         width = self.planet_area.rect.width
+        proto_week = [i for i in range(w)]
+        self.start_day_cycler = cycle(proto_week)
+        next(self.start_day_cycler)  # initialize the cycler at the first day of the week.
+        self.reverse_day_cycler = cycle(reversed(proto_week))
+        next(self.reverse_day_cycler)  # initialize the cycler at the last day of the week.
 
         t = (f'{self.calendar.month_local} months of {m} days.'
              f'\n4 {w}-day long weeks per month.'
@@ -127,17 +137,27 @@ class CalendarPanel(BaseWidget):
             month = MonthSprite(self, mi, week_day, self.calendar.week_days, dx, dy)
             week_day = month.last_week_day + 1
             self.properties.add(month, layer=3)
+            self.months.append(month)
             month.show()
 
     def switch_first_day(self, delta):
         for sprite in self.properties.get_sprites_from_layer(5):
             sprite.kill()
+        if delta > 0:
+            self.first_week_day = next(self.start_day_cycler)
+            _last = next(self.reverse_day_cycler)
+            while _last != self.first_week_day:
+                _last = next(self.reverse_day_cycler)
+        else:
+            self.first_week_day = next(self.reverse_day_cycler)
+            _first = next(self.start_day_cycler)
+            while _first != self.first_week_day:
+                _first = next(self.start_day_cycler)
 
-        if 0 <= self.first_week_day + delta < self.calendar.week_days:
-            self.first_week_day += delta
+        if 0 <= self.first_week_day < self.calendar.week_days:
             self.show_year_title(self.first_week_day)
             for month in self.properties.get_sprites_from_layer(3):
-                month.move_days(self.first_week_day)
+                month.move_days()
 
     def select_one(self, radio):
         if radio is self.intercalary:
@@ -334,15 +354,20 @@ class MonthSprite(BaseWidget):
     day_g = None
 
     last_week_day = 0
+    week_cycler = None
 
     def __init__(self, parent, idx, first_week_day, week_lenght, dx, dy):
         super().__init__(parent)
         self.number = idx + 1
         self.week = week_lenght
+        self.week_cycler = cycle([i for i in range(week_lenght)])
         self.day_g = []
 
         self.create_title(dx, dy)
         self.first_day = first_week_day if first_week_day < week_lenght else 0
+        _first = next(self.week_cycler)
+        while _first != self.first_day:
+            _first = next(self.week_cycler)
         if idx >= 0:
             self.create_normal_days()
 
@@ -397,10 +422,10 @@ class MonthSprite(BaseWidget):
         intercalary = self.parent.calendar.months[self.number - 1]['intercalary']
         self.create_days(common, leap, self.rect, intercalary)
 
-    def move_days(self, delta):
+    def move_days(self):
         dx = self.rect.x
         dy = self.rect.bottom + 11
-        for i, day in enumerate(self.day_g, start=self.first_day + delta):
+        for i, day in enumerate(self.day_g, start=next(self.week_cycler)):
             x = dx + (i % self.week) * (day.size + 1)
             y = dy + (i // self.week) * (day.size + 1)
 
