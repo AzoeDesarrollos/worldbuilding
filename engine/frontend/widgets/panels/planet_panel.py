@@ -70,8 +70,8 @@ class PlanetPanel(BasePanel):
             layer_number = self.last_id
             planet.system_id = layer_number
         self.planets.append(planet)
-        if planet.idx is None:
-            planet.idx = len([i for i in self.planets if i.cls == planet.cls])
+        if not bool(planet.idx):
+            planet.idx = len([i for i in self.planets if i.clase == planet.clase]) - 1
         self.planet_buttons.add(button, layer=layer_number)
         if self.is_visible:
             planets = self.planet_buttons.get_widgets_from_layer(self.last_id)

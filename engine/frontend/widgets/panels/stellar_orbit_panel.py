@@ -171,15 +171,15 @@ class OrbitPanel(BaseWidget):
         if hasattr(position, 'e'):
             test = True  # saved orbits are valid by definition
             color = COLOR_STARORBIT
-        elif resonance is False:
+        elif not resonance:
             test = star.inner_boundry < position < star.outer_boundry
             color = COLOR_TEXTO
-        elif resonance is True:
+        elif resonance:
             bd = [res_parent, res_order]
             test = star.inner_boundry < position  # TNOs orbit well outside of 40AUs.
             color = COLOR_RESONANT
 
-        if test is True:
+        if test:
             new = OrbitMarker(self, obj, star, position, is_complete_orbit=bb, is_resonance=bc, res=bd)
             self._markers[star.id].append(new)
             self._orbits[star.id].append(new)
@@ -516,7 +516,7 @@ class OrbitPanel(BaseWidget):
     def link_astrobody_to_stellar_orbit(self, astrobody, **kwargs):
         system = Universe.nei().get_current()
         star = system.parent
-        if self.resonance_mode is False:
+        if not self.resonance_mode:
             pos = q(roll(star.inner_boundry.m, star.outer_boundry.m), 'au')
             marker = self.add_orbit_marker(pos, obj=astrobody)
             self.add_orbits_button.link(marker)
@@ -550,7 +550,7 @@ class OrbitPanel(BaseWidget):
             self.show_no_system_error()
 
         if idx != self.last_idx:
-            if self.no_star_error is False:
+            if not self.no_star_error:
                 self.set_current()
             self.last_idx = idx
 
@@ -643,7 +643,7 @@ class Intertwined:
         return NotImplemented
 
     def toggle(self, value: bool):
-        if value is True:
+        if value:
             self.show()
         else:
             self.hide()
@@ -692,6 +692,7 @@ class OrbitType(BaseWidget, Intertwined):
             vt = ValueText(self, props[attr.index(prop)], 3, 64 + i * 21, COLOR_TEXTO, COLOR_BOX)
             vt.value = value
             vt.modifiable = props[attr.index(prop)] in modifiables
+            vt.set_function(self.fill)
             self.properties.add(vt)
 
         if hasattr(orbit, 'resonant_order') and orbit.resonant:
@@ -706,6 +707,7 @@ class OrbitType(BaseWidget, Intertwined):
             self.properties.add(sprite)
 
     def fill(self):
+        self.parent.show_markers_button.enable()
         parametros = []
         for elemento in self.properties.widgets():
             value = None
@@ -1273,7 +1275,7 @@ class Recomendation(BaseWidget):
         clase = planet.clase in ('Puffy Giant', 'Gas Giant')
         orbita = 0.04 <= orbit.a.m <= 0.5
         period = q(sqrt(pow(orbit.a.m, 3) / star.mass.m), 'year').to('day').m >= 3
-        if all([clase, orbita, period]) is True:
+        if all([clase, orbita, period]):
             data.update(self.recomendation['hot'].copy())
             data.update({'planet_type': 'Puffy Giant'})
             return data

@@ -253,7 +253,9 @@ class StarType(ObjectType):
         abs_props = ['Density', 'Volume', 'Circumference', 'Surface area', 'Spin', 'Classification', 'Age']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
         self.set_modifiables('relatives', 0, 1)
-        self.relatives.widgets()[0].enable()
+        mass = self.relatives.widgets()[0]
+        mass.enable()
+        mass.set_function(lambda: self.set_star({mass.text.lower(): float(mass.text_area.value)}))
 
         f = self.crear_fuente(16, bold=True)
         self.habitable = f.render('Habitable', True, (0, 255, 0), COLOR_BOX)

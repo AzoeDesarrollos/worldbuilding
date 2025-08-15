@@ -229,6 +229,7 @@ class AsteroidType(BaseWidget):
             elif i in (6, 7, 8):
                 layer = 3
                 vt.modifiable = True
+                vt.set_function(self.calculate)
             elif i in (3, 4, 5):
                 layer = 6
             else:

@@ -291,6 +291,8 @@ class NeutronStarType(BaseWidget):
         rect = self.parent.write('Neutron Star', title_font, x=3, y=30 * 9)
         for i, text in enumerate(texts):
             value = ValueText(self, text, 3, i * 20 + rect.bottom, size=16)
+            if i == 1:
+                value.set_function(self.fill)
             self.parent.properties.add(value, layer=2)
 
     def fill(self, object_data=None):
@@ -349,6 +351,8 @@ class BlackHoleType(BaseWidget):
         rect = self.parent.write('Black Hole', title_font, x=3, y=30 * 6 - 6)
         for i, text in enumerate(texts):
             value = ValueText(self, text, 3, i * 20 + rect.bottom, size=16)
+            if i == 0:
+                value.set_function(self.fill)
             self.parent.properties.add(value, layer=3)
 
     def fill(self, object_data=None):
@@ -398,6 +402,8 @@ class WhiteDwarfType(BaseWidget):
         texts = ['Mass', 'Radius']
         for i, text in enumerate(texts):
             value = ValueText(self, text, 3, i * 20 + rect.bottom, size=16)
+            if i == 0:
+                value.set_function(self.fill)
             self.parent.properties.add(value, layer=4)
 
     def fill(self, object_data=None):
@@ -444,6 +450,8 @@ class BrownDwarfType(BaseWidget):
         rect = self.parent.write('Brown Dwarf', title_font, x=3, y=30 * 3 + 6)
         for i, text in enumerate(texts):
             value = ValueText(self, text, 3, i * 20 + rect.bottom, size=16)
+            if i == 0:
+                value.set_function(self.fill)
             self.parent.properties.add(value, layer=5)
 
     def fill(self, object_data=None):

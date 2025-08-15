@@ -23,6 +23,7 @@ class CalendarPanel(BaseWidget):
 
     start_day_cycler = None
     reverse_day_cycler = None
+    year_cyler = 1
 
     def __init__(self, parent):
         self.name = 'Calendar'
@@ -35,12 +36,13 @@ class CalendarPanel(BaseWidget):
 
         self.planet_area = AvailablePlanets(self, ANCHO - 200, 32, 200, 340)
 
-        self.add_text = ValueText(self, 'Add', 390, 480, size=12)
+        self.add_text = ValueText(self, 'Add', 390, 458, size=12)
         self.add_text.modifiable = True
         self.add_text.hide()
 
         r = self.add_text.rect
         self.month_text = ValueText(self, 'days to month', r.right + 20, r.y, size=12)
+        self.month_text.set_function(self.add_remaning_days)
         self.month_text.modifiable = True
         self.month_text.hide()
         self.properties.add(self.planet_area, layer=1)
@@ -60,6 +62,10 @@ class CalendarPanel(BaseWidget):
         self.where = ValueText(self, " as intercalary, before", rect.right, rect.top - 1, size=12)
         self.where.modifiable = True
         self.properties.add(self.intercalary, self.where, layer=2)
+        self.leap_day = ValueText(self, 'Add Leap-year day to month', rect.left, self.where.rect.bottom + 10, size=12)
+        self.leap_day.modifiable = True
+        self.leap_day.set_function(self.add_leap_day_to_month)
+        self.properties.add(self.leap_day, layer=7)
 
         self.held_data = {}
         self.months = []
@@ -128,7 +134,7 @@ class CalendarPanel(BaseWidget):
         week_day = self.first_week_day
         self.show_year_title(week_day)
 
-        for widget in self.properties.get_sprites_from_layer(6):
+        for widget in self.properties.get_sprites_from_layer(6):  # the arrows
             widget.show()
 
         for mi in self.calendar.months.keys():
@@ -159,6 +165,11 @@ class CalendarPanel(BaseWidget):
             for month in self.properties.get_sprites_from_layer(3):
                 month.move_days()
 
+        self.year_cyler += delta
+        if self.year_cyler % self.calendar.year_leap == 0:
+            self.leap_day.enable()
+            self.leap_day.show()
+
     def select_one(self, radio):
         if radio is self.intercalary:
             radio.select()
@@ -174,12 +185,17 @@ class CalendarPanel(BaseWidget):
         self.image.fill(COLOR_BOX, [390, 464, 200, 32])
         self.locked = False
         remaining_text = f'Distribute {self.calendar.days_remaining} missing days'
-        self.write2(remaining_text, self.fuente, width=200, x=390, y=464)
+        self.write2(remaining_text, self.fuente, width=200, x=390, y=438)
 
         if not recreate:
             for wg in self.properties.get_sprites_from_layer(2):
                 wg.show()
                 wg.enable()
+
+    def add_leap_day_to_month(self):
+        leap_day = self.properties.get_sprites_from_layer(7)[0]
+        if leap_day.value != '':
+            pass
 
     def add_remaning_days(self):
         widgets = self.properties.get_sprites_from_layer(2)

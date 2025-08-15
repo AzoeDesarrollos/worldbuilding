@@ -40,6 +40,9 @@ class ValueText(Meta):
 
         self.kind = kind
 
+    def set_function(self, function):
+        self.text_area.function = function
+
     def kill(self) -> None:
         super().kill()
         self.text_area.kill()
@@ -240,6 +243,8 @@ class BaseArea(BaseWidget):
     modifiable = False
     unit = None
 
+    function = None
+
     def __init__(self, parent, name, x, y, fg=COLOR_TEXTO, bg=COLOR_BOX, size=16):
         super().__init__(parent)
         self.value = ''
@@ -285,26 +290,8 @@ class NumberArea(BaseArea, IncrementalValue):
 
             elif event.tipo == 'Fin' and len(str(self.value)):
                 self.parent.deselect()
-                if self.great_grandparent.name == 'Star':
-                    self.grandparent.set_star({self.parent.text.lower(): float(self.value)})
-
-                elif self.great_grandparent.name in ['Star System', 'Orbit', 'Multiple Stars',
-                                                     'Double Planets', 'Neighbourhood', 'Compact Objects']:
-                    self.grandparent.fill()
-
-                elif self.great_grandparent.name in ['Satellite', 'Asteroid']:
-                    self.grandparent.calculate()
-
-                elif self.great_grandparent.name == 'Planetary Orbit':
-                    self.great_grandparent.show_markers_button.enable()
-                    self.grandparent.fill()
-
-                elif self.grandparent.name == 'Albedo':
-                    if self.grandparent.current is not None:
-                        self.grandparent.total_albedo()
-
-                elif self.grandparent.name == 'Calendar':
-                    self.grandparent.add_remaning_days()
+                if self.function is not None:
+                    self.function()
 
     def set_value(self, quantity, is_percentage=False):
         if type(quantity) is q and not is_percentage:

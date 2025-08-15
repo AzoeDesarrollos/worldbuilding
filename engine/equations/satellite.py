@@ -150,7 +150,13 @@ class Minor(Satellite, StarSystemBody):
         self.idx = data.get('idx', 0)
         self.composition = data['composition']
         self.density = self.set_density(data['composition'])
-        a, b, c = data.get('a axis', 0), data.get('b axis', 0), data.get('c axis', 0)
+        a, b, c = data.get('a axis', False), data.get('b axis', False), data.get('c axis', False)
+        if not a:
+            raise AssertionError('Set the Axis A first')
+        if not b:
+            raise AssertionError('Set the Axis B first')
+        if not c:
+            raise AssertionError('Set the Axis C first')
         self.a_axis = q(a, 'km')
         self.b_axis = q(b, 'km')
         self.c_axis = q(c, 'km')

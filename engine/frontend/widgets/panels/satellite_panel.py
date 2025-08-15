@@ -205,6 +205,7 @@ class SatelliteType(ObjectType):
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
         self.set_modifiables('relatives', 1)
         self.show_layers.append(3)
+        self.relatives.get_widget(1).set_function(self.calculate)
 
         for i, item in enumerate(self.relatives.widgets() + self.absolutes.widgets()):
             item.rect.y += i * 4

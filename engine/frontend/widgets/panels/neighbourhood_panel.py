@@ -54,6 +54,7 @@ class NeighbourhoodPanel(BaseWidget):
             if i == 0:
                 value.enable()
                 value.modifiable = True
+                value.set_function(self.galaxy.fill)
             self.properties.add(value, layer=1)
 
         rect = draw.aaline(self.image, (0, 0, 0), [3, len(texts) * 20 + 55], [self.rect.w - 3, len(texts) * 20 + 55])
@@ -63,6 +64,7 @@ class NeighbourhoodPanel(BaseWidget):
         for i, text in enumerate(texts):
             value = ValueText(self.neighbourhood, text, 3, i * 20 + rect.bottom, size=16)
             value.modifiable = True
+            value.set_function(self.neighbourhood.fill)
             self.properties.add(value, layer=2)
 
         value = ValueText(self.neighbourhood, 'Density x1K', 400, rect.bottom, size=16)

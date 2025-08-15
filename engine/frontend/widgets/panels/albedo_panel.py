@@ -115,6 +115,7 @@ class AlbedoPanel(BaseWidget):
         self.albedo_vt = ValueText(self, 'Total Albedo', self.planet_area.rect.x, self.planet_area.rect.bottom + 10)
         self.albedo_vt.enable()
         self.albedo_vt.modifiable = False
+        self.albedo_vt.set_function(self.total_albedo)
         self.properties.add(self.albedo_vt, layer=2)
 
         EventHandler.register(self.conclude, 'Fin')

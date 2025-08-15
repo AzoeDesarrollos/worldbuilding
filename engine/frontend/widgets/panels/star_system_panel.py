@@ -283,6 +283,8 @@ class SystemType(BaseWidget):
                 vt.modifiable = True
             if i in [0, 1]:
                 vt.enable()
+            if i == 4:
+                vt.set_function(self.fill)
 
         attrs = ['primary', 'secondary', 'separation', 'ecc_p', 'ecc_s']
         for idx, attr in enumerate(attrs):
