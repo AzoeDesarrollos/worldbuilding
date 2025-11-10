@@ -24,8 +24,8 @@ class SolarCalendar:
 
         self.days_month = self.year_local / self.month_local
         self.month_days = trunc(self.days_month)
-        c, l, i = "common", "leap", 'intercalary'
-        self.months = {month_n: {c: self.month_days, l: 0, i: []} for month_n in range(self.month_local)}
+        c, i = "common", 'intercalary'
+        self.months = {month_n: {c: self.month_days, i: []} for month_n in range(self.month_local)}
         days_year = self.month_local * self.month_days
         self.days_remaining = self.year_local - days_year
 

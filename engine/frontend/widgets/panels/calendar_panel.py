@@ -1,4 +1,4 @@
-from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, WidgetHandler
+from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, WidgetHandler, Renderer
 from engine.frontend.widgets import BaseWidget, ValueText, Meta
 from .common import ListedArea, ColoredBody, TextButton, RadioButton
 from engine.backend.eventhandler import EventHandler
@@ -24,6 +24,10 @@ class CalendarPanel(BaseWidget):
     start_day_cycler = None
     reverse_day_cycler = None
     year_cyler = 1
+
+    erase_text_rect = None
+    calendar_properties_text = None
+    erase_calendar_text = None
 
     def __init__(self, parent):
         self.name = 'Calendar'
@@ -97,10 +101,7 @@ class CalendarPanel(BaseWidget):
                     self.calendar.days_remaining -= self.held_data[planet.id][month_key]
 
         w = self.calendar.week_days
-        m = self.calendar.month_days
         r = self.calendar.days_remaining
-        l = self.calendar.year_leap
-        a = self.calendar.year_local
 
         x = self.planet_area.rect.x
         y = self.planet_area.rect.bottom + 2
@@ -111,19 +112,28 @@ class CalendarPanel(BaseWidget):
         self.reverse_day_cycler = cycle(reversed(proto_week))
         next(self.reverse_day_cycler)  # initialize the cycler at the last day of the week.
 
-        t = (f'{self.calendar.month_local} months of {m} days.'
-             f'\n4 {w}-day long weeks per month.'
-             f'\n{a} days per year.'
-             f'\nleap years every {l} years.')
-
-        self.write2(t, self.fuente, width=width, y=y, x=x)
+        self.erase_calendar_text = self.write2(self.analyze(self.calendar), self.fuente, width=width, y=y, x=x)
         self.show_calendar()
 
         if r > 0:
             self.write_remaining_text()
 
-    def show_year_title(self, week_day):
-        title_sprite = YearTitle(self, week_day, 0, 32)
+    def analyze(self, calendar):
+        w = calendar.week_days
+        m = calendar.month_days
+        l = calendar.year_leap
+        a = calendar.year_local
+
+        t = f'{self.calendar.month_local} months of {m} days.'
+        t += f'\n4 {w}-day long weeks per month.'
+        t += f'\n{a} days per year.'
+        t += f'\n{a + 1} days in leap years.' if [month for month in self.months if month.has_leap_day == True] else ''
+        t += f'\nleap years every {l} years.'
+
+        return t
+
+    def show_year_title(self, week_day, is_leap_year=False):
+        title_sprite = YearTitle(self, week_day, 0, 32, is_leap_year)
         self.properties.add(title_sprite, layer=5)
         title_sprite.show()
 
@@ -147,8 +157,21 @@ class CalendarPanel(BaseWidget):
             month.show()
 
     def switch_first_day(self, delta):
-        for sprite in self.properties.get_sprites_from_layer(5):
-            sprite.kill()
+        self.year_cyler += delta
+        is_a_leap_year = False
+        if self.year_cyler % self.calendar.year_leap == 0:
+            is_a_leap_year = True
+            if not any([month for month in self.months if month.has_leap_day == True]):
+                self.leap_day.enable()
+                self.leap_day.show()
+        else:
+            self.leap_day.disable()
+            self.leap_day.hide()
+
+        EventHandler.trigger("NotALeapDay", self, {'is_a_leap_year': is_a_leap_year})
+        for month in self.properties.get_sprites_from_layer(3):
+            month.is_leap_year = is_a_leap_year
+
         if delta > 0:
             self.first_week_day = next(self.start_day_cycler)
             _last = next(self.reverse_day_cycler)
@@ -161,14 +184,16 @@ class CalendarPanel(BaseWidget):
                 _first = next(self.start_day_cycler)
 
         if 0 <= self.first_week_day < self.calendar.week_days:
-            self.show_year_title(self.first_week_day)
+            self.show_year_title(self.first_week_day, is_a_leap_year)
             for month in self.properties.get_sprites_from_layer(3):
-                month.move_days()
+                month.move_days(delta)
 
-        self.year_cyler += delta
-        if self.year_cyler % self.calendar.year_leap == 0:
-            self.leap_day.enable()
-            self.leap_day.show()
+        # show updated calendar properties text
+        self.image.fill('red', self.erase_calendar_text)
+        x = self.planet_area.rect.x
+        y = self.planet_area.rect.bottom + 2
+        width = self.planet_area.rect.width
+        self.erase_calendar_text = self.write2(self.analyze(self.calendar), self.fuente, width=width, y=y, x=x)
 
     def select_one(self, radio):
         if radio is self.intercalary:
@@ -185,7 +210,7 @@ class CalendarPanel(BaseWidget):
         self.image.fill(COLOR_BOX, [390, 464, 200, 32])
         self.locked = False
         remaining_text = f'Distribute {self.calendar.days_remaining} missing days'
-        self.write2(remaining_text, self.fuente, width=200, x=390, y=438)
+        self.erase_text_rect = self.write2(remaining_text, self.fuente, width=200, x=390, y=438)
 
         if not recreate:
             for wg in self.properties.get_sprites_from_layer(2):
@@ -195,7 +220,12 @@ class CalendarPanel(BaseWidget):
     def add_leap_day_to_month(self):
         leap_day = self.properties.get_sprites_from_layer(7)[0]
         if leap_day.value != '':
-            pass
+            months = self.properties.get_sprites_from_layer(3)
+            month_index = int(leap_day.value) - 1
+            months[month_index].has_leap_day = True
+            months[month_index].recreate_month()
+            for month in months[month_index + 1 if month_index + 1 < len(months) else 0:]:
+                month.move_days(1)
 
     def add_remaning_days(self):
         widgets = self.properties.get_sprites_from_layer(2)
@@ -215,9 +245,9 @@ class CalendarPanel(BaseWidget):
             month_index = value_month - 1
             months = self.properties.get_sprites_from_layer(3)
             if month_index > len(months) - 1:
-                month = None
+                month: MonthSprite = None
             else:
-                month = months[month_index]
+                month: MonthSprite = months[month_index]
 
             if self.calendar.days_remaining - value_day >= 0:
                 self.calendar.days_remaining -= value_day
@@ -227,7 +257,7 @@ class CalendarPanel(BaseWidget):
                         wid_inter.deselect()
                         wid_where.value = ''
                     else:
-                        self.calendar.months[month_index]["leap"] += value_day
+                        self.calendar.months[month_index]["common"] += value_day
                 else:
                     self.calendar.special_monthless_period += value_day
                 wid_month.value = ''
@@ -239,11 +269,12 @@ class CalendarPanel(BaseWidget):
                 wid_day.hide()
                 wid_where.hide()
                 wid_inter.hide()
+                self.image.fill(COLOR_BOX, self.erase_text_rect)
             else:
                 self.write_remaining_text()
 
             if month is not None:
-                month.recreate()
+                month.recreate_month()
 
             elif month is None:
                 y = self.properties.remove_sprites_of_layer(3)[-1].rect.y + 8
@@ -253,6 +284,9 @@ class CalendarPanel(BaseWidget):
 
             elif value_month is None:
                 WidgetHandler.origin = wid_month.text_area
+
+            for month in months[month_index + 1:] if month_index + 1 < len(months) else []:
+                month.move_days(1)
 
     def show(self):
         super().show()
@@ -320,34 +354,45 @@ class DaySprite(BaseWidget):
     enabled = True
     moveable = False
     month_id = None
+    is_leap_day = False  # this day only appears on leap years, and dissapears otherwise
 
-    def __init__(self, parent, idx, day_month, week_day, size, remaining=False, weekday=False):
+    def __init__(self, parent, idx, day_month, week_day, month_id, size, leap_day, remaining=False, weekday=False):
         super().__init__(parent)
         self.size = size
         self.image = Surface((self.size, self.size))
         rect = self.image.get_rect()
 
         indice = None
+        self.color = 'black'
+        self.color_text = 'white'
         if remaining:
-            self.image.fill('red')
+            self.color = 'red'
             self.moveable = remaining
         elif weekday:
-            self.image.fill('blue')
+            self.color = 'blue'
             indice = idx
+        elif leap_day:
+            indice = idx
+            self.color = 'green'
+            self.color_text = 'black'
         elif type(idx) is int:
+            self.color = 'black'
             indice = idx
-        else:
-            self.image.fill('green')
 
+        self.image.fill(self.color)
         self.rect = self.image.get_rect()
         self.number = indice
         if indice is not None:
             f = self.crear_fuente(8)
-            render = f.render(str(idx + 1), 1, 'white')
+            render = f.render(str(idx + 1), 1, self.color_text)
             render_rect = render.get_rect(center=rect.center)
             self.image.blit(render, render_rect)
         self.day_month = day_month
         self.week_day = week_day
+        self.is_leap_day = leap_day
+        self.month_id = month_id
+        if self.color == 'green':
+            EventHandler.register(self.toggle, 'NotALeapDay')
 
     def on_mousebuttondown(self, event):
         if event.data['button'] == 1 and self.enabled and event.origin == self:
@@ -361,8 +406,31 @@ class DaySprite(BaseWidget):
     def move(self, dx, dy):
         self.rect.move_ip(dx, dy)
 
+    def toggle(self, event):
+        flag = event.data['is_a_leap_year']
+        if flag is False and self.is_visible:
+            self.hide()
+            start: int = self.parent.number
+            for month in self.parent.parent.months[start:]:
+                month.move_days(-1)
+        elif flag is True and not self.is_visible:
+            self.show()
+            start: int = self.parent.number
+            for month in self.parent.parent.months[start:]:
+                month.move_days(+1)
+
     def __repr__(self):
         return f"Day #{self.day_month} of {str(self.parent)}"
+
+    def __eq__(self, other):
+        test1 = isinstance(other, DaySprite)
+        test2 = test1 and self.day_month == other.day_month
+        test3 = test2 and self.parent.number == other.parent.number
+        test4 = test3 and self.color == other.color
+        return test4
+
+    def __hash__(self):
+        return hash((self.day_month, self.parent.number))
 
 
 class MonthSprite(BaseWidget):
@@ -372,11 +440,16 @@ class MonthSprite(BaseWidget):
     last_week_day = 0
     week_cycler = None
 
+    has_leap_day = False  # this month contains the leap day
+    is_leap_year = False
+
     def __init__(self, parent, idx, first_week_day, week_lenght, dx, dy):
         super().__init__(parent)
         self.number = idx + 1
         self.week = week_lenght
-        self.week_cycler = cycle([i for i in range(week_lenght)])
+        week_days = [i for i in range(week_lenght)]
+        self.week_cycler = cycle(week_days)
+        self.reverse_week_cycler = cycle(reversed(week_days))
         self.day_g = []
 
         self.create_title(dx, dy)
@@ -389,23 +462,21 @@ class MonthSprite(BaseWidget):
 
     def create_normal_days(self):
         common = self.parent.calendar.months[self.number - 1]['common']
-        leap = self.parent.calendar.months[self.number - 1]['leap']
-        self.last_week_day = self.create_days(common, leap, self.rect)
+        self.last_week_day = self.create_days(common, self.rect)
 
     def create_title(self, x, y):
         self.image = self.write3(f"Month #{self.number}", self.crear_fuente(14), self.week * 12, j=1)
         self.rect = self.image.get_rect(topleft=(x, y - 8))
 
-    def create_days(self, common, leap, rect, intecalary=None):
+    def create_days(self, common, rect, intecalary=None):
         dx = rect.x
         dy = rect.y + rect.h
-        days = [i for i in range(common + leap)]
+        days = [i for i in range(common)]
         if intecalary is not None:
             for inter in intecalary:
                 days.insert(inter - 1, str(inter))
         for i, weekday in enumerate([i for i in range(self.week)]):
-            day = DaySprite(self, weekday, weekday % len(days), i % self.week, 11, weekday=True)
-            day.month_id = self.number
+            day = DaySprite(self, weekday, weekday % len(days), i % self.week, self.number, 11, False, weekday=True)
             x = dx + (i % self.week) * (day.size + 1)
             y = dy + (i // self.week) * (day.size + 1)
             day.rect.topleft = (x, y)
@@ -413,9 +484,10 @@ class MonthSprite(BaseWidget):
             self.parent.properties.add(day, layer=4)
 
         dy += 11
+        leap_day = len(days) - 1 if self.has_leap_day else -1
         for i, day_i in enumerate(days, start=self.first_day):
-            day = DaySprite(self, day_i, int(day_i) % len(days), i % self.week, 11, remaining=False)
-            day.month_id = self.number
+            day = DaySprite(self, day_i, int(day_i) % len(days), i % self.week,
+                            self.number, 11, day_i == leap_day, remaining=False)
             x = dx + (i % self.week) * (day.size + 1)
             y = dy + (i // self.week) * (day.size + 1)
 
@@ -427,21 +499,44 @@ class MonthSprite(BaseWidget):
         else:
             return self.day_g[-1].week_day
 
-    def recreate(self):
-        for day in self.day_g:
-            day.hide()
-            day.kill()
-
-        self.day_g.clear()
+    def recreate_month(self):
         common = self.parent.calendar.months[self.number - 1]['common']
-        leap = self.parent.calendar.months[self.number - 1]['leap']
         intercalary = self.parent.calendar.months[self.number - 1]['intercalary']
-        self.create_days(common, leap, self.rect, intercalary)
 
-    def move_days(self):
+        has_to_kill = False
+        days = 0
+        if self.is_leap_year and self.has_leap_day:
+            has_to_kill = True
+            days = common + 1
+
+        elif not self.has_leap_day:
+            has_to_kill = True
+            days = common
+
+        if has_to_kill:
+            for day in self.day_g:
+                day.kill()
+            self.day_g.clear()
+            self.create_days(days, self.rect, intercalary)
+        else:
+            self.move_days(1)
+
+    def move_days(self, delta):
         dx = self.rect.x
         dy = self.rect.bottom + 11
-        for i, day in enumerate(self.day_g, start=next(self.week_cycler)):
+        if delta > 0:
+            starter = next(self.week_cycler)
+            _last = next(self.reverse_week_cycler)
+            while _last != starter:
+                _last = next(self.reverse_week_cycler)
+        else:
+            starter = next(self.reverse_week_cycler)
+            _first = next(self.week_cycler)
+            while _first != starter:
+                _first = next(self.week_cycler)
+
+        self.first_day = starter
+        for i, day in enumerate(self.day_g, start=starter):
             x = dx + (i % self.week) * (day.size + 1)
             y = dy + (i // self.week) * (day.size + 1)
 
@@ -465,9 +560,10 @@ class MonthSprite(BaseWidget):
 
 
 class YearTitle(BaseWidget):
-    def __init__(self, parent, week_day, x, y):
+    def __init__(self, parent, week_day, x, y, is_leap_year=False):
         super().__init__(parent)
-        t = f'Common Year starting on Day #{str(week_day + 1)}'
+        kind = 'Common' if not is_leap_year else 'Leap'
+        t = f'{kind} Year starting on Day #{str(week_day + 1)}'
         self.image = self.write3(t, self.crear_fuente(14, bold=True), ANCHO - 200, j=1)
         self.rect = self.image.get_rect(topleft=(x, y))
 
