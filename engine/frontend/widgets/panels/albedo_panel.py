@@ -121,8 +121,8 @@ class AlbedoPanel(BaseWidget):
         EventHandler.register(self.conclude, 'Fin')
         EventHandler.register(self.export_data, 'ExportData')
 
-        for chart in self.charts.widgets():
-            chart.hide()
+        # for chart in self.charts.widgets():
+        #     chart.hide()
 
     def surface_coverage(self):
         arcs = self.pie_land.arcs + self.pie_ocean.arcs + self.pie_clouds.arcs + self.pie_coverage.arcs

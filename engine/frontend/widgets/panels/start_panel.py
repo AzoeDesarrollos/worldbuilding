@@ -46,18 +46,18 @@ class StartPanel(BaseWidget):
 
     def hide(self):
         super().hide()
-        for widget in self.properties.get_widgets_from_layer(1):
-            widget.hide()
+        # for widget in self.properties.get_widgets_from_layer(1):
+        #     widget.hide()
         self.parent.show()
 
     def show(self):
         super().show()
-        for widget in self.properties.get_widgets_from_layer(1):
-            widget.show()
+        # for widget in self.properties.get_widgets_from_layer(1):
+        #     widget.show()
 
-    def select_one(self, selected):
-        for each in self.properties.get_widgets_from_layer(1):
-            each.deselect()
-        selected.select()
+    # def select_one(self, selected):
+    #     for each in self.properties.get_widgets_from_layer(1):
+    #         each.deselect()
+    #     selected.select()
 
 

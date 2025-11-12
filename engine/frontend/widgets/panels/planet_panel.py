@@ -189,7 +189,7 @@ class PlanetType(ObjectType):
                      'Axial tilt', 'Spin', 'Rotation Rate', 'Albedo (bond)', 'Greenhouse effect', 'Class']
         super().__init__(parent, rel_props, abs_props, rel_args, abs_args)
         self.set_modifiables('relatives', 0, 1)
-        self.set_modifiables('absolutes', 4, 6)
+        self.set_modifiables('absolutes', 4)
         self.absolutes.widgets()[4].set_min_and_max(0, 100)
         f = self.crear_fuente(14)
         f.set_underline(True)

@@ -20,7 +20,6 @@ class PieChart(BaseWidget):
         self.radius = radius
         self.rect = Rect(0, 0, radius, radius)
         self.rect.center = cx, cy
-        WidgetHandler.add_widget(self)
         if colors is None:
             self.use_default_colors()
         else:
@@ -38,7 +37,6 @@ class PieChart(BaseWidget):
             b += round((value / Dc(100)) * Dc(360))
 
             arc = Arc(self, name, ca[i], cb[i], a, b, radius, using_handlers=use_handlers, is_set=is_set)
-            WidgetHandler.add_widget(arc)
             arc.default_value = value
             arcs.append(arc)
             self.chart.add(arc, layer=1)
@@ -120,6 +118,8 @@ class PieChart(BaseWidget):
         "Overrides the base function because this class has no image to add to the Renderer"""
         self.is_visible = True
         WidgetHandler.add_widget(self)
+        for arc in self.arcs:
+            arc.show()
 
     def hide(self):
         "Overrides the base function because this class has no image to remove from the Renderer"""

@@ -35,10 +35,6 @@ class Arc(BaseWidget):
         self.using_handlers = using_handlers
         self._set = is_set
 
-    def show(self):
-        self.parent.show()
-        super().show()
-
     def disable(self):
         super().disable()
         self.selected_color = self.color_dis

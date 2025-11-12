@@ -62,7 +62,7 @@ class AtmospherePanel(BaseWidget):
             boiling = None if gas['boiling'] is None else q(gas.get('boiling'), 'degree_Celsius')
             melting = None if gas['melting'] is None else q(gas.get('melting'), 'degree_Celsius')
             elm = Element(self, i, element, name, weight, min_atm, max_atm, boiling, melting, 3, 21 * i + 60, color=c)
-            elm.hide()
+            # elm.hide()
             self.elements.add(elm)
             self.write('%', self.f2, x=elm.percent.rect.right + 3, centery=elm.rect.centery)
 

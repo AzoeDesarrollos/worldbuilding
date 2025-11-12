@@ -14,23 +14,21 @@ class WidgetHandler:
     locked = False
     the_one = None
 
-    mode = 1
-
     @classmethod
     def init(cls):
         cls.contents = LayeredUpdates()
         cls.clock = time.Clock()
-        EventHandler.register(cls.switch_mode, 'SwitchMode')
+        # EventHandler.register(cls.switch_mode, 'SwitchMode')
         EventHandler.register(cls.set_origin, 'SetOrigin')
 
     @classmethod
     def add_widget(cls, widget):
         if widget not in cls.contents:
-            cls.contents.add(widget, layer=cls.mode)
+            cls.contents.add(widget)
 
     @classmethod
     def del_widget(cls, widget):
-        if widget in cls.contents.get_sprites_from_layer(cls.mode):
+        if widget in cls.contents.sprites():
             cls.contents.remove(widget)
 
     @classmethod
@@ -58,10 +56,6 @@ class WidgetHandler:
             if val >= 500:
                 n = 500 * sign
         return n
-
-    @classmethod
-    def switch_mode(cls, evento):
-        cls.mode = evento.data['mode']
 
     @classmethod
     def update(cls):

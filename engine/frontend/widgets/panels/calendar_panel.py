@@ -2,7 +2,7 @@ from engine.frontend.globales import ANCHO, ALTO, COLOR_BOX, WidgetHandler, Rend
 from engine.frontend.widgets import BaseWidget, ValueText, Meta
 from .common import ListedArea, ColoredBody, TextButton, RadioButton
 from engine.backend.eventhandler import EventHandler
-from engine.equations import Universe, SolarCalendar
+from engine.equations import Universe, SolarCalendar, LunarCalendar
 from pygame.sprite import LayeredUpdates
 from pygame import Surface, mouse, draw
 from itertools import cycle
@@ -23,7 +23,7 @@ class CalendarPanel(BaseWidget):
 
     start_day_cycler = None
     reverse_day_cycler = None
-    year_cyler = 1
+    year_cycler = 1
 
     erase_text_rect = None
     calendar_properties_text = None
@@ -42,13 +42,13 @@ class CalendarPanel(BaseWidget):
 
         self.add_text = ValueText(self, 'Add', 390, 458, size=12)
         self.add_text.modifiable = True
-        self.add_text.hide()
+        # self.add_text.hide()
 
         r = self.add_text.rect
         self.month_text = ValueText(self, 'days to month', r.right + 20, r.y, size=12)
         self.month_text.set_function(self.add_remaning_days)
         self.month_text.modifiable = True
-        self.month_text.hide()
+        # self.month_text.hide()
         self.properties.add(self.planet_area, layer=1)
         self.properties.add(self.add_text, self.month_text, layer=2)
 
@@ -92,14 +92,16 @@ class CalendarPanel(BaseWidget):
         self.properties.remove_sprites_of_layer(4)
 
         if satellite.title == 'Major':
-            calendar = SolarCalendar(planet, satellite)
-            planet.set_calendar(calendar)
-            self.calendar = planet.calendar
-            if planet.id in self.held_data:
-                for month_key in self.held_data[planet.id]:
-                    self.calendar.months[int(month_key)]["leap"] += self.held_data[planet.id][month_key]
-                    self.calendar.days_remaining -= self.held_data[planet.id][month_key]
+            self.lunar.feed(planet, satellite)
+            self.solar.feed(planet, satellite)
+            self.lunisolar.feed(planet, satellite)
 
+    def set_calendar(self, calendar, planet):
+        self.calendar = calendar
+        if planet.id in self.held_data:
+            for month_key in self.held_data[planet.id]:
+                self.calendar.months[int(month_key)]["leap"] += self.held_data[planet.id][month_key]
+                self.calendar.days_remaining -= self.held_data[planet.id][month_key]
         w = self.calendar.week_days
         r = self.calendar.days_remaining
 
@@ -119,16 +121,38 @@ class CalendarPanel(BaseWidget):
             self.write_remaining_text()
 
     def analyze(self, calendar):
-        w = calendar.week_days
-        m = calendar.month_days
-        l = calendar.year_leap
-        a = calendar.year_local
+        w, m, l, a, t = 0, 0, 0, 0, None
+        calendar_type = calendar.calendar_type
 
-        t = f'{self.calendar.month_local} months of {m} days.'
-        t += f'\n4 {w}-day long weeks per month.'
-        t += f'\n{a} days per year.'
-        t += f'\n{a + 1} days in leap years.' if [month for month in self.months if month.has_leap_day == True] else ''
-        t += f'\nleap years every {l} years.'
+        if calendar_type == "Solar":
+            w = calendar.week_days
+            m = calendar.month_days
+            l = calendar.year_leap
+            a = calendar.year_local
+        elif calendar_type == "Lunar":
+            w = calendar.week_days
+            m = calendar.month_days
+            l = calendar.leap_month
+            a = calendar.year_local
+        elif calendar_type == "Lunisolar":
+            w = calendar.week_days
+            m = calendar.month_days
+            l = calendar.year_leap
+            a = calendar.year_local
+
+        if calendar_type == 'Solar':
+            t = f'{self.calendar.month_local} months of {m} days.'
+            t += f'\n4 {w}-day long weeks per month.'
+            t += f'\n{a} days per year.'
+            t += f'\n{a + 1} days in leap years.' if [month for month in self.months if
+                                                      month.has_leap_day == True] else ''
+            t += f'\nleap years every {l} years.'
+
+        elif calendar_type == 'Lunar':
+            t = f'{self.calendar.month_local} months of {m} days.'
+            t += f'\n4 {w}-day long weeks per month.'
+            t += f'\n{a} days per year.'
+            t += f'\nleap months every {l} months.'
 
         return t
 
@@ -139,7 +163,9 @@ class CalendarPanel(BaseWidget):
 
     def show_calendar(self):
         for month in self.properties.get_sprites_from_layer(3):
-            month.hide()
+            month.kill()
+        for widget in self.properties.get_sprites_from_layer(4):
+            widget.kill()
 
         week_day = self.first_week_day
         self.show_year_title(week_day)
@@ -149,7 +175,7 @@ class CalendarPanel(BaseWidget):
 
         for mi in self.calendar.months.keys():
             dx = 120 * (mi % 3) + 16
-            dy = (100 * (mi // 3)) + 70
+            dy = (100 * (mi // 3)) + 80
             month = MonthSprite(self, mi, week_day, self.calendar.week_days, dx, dy)
             week_day = month.last_week_day + 1
             self.properties.add(month, layer=3)
@@ -157,16 +183,17 @@ class CalendarPanel(BaseWidget):
             month.show()
 
     def switch_first_day(self, delta):
-        self.year_cyler += delta
+        self.year_cycler += delta
         is_a_leap_year = False
-        if self.year_cyler % self.calendar.year_leap == 0:
-            is_a_leap_year = True
-            if not any([month for month in self.months if month.has_leap_day == True]):
-                self.leap_day.enable()
-                self.leap_day.show()
-        else:
-            self.leap_day.disable()
-            self.leap_day.hide()
+        if self.calendar.calendar_type == "Solar":
+            if self.year_cycler % self.calendar.year_leap == 0:
+                is_a_leap_year = True
+                if not any([month for month in self.months if month.has_leap_day == True]):
+                    self.leap_day.enable()
+                    self.leap_day.show()
+            else:
+                self.leap_day.disable()
+                self.leap_day.hide()
 
         EventHandler.trigger("NotALeapDay", self, {'is_a_leap_year': is_a_leap_year})
         for month in self.properties.get_sprites_from_layer(3):
@@ -563,7 +590,7 @@ class YearTitle(BaseWidget):
     def __init__(self, parent, week_day, x, y, is_leap_year=False):
         super().__init__(parent)
         kind = 'Common' if not is_leap_year else 'Leap'
-        t = f'{kind} Year starting on Day #{str(week_day + 1)}'
+        t = f'{str(parent.year_cycler)}\n{kind} Year starting on Day #{str(week_day + 1)}'
         self.image = self.write3(t, self.crear_fuente(14, bold=True), ANCHO - 200, j=1)
         self.rect = self.image.get_rect(topleft=(x, y))
 
@@ -585,21 +612,49 @@ class SpecialMonthlessPeriod(MonthSprite):
         self.rect = self.image.get_rect(topleft=(x, y - 8))
 
 
-class SolarCalendarButton(TextButton):
+class CalendarButton(TextButton):
+    planet, satellite = None, None
+
+    def feed(self, planet, satellite):
+        self.planet = planet
+        self.satellite = satellite
+
+
+class SolarCalendarButton(CalendarButton):
     enabled = True
 
     def __init__(self, parent, x, y):
-        super().__init__(parent, 'Solar Calendar', x, y, )
+        super().__init__(parent, 'Solar Calendar', x, y)
         self.rect.right = x
 
+    def on_mousebuttondown(self, event):
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
+            calendar = SolarCalendar(self.planet, self.satellite)
+            self.parent.set_calendar(calendar, self.planet)
+            self.disable()
+            self.parent.lunar.enable()
 
-class LunarCalendarButton(TextButton):
+
+class LunarCalendarButton(CalendarButton):
+    enabled = True
+
     def __init__(self, parent, x, y):
-        super().__init__(parent, 'Lunar Calendar', x, y, )
+        super().__init__(parent, 'Lunar Calendar', x, y)
         self.rect.right = x
 
+    def feed(self, planet, satellite):
+        self.planet = planet
+        self.satellite = satellite
 
-class LunisolarCalendarButton(TextButton):
+    def on_mousebuttondown(self, event):
+        if event.data['button'] == 1 and self.enabled and event.origin == self:
+            calendar = LunarCalendar(self.planet, self.satellite)
+            self.parent.set_calendar(calendar, self.planet)
+            self.disable()
+            self.parent.solar.enable()
+
+
+class LunisolarCalendarButton(CalendarButton):
     def __init__(self, parent, x, y):
         super().__init__(parent, 'Lunisolar Calendar', x, y)
         self.rect.right = x
